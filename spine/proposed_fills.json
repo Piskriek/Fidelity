@@ -111,6 +111,7 @@
       ],
       "touches": {},
       "calls": [
+        "stepLodPopulationTick",
         "v2ValidateCartridge",
         "v2EvaluateCircleAndPolarityInterference",
         "stepSymbioticUniverseBridge"
@@ -131,7 +132,6 @@
         "v2StepAndRebaseOrigin64",
         "v2MultiStarField",
         "translateWiregraphToRig",
-        "stepLodPopulationTick",
         "runHeadlessEonGenesis",
         "formatShorthandRecordV2",
         "stepHardwareFidelityGovernor",
@@ -144,7 +144,7 @@
         "synthesizeEmergentLitRpgClass",
         "stepSqJepaLatentRollout"
       ],
-      "note": "Wave 6 extends this tick with stepSymbioticUniverseBridge and v2ValidateCartridge (on cartridge import); modelled separately so build order stays valid."
+      "note": "Wave 6 extends this tick with the cohort tick (stepLodPopulationTick), v2ValidateCartridge (on import), circle evaluation and stepSymbioticUniverseBridge; modelled as wave6CommunityTick so build order stays valid."
     }
   }
 }
