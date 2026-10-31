@@ -1,0 +1,485 @@
+[
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "raster of 512 columns",
+    "number": "512",
+    "kind": "bound",
+    "rule": "width x height = cell count 131,072"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "columns by 256 rows",
+    "number": "256",
+    "kind": "bound",
+    "rule": "width x height = cell count 131,072"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "That is 131,072 cells",
+    "number": "131,072",
+    "kind": "bound",
+    "rule": "512 x 256; also 4,096 x 32 tiles"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "deliberately $2^{17}$",
+    "number": "2^{17}",
+    "kind": "bound",
+    "rule": "power-of-two form of 131,072"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "fixed 24-byte record",
+    "number": "24",
+    "kind": "bound",
+    "rule": "sum of field sizes: 3x4 + 3x2 + 2 + 4 bytes"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "snapshot is therefore 3,145,728 bytes",
+    "number": "3,145,728",
+    "kind": "bound",
+    "rule": "131,072 cells x 24 bytes"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": ", exactly 3 MiB. The solver",
+    "number": "3 MiB",
+    "kind": "bound",
+    "rule": "3,145,728 bytes = 3 x 1,048,576"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "working set is 6,291,456 bytes",
+    "number": "6,291,456",
+    "kind": "bound",
+    "rule": "2 x 3,145,728 (double buffer)"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "model defines 12 functional groups",
+    "number": "12",
+    "kind": "bound",
+    "rule": "number of rows in the group table; checklist restates"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "tiles of 4,096 cells each",
+    "number": "4,096",
+    "kind": "bound",
+    "rule": "131,072 cells / 32 tiles"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "which yields 32 tiles",
+    "number": "32",
+    "kind": "bound",
+    "rule": "131,072 / 4,096; checklist restates"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "A simulated year is 1,460 ticks",
+    "number": "1,460",
+    "kind": "bound",
+    "rule": "4 ticks/day x 365 days (6-hour tick)"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "covers 50 years, which is",
+    "number": "50",
+    "kind": "bound",
+    "rule": "73,000 / 1,460"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "which is 73,000 ticks",
+    "number": "73,000",
+    "kind": "bound",
+    "rule": "50 x 1,460; resume restates"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "fixed pool of $2^{15}$ slots",
+    "number": "2^{15}",
+    "kind": "bound",
+    "rule": "power-of-two form of 32,768"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "i.e. 32,768 slots, allocated",
+    "number": "32,768",
+    "kind": "bound",
+    "rule": "2^15"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "at or below 75% of the pool",
+    "number": "75%",
+    "kind": "bound",
+    "rule": "24,576 / 32,768"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "which is 24,576 slots",
+    "number": "24,576",
+    "kind": "bound",
+    "rule": "75% of 32,768"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "population is 20,000 agents",
+    "number": "20,000",
+    "kind": "bound",
+    "rule": "9,000 + 3,000 + 8,000; below cap 24,576"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "9,000 herbivores",
+    "number": "9,000",
+    "kind": "bound",
+    "rule": "part of 20,000 initial population"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "3,000 piscivores",
+    "number": "3,000",
+    "kind": "bound",
+    "rule": "part of 20,000 initial population"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "8,000 planktivores",
+    "number": "8,000",
+    "kind": "bound",
+    "rule": "part of 20,000 initial population"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "every run is 28% hard coral",
+    "number": "28%",
+    "kind": "bound",
+    "rule": "initial cover shares sum to 100% with 17% and 55%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "coral, 17% macroalgae",
+    "number": "17%",
+    "kind": "bound",
+    "rule": "initial cover shares sum to 100% with 28% and 55%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "and 55% bare substrate",
+    "number": "55%",
+    "kind": "bound",
+    "rule": "100% minus 28% minus 17%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Unit tests | 40 |",
+    "number": "40",
+    "kind": "bound",
+    "rule": "40 + 8 = 48 total tests"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Integration scenarios | 8 |",
+    "number": "8",
+    "kind": "bound",
+    "rule": "40 + 8 = 48 total tests"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| **Total** | **48** |",
+    "number": "48",
+    "kind": "bound",
+    "rule": "sum of unit and integration test counts; checklist and resume restate"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "contains 131,072 cells",
+    "number": "131,072",
+    "kind": "bound",
+    "rule": "plan grid cell count (512 x 256)"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "occupies 3,145,728 bytes",
+    "number": "3,145,728",
+    "kind": "bound",
+    "rule": "plan snapshot size (131,072 x 24)"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "divided into 32 tiles",
+    "number": "32",
+    "kind": "bound",
+    "rule": "plan tile count"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "table lists 12 rows",
+    "number": "12",
+    "kind": "bound",
+    "rule": "plan functional group count"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "inventory totals 48",
+    "number": "48",
+    "kind": "bound",
+    "rule": "plan total test count (40 + 8)"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "full 73,000-tick experiment",
+    "number": "73,000",
+    "kind": "bound",
+    "rule": "plan reference run length (50 x 1,460)"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "all 48 tests pass",
+    "number": "48",
+    "kind": "bound",
+    "rule": "plan total test count (40 + 8)"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "a square 25 m on a side",
+    "number": "25",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Lagoon | 3.5 |",
+    "number": "3.5",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Back-reef flat | 1.2 |",
+    "number": "1.2",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Reef crest | 0.6 |",
+    "number": "0.6",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Fore-reef slope | 9.0 |",
+    "number": "9.0",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "warm-up of 600 ticks",
+    "number": "600",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "relative tolerance of $10^{-4}$",
+    "number": "10^{-4}",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "with a mean of 60 m, biased",
+    "number": "60",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "mean of 0.8 events per",
+    "number": "0.8",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "removes at most 18% of coral cover",
+    "number": "18%",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "stays above 0.65 mmol",
+    "number": "0.65",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "Linear trends span 0.02 to",
+    "number": "0.02",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "to 0.08 °C per year",
+    "number": "0.08",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "mean tick time of 45 ms",
+    "number": "45",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "for 30 s, and structured",
+    "number": "30",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "flushed every 250 ticks",
+    "number": "250",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $r_C$ | 0.0042 |",
+    "number": "0.0042",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $r_A$ | 0.011 |",
+    "number": "0.011",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $K$ | 0.90 | fraction",
+    "number": "0.90",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $g$ | 0.35 | per unit",
+    "number": "0.35",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $\\theta$ | 1.0 |",
+    "number": "1.0",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $D_{\\mathrm{alert}}$ | 4.0 |",
+    "number": "4.0",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $D_{\\mathrm{mid}}$ | 7.5 |",
+    "number": "7.5",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $s$ | 1.5 | °C-weeks",
+    "number": "1.5",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $\\mu_{\\max}$ | 0.0035 |",
+    "number": "0.0035",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $\\lambda$ | 180 |",
+    "number": "180",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $N_h$ | 0.12 |",
+    "number": "0.12",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $p_r$ | 0.015 |",
+    "number": "0.015",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| $m_a$ | 0.0006 |",
+    "number": "0.0006",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "exceed 70 ms for a sustained",
+    "number": "70",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "more than 0.002 after clamping",
+    "number": "0.002",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "mean tick time of 38 ms",
+    "number": "38",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "on 6 worker threads",
+    "number": "6",
+    "kind": "free",
+    "rule": ""
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "coefficient by ±20% around",
+    "number": "20%",
+    "kind": "free",
+    "rule": ""
+  }
+]

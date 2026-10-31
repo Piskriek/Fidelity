@@ -12,6 +12,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 | `scripts/adversarial_red_team_v9_audit.mjs` | v9 operator fuzz + token gates (Argon) |
 | `scripts/mutation_test_audits.mjs` | Plants known defects and checks that the gates fail |
 | `scripts/fractal_gap_map.mjs` + `spine/` | Fractal Gap Map: the plan as a point cloud on the framework's own axes; lists missing links (`spine/GAP_MAP.md`) |
+| `scripts/count_identity_audit.mjs` | Advisory: flags stated numbers that disagree (arithmetic chains, derived numbers, table totals, partitions, restated counts, array sizes, percentages); mark checked lines `<!-- counts:ok -->` |
 | `scripts/formula_spine.mjs` | 47 key formulas read from the Plan and tested by behaviour (signs, round-trips, units, boundaries) |
 | `scripts/mutant_generator.mjs` | Mutation testing of the default gates (semantic, gap map, formula spine): sampled by default, every Plan site with `--all-sites`; rates by exposure; lists the blind spots |
 | `scripts/method_mirror.mjs` | Which defect classes have no mechanical detector |
@@ -22,7 +23,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 The GitHub `.md` files are canonical. Google Drive/Docs copies drop LaTeX `_` subscripts, frontmatter and code fences (Check C30).
 
 ```bash
-node scripts/triad_semantic_audit.mjs && node scripts/formula_spine.mjs && node scripts/fractal_gap_map.mjs --strict && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/mutation_test_audits.mjs
+node scripts/triad_semantic_audit.mjs && node scripts/formula_spine.mjs && node scripts/count_identity_audit.mjs && node scripts/fractal_gap_map.mjs --strict && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/mutation_test_audits.mjs
 ```
 
 ---

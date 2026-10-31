@@ -19,6 +19,9 @@ jobs:
         run: node scripts/fractal_gap_map.mjs --strict
       - name: Formula spine (plan formulas tested by behaviour)
         run: node scripts/formula_spine.mjs
+      - name: Count & identity audit (advisory; stated numbers that should agree)
+        run: node scripts/count_identity_audit.mjs
+        continue-on-error: true
       - name: v9 red-team operator fuzz + token gates
         run: node scripts/adversarial_red_team_v9_audit.mjs
       - name: Mutation test (gates must fail on planted defects)

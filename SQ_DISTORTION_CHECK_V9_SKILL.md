@@ -7,7 +7,7 @@ description: Always-on reasoning framework (v9.4 — Document-Audit Mode with wh
 Measured in Pass R26 (2026-10-31, 9 Sonnet/Haiku runs) and Pass R27 (8 more runs on harder plants): on prose, the checks below produced the findings, while the code-only checks and the latent rollout could not be executed and only added tokens. So, for a document:
 
 0. **Purpose first (`why=`)**: before any arithmetic, write each rule's purpose in at most 6 words, specific enough to fail, and check the rule serves it. On set C it was the only Haiku method to catch an inverted logic rule (Pass R28, a single run: re-test with ≥ 3 runs before relying on it).
-1. **Recount** every count, total and ledger line against the list it describes (headings, "N items", defect totals). Use code.
+1. **Recount** every count, total and ledger line against the list it describes (headings, "N items", defect totals). Use code: `node scripts/count_identity_audit.mjs` (advisory) flags stated numbers that disagree: arithmetic chains, numbers introduced as derived ("that is", "therefore"), compound counts such as "14 zones (7 × L/R)", table totals, typed-array sizes, percentages, and a count restated with the same noun. A finding shows a disagreement, not which side is wrong; check both, and mark a correct line `<!-- counts:ok -->`. On unseen text it caught roughly a quarter to a third of such errors. Counts against an enumerated list, and most cross-file restatements, are still yours to recount.
 2. **Sum** every weight set that should total 1, and recompute every arithmetic identity the text states.
 3. **Units**: write the unit of each term in every sum, min/max and comparison; flag mixed units and unitless thresholds.
 4. **Positivity probe**: evaluate every "≥ 0", "decreasing" or "converges" claim at a point below the baseline (e.g. ratio 0.1) and at 0.
@@ -38,7 +38,7 @@ Apply this framework across all 5 phases of task execution:
 - **Reviewing, Independent Audit & The 3-Artifact Co-Evolution Loop (**`Skill <-> Plan <-> Resume`**)**:
   - Every recursive iteration maintains and updates **3 synchronized handoff files**:
     - **The Skill (**`SQ_DISTORTION_CHECK_V9_SKILL.md`**)** — the active reasoning and verification harness (`Checks C1–C34`).
-    - **The Plan (**`FIDELITY_COMPLETE_BRS_V2.md`**)** — the complete Master Constitution and 6-Wave Engineering Build Plan.
+    - **The Plan (**`FIDELITY_COMPLETE_BRS_V2.md`**)** — the complete Master Constitution and 7-Wave Engineering Build Plan.
     - **The Resume (**`ARGON_OPUS_MASTER_RESUME_V2.md`**)** — the standalone Session Checkpoint, `@hm/shorthand` v2 Memory Record (`m/me/mc/mb/nem`), Defect Ledger, and Wake-Up Protocol for Argon & Claude Opus.
   - **Co-Evolution Execution Law (**`Checks C23–C34`**)**: Whenever **The Skill** is updated, immediately run the updated Skill against **The Plan**, **The Resume**, and **The Skill** itself to expose defects across all 3 artifacts. Fix every defect found via an `SQ-JEPA` pre-commit latent rollout, update all 3 artifacts in lockstep, and re-run fresh until **$\Delta\text{Bugs} = 0$** AND **$\Delta L_{\text{meta}} \le 0$**.
 ## Summary

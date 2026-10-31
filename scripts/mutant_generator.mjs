@@ -115,6 +115,7 @@ const GATES = [
   ['semantic', ['triad_semantic_audit.mjs']],
   ['gapmap', ['fractal_gap_map.mjs', '--strict']],
   ['formula', ['formula_spine.mjs', '--quiet']],
+  ['counts', ['count_identity_audit.mjs', '--quiet']],
   ...(args.includes('--with-v9') ? [['v9', ['adversarial_red_team_v9_audit.mjs']]] : []),
 ];
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fidelity-mutants-'));
@@ -174,7 +175,7 @@ if (tunedList) {
   L.push('', 'Sampled run: the sample can include sites the specs were written against, so this rate is not a generalisation rate. For that, run with `--all-sites --tuned-file … --shown-specs …` and read the unseen row.');
 }
 const errs = mutants.filter(m => m.errors?.length);
-L.push('', `Gate crashes or timeouts (not counted as catches, listed separately): ${errs.length}. The default gates are semantic, gap map and formula spine; the v9 suite runs only with \`--with-v9\`, and the mutation test and clean-slate scan are not run. Equivalent mutants (changes that alter nothing that matters) are not removed, so survivors mix blind spots and harmless edits.`);
+L.push('', `Gate crashes or timeouts (not counted as catches, listed separately): ${errs.length}. The default gates are semantic, gap map, formula spine and count/identity audit; the v9 suite runs only with \`--with-v9\`, and the mutation test and clean-slate scan are not run. Equivalent mutants (changes that alter nothing that matters) are not removed, so survivors mix blind spots and harmless edits.`);
 for (const mu of errs) L.push(`- crashed: ${mu.op} \`${mu.from.replace(/`/g, "'")}\` → \`${mu.to.replace(/`/g, "'")}\` (${mu.errors.join(', ')})`);
 const survivors = mutants.filter(m => !m.killedBy.length && !m.errors?.length);
 L.push('', `## Survivors (${survivors.length}): blind spots or equivalent mutants`, '', '| Operator | Change | Exposure | Context |', '|---|---|---|---|');
