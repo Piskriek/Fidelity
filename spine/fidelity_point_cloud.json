@@ -235,7 +235,7 @@
       "tested": "v2PredictiveLossKL"
     },
     {
-      "id": "Cayley-Padé",
+      "id": "Discrete-Gradient",
       "pkg": "kernel",
       "role": [
         "dynamics"

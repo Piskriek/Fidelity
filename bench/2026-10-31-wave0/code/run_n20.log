@@ -1,0 +1,37 @@
+grid 20x20, tau 0.00016, steps 50000; analytic lam1=4.9550 lam2=7.3594 predicted release n=2->n=1: 0.3267
+
+[C0] start in analytic ground state: W released 0.000 % (discretisation floor), lam_eff 4.9484, K drift 0.00000000, W-rise violations 0
+
+[C1] generic blobs -> W/W0 0.2400 (released 76.00 %), K drift -0.00000000, lam_eff 4.9484 vs analytic 4.9550
+     magnetic axis at r=0.650, z=0.500 (ring radius > 0 => toroidal), corr(F,psi) 1.00000, overlap with analytic spheromak 1.00000, toroidal energy fraction 0.5000, W-rise violations 0
+..:::--::::...    |    ...::::--:::..
+:-=++++++==-:..   |   ..:-==++++++=-:
+-+*##%%##*+=-:..  |  ..:-=+*##%%##*+-
+=+#%@@@@%#*+=-:.  |  .:-=+*#%@@@@%#+=
+=*#%@@@@%%*+=-:.  |  .:-=+*%%@@@@%#*=
+=+#%@@@@%#*+=-:.  |  .:-=+*#%@@@@%#+=
+-+*##%%##*+=-:..  |  ..:-=+*##%%##*+-
+:-=++++++==-:..   |   ..:-==++++++=-:
+..:::--::::...    |    ...::::--:::..
+
+[C2] two stacked counter-poloidal toroids -> W/W0 0.6805, released 31.95 % (Taylor prediction 32.67 %), lam_eff 4.9484, axis r=0.650 z=0.500, violations 0
+[C3 b=0] W/W0 0.6741, released 32.59 % (approx prediction 32.67 %), lam_eff 4.9484, W_final/(lam1*K/2) 0.9987, axis r=0.650 z=0.500, violations 0
+[C3 b=0.25] W/W0 0.4045, released 59.55 % (approx prediction 59.60 %), lam_eff 4.9484, W_final/(lam1*K/2) 0.9987, axis r=0.650 z=0.500, violations 0
+[C3 b=0.5] W/W0 0.2247, released 77.53 % (approx prediction 77.56 %), lam_eff 4.9484, W_final/(lam1*K/2) 0.9987, axis r=0.650 z=0.500, violations 0
+[C3 b=0.8] W/W0 0.0749, released 92.51 % (approx prediction 92.52 %), lam_eff 4.9484, W_final/(lam1*K/2) 0.9987, axis r=0.650 z=0.500, violations 0
+[C3 b=0.9] W/W0 0.0355, released 96.45 % (approx prediction 96.46 %), lam_eff 4.9484, W_final/(lam1*K/2) 0.9987, axis r=0.650 z=0.500, violations 0
+[C4 #0] W/W0 0.0058, lam_eff 4.9484, axis r=0.650 z=0.500, corr(F,psi) 0.99999, overlap 1.00000, tor.frac 0.5000, violations 0
+[C4 #1] W/W0 0.0279, lam_eff 4.9487, axis r=0.650 z=0.500, corr(F,psi) 0.99996, overlap 0.99997, tor.frac 0.5000, violations 0
+[C4 #2] W/W0 0.0141, lam_eff 4.9484, axis r=0.650 z=0.500, corr(F,psi) 0.99999, overlap 1.00000, tor.frac 0.5000, violations 0
+[C4 #3] W/W0 0.0673, lam_eff 4.9488, axis r=0.600 z=0.500, corr(F,psi) 0.99996, overlap 0.99998, tor.frac 0.5000, violations 0
+[C4 #4] W/W0 0.0960, lam_eff 4.9484, axis r=0.650 z=0.500, corr(F,psi) 0.99999, overlap 1.00000, tor.frac 0.5000, violations 0
+[C4 #5] W/W0 0.0103, lam_eff 4.9484, axis r=0.650 z=0.500, corr(F,psi) 1.00000, overlap 1.00000, tor.frac 0.5000, violations 0
+[C4 #6] W/W0 0.0807, lam_eff 4.9484, axis r=0.650 z=0.500, corr(F,psi) 1.00000, overlap 1.00000, tor.frac 0.5000, violations 0
+[C4 #7] W/W0 0.0004, lam_eff 4.9496, axis r=0.600 z=0.500, corr(F,psi) 0.99986, overlap 0.99991, tor.frac 0.5000, violations 0
+     C4 summary: lam_eff min 4.9484 max 4.9496; runs within 0.2% of the lowest: 8/8
+
+[P2] Rayleigh discriminant min: co-rotating Rankine 0.0000 (>=0 => stable), counter-rotating shell -7.7236 (<0 => centrifugally unstable layer => toroidal Taylor cells)
+
+[P3] Gharib jet d=85 um, v=255 m/s: flow 1.447 mL/s, jet kinetic power 47.0 W, stagnation pressure 32.5 MPa
+
+results written to code/taylor_relax_results_n20.json

@@ -349,12 +349,19 @@ const SPECS = [
       const sim = d => 1 + (m[1] === '-' ? -2 : 2) * d / +m[2];
       return sim(0) === 1 && sim(BITS) === -1 ? [] : [`probe: s(identical) = ${sim(0)}, s(opposite, d_H = ${BITS}) = ${sim(BITS)}`];
     } },
-  { id: 'F36 port-Hamiltonian dissipation', why: 'R dissipates energy, so it enters as J − R in every occurrence',
-    re: /\\Delta t \\left\( \\mathbf\{I\} - \\frac\{\\Delta t\}\{2\} \(([^()]*)\) \\mathbf\{M\}\^\{-1\} \\right\)\^\{-1\} \(([^()]*)\) \\nabla H/,
+  { id: 'F36 port-Hamiltonian dissipation', why: 'R dissipates energy: the step uses J − R, and the stated energy identity has the R term negative',
+    re: /\\mathbf\{x\}\^\{k\+1\} = \\mathbf\{x\}\^k \+ \\Delta t\\, \(([^()]*)\)\\, \\bar\\nabla H[\s\S]{0,600}?H\^\{k\+1\} - H\^k = ([+-]?)\s*\\Delta t\\, \\bar\\nabla H\^\\top \\mathbf\{R\}\\, \\bar\\nabla H/,
     test: m => {
-      // Read the sign each of J and R carries (in any order); R must enter negatively, J positively.
-      const signs = x => Object.fromEntries([...x.matchAll(/([+-]?)\s*\\mathbf\{(J|R)\}/g)].map(t => [t[2], t[1] === '-' ? -1 : 1]));
-      return [m[1], m[2]].map(signs).every(s => s.J === 1 && s.R === -1) ? [] : [`probe: dissipation sign flipped (${m[1]} / ${m[2]})`];
+      // Read the sign each of J and R carries (in any order), then run one unforced step on H = |x|²/2
+      // with J skew and R = I: the energy change must be negative and carry the identity's sign.
+      const s = Object.fromEntries([...m[1].matchAll(/([+-]?)\s*\\mathbf\{(J|R)\}/g)].map(t => [t[2], t[1] === '-' ? -1 : 1]));
+      if (s.J === undefined || s.R === undefined) return [`probe: step lacks J or R (${m[1]})`];
+      const g = [1, 0.5], Jg = [g[1], -g[0]];
+      const dH = s.J * (g[0] * Jg[0] + g[1] * Jg[1]) + s.R * (g[0] ** 2 + g[1] ** 2);
+      const errs = [];
+      if (!(dH < 0)) errs.push(`probe: the step adds energy through R (ΔH = ${dH})`);
+      if (Math.sign(dH) !== (m[2] === '-' ? -1 : 1)) errs.push(`probe: energy identity sign (${m[2] || '+'}) disagrees with the step (ΔH = ${dH})`);
+      return errs;
     } },
   { id: 'F37 burial depth', why: 'older lineages (smaller epoch index e) lie deeper',
     re: /z_\{\\text\{burial\}\}\(e\) = \(([^()]*) - ([^()]*)\) \\cdot \\Delta z_\{\\text\{epoch\}\} [+-] z_0/,
