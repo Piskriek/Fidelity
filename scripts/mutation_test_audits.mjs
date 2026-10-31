@@ -3,7 +3,7 @@
  * MUTATION TEST FOR THE AUDIT GATES (Check C27)
  *
  * "An audit that passes a known-bad plan is not an audit." Copies the triad into a temp dir,
- * plants one known defect at a time, and runs every gate (semantic audit, gap map --strict, v9 suite).
+ * plants one known defect at a time, and runs every gate (semantic audit, gap map --strict, formula spine, v9 suite).
  * At least one gate must fail on every mutant. The per-gate columns show which gate guards what:
  * the v9 suite only catches edits inside the CRC-protected shorthand block.
  *
@@ -38,6 +38,7 @@ const MUTANTS = [
 const GATES = [
   ['semantic', ['triad_semantic_audit.mjs']],
   ['gapmap', ['fractal_gap_map.mjs', '--strict']],
+  ['formula', ['formula_spine.mjs', '--quiet']],
   ['v9', ['adversarial_red_team_v9_audit.mjs']],
 ];
 function gatePasses([script, ...flags], dir) {

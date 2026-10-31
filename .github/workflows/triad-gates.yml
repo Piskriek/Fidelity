@@ -13,11 +13,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Semantic audit (S1–S14)
+      - name: Semantic audit (S1–S15)
         run: node scripts/triad_semantic_audit.mjs
       - name: Fractal gap map (spine grounded in the plan)
         run: node scripts/fractal_gap_map.mjs --strict
+      - name: Formula spine (plan formulas tested by behaviour)
+        run: node scripts/formula_spine.mjs
       - name: v9 red-team operator fuzz + token gates
         run: node scripts/adversarial_red_team_v9_audit.mjs
       - name: Mutation test (gates must fail on planted defects)
         run: node scripts/mutation_test_audits.mjs
+      - name: Mutant generator (informational blind-spot report)
+        run: node scripts/mutant_generator.mjs --per-op 3 --seed 7
