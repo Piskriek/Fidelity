@@ -5,7 +5,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 
 | Path | What it is |
 |---|---|
-| `SQ_DISTORTION_CHECK_V9_SKILL.md` | Artifact 1, THE SKILL: reasoning harness v9.4 (Checks C1–C34; start with Document-Audit Mode when auditing prose) |
+| `SQ_DISTORTION_CHECK_V9_SKILL.md` | Artifact 1, THE SKILL: reasoning harness v9.5 (Checks C1–C35; start with Document-Audit Mode when auditing prose) |
 | `FIDELITY_COMPLETE_BRS_V2.md` | Artifact 2, THE PLAN: clean-slate constitution, Parts 1–9, defect ledger and open-item register (§8.1) |
 | `ARGON_OPUS_MASTER_RESUME_V2.md` | Artifact 3, THE RESUME: checkpoint, shorthand memory, wake-up prompt |
 | `scripts/triad_semantic_audit.mjs` | Semantic gate S1–S15: recounts, sums, identities, caps, cross-artifact constants |

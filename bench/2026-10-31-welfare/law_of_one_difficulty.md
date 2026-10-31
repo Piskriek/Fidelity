@@ -20,7 +20,7 @@ Design reference for the Fidelity simulation. Source: Ra sessions at lawofone.in
 - [RA] **Speed.** A Wanderer who penetrates the forgetting polarizes "with much greater efficiency" than in higher densities (36.17) and will "polarize much more rapidly" (52.9). Fourth density uses aids that cut "extremely upon the quick effect of catalyst" (47.6).
 - [RA] **Why catalyst exists.** It is "not strictly necessary to have catalyst", but without it the desire to evolve and faith do not normally manifest (54.24).
 - [RA] **Harvestability.** Positive harvest needs about 51% service to others and negative about 95% service to self, with a "sinkhole of indifference" between (17.32, 17.33). Ra says harvestable positive entities greatly outnumber harvestable negative ones on Earth (17.23).
-- [RA] **For others.** Incarnate Wanderers lighten "the planetary consciousness distortions" and offer catalyst to others to increase the harvest (52.9). They add a "doubling effect of planetary love and light" (65.12). Confederation entities "catch those who stumble and set them aright" (51.1).
+- [RA] **For others.** Incarnate Wanderers lighten "the planetary consciousness distortions" and offer catalyst to others to increase the harvest (52.9). They add a "doubling effect of planetary love and light" (65.12). At harvest, Confederation entities "catch those who stumble and set them aright" (51.1); Ra describes this as harvest-time help, not mid-life help.
 - [RA] **Limits of the reward.** Too much catalyst backfires: "the intensity of catalyst disarranges the polarized entity" (48.8; Ra confirms the over-enrolled-student analogy in 48.9). Ra gives an example of an entity that tried to "polarize more quickly than experience may be integrated" (35.4). Ra grants that very heavy pain may "seem a great waste of the catalyst of pain" (83.27), while hoping the sufferer is using what it chose. Catalyst "which has gone awry" is answered with "additional catalyst" (34.6). There is "no outward shelter" from cruel catalyst (95.24). An entity living fully in unity is "extraordinarily rare" (95.25).
 
 ## 3. Reasons for the decision
@@ -43,7 +43,7 @@ Design reference for the Fidelity simulation. Source: Ra sessions at lawofone.in
 
 **Where Ra supports your values**
 1. *Consent at entry.* Ra's model is tiered: automatic for the newest, self-chosen after a developmental threshold, and volunteer-with-terms for Wanderers (21.9, 70.15). Vibrational matching (48.8, 59.4) fits your "matched by vibration".
-2. *Way out of loops.* Karma stops with forgiveness at any time (34.5). Each life ends in a review and healing (71.6). Helpers catch stumblers (51.1), Wanderers have an exit (70.15), and the displaced Wanderer eventually returns (69.11).
+2. *Way out of loops.* Karma stops with forgiveness at any time (34.5). Each life ends in a review and healing (71.6). At harvest, helpers catch stumblers (51.1), Wanderers have an exit (70.15), and the displaced Wanderer eventually returns (69.11).
 3. *Pain set from above.* The higher self programs lessons but cannot override free choice (36.7, 70.11). Shortening lifetimes when catalyst outran assimilation (76.21) is a precedent for a throttle.
 4. *Designer shares the experience.* Because the programming self is the sufferer's own future self (70.9, 37.6), the planner is, loosely, the one who lives it. Higher-density Wanderers, Ra's own people among them (45.4), accept the veil.
 
@@ -51,7 +51,7 @@ Design reference for the Fidelity simulation. Source: Ra sessions at lawofone.in
 1. *Intensity is the point.* Ra's stated reason for the veil is faster polarization (82.21), and it is one reason Wanderers come (36.17, 52.9). Your value of no needless suffering cuts against a frame that answers severe pain with the hope that the sufferer chose it and is using it (83.27). That framing can make any suffering look justified, so avoid copying it.
 2. *Consent is not informed in the moment.* The veil plausibly hides the pre-incarnative choice (65.19), and in one case Ra calls an entity's chosen limitations "to a great extent, fixed" (60.8). The automatic share (about 46% in 1981, by subtraction from 21.11) has no stated consent. Your design is stricter than Ra's.
 3. *Pain that starts low is not what Ra describes.* Newcomers get the most random programming (92.11), and the survival-level catalyst is the base (54.17). I found no passage where Ra says early pain is gentle.
-4. *Loops are tougher than a release valve.* Failed catalyst brings more (34.6), and non-graduates repeat a 75,000-year cycle (6.15, 13.23).
+4. *Loops are tougher than a release valve.* Failed catalyst brings more (34.6), and non-graduates repeat third density (10.6, 13.23), a cycle of about 75,000 years (6.15).
 5. *Higher perspective does not intervene.* Ra treats unrequested help as infringement (53.7, 89.30). A designer who tunes pain from above has more power than Ra's helpers claim.
 6. *Control versus speed.* Ra agreed that making pain harder to control created catalyst not usable before (83.26) and describes the pre-veil pace as "turtle" (82.18). A pain-relief feature trades against the growth Ra attributes to intensity.
 

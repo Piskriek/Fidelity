@@ -2,7 +2,7 @@
 /**
  * INDEPENDENT ADVERSARIAL RED-TEAM, SQ-JEPA LATENT ROLLOUT & 3-ARTIFACT CO-EVOLUTION SUITE (v9 — Passes R15 -> R23)
  * Target Triad:
- *   1. THE SKILL:  SQ_DISTORTION_CHECK_V9_SKILL.md (Checks C1-C31 + Document-Audit Mode, v9.1)
+ *   1. THE SKILL:  SQ_DISTORTION_CHECK_V9_SKILL.md (Checks C1-C35 + Document-Audit Mode, v9.5)
  *   2. THE PLAN:   FIDELITY_COMPLETE_BRS_V2.md (Master Constitution Parts 1-9)
  *   3. THE RESUME: ARGON_OPUS_MASTER_RESUME_V2.md (Checkpoint, Shorthand Memory & 117-Defect Ledger)
  * Companion: scripts/triad_semantic_audit.mjs checks what the documents SAY (this file only checks tokens are present).

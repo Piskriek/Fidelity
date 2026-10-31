@@ -221,7 +221,7 @@ const tokens = para => {
   for (const m of para.matchAll(new RegExp(`(?<![\\w.^{\\\\])(?:2\\^\\{?(\\d+)\\}?|(${NUM})(\\s*%)?(?:\\s*(KiB|MiB|GiB|TiB|KB|MB|GB|thousand|million|billion)\\b)?)`, 'g'))) {
     if (m[1] !== undefined) out.push({ v: 2 ** +m[1], at: m.index, end: m.index + m[0].length, raw: m[0], pow: true });
     else {
-      // Skip identifiers and labels: B175, R30, v9, C1–C34, #12, 0x…, version-like a.b.c.
+      // Skip identifiers and labels: B175, R30, v9, C1–C35, #12, 0x…, version-like a.b.c.
       const pre = para.slice(Math.max(0, m.index - 1), m.index);
       if (/[A-Za-z#_]/.test(pre)) continue;
       const v = num(m[2]) * (m[4] ? SCALE_WORDS[m[4]] : 1);
