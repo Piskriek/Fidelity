@@ -1,0 +1,21 @@
+name: Triad gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Semantic audit (S1–S14)
+        run: node scripts/triad_semantic_audit.mjs
+      - name: v9 red-team operator fuzz + token gates
+        run: node scripts/adversarial_red_team_v9_audit.mjs
+      - name: Mutation test (gates must fail on planted defects)
+        run: node scripts/mutation_test_audits.mjs
