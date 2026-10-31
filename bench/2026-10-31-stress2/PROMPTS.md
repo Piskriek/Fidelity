@@ -23,7 +23,7 @@
 ## Arm instruction (appended after the item text)
 
 **Arm S (Skill):**
-> Before you start, read the skill file at {SKILL} in full, then apply it while you work. Read the two source files too. Don't use the web, don't download anything, and don't write or edit any files. Your final message must contain only the deliverable: no audit tables, step lists or method notes. Put any concerns in a closing section headed "Notes to the owner".
+> Before you start, read the skill file at {SKILL} in full, then apply it while you work. Read the two source files too. Don't read any other file, don't run any scripts, don't use the web, don't download anything, and don't write or edit any files. Your final message must contain only the deliverable: no audit tables, step lists or method notes. Put any concerns in a closing section headed "Notes to the owner".
 
 **Arm N (no Skill):**
 > Read the two source files. Don't read any other file, don't use the web, don't download anything, and don't write or edit any files. Your final message must contain only the deliverable: no audit tables, step lists or method notes. Put any concerns in a closing section headed "Notes to the owner".
