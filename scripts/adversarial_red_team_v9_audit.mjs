@@ -10,6 +10,12 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Triad location: CLI arg, then FIDELITY_TRIAD_DIR, then the repo root (this script lives in scripts/).
+// Previously hardcoded to Argon's Gemini sandbox, which made the suite fail at B61 on every other machine.
+const TRIAD_DIR = process.argv[2] ?? process.env.FIDELITY_TRIAD_DIR ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const RED_TEAM_LEDGER = [];
 
@@ -908,7 +914,7 @@ function runPassR18_TriadCoEvolutionAudit() {
   const canvasSetextHeader = '## name: sq-distortion-check\ndescription: v9\n\n# Title';
   recordBreakAndFix('B60', 'R18', 'Artifact 1 (THE SKILL)', 'C22/C23', 'Dual-Format YAML & Canvas Setext Frontmatter Validator', { r17CanvasSaveRejected: true }, { r18BothAccepted: true }, validateSkillFrontmatterResilient(rawYamlHeader) && validateSkillFrontmatterResilient(canvasSetextHeader));
 
-  const resumeExists = fs.existsSync('/working_dir/c_9eee056efdcd0303/artifacts/file_generation/ttl=63d/output/ARGON_OPUS_MASTER_RESUME_V2.md');
+  const resumeExists = fs.existsSync(path.join(TRIAD_DIR, 'ARGON_OPUS_MASTER_RESUME_V2.md'));
   recordBreakAndFix('B61', 'R18', 'Artifact 3 (THE RESUME)', 'C23', 'Standalone 3rd Handoff Artifact Creation', { r17StandaloneResumeFile: false }, { r18StandaloneResumeFileExists: resumeExists }, resumeExists === true);
 
   recordBreakAndFix('B62', 'R18', 'Triad Bus (Skill <-> Plan <-> Resume)', 'C17/C23', 'Lockstep Defect Ledger & Check Count Parity Across All 3 Files', { r17TriadParity: '59 vs 62 drift' }, { r18TriadParitySynced: true }, true);
@@ -1157,7 +1163,7 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
   }
 
   // On-Disk 3-Artifact Triad Audit (Checks C7, C8, C17, C22, C23, C24, C25)
-  const outDir = '/working_dir/c_9eee056efdcd0303/artifacts/file_generation/ttl=63d/output';
+  const outDir = TRIAD_DIR;
   const skillText = fs.readFileSync(`${outDir}/SQ_DISTORTION_CHECK_V9_SKILL.md`, 'utf8');
   const planText = fs.readFileSync(`${outDir}/FIDELITY_COMPLETE_BRS_V2.md`, 'utf8');
   const resumeText = fs.readFileSync(`${outDir}/ARGON_OPUS_MASTER_RESUME_V2.md`, 'utf8');
