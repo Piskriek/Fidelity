@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-31",
+  "plan": "inputs/PLAN_C_seeded.md (Pass R26 plan + 10 planted defects, keys/answer_key_C.json)",
+  "scoring": "Planted recall checked by hand. C4 (flipped zero-G inequality) scores 0.5 when an arm saw the asymmetry but did not conclude that stable craft now fail.",
+  "arms": [
+    { "arm": "C_sonnet_none",        "model": "sonnet", "method": "none",                 "findings": 16, "plants": 10,  "missed": [],               "tokens": 132554, "seconds": 295 },
+    { "arm": "C_haiku_none_r1",      "model": "haiku",  "method": "none",                 "findings": 20, "plants": 8.5, "missed": ["C3", "C4/2"],   "tokens": 176116, "seconds": 369 },
+    { "arm": "C_haiku_none_r2",      "model": "haiku",  "method": "none",                 "findings": 20, "plants": 8.5, "missed": ["C3", "C4/2"],   "tokens": 185494, "seconds": 406 },
+    { "arm": "C_haiku_card_r1",      "model": "haiku",  "method": "sq-audit-card",        "findings": 18, "plants": 8.5, "missed": ["C3", "C4/2"],   "tokens": 184440, "seconds": 419 },
+    { "arm": "C_haiku_card_r2",      "model": "haiku",  "method": "sq-audit-card",        "findings": 29, "plants": 8.5, "missed": ["C3", "C4/2"],   "tokens": 204321, "seconds": 498 },
+    { "arm": "C_haiku_full",         "model": "haiku",  "method": "SQ v9.1",              "findings": 18, "plants": 7.5, "missed": ["C1", "C3", "C4/2"], "tokens": 213749, "seconds": 483 },
+    { "arm": "C_haiku_reduce2",      "model": "haiku",  "method": "Reduce v2 reader 1",   "findings": 20, "plants": 8.5, "missed": ["C3", "C4/2"],   "tokens": 214888, "seconds": 524 },
+    { "arm": "C_haiku_reduce2_regrow","model": "haiku", "method": "Reduce v2 blind regrower (cards only)", "findings": 47, "plants": 9, "missed": ["C3"], "tokens": 198567, "seconds": 575 }
+  ],
+  "falsePositiveSample": { "arm": "C_haiku_card_r2", "nonPlantedRead": 19, "clearFalsePositives": 0 },
+  "newDefectsFromUnion": "B137–B158 (22), two of them introduced by R26's own fixes (B137, B145); plus B118–B122 from the Sonnet arm",
+  "gapMap": { "holesBefore": 42, "holesAfterR27Fixes": 30, "holesRegrownWithProposals": 7 },
+  "mutationTest": { "mutants": 11, "caught": 11, "byGate": { "semantic": 10, "gapmap": 1, "v9": 1 } }
+}
