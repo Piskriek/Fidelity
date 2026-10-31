@@ -9,6 +9,8 @@ Dense plans hide defects: terms of art stand in for mechanisms, numbers repeat a
 
 v2 changes come from the 2026-10-31 benchmark (`bench/2026-10-31/REPORT.md`): cards trimmed to the fields that paid off, a much stronger mechanical check list, and regrowth moved to a fresh context, because a reader who has seen the original cannot regrow blind.
 
+**Measured on set C (`bench/2026-10-31-c/`):** a Haiku regrower that only saw the cards caught 9 of 10 planted defects. That was the best Haiku result, and it was the only Haiku arm to fully catch a flipped stability gate. The two-reader pipeline cost about 2.3× a single run. Use it when a fresh angle is worth that much, not as the default audit.
+
 ## Step 1 — Reduce to a ladder (the "base fractional elements")
 - **R0** (1 sentence): what the system is for, and how you would know it works.
 - **R1** (≤ 7 elements): the subsystems, each as noun + verb.
@@ -19,6 +21,8 @@ v2 changes come from the 2026-10-31 benchmark (`bench/2026-10-31/REPORT.md`): ca
 - **OPAQUE**: mark a term OPAQUE only when it appears in a formula, invariant or interface and you cannot restate it operationally. Framing and lore vocabulary is not a finding.
 
 Write R0–R2 to a file (`reduce_cards.md`). The file is the handoff to Step 3.
+
+**Point-cloud variant (when the plan has its own structural laws).** Write the cards as data rather than prose: every operator (home, what it raises or lowers, what it calls, its test) and every stateful quantity (unit, range, persistence, save path). Then let a script apply the plan's own laws and list the empty cells. In Fidelity this is `spine/fidelity_point_cloud.json` + `scripts/fractal_gap_map.mjs`: every quantity that only moves one way needs a dual, every persistent value needs a save path, every package needs a supplier and a host. Proposed fills can be applied as an overlay and the map re-run ("regrown") to see which holes they close and which new ones they open.
 
 ## Step 2 — Mechanical checks (run on the cards; use code for arithmetic)
 1. **Recount**: counts in headings vs items listed, ledger totals vs rows, "N items" vs the list.

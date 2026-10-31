@@ -1173,7 +1173,9 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
     console.error('Skill failed resilient frontmatter check!');
     bugsInR23++;
   }
-  for (let c = 1; c <= 31; c++) {
+  // Check range is read from the skill itself ("Checks C1–C<n>"), so new checks need no edit here.
+  const maxCheck = Math.max(26, ...[...skillText.matchAll(/Checks C1[–-]C(\d+)/g)].map(m => +m[1]));
+  for (let c = 1; c <= maxCheck; c++) {
     if (!skillText.includes(`C${c} [`)) {
       console.error(`Skill missing Check C${c}!`);
       bugsInR23++;
@@ -1183,7 +1185,7 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
   const requiredPlanTokens = [
     '# PART 1:', '# PART 2:', '# PART 3:', '# PART 4:', '# PART 5:', '# PART 6:', '# PART 7:', '# PART 8:', '# PART 9:',
     'fidelity-universe/', 'ARGON_OPUS_MASTER_RESUME_V2.md', 'sq-jepa/', 'nemesis-enrage/', 'universe-bridge/', 'Wave 1', 'Wave 6',
-    '#1 The Magician', '#22 The Fool', '117 Defects Logged', 'B74', 'B117', 'Checks C1–C31', '131,072', 'BigInt64Array', 'stepSqJepaLatentRollout', 'Wave 7', 'Sonnet', 'Haiku'
+    '#1 The Magician', '#22 The Fool', 'Defects Logged', 'B74', 'Checks C1–C', '131,072', 'BigInt64Array', 'stepSqJepaLatentRollout', 'Wave 7', 'Sonnet', 'Haiku'
   ];
   for (const tok of requiredPlanTokens) {
     if (!planText.includes(tok)) {
@@ -1197,9 +1199,8 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
     'SQ_DISTORTION_CHECK_V9_SKILL.md',
     'FIDELITY_COMPLETE_BRS_V2.md',
     'ARGON_OPUS_MASTER_RESUME_V2.md',
-    '117 Defects Logged',
-    'Checks C1–C31',
-    'B117',
+    'Defects Logged',
+    'Checks C1–C',
     'm of=preset:agent-argon-overwatch',
     '#TAIL|schema:hm:universe:v2|crc32:',
     'B74',

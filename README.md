@@ -11,6 +11,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 | `scripts/triad_semantic_audit.mjs` | Semantic gate S1–S14: recounts, sums, identities, caps, cross-artifact constants |
 | `scripts/adversarial_red_team_v9_audit.mjs` | v9 operator fuzz + token gates (Argon) |
 | `scripts/mutation_test_audits.mjs` | Plants known defects and checks that the gates fail |
+| `scripts/fractal_gap_map.mjs` + `spine/` | Fractal Gap Map: the plan as a point cloud on the framework's own axes; lists missing links (`spine/GAP_MAP.md`) |
 | `skills/reduce/` | Reduce → Check → Blind Regrow → Diff skill |
 | `skills/sq-audit-card/` | Compact document-audit card for Sonnet/Haiku subagents |
 | `bench/2026-10-31/` | Skill benchmark: inputs, answer keys, every agent output, scoring tools, `REPORT.md` |
@@ -18,7 +19,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 The GitHub `.md` files are canonical. Google Drive/Docs copies drop LaTeX `_` subscripts, frontmatter and code fences (Check C30).
 
 ```bash
-node scripts/triad_semantic_audit.mjs && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/mutation_test_audits.mjs
+node scripts/triad_semantic_audit.mjs && node scripts/fractal_gap_map.mjs --strict && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/mutation_test_audits.mjs
 ```
 
 ---

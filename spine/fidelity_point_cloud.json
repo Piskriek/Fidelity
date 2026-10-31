@@ -1,0 +1,642 @@
+{
+  "about": "Reduced spine of FIDELITY_COMPLETE_BRS_V2.md: every operator and stateful quantity the plan names, placed on the framework's own axes (package/branch, fold role, drain/restore direction, persistence seam). `ground` is text that must appear in the plan so this file cannot drift from it. scripts/fractal_gap_map.mjs turns this cloud into a hole list. Edit this file whenever the plan adds, renames or removes an operator or quantity.",
+  "quantities": [
+    {
+      "id": "fourFloats",
+      "ground": "Four Floats",
+      "unit": "dimensionless",
+      "range": "[0,1]^4",
+      "persistence": "persistent",
+      "seam": null,
+      "note": "the soul cartridge is 'Four-Float + 22-Archetype' (Skill C22) but no shorthand line carries S",
+      "scope": "soul"
+    },
+    {
+      "id": "archetypeProfile",
+      "ground": "22-Archetype",
+      "unit": "archetype id",
+      "range": "1..22",
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "episodes",
+      "ground": "Capped at 32 slots",
+      "unit": "count",
+      "range": "0..32",
+      "persistence": "persistent",
+      "seam": "me",
+      "scope": "soul"
+    },
+    {
+      "id": "causes",
+      "ground": "Capped at 16 slots",
+      "unit": "count",
+      "range": "0..16",
+      "persistence": "persistent",
+      "seam": "mc",
+      "scope": "soul"
+    },
+    {
+      "id": "bodyZones",
+      "ground": "Capped at 14 zones",
+      "unit": "zone stage",
+      "range": "14 zones",
+      "persistence": "persistent",
+      "seam": "mb",
+      "scope": "soul"
+    },
+    {
+      "id": "vitalReserveJoules",
+      "ground": "vitalReserveJoules",
+      "unit": "J",
+      "range": "[5,100]",
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "somaticStrainJoules",
+      "ground": "somaticStrainJoules",
+      "unit": "J",
+      "range": "[0,500]",
+      "persistence": "persistent",
+      "seam": null,
+      "note": "reference clamps at 500 J; the plan states no upper bound",
+      "scope": "soul"
+    },
+    {
+      "id": "recoveryCyclesDebt",
+      "ground": "recoveryCyclesDebt",
+      "unit": "rest cycles",
+      "range": "0..64",
+      "persistence": "persistent",
+      "seam": null,
+      "note": "if not persisted, logging out clears debt",
+      "scope": "soul"
+    },
+    {
+      "id": "unrecoveredDoses",
+      "ground": "unrecoveredDoses",
+      "unit": "count",
+      "range": null,
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "safeHibernationMode",
+      "ground": "safeHibernationMode",
+      "unit": "bool",
+      "range": "{false,true}",
+      "persistence": "transient",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "grudgeScore",
+      "ground": "grudgeScore",
+      "unit": "score",
+      "range": "[0,10]",
+      "persistence": "persistent",
+      "seam": "nem.score",
+      "scope": "soul"
+    },
+    {
+      "id": "scarResistance",
+      "ground": "+0.35 resistance (capped at 0.85)",
+      "unit": "fraction",
+      "range": "[0,0.85]",
+      "persistence": "persistent",
+      "seam": "nem.resist",
+      "monotone": "scars are permanent by design?",
+      "scope": "soul"
+    },
+    {
+      "id": "townTension",
+      "ground": "town tension",
+      "unit": null,
+      "range": null,
+      "persistence": "unspecified",
+      "seam": null,
+      "scope": "world"
+    },
+    {
+      "id": "excitement",
+      "ground": "boosting excitement",
+      "unit": "fraction",
+      "range": "[0,1]",
+      "persistence": "transient",
+      "seam": "me.ex",
+      "scope": "soul"
+    },
+    {
+      "id": "ambientEnergy",
+      "ground": "E_{\\text{ambient}}",
+      "unit": "J",
+      "range": null,
+      "persistence": "unspecified",
+      "seam": null,
+      "scope": "world"
+    },
+    {
+      "id": "progress4D",
+      "ground": "Progress}_{4\\text{D}}",
+      "unit": "fraction",
+      "range": "[0,1]",
+      "persistence": "persistent",
+      "seam": null,
+      "monotone": "graduation progress only rises?",
+      "scope": "player"
+    },
+    {
+      "id": "reputation",
+      "ground": "reputationAfter",
+      "unit": "fraction",
+      "range": "[0,1]",
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "host"
+    },
+    {
+      "id": "childUniverses",
+      "ground": "child universe seed",
+      "unit": "count",
+      "range": null,
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "world"
+    },
+    {
+      "id": "lineages",
+      "ground": "Superseded or failed lineages",
+      "unit": "count",
+      "range": null,
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "world"
+    },
+    {
+      "id": "pins",
+      "ground": "<= 6",
+      "unit": "count",
+      "range": "0..6",
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "world"
+    },
+    {
+      "id": "thermalEnergy",
+      "ground": "E_THERMAL",
+      "unit": "J",
+      "range": null,
+      "persistence": "transient",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "precision",
+      "ground": "Precision tensor diagonal",
+      "unit": "precision",
+      "range": "(0, inf)",
+      "persistence": "transient",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "stmQueue",
+      "ground": "STM MDL Coalescing Queue",
+      "unit": "items",
+      "range": null,
+      "persistence": "transient",
+      "seam": null,
+      "scope": "soul"
+    },
+    {
+      "id": "integrity",
+      "ground": "handleVesselDecoherenceAtZeroHp",
+      "unit": "hp",
+      "range": null,
+      "persistence": "persistent",
+      "seam": null,
+      "scope": "soul"
+    }
+  ],
+  "operators": [
+    {
+      "id": "v2PredictiveLossKL",
+      "pkg": "kernel",
+      "role": [
+        "evaluator"
+      ],
+      "touches": {},
+      "tested": "v2PredictiveLossKL"
+    },
+    {
+      "id": "Cayley-Padé",
+      "pkg": "kernel",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {},
+      "tested": null,
+      "note": "Port-Hamiltonian step, unnamed in the plan"
+    },
+    {
+      "id": "stepSqJepaLatentRollout",
+      "pkg": "sq-jepa",
+      "role": [
+        "restore",
+        "driver"
+      ],
+      "touches": {
+        "somaticStrainJoules": "-",
+        "recoveryCyclesDebt": "-",
+        "grudgeScore": "-",
+        "precision": "-"
+      },
+      "calls": [
+        "v2StepRestAndRecoveryCycle",
+        "stepEnrageNemesisEncounter",
+        "v2PredictiveLossKL"
+      ],
+      "tested": "stepSqJepaLatentRollout"
+    },
+    {
+      "id": "formatShorthandRecordV2",
+      "pkg": "shorthand",
+      "role": [
+        "transducer"
+      ],
+      "touches": {},
+      "dualOf": "parseShorthandRecordV2",
+      "tested": "formatShorthandRecordV2"
+    },
+    {
+      "id": "parseShorthandRecordV2",
+      "pkg": "shorthand",
+      "role": [
+        "transducer"
+      ],
+      "touches": {},
+      "dualOf": "formatShorthandRecordV2",
+      "tested": "parseShorthandRecordV2"
+    },
+    {
+      "id": "evaluateBreadcrumbExcitement",
+      "pkg": "genesis",
+      "role": [
+        "evaluator"
+      ],
+      "touches": {
+        "excitement": "+"
+      },
+      "tested": null
+    },
+    {
+      "id": "reproducePresets",
+      "pkg": "genesis",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "lineages": "+",
+        "pins": "±"
+      },
+      "tested": null
+    },
+    {
+      "id": "runHeadlessEonGenesis",
+      "pkg": "genesis",
+      "role": [
+        "driver"
+      ],
+      "touches": {
+        "lineages": "-"
+      },
+      "calls": [
+        "reproducePresets",
+        "evaluateBreadcrumbExcitement"
+      ],
+      "tested": null,
+      "note": "lineage burial into strata is the dual of reproduction"
+    },
+    {
+      "id": "translateWiregraphToRig",
+      "pkg": "taste",
+      "role": [
+        "transducer"
+      ],
+      "touches": {},
+      "tested": null
+    },
+    {
+      "id": "stepCoupledSomaticSystem",
+      "pkg": "somatic",
+      "role": [
+        "dynamics",
+        "evaluator"
+      ],
+      "touches": {
+        "somaticStrainJoules": "+",
+        "safeHibernationMode": "+"
+      },
+      "tested": "v2EvaluateMultiZoneBody"
+    },
+    {
+      "id": "stepBiologicalCompensatoryVent",
+      "pkg": "somatic",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "somaticStrainJoules": "-",
+        "thermalEnergy": "-"
+      },
+      "tested": null,
+      "home": "B124"
+    },
+    {
+      "id": "stepEnrageNemesisEncounter",
+      "pkg": "nemesis-enrage",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "grudgeScore": "±",
+        "scarResistance": "+",
+        "townTension": "+"
+      },
+      "tested": "stepEnrageNemesisEncounter"
+    },
+    {
+      "id": "handleVesselDecoherenceAtZeroHp",
+      "pkg": "rules-litrpg",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "integrity": "±"
+      },
+      "tested": null
+    },
+    {
+      "id": "generateEmergentQuestFromWorld",
+      "pkg": "rules-litrpg",
+      "role": [
+        "transducer"
+      ],
+      "touches": {},
+      "tested": null
+    },
+    {
+      "id": "stepHardwareFidelityGovernor",
+      "pkg": "governor",
+      "role": [
+        "evaluator",
+        "dynamics"
+      ],
+      "touches": {},
+      "tested": null
+    },
+    {
+      "id": "v2StepAndRebaseOrigin64",
+      "pkg": "origin64",
+      "role": [
+        "dynamics",
+        "transducer"
+      ],
+      "touches": {},
+      "tested": "v2StepAndRebaseOrigin64"
+    },
+    {
+      "id": "v2MultiStarField",
+      "pkg": "origin64",
+      "role": [
+        "evaluator"
+      ],
+      "touches": {},
+      "tested": "v2MultiStarField"
+    },
+    {
+      "id": "v2ValidateCartridge",
+      "pkg": "smc-nexus",
+      "role": [
+        "evaluator",
+        "transducer"
+      ],
+      "touches": {},
+      "tested": "v2ValidateCartridge"
+    },
+    {
+      "id": "v2EvaluateCircleAndPolarityInterference",
+      "pkg": "smc-nexus",
+      "role": [
+        "evaluator"
+      ],
+      "touches": {},
+      "tested": "v2EvaluateCircleAndPolarityInterference"
+    },
+    {
+      "id": "stepLodPopulationTick",
+      "pkg": "open-host-sdk",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "reputation": "±"
+      },
+      "tested": null
+    },
+    {
+      "id": "stepSymbioticUniverseBridge",
+      "pkg": "universe-bridge",
+      "role": [
+        "transducer",
+        "dynamics"
+      ],
+      "touches": {
+        "progress4D": "+",
+        "fourFloats": "=",
+        "childUniverses": "+"
+      },
+      "tested": "stepSymbioticUniverseBridge"
+    },
+    {
+      "id": "invokeAdeptIndigoWorking",
+      "pkg": "magic-indigo",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "ambientEnergy": "-",
+        "vitalReserveJoules": "-",
+        "somaticStrainJoules": "+"
+      },
+      "tested": null
+    },
+    {
+      "id": "v2IngestSporeConserved",
+      "pkg": "alchemy-catalyst",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "vitalReserveJoules": "-",
+        "somaticStrainJoules": "+",
+        "recoveryCyclesDebt": "+",
+        "unrecoveredDoses": "+"
+      },
+      "tested": "v2IngestSporeConserved"
+    },
+    {
+      "id": "v2StepRestAndRecoveryCycle",
+      "pkg": "alchemy-catalyst",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "vitalReserveJoules": "+",
+        "somaticStrainJoules": "-",
+        "recoveryCyclesDebt": "-",
+        "unrecoveredDoses": "-",
+        "safeHibernationMode": "-"
+      },
+      "tested": "v2StepRestAndRecoveryCycle",
+      "note": "+30 J has no stated source (B107)"
+    },
+    {
+      "id": "evaluateSimulatedMusicResonance",
+      "pkg": "soul",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "excitement": "+",
+        "precision": "-"
+      },
+      "tested": null,
+      "home": "B124"
+    },
+    {
+      "id": "enqueueShortTermMemoryBurst",
+      "pkg": "soul",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "stmQueue": "+"
+      },
+      "tested": null,
+      "home": "B124"
+    },
+    {
+      "id": "flushStmAndVentToLongTermMem",
+      "pkg": "soul",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "stmQueue": "-",
+        "episodes": "+"
+      },
+      "tested": null,
+      "home": "B124"
+    },
+    {
+      "id": "stepVortexPlasmaTransmutation",
+      "pkg": "alchemy-catalyst",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "thermalEnergy": "+"
+      },
+      "dualOf": "stepPlasmoidRelaxation",
+      "tested": null
+    },
+    {
+      "id": "stepPlasmoidRelaxation",
+      "pkg": "alchemy-catalyst",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "thermalEnergy": "-"
+      },
+      "dualOf": "stepVortexPlasmaTransmutation",
+      "tested": null
+    },
+    {
+      "id": "synthesizeEmergentLitRpgClass",
+      "pkg": "class-forge",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {},
+      "tested": null
+    },
+    {
+      "id": "stepUniverseAppStateMachine",
+      "pkg": "apps/universe",
+      "role": [
+        "driver"
+      ],
+      "touches": {},
+      "tested": null
+    },
+    {
+      "id": "recordExperience",
+      "pkg": "soul",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "episodes": "+",
+        "causes": "+"
+      },
+      "tested": null
+    },
+    {
+      "id": "dream.ts",
+      "pkg": "soul",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "causes": "-",
+        "episodes": "-"
+      },
+      "tested": null,
+      "note": "W3 dream: replay -> rebalance -> closeLinks"
+    },
+    {
+      "id": "evaluateHarvestChoice",
+      "pkg": "soul",
+      "role": [
+        "evaluator"
+      ],
+      "touches": {},
+      "tested": null
+    },
+    {
+      "id": "v2EvaluateCrossTierModelDistillation",
+      "pkg": "sq-jepa",
+      "role": [
+        "evaluator"
+      ],
+      "touches": {},
+      "tested": "v2EvaluateCrossTierModelDistillation",
+      "note": "returns hardcoded profiles (B95)"
+    }
+  ],
+  "packageDependsOn": {
+    "ground": "anchored in the Four Floats manifold",
+    "root": "kernel",
+    "all": [
+      "kernel"
+    ],
+    "note": "Part 1 §1.1: every entity, part, contraption, soul, planet and child universe is anchored in the Four Floats manifold (Branch 0 = @hm/kernel, the (0,0,0)_Root)."
+  }
+}
