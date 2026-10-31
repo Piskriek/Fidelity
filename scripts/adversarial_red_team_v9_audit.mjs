@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { selectEpisodes, formatMsLine, parseMsLine, ME_SLOTS } from './wave0_reference.mjs';
 
 // Triad location: CLI arg, then FIDELITY_TRIAD_DIR, then the repo root (this script lives in scripts/).
 // Previously hardcoded to Argon's Gemini sandbox, which made the suite fail at B61 on every other machine.
@@ -515,15 +516,17 @@ export function formatShorthandRecordV2(record = {}) {
   const cyc = Math.max(0, Math.trunc(finiteOr(record?.cyc, 0)));
 
   const lines = [`m of=${ofId} hard=${hard} bal=${bal} ch=${chArr.join(',')} inv=${inv} cyc=${cyc}`];
+  if (record?.ms) lines.push(formatMsLine(record.ms));
 
-  const episodes = Array.isArray(record?.episodes) ? record.episodes.slice(-32) : [];
+  const causes = Array.isArray(record?.causes) ? record.causes.slice(-16) : [];
+  // B178 (Plan §8.6 Q2): episodes linked to an open cause are pinned; the other slots hold the most recent.
+  const episodes = Array.isArray(record?.episodes) ? selectEpisodes(record.episodes, causes) : [];
   for (const ep of episodes) {
     lines.push(
       `me t=${Math.max(0, Math.trunc(finiteOr(ep.t, 0)))} st=${sanitizeToken(ep.st, 'S3')} cat=${sanitizeToken(ep.cat, 'none')} ex=${clamp01(ep.ex, 0.5).toFixed(2)} err=${clamp01(ep.err, 0).toFixed(2)} h=${clamp01(ep.h, 0.8).toFixed(2)} d=${sanitizeToken(ep.d, 'none')} by=${sanitizeToken(ep.by, 'none')} src=${sanitizeToken(ep.src, 'rule:default')}`
     );
   }
 
-  const causes = Array.isArray(record?.causes) ? record.causes.slice(-16) : [];
   for (const c of causes) {
     lines.push(`mc by=${sanitizeToken(c.by, 'none')} d=${sanitizeToken(c.d, 'none')} n=${Math.max(1, Math.trunc(finiteOr(c.n, 1)))} open=${c.open ? 1 : 0}`);
   }
@@ -552,7 +555,7 @@ export function formatShorthandRecordV2(record = {}) {
 export function parseShorthandRecordV2(text = '') {
   const rawLines = String(text || '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const bodyLines = [];
-  const result = { of: 'preset:unknown', hard: 0.5, bal: 1.0, ch: [0,0,0,0,0,0,0], inv: 0.5, cyc: 0, episodes: [], causes: [], bodies: [], nemeses: [], schema: null, crc32: null, computedCrc32: null, crcValid: false };
+  const result = { of: 'preset:unknown', hard: 0.5, bal: 1.0, ch: [0,0,0,0,0,0,0], inv: 0.5, cyc: 0, ms: null, episodes: [], causes: [], bodies: [], nemeses: [], schema: null, crc32: null, computedCrc32: null, crcValid: false };
 
   function parseKvTokens(tokens) {
     const map = {};
@@ -584,6 +587,8 @@ export function parseShorthandRecordV2(text = '') {
       result.ch = normalizeChArray7(kv.ch);
       result.inv = clamp01(Number(kv.inv), 0.5);
       result.cyc = Math.max(0, Math.trunc(finiteOr(Number(kv.cyc), 0)));
+    } else if (kind === 'ms') {
+      result.ms = parseMsLine(line);
     } else if (kind === 'me') {
       result.episodes.push({
         t: Math.max(0, Math.trunc(finiteOr(Number(kv.t), 0))),
@@ -630,8 +635,9 @@ export function parseShorthandRecordV2(text = '') {
     }
   }
   // Fixes B71: Enforce symmetric ring-buffer caps (32/16/14/8) on parsed untrusted records!
-  if (result.episodes.length > 32) result.episodes = result.episodes.slice(-32);
   if (result.causes.length > 16) result.causes = result.causes.slice(-16);
+  // B178: pinning of unresolved episodes replaces the plain last-32 window.
+  result.episodes = selectEpisodes(result.episodes, result.causes);
   if (result.bodies.length > 14) result.bodies = result.bodies.slice(-14);
   if (result.nemeses.length > 8) {
     result.nemeses = result.nemeses.sort((a, b) => finiteOr(b.score, 0) - finiteOr(a.score, 0)).slice(0, 8);
@@ -1262,6 +1268,20 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
   };
 }
 
+// Pass R38 (B178): the shorthand formatter and parser carry the `ms` line and pin unresolved episodes.
+function runPassR38_Wave0Shorthand() {
+  const episodes = Array.from({ length: 40 }, (_, t) => ({ t, st: 'S3', cat: 'none', ex: 0.5, by: t < 3 ? 'heart-humility' : 'x', d: t < 3 ? 'solar-pride' : 'y' }));
+  const ms = { s: [0.1, 0.9, 0.4, 0.6], arch: [0.7, 0.2, 0.9], pol: [0.8, 0.05], vital: 63.5, strain: 120, debt: 9, doses: 3, hp: 0.75, chose: ['cat:grief'] };
+  const text = formatShorthandRecordV2({ of: 'preset:wave0', ms, episodes, causes: [{ by: 'heart-humility', d: 'solar-pride', n: 3, open: true }] });
+  const parsed = parseShorthandRecordV2(text);
+  assert.ok(parsed.crcValid, 'R38: CRC survives the ms line');
+  assert.equal(formatMsLine(parsed.ms), formatMsLine(ms), 'R38: ms line round-trips');
+  assert.equal(parsed.episodes.length, ME_SLOTS, 'R38: window stays at 32');
+  assert.deepEqual(parsed.episodes.slice(0, 3).map(e => e.t), [0, 1, 2], 'R38: unresolved episodes stay pinned');
+  return { passId: 'R38', msRoundTrip: true, pinnedKept: 3 };
+}
+
+const r38Wave0 = runPassR38_Wave0Shorthand();
 runPassR15_BreakV1();
 runPassR16_BreakAndFixV2Additions();
 runPassR18_TriadCoEvolutionAudit();
@@ -1280,5 +1300,6 @@ console.log(JSON.stringify({
   r22SqJepaAndCompositionDefects: RED_TEAM_LEDGER.filter(d => d.passId === 'R22').map(d => d.id),
   r24ParserCapAndDistillationDefects: RED_TEAM_LEDGER.filter(d => d.passId === 'R24').map(d => d.id),
   r25Convergence,
+  r38Wave0,
   allInvariantsVerified: RED_TEAM_LEDGER.every(d => d.invariantPassed) && r25Convergence.twoZeroConvergenceAchieved,
 }, null, 2));

@@ -24,6 +24,8 @@ jobs:
         continue-on-error: true
       - name: v9 red-team operator fuzz + token gates
         run: node scripts/adversarial_red_team_v9_audit.mjs
+      - name: Wave 0 reference tests (B178; energy ledger, gateway, me pinning, ms line)
+        run: node scripts/wave0_reference_test.mjs
       - name: Mutation test (gates must fail on planted defects)
         run: node scripts/mutation_test_audits.mjs
       - name: Mutant generator (informational blind-spot report)

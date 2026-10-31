@@ -16,6 +16,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 | `scripts/formula_spine.mjs` | 47 key formulas read from the Plan and tested by behaviour (signs, round-trips, units, boundaries) |
 | `scripts/mutant_generator.mjs` | Mutation testing of the default gates (semantic, gap map, formula spine): sampled by default, every Plan site with `--all-sites`; rates by exposure; lists the blind spots |
 | `scripts/method_mirror.mjs` | Which defect classes have no mechanical detector |
+| `scripts/wave0_reference.mjs` + `scripts/wave0_reference_test.mjs` | Wave 0 reference implementation (Plan §8.6, `B178`; partial, see the register): discrete-gradient step with energy ledger and declared ports, the gateway, `me` pinning, the `ms` soul line and its two scopes; tests are the physics brief's invariants T1–T6 plus the memory and soul-line rules |
 | `skills/reduce/` | Reduce → Check → Blind Regrow → Diff skill |
 | `skills/sq-audit-card/` | Compact document-audit card for Sonnet/Haiku subagents |
 | `bench/2026-10-31/` | Skill benchmark: inputs, answer keys, every agent output, scoring tools, `REPORT.md` |
@@ -23,7 +24,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 The GitHub `.md` files are canonical. Google Drive/Docs copies drop LaTeX `_` subscripts, frontmatter and code fences (Check C30).
 
 ```bash
-node scripts/triad_semantic_audit.mjs && node scripts/formula_spine.mjs && node scripts/count_identity_audit.mjs && node scripts/fractal_gap_map.mjs --strict && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/mutation_test_audits.mjs
+node scripts/triad_semantic_audit.mjs && node scripts/formula_spine.mjs && node scripts/count_identity_audit.mjs && node scripts/fractal_gap_map.mjs --strict && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/wave0_reference_test.mjs && node scripts/mutation_test_audits.mjs
 ```
 
 ---
