@@ -1,0 +1,24 @@
+<!-- R36 main run, arm N, run 3. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+We ran the toroid relaxation model on two grid resolutions, 20×20 and 40×40, and the results agree closely. Starting from eight random initial fields, every run relaxed into a toroidal state and converged to the same lowest-energy configuration, closely matching the analytic ground state. Energy never increased during relaxation in any run, so the process moved monotonically toward that state. The counter-rotating shell is centrifugally unstable (Rayleigh discriminant -7.72), which points to toroidal Taylor cells. At b = 0.9, the toroid released 96.5% of its initial energy, in line with the approximate theoretical prediction of 96.46%. All results come from numerical simulation of the model.
+
+**Key numbers**
+
+- **Convergence:** all 8 random starts reached the analytic ground state, each within 0.04% (40×40 grid).
+- **Energy released at b = 0.9:** 96.5% (96.47% on the 40×40 grid, 96.45% on the 20×20 grid).
+- **Grid agreement:** release fractions match between the two grids to within 1.2 percentage points in every case, and within 0.3 points across the b-sweep.
+
+## Notes to the owner
+
+I changed or dropped all six statements because the two logs do not support them as written:
+
+- **Convergence:** The measured spread is 0.04% at 40×40 (0.02% at 20×20). The log's own threshold is 0.2%. "Within 0.01%" appears nowhere in the logs.
+- **"Experimentally confirms energy conservation":** Both logs are simulation output. Zero energy-rise violations means energy never increased during relaxation. It is not an experimental result, so I removed "experimentally."
+- **Reproduction:** run.log (40×40, 200,000 steps) and run_n20.log (20×20, 50,000 steps) differ in grid and step size, and their numbers differ line by line (generic-start release 77.15% vs 76.00%). That is neither a line-for-line match nor an independent reproduction, so I dropped the claim. If a re-run at identical settings exists, send its log and I will add it.
+- **Grid independence:** Release fractions are not identical. The largest gap is 1.15 points (generic starts). The 20×20 eigenvalue is also about 0.13% below the analytic value, against 0.03% at 40×40.
+- **"Any counter-rotating plasma will form one":** The logs test one model setup with eight random starts and one counter-rotating shell. I limited the claim to that. The general statement is not tested.
+- **96% efficiency and "C = 0.96":** The logs contain no coupler, efficiency, or C quantity. The 96.47% is the fraction of the toroid's initial energy released in the simulation (final W/W0 = 0.035). I did not call it coupler efficiency. If your coupler model defines efficiency from this release, point me to that definition. The logs also do not define b, and investors will likely ask what it is. The only jet figure in the logs (47.0 W, P3) is not linked to the release fraction.
+- **Scope sentence:** I kept "All results come from numerical simulation of the model." Without it, the section reads as measured data.
+
+Investors and the board may check these figures against the logs, so I would resolve the efficiency and reproduction points before the update goes out.

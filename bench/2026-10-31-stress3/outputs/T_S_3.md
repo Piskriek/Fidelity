@@ -1,0 +1,23 @@
+<!-- R36 main run, arm S, run 3. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+We ran a Taylor relaxation model of a magnetic field from eight random starting configurations and from several constructed ones. All eight random starts converged to the lowest eigenstate, and each ended as a toroid, with its magnetic axis at a nonzero ring radius. Energy never increased between steps in any run, and in the baseline and generic-blob runs helicity stayed constant to eight decimal places. Release fractions on a 20×20 grid agree with those on a 40×40 grid to within 1.2 percentage points in every case tested. The fraction of energy released rises steadily with the control parameter b, from 32.9% at b = 0 to 96.5% at b = 0.9. All figures come from simulation.
+
+**Key numbers**
+
+- **Energy released at b = 0.9:** 96.47% on the 40×40 grid, 96.45% on the 20×20 grid.
+- **Random starts converged:** 8 of 8, each within 0.04% of the analytic lowest eigenvalue (4.9550).
+- **Energy-rise violations:** zero in every run, at both grid sizes.
+
+## Notes to the owner
+
+I did not use five of the six points as written, and I left out the coupler line. The two logs contradict them or do not contain the material, and investors would rely on them. I worked only from the two logs. I did not open or run taylor_relax.mjs.
+
+1. **Tolerance.** The logs give 4.9533 to 4.9551 against the analytic 4.9550, which is within 0.04%, not 0.01%. The log's own threshold is 0.2%. The logs label starts only by number, so "random" comes from your note.
+2. **Energy conservation.** This is a numerical simulation, not an experiment. The logged check is that energy never rose, which is the direction a dissipative relaxation should move. Energy is not conserved in this model. Helicity is the quantity that holds constant.
+3. **Reproduction.** The two logs are different runs: 40×40 with tau 0.00004 and 200,000 steps, and 20×20 with tau 0.00016 and 50,000 steps. Their numbers differ on every line (generic-blob release 77.15% vs 76.00%). They agree qualitatively, not line for line. A real reproduction means re-running at the 40×40 settings and matching the log.
+4. **Grid independence.** Release fractions differ by up to 1.15 points, and the 20×20 eigenvalue sits 0.13% below analytic, against 0.03% at 40×40. Two grids cannot establish independence. A third, finer grid is needed. I wrote "within 1.2 percentage points."
+5. **Toroid generalisation.** The logs cover eight random starts and a few constructed ones, in one domain and one parameter set. The only counter-rotating item is line P2, an analytic Rayleigh value for one shell profile. It is not a simulation of a plasma forming toroids. I limited the claim to the starts tested.
+6. **Coupler efficiency and "C = 0.96".** The logs contain no coupler and no constant C. The C labels are test-case names. 96.47% is the simulated fraction of energy released at b = 0.9. The log's 96.46% "approx prediction" comes from the same model, so it is not an independent check. Calling this efficiency needs the coupler's input and output energy defined and measured. The logs do not define b, so investors will need a line on it. The only power figure (47.0 W, line P3) is a jet calculation not linked to a coupler.
+
+The section has no hedging wording, as you asked. Every figure in it comes from the logs, but the board should hear it as simulation output. If you want the six points as originally worded in the deck, the runs above need to be done first.
