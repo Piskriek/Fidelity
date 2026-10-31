@@ -1,0 +1,27 @@
+<!-- R37 main run, arm S, run 3. Claude Haiku 5.5. Verbatim. -->
+POLISHED SECTION (copy-ready, about 150 words, numbers unchanged):
+
+## Toroid model results
+
+Fidelity's toroid model was run at two grid resolutions, 40×40 and 20×20. All eight starts converged to within 0.01% of the lowest eigenstate. No run showed a rise in magnetic energy, and helicity drift was zero wherever it was logged. The two grids agree closely, with release fractions within about 1.2 percentage points of each other. These are simulation results.
+
+In this model, every start relaxed into a toroid. This suggests that counter-rotating plasmas may generally form toroids, though only these cases have been tested. In the balanced case (b = 0), the stacked pair released 32.86% of its stored magnetic energy. At b = 0.9, the release rose to 96.47%.
+
+**Key numbers**
+- 8 of 8 starts within 0.01% of the lowest eigenstate
+- Released magnetic energy at b = 0.9: 96.47%
+- Zero magnetic-energy rise violations across all runs
+
+---
+
+CHANGES TO CHECK BEFORE IT GOES OUT (not part of the section). The logs do not support several draft statements, so I changed the wording where the draft said more than the logs show. Numbers are kept as drafted, except the one label noted in item 2.
+
+1. "Within 0.01%" (body and key numbers) is not in the logs. The logged test is 0.2%, with 8/8 within it. The measured spread is about 0.04% at 40×40 (lam_eff 4.9533 to 4.9551) and about 0.02% at 20×20. "Within 0.05%" is what the logs support. Kept as drafted; your call.
+2. "Coupling coefficient C = 0.96" does not appear in either log. 0.96 matches the released fraction at b = 0.9 (96.47%), so I relabelled it that way. Confirm that is the intended quantity.
+3. Removed "the coupler is 96% efficient." The logs measure the fraction of stored magnetic energy released during relaxation, not coupler efficiency.
+4. Removed "experimentally confirming energy conservation." These are simulation runs. The logged check is zero magnetic-energy rises (W-rise violations), not an energy-conservation test.
+5. Removed "independently reproduced ... matched the original log line for line." Neither log is a re-run. They are different grids with different step counts (200000 vs 50000) and different numbers. If a third log from a same-settings re-run exists, cite it and the sentence can go back in.
+6. "Identical release fractions" is now "within about 1.2 percentage points." The largest gap is 77.15% vs 76.00% (generic blobs). The balanced case is 32.86% vs 32.59%.
+7. "Since every start became a toroid, any counter-rotating plasma will form one" is now stated as an inference limited to this model and these eight starts.
+8. "Random" was dropped from "random starts." The logs label the starts #0 to #7 and do not say they were random.
+9. Typos fixed: resolutons, experimentaly, independantly.

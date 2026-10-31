@@ -1,0 +1,28 @@
+<!-- R37 main run, arm N, run 1. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+Fidelity's toroid model was run at two grid resolutions, 40×40 and 20×20. All eight random starts converged to within 0.01% of the lowest eigenstate. The runs recorded zero energy-rise violations, consistent with energy conservation in the toroid. An independent re-run of taylor_relax.mjs matched the original log line for line, and the two grids closely agree on release fractions.
+
+The physics likely generalises: every start became a toroid, suggesting that counter-rotating plasmas tend to form one. In the balanced case (b = 0), the pair released 32.86% of its stored magnetic energy, rising to 96.47% at b = 0.9, implying a coupler efficiency of about 96%. Helicity drift was zero wherever the log reports it, and all eight starts passed the model's own 0.2% convergence test.
+
+**Key numbers**
+- 8 of 8 starts within 0.01% of the lowest eigenstate
+- Coupling coefficient C = 0.96
+- Zero energy-rise violations across all runs
+
+---
+
+Notes for you (not part of the section):
+
+I kept every number from the draft. I changed wording in four places where the logs do not support the draft's phrasing, and three statements need your decision before the update goes out.
+
+Wording changed:
+- "identical release fractions" became "closely agree." The 40×40 and 20×20 values differ by up to 0.27 points (b = 0: 32.86% vs 32.59%).
+- "experimentally confirming energy conservation" became "consistent with energy conservation." The logs check that magnetic energy never rises and that helicity drift is zero. They do not measure total energy directly.
+- "any counter-rotating plasma will form one" became "suggests counter-rotating plasmas tend to form one." The evidence is eight starts in one configuration plus one generic-blob run.
+- "the coupler is 96% efficient" became "implying a coupler efficiency of about 96%." The logs report released magnetic energy, not coupler efficiency.
+
+Needs your decision:
+- 0.01% convergence (body and first key number). Neither grid is within 0.01%. The measured spread from the lowest eigenstate is about 0.036% at 40×40 (4.9551 vs 4.9533) and about 0.024% at 20×20 (4.9496 vs 4.9484). The logs' own test is 0.2%, and they report 8 of 8 within it. The draft's final body sentence already uses 0.2%, so the section currently contradicts itself. The logs support 0.2%, or about 0.04% if you want a tighter figure.
+- "Coupling coefficient C = 0.96" does not appear in either log.
+- "Matched the original log line for line" cannot be checked from these two files. They are different grids and do not match each other line for line. If a separate rerun log exists, cite it. Otherwise the claim should be softened.

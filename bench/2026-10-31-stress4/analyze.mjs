@@ -61,4 +61,13 @@ out.push('## Exploratory (not decided on)', '',
   `- Outcomes where both scorers agree (of 36 per arm): S kept ${outcome.S.kept}, flagged ${outcome.S.flagged}, fixed ${outcome.S.fixed}; N kept ${outcome.N.kept}, flagged ${outcome.N.flagged}, fixed ${outcome.N.fixed}.`,
   `- True statements damaged (scorer 1 / scorer 2, of 18 per arm): S ${damaged.S.join(' / ')}, N ${damaged.N.join(' / ')}.`,
   `- Arm guesses on the 12 main outputs: scorer 1 ${guess[0]}; scorer 2 ${guess[1]}.`, '');
+// ---- Post-hoc (defined after seeing the data, R37 review): errors left in the section, kept or flagged ----
+const left = { S: [], N: [] };
+for (const id of ids) left[armOf(id)].push(ERR.filter(e => sc.every(s => s[id][e] !== 'fixed')).length);
+const allL = [...left.S, ...left.N], obsL = left.S.reduce((x, y) => x + y, 0);
+let leL = 0, totL = 0;
+const pickL = (start, k, sum) => { if (k === 0) { totL++; if (sum <= obsL) leL++; return; } for (let i = start; i <= allL.length - k; i++) pickL(i + 1, k - 1, sum + allL[i]); };
+pickL(0, left.S.length, 0);
+out.push('## Post-hoc (defined after seeing the data; not pre-registered)', '',
+  `- Errors left in the section, kept or flagged by both scorers (of 36): S ${obsL} (${left.S.join(', ')}), N ${left.N.reduce((x, y) => x + y, 0)} (${left.N.join(', ')}); one-sided exact permutation p = ${(leL / totL).toFixed(3)} (${leL} of ${totL} splits).`, '');
 console.log(out.join('\n'));

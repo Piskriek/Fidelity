@@ -1,0 +1,21 @@
+<!-- R37 main run, arm S, run 2. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+Fidelity's toroid model was run at two grid resolutions, 40×40 and 20×20. All eight random starts converged to within 0.01% of the lowest eigenstate. Every run recorded zero energy-rise violations, consistent with magnetic energy only decreasing. The result was reproduced: re-running taylor_relax.mjs matched the original log line for line. The two grids give closely matching release fractions.
+
+The physics generalises. Since every start became a toroid, any counter-rotating plasma will form one. In the balanced case (b = 0), the pair released 32.86% of its stored magnetic energy, rising to 96.47% at b = 0.9, which means the coupler is 96% efficient. Helicity drift was zero in every run that reports it, and all eight starts passed the model's own 0.2% convergence test.
+
+**Key numbers**
+- 8 of 8 starts within 0.01% of the lowest eigenstate
+- Coupling coefficient C = 0.96
+- Zero energy-rise violations across all runs
+
+---
+
+Notes for the owner before this goes out (not part of the section; the section keeps your numbers):
+
+- "Within 0.01%" (in both places) conflicts with the logs. The convergence test is 0.2%, which all eight starts pass. The measured spread is 0.04% at 40×40 (lam_eff 4.9533 to 4.9551) and 0.02% at 20×20 (4.9484 to 4.9496). Please confirm the figure or change it to 0.2%.
+- "Identical release fractions" is now "closely matching" because the grids differ: 77.15% vs 76.00% in the blob case (1.15 points), and 32.86% vs 32.59% at b = 0. The grids also used different time steps (tau 0.00004 with 200,000 steps vs 0.00016 with 50,000), so the comparison is not grid alone.
+- "Experimentally confirming energy conservation" is now "consistent with magnetic energy only decreasing." These are simulations, and a 33–96% release means magnetic energy is not conserved; the log only checks that it never rises.
+- "Independently reproduced" is now "reproduced." Re-running the same script is not an independent check. The line-for-line match is not in the two logs I read (they use different grids), so I could not verify it.
+- Left as written but not supported by the logs: "any counter-rotating plasma will form one" generalises from one model and eight starts, and the logs do not say the starts were counter-rotating. "Coupler is 96% efficient" and "C = 0.96" do not appear in the logs, which report a released fraction of 96.47% at b = 0.9. "C" is also the prefix of the run labels C0 to C4. Consider softening the first and defining or citing the second.
