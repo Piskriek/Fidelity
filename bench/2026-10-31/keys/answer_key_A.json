@@ -1,0 +1,47 @@
+[
+  {
+    "id": "P1",
+    "cat": "math/weights",
+    "desc": "daySatisfaction weights sum to 1.10 (exit weight 0.20 -> 0.30), so satisfaction can exceed 1"
+  },
+  {
+    "id": "P2",
+    "cat": "cap-violation",
+    "desc": "nem example line resist=0.95 exceeds the 0.85 resistance cap stated in the grammar and Part 3"
+  },
+  {
+    "id": "P3",
+    "cat": "boundary-gap",
+    "desc": "VRAM governor thresholds leave exactly 16 GB unassigned (<16GB Tier 2, >16GB Tier 3)"
+  },
+  {
+    "id": "P4",
+    "cat": "math/sign",
+    "desc": "Part 7 KL term sign flipped (+ln instead of -ln): x + ln x - 1 is negative for x<1, contradicting the >= 0 claim and the skill formula"
+  },
+  {
+    "id": "P5",
+    "cat": "unbounded-growth",
+    "desc": "Recovery debt 2^(n-1) has no cap (was 2^min(6,n-1)); unbounded exponent, contradicts 64-debt ceiling elsewhere"
+  },
+  {
+    "id": "P6",
+    "cat": "seam-mismatch",
+    "desc": "nemesisEntry emits field `grudge` but the nem shorthand grammar / formatter expects `score`"
+  },
+  {
+    "id": "P7",
+    "cat": "div-by-zero",
+    "desc": "Breadcrumb excitement divides by |P_b| with no guard (was max(1,|P_b|)); a breadcrumb with zero pins gives 0/0 = NaN"
+  },
+  {
+    "id": "P8",
+    "cat": "arithmetic",
+    "desc": "Part 4 says 131,072 m = 128 x 512 m; 128 x 512 = 65,536 (should be 256)"
+  },
+  {
+    "id": "P9",
+    "cat": "cross-artifact",
+    "desc": "Part 3 syncope threshold changed to >=4 runaway zones; skill C7, spider diagram text and resume all say >=3 (skill-advantaged plant)"
+  }
+]

@@ -1,6 +1,28 @@
 # Fidelity
 The Fidelity Simulated Universe incl. Harness/Universe Translator
 
+## Repository map
+
+| Path | What it is |
+|---|---|
+| `SQ_DISTORTION_CHECK_V9_SKILL.md` | Artifact 1, THE SKILL: reasoning harness v9.1 (Checks C1–C31; start with Document-Audit Mode when auditing prose) |
+| `FIDELITY_COMPLETE_BRS_V2.md` | Artifact 2, THE PLAN: clean-slate constitution, Parts 1–9, defect ledger and open-item register (§8.1) |
+| `ARGON_OPUS_MASTER_RESUME_V2.md` | Artifact 3, THE RESUME: checkpoint, shorthand memory, wake-up prompt |
+| `scripts/triad_semantic_audit.mjs` | Semantic gate S1–S14: recounts, sums, identities, caps, cross-artifact constants |
+| `scripts/adversarial_red_team_v9_audit.mjs` | v9 operator fuzz + token gates (Argon) |
+| `scripts/mutation_test_audits.mjs` | Plants known defects and checks that the gates fail |
+| `skills/reduce/` | Reduce → Check → Blind Regrow → Diff skill |
+| `skills/sq-audit-card/` | Compact document-audit card for Sonnet/Haiku subagents |
+| `bench/2026-10-31/` | Skill benchmark: inputs, answer keys, every agent output, scoring tools, `REPORT.md` |
+
+The GitHub `.md` files are canonical. Google Drive/Docs copies drop LaTeX `_` subscripts, frontmatter and code fences (Check C30).
+
+```bash
+node scripts/triad_semantic_audit.mjs && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/mutation_test_audits.mjs
+```
+
+---
+
 MANDATORY ALWAYS-ON REASONING HARNESS (v7 — Apex Predictive Holon & Zero-Tool Edition). Always load and apply this 4D University SQ Distortion Check, Convergent Unasked-Question Probe, Predictive Loss & Mimetic Polarity Engine, Fractal Completeness Detector (Inside/Around), Universal Tool & Research Dose Governor, Zero-Tool Mental Simulation Fallback, and 15-Point Recursive Reiteration Bug-Crawler across all 5 AI reasoning phases.
 
 # SQ Distortion Check, Predictive Holon & Recursive Reiteration Harness (v7)

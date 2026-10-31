@@ -1,0 +1,47 @@
+[
+  {
+    "id": "H1",
+    "cat": "unit",
+    "desc": "Rest cycle clears hibernation below 20 kJ while every other strain quantity is in J (25 J steps, 45 J doses)"
+  },
+  {
+    "id": "H2",
+    "cat": "coverage-gap",
+    "desc": "Orbital range [-32768, 32768) no longer covers the 131,072 m sector (half-sector = 65,536 m); points in the outer half of a sector are unrepresentable"
+  },
+  {
+    "id": "H3",
+    "cat": "recount",
+    "desc": "mb cap says 12 zones but 1..7 x L|R = 14 (and Part 3 says 14 zones)"
+  },
+  {
+    "id": "H4",
+    "cat": "dependency-order",
+    "desc": "Wave 3 genesis is gated on the Wave 5 app state machine: build order is circular/inverted"
+  },
+  {
+    "id": "H5",
+    "cat": "weights",
+    "desc": "Taste total weights 0.40+0.35+0.35 = 1.10"
+  },
+  {
+    "id": "H6",
+    "cat": "physics",
+    "desc": "Gravity denominator exponent 1/2 with a vector numerator gives |g| constant in r, not 1/r^2"
+  },
+  {
+    "id": "H7",
+    "cat": "seam",
+    "desc": "nem grammar drops DRIFTER, but Part 3 temper list includes DRIFTER: that NPC cannot be serialized"
+  },
+  {
+    "id": "H8",
+    "cat": "boundary",
+    "desc": "Zero-G branch is safeG < 0.05, planetary branch now safeG > 0.05: g == 0.05 is unhandled"
+  },
+  {
+    "id": "H9",
+    "cat": "unsupported-claim",
+    "desc": "Fabricated benchmark with no evidence file; also inconsistent with the ~10 ms S0a->S3 figure"
+  }
+]
