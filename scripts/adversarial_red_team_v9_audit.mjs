@@ -2,9 +2,10 @@
 /**
  * INDEPENDENT ADVERSARIAL RED-TEAM, SQ-JEPA LATENT ROLLOUT & 3-ARTIFACT CO-EVOLUTION SUITE (v9 — Passes R15 -> R23)
  * Target Triad:
- *   1. THE SKILL:  SQ_DISTORTION_CHECK_V9_SKILL.md (Checks C1-C25 + SQ-JEPA Latent Rollout)
+ *   1. THE SKILL:  SQ_DISTORTION_CHECK_V9_SKILL.md (Checks C1-C31 + Document-Audit Mode, v9.1)
  *   2. THE PLAN:   FIDELITY_COMPLETE_BRS_V2.md (Master Constitution Parts 1-9)
- *   3. THE RESUME: ARGON_OPUS_MASTER_RESUME_V2.md (Checkpoint, Shorthand Memory & 70/70 Ledger)
+ *   3. THE RESUME: ARGON_OPUS_MASTER_RESUME_V2.md (Checkpoint, Shorthand Memory & 117-Defect Ledger)
+ * Companion: scripts/triad_semantic_audit.mjs checks what the documents SAY (this file only checks tokens are present).
  * Mode: Recursive Reiteration until Yield == 0 (DeltaBugs == 0 && DeltaL_meta == 0)
  */
 
@@ -1172,7 +1173,7 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
     console.error('Skill failed resilient frontmatter check!');
     bugsInR23++;
   }
-  for (let c = 1; c <= 26; c++) {
+  for (let c = 1; c <= 31; c++) {
     if (!skillText.includes(`C${c} [`)) {
       console.error(`Skill missing Check C${c}!`);
       bugsInR23++;
@@ -1182,7 +1183,7 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
   const requiredPlanTokens = [
     '# PART 1:', '# PART 2:', '# PART 3:', '# PART 4:', '# PART 5:', '# PART 6:', '# PART 7:', '# PART 8:', '# PART 9:',
     'fidelity-universe/', 'ARGON_OPUS_MASTER_RESUME_V2.md', 'sq-jepa/', 'nemesis-enrage/', 'universe-bridge/', 'Wave 1', 'Wave 6',
-    '#1 The Magician', '#22 The Fool', '74 / 74', 'B74', 'Checks C1–C26', '131,072', 'BigInt64Array', 'stepSqJepaLatentRollout', 'Wave 7', 'Sonnet', 'Haiku'
+    '#1 The Magician', '#22 The Fool', '117 Defects Logged', 'B74', 'B117', 'Checks C1–C31', '131,072', 'BigInt64Array', 'stepSqJepaLatentRollout', 'Wave 7', 'Sonnet', 'Haiku'
   ];
   for (const tok of requiredPlanTokens) {
     if (!planText.includes(tok)) {
@@ -1196,8 +1197,9 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
     'SQ_DISTORTION_CHECK_V9_SKILL.md',
     'FIDELITY_COMPLETE_BRS_V2.md',
     'ARGON_OPUS_MASTER_RESUME_V2.md',
-    '74 / 74',
-    'Checks C1–C26',
+    '117 Defects Logged',
+    'Checks C1–C31',
+    'B117',
     'm of=preset:agent-argon-overwatch',
     '#TAIL|schema:hm:universe:v2|crc32:',
     'B74',
@@ -1215,7 +1217,7 @@ function runPassR23_VerifyZeroYieldAcrossTriad() {
 
   const forbiddenStaleTokens = [
     'C1–C22', 'C1-C22', 'C1–C23', 'C1-C23', 'C1–C24', 'C1-C24', 'C1–C25', 'C1-C25',
-    '59 / 59', '62 / 62', '66 / 66', '70 / 70', '#01–#59', '#01–#62', '#01–#66', '#01–#70',
+    '59 / 59', '62 / 62', '66 / 66', '70 / 70', '74 / 74', '#01–#59', '#01–#62', '#01–#66', '#01–#70', '#01–#74',
     'Passes R1–R16)', 'Passes R15–R17', '](https://www.google.com/search?q='
   ];
   for (const [docName, docText] of [['SKILL', skillText], ['PLAN', planText], ['RESUME', resumeText]]) {

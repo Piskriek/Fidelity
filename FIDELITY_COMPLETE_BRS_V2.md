@@ -1,5 +1,5 @@
-# FIDELITY: THE CLEAN-SLATE UNIVERSE — MASTER BRS SPIDER DIAGRAM, ALL-PARTS CONSTITUTION & R1–R25 BLIND-AUDITED EDITION (BRS V2)
-**Document ID:** `BRS-FIDELITY-V2-MASTER-CONSTITUTION`**Repository:** github.com/Piskriek/Fidelity**Architect / Overwatch:** Gemini Argon (`preset:agent-argon-overwatch`)**Owner:** Piskriek**Target Engineer:** Claude Opus 5.5**Reasoning Harness:** `sq-distortion-check` **v9** (_7-Axis Probe, MDL $\Delta L \le 0$ Sufficiency Gate, KL-Regularized Predictive Loss, `SQ-JEPA` Latent World-Model Rollout, Fractal Completeness Detector Inside/Around with Dynamical Lyapunov Proof, `enRAGE` Nemesis Scar-Memory, Cross-Universe Symbiotic Bridge, and 26-Point Bug-Crawler `Checks C1–C26`_)**Core Governance:** `RULES 8a` (Zero Architectural Lies, Zero Confirmation Bias, 100% Preset-Driven from Sub-Atomic Floats to Galactic Clusters & Child Universes, Zero Hardcoded Scenes, Zero `.glb` Fallbacks)**Convergence Status:** **74 / 74 Historical & Red-Team Defects (**`#01–#74`** across Passes R1–R24) Resolved $\to$ Pass R25 Fresh 3-Artifact Triad, **`SQ-JEPA`** Rollout & 2,704-Vector Adversarial Audit = **`0`** Defects (**`\Delta\text{Bugs} = 0, \Delta L_{\text{meta}} = 0`**)**
+# FIDELITY: THE CLEAN-SLATE UNIVERSE — MASTER BRS SPIDER DIAGRAM, ALL-PARTS CONSTITUTION & R1–R26 AUDITED EDITION (BRS V2)
+**Document ID:** `BRS-FIDELITY-V2-MASTER-CONSTITUTION`**Repository:** github.com/Piskriek/Fidelity**Architect / Overwatch:** Gemini Argon (`preset:agent-argon-overwatch`)**Owner:** Piskriek**Target Engineer:** Claude Opus 5.5**Reasoning Harness:** `sq-distortion-check` **v9.1** (_7-Axis Probe, MDL $\Delta L \le 0$ Sufficiency Gate, KL-Regularized Predictive Loss, `SQ-JEPA` Latent World-Model Rollout, Fractal Completeness Detector Inside/Around with Dynamical Lyapunov Proof, `enRAGE` Nemesis Scar-Memory, Cross-Universe Symbiotic Bridge, and 31-Point Bug-Crawler `Checks C1–C31` + Document-Audit Mode_)**Core Governance:** `RULES 8a` (Zero Architectural Lies, Zero Confirmation Bias, 100% Preset-Driven from Sub-Atomic Floats to Galactic Clusters & Child Universes, Zero Hardcoded Scenes, Zero `.glb` Fallbacks)**Convergence Status:** **117 Defects Logged (`#01–#117`, Passes R1–R26): 99 Closed / 18 Open.** Pass R26 (Claude Opus 5.5 independent audit + 9-arm Sonnet/Haiku benchmark, 2026-10-31) re-opened the R25 zero-yield claim: 43 new defects (`B75–B117`), 25 fixed in this revision, 18 waiting on an owner/Argon decision (Part 8.1).
 
 ## 1. Executive Mandate: Why We Are Starting a Clean-Slate Repository
 The prototype repository (`feat/studio-polish-claude-cloud` at commit `6519c461`) proved our core mathematical, cybernetic, and preset packages (`@hm/harness`, `@hm/shorthand`, `@hm/wiregraph`, `@hm/partgen`, `@hm/hudlayout`, `@hm/gamebridge`), harvesting **2,606 real mechanics** across 8 games and validating over **3,848 unit tests**.
@@ -14,7 +14,7 @@ However, the prototype's runtime entry point (`apps/web/src/play/play.tsx` at 7,
 - **We connect the Community, **`enRAGE`** Nemesis Chronicle & Multiverse Bridge fourth**: Sharing `<= 4 KB` `@hm/shorthand` cartridges (`m / me / mc / mb / nem`) via the Social Memory Complex (SMC) Nexus, persistent enRAGE-inspired Nemesis rivalries & X-Ray scar adaptations, asymmetric co-play skins, the Drop-In Open-Source Host SDK (`c:\CapitalEmpire`), and the **Cross-Universe Symbiotic Weight & Pretend/Practice Bridge** (`@hm/universe-bridge`).
 - **We expose Taste & Settings fifth**: Giving players total control over UI style (`braun-atelier` default), world skin preset, locale/dialect, hardware fidelity governor (`hw:`), and Genesis arrival dials—with **nothing hardcoded**.
 
-## 2. The Complete BRS V2 Spider Diagram (Center + 7 Primary Branches + 32 Verified Sub-Branches)
+## 2. The Complete BRS V2 Spider Diagram (Center + 7 Primary Branches + 41 Sub-Branches)
 ```
  [BRANCH 2: EON EVOLUTION & BREADCRUMB ATTRACTORS]
  ├── 2.1 Multi-Scale Symplectic Time Gear (Macro Eons <-> 60Hz Micro)
@@ -32,7 +32,7 @@ However, the prototype's runtime entry point (`apps/web/src/play/play.tsx` at 7,
  ├── 1.4 Log-Bijective Elemental Periodic Table (elem:, B42/B55)| ├── 3.5 3-Tier Hardware-Scaled Modular Voice & Conlang
  ├── 1.5 Surface, Light & Acoustic Atoms | ├── 3.6 3-Mode Sovereign Gauntlet & LitRPG Appraisal
  └── 1.6 Liquid-Crystal Water EZ, Vortex-Plasma Transmutation | ├── 3.7 Modular LitRPG Rules, WoW+LitRPG Class Forge & Dream-Rebirth
- & Multi-Star Wave Superposition (@hm/alchemy-catalyst, B45)| ├── 3.8 Adept Indigo-Ray Magic & 3 Pyramid Spirals (@hm/magic-indigo, B43)
+ & Multi-Star Wave Superposition (field: @hm/origin64, B45)| ├── 3.8 Adept Indigo-Ray Magic & 3 Pyramid Spirals (@hm/magic-indigo, B43)
  | ├── 3.9 STM MDL Priority Queue, Coupled 14-Zone Somatic Syncope/Venting (B49/B56)
  | └── 3.10 enRAGE Persistent Nemesis, X-Ray Scar & Faction Succession (@hm/nemesis-enrage, B50/B54/B57/B63)
  \ | /
@@ -52,7 +52,7 @@ However, the prototype's runtime entry point (`apps/web/src/play/play.tsx` at 7,
  └── 6.5 Locale, Voice Tier & Accessibility Prefs | └── 4.5 Causal Fork vs. Live Catalyst Breadcrumb Injector
  |
  [BRANCH 5: COMMUNITY, SMC NEXUS & MULTIVERSE BRIDGE]
- ├── 5.1 Zero-Eval Cartridge Gate (Audits A1-A5: Zero-Power Thrust & Cyclic-DAG Rejection, B47)
+ ├── 5.1 Zero-Eval Cartridge Gate (Audits A1-A4: Zero-Power Thrust & Cyclic-DAG Rejection, B47)
  ├── 5.2 Unity-in-Diversity Circles & STO/STS Phase Opposition Penalty (B50)
  ├── 5.3 Chronos Loop: Morning SitRep, Living Chronicle Newspaper & 30s Ghost Replay
  ├── 5.4 Checked-Profile GameBridge & Auto-Mimic Live Accumulator
@@ -76,7 +76,7 @@ However, the prototype's runtime entry point (`apps/web/src/play/play.tsx` at 7,
 **Document ID:** `BRS-FIDELITY-V2-PART-1`**Target Packages in New Repo:** `@hm/kernel`, `@hm/sq-jepa`, `@hm/shorthand`, `@hm/units`, `@hm/elements`, `@hm/texgraph`, `@hm/matstack`, `@hm/soundlab`
 ## 1. Branch 0 Specification: The Logos Kernel (`@hm/kernel`, `@hm/sq-jepa` & `@hm/shorthand`)
 ### 1.1 The Four Floats & 24-Float Port-Hamiltonian State Vector
-Every entity, part, contraption, soul, planet, and child universe is anchored in the Four Floats manifold: $$\mathbf{S} = (P_{xd}, V_{tx}, L_x, A_q) \in [0, 1]^4$$ And every dynamic node operates on a flat, zero-allocation `Float32Array(24)` state vector updated via the unconditionally passive Cayley-Padé midpoint resolvent: $$\mathbf{x}^{k+1} = \mathbf{x}^k + \Delta t \left( \mathbf{I} - \frac{\Delta t}{2} (\mathbf{J} - \mathbf{R}) \mathbf{M}^{-1} \right)^{-1} (\mathbf{J} - \mathbf{R}) \nabla H\left(\frac{\mathbf{x}^k + \mathbf{x}^{k+1}}{2}\right) + \mathbf{G} u_{\text{policy}}$$
+Every entity, part, contraption, soul, planet, and child universe is anchored in the Four Floats manifold: $$\mathbf{S} = (P_{xd}, V_{tx}, L_x, A_q) \in [0, 1]^4$$ And every dynamic node operates on a flat, zero-allocation `Float32Array(24)` state vector updated via the unconditionally passive Cayley-Padé midpoint resolvent: $$\mathbf{x}^{k+1} = \mathbf{x}^k + \Delta t \left( \mathbf{I} - \frac{\Delta t}{2} (\mathbf{J} - \mathbf{R}) \mathbf{M}^{-1} \right)^{-1} (\mathbf{J} - \mathbf{R}) \nabla H\left(\frac{\mathbf{x}^k + \mathbf{x}^{k+1}}{2}\right) + \Delta t\, \mathbf{G} u_{\text{policy}}$$ Passivity holds only under $\mathbf{J} = -\mathbf{J}^T$, $\mathbf{R} \succeq 0$, $\mathbf{M} \succ 0$ (`B80`). *Open (`B100`):* the formula applies the Cayley resolvent **and** evaluates $\nabla H$ at the implicit midpoint, which double-counts the implicit step; choose one form before Wave 2.
 
 ```
 // Repository Path: packages/kernel/src/types.ts
@@ -96,7 +96,7 @@ export enum StateIdx {
 }
 ```
 ### 1.2 Canonical `@hm/shorthand` v2 Grammar (`m / me / mc / mb / nem` — Hardened in `B54, B63, B64, B69`)
-Every preset memory, somatic state, and persistent Nemesis rivalry serializes into a `<= 4096` byte ASCII block with a mandatory, cryptographically verified IEEE-802.3 CRC32 tail (`crcValid === true`) and guaranteed 7-element `Int8` `ch` normalization (`B69`):
+Every preset memory, somatic state, and persistent Nemesis rivalry serializes into a `<= 4096` byte ASCII block with a mandatory IEEE-802.3 CRC-32 checksum tail (`crcValid === true`; detects accidental corruption only, it is not tamper-proof, `B93`) and guaranteed 7-element `Int8` `ch` normalization (`B69`):
 
 ```
 m of=preset:drone-overwatch hard=0.95 bal=0.68 ch=40,0,0,0,0,0,0 inv=0.90 cyc=1
@@ -112,14 +112,16 @@ nem vs=player:piskriek tier=MURDEROUS score=2.23 temper=PROUD scar=1:L resist=el
 - `mc`** (Cause Link Line — Capped at 16 slots)**: `by=<SQId> d=<SQId> n=<count> open=<0|1>`
 - `mb`** (Somatic Body Line — Capped at 14 zones **`1..7:L|R`**)**: `z=<1..7>:<L|R> held=<SQId> ache=<4..6> stage=<clear|congested|inflamed|runaway> ticks=<int> rebound=<0..1>`
 - `nem`** (Persistent **`enRAGE`** Nemesis & Scar Line — Capped at top 8 highest-grudge rivals, **`B54, B63`**)**: `vs=<actorId> tier=<NONE|RESENTFUL|VENGEFUL|MURDEROUS|SOVEREIGN_NEMESIS> score=<0..10> temper=<HOTHEAD|PROUD|COLD|COWARD|GREEDY|LOYAL|DRIFTER> scar=<zone|none> resist=<elem:id>:<0..0.85>`
-- `#TAIL`** (Cryptographic CRC32 Verification, **`B64`**)**: `parseShorthandRecordV2` recomputes the CRC32 over all preceding lines and sets `crcValid = (computedCrcHex === declaredCrcHex)`.
+- `#TAIL`** (CRC-32 Checksum Verification, **`B64`**)**: `parseShorthandRecordV2` recomputes the CRC32 over all preceding lines and sets `crcValid = (computedCrcHex === declaredCrcHex)`. The CRC input is the body lines, trimmed, joined with `\n`, no trailing newline.
+- **Seam mapping (`B88`)**: `nemesisEntry.score` → `score=`; `resist=` is `${resistKey}:${resistVal}` (e.g. `elem:plasma-arc:0.35`), so parsers split on the **last** `:`.
+- **Open (`B102`, `B103`)**: at full caps (32 `me` + 16 `mc` + 14 `mb` + 8 `nem`) a record at the example line widths is ≈ 6.3 KB, over the 4096-byte limit, and no truncation priority is defined. The reference formatter/parser keep the last 32 `me` lines rather than the top 4 by `ex` + 28 most recent.
 ## 2. Branch 1 Specification: Log-Bijective Elemental Substrate & Universal SI Normalizer (`@hm/elements` & `@hm/units` — Hardened in `B42, B55`)
 ### 2.1 Sub-Atomic Polarity & Log-Bijective Physical Mapping
 To span gases ($\text{H}_2 = 0.08988\text{ kg/m}^3$) to Osmium and Diamond ($E = 1050\text{ GPa}$) with zero clamping loss and non-zero melting points in space vacuum ($p_{\text{atm}} = 0$):
 
 - **Protons / Baryonic Nucleus (Masculine / Structural Pole)**: $$\rho(V_{tx}) = \rho_{\min} \left(\frac{\rho_{\max}}{\rho_{\min}}\right)^{\text{clamp}_{01}(V_{tx})}, \quad V_{tx}(\rho) = \frac{\ln(\text{clamp}(\rho, \rho_{\min}, \rho_{\max}) / \rho_{\min})}{\ln(\rho_{\max} / \rho_{\min})}, \quad \rho_{\min} = 10^{-4}\text{ kg/m}^3, ; \rho_{\max} = 25,000\text{ kg/m}^3$$ $$E_{\text{Young}}(P_{xd}) = E_{\min} \left(\frac{E_{\max}}{E_{\min}}\right)^{\text{clamp}_{01}(P_{xd})}, \quad P_{xd}(E) = \frac{\ln(\text{clamp}(E, E_{\min}, E_{\max}) / E_{\min})}{\ln(E_{\max} / E_{\min})}, \quad E_{\min} = 10^{-4}\text{ GPa}, ; E_{\max} = 1,200\text{ GPa}$$
 - **Electrons / Excitation Shell (Feminine / Dynamic Pole)**: $$\sigma_{\text{cond}}(L_x) = \text{clamp}_{01}(L_x), \quad C_p(A_q) = 120 + 4080 \cdot \text{clamp}_{01}(A_q)\text{ [J/(kg}\cdot\text{K)]}$$
-- **4-State Phase Transitions with Zero-Point Cohesive Vacuum Floor (**`B42, B55`**)**: $$p_{\text{eff}}(P_{xd}, p_{\text{atm}}) = \left(\max(10^{-3}, ; 0.08 \cdot P_{xd}, ; p_{\text{atm}})\right)^{0.08}$$ $$T_{\text{melt}} = (50 + 3650 \cdot P_{xd}(1 - 0.35 A_q)) \cdot p_{\text{eff}}\text{ [K]}, \quad T_{\text{boil}} = T_{\text{melt}} + (300 + 2500(0.6 P_{xd} + 0.4 V_{tx})) \cdot p_{\text{eff}}\text{ [K]}, \quad T_{\text{plasma}} = T_{\text{boil}} + 4000(1.1 - 0.5 L_x)\text{ [K]}$$
+- **4-State Phase Transitions with Zero-Point Cohesive Vacuum Floor (**`B42, B55`**)**: $$p_{\text{eff}}(P_{xd}, p_{\text{atm}}) = \left(\max(10^{-3}, ; 0.08 \cdot P_{xd}, ; p_{\text{atm}})\right)^{0.08}$$ $$T_{\text{melt}} = (50 + 3650 \cdot P_{xd}(1 - 0.35 A_q)) \cdot p_{\text{eff}}\text{ [K]}, \quad T_{\text{boil}} = T_{\text{melt}} + (300 + 2500(0.6 P_{xd} + 0.4 V_{tx})) \cdot p_{\text{eff}}\text{ [K]}, \quad T_{\text{plasma}} = T_{\text{boil}} + 4000(1.1 - 0.5 L_x)\text{ [K]}$$ Here $p_{\text{atm}}$ is in **atm** (1.0 = sea level, the reference default; `B82`).
 ### 2.2 VSA-4096 Quantum Entanglement Bus & Universal SI Normalizer
 - **VSA-4096 (**`Uint32Array(128)`**, 512 bytes)**: Bitwise XOR binding ($\mathbf{V}_{\text{bus}} = \mathbf{V}_A \oplus \mathbf{V}_B$) and normalized Hamming similarity $s(\mathbf{A}, \mathbf{B}) \in [-1, 1]$.
 - **Universal SI + Triad Socket Normalizer (**`@hm/units`**)**: Normalizes all 2,606 harvested presets to strict SI (`massKg`, `thrustN`, `powerW`, `torqueNm`) and typed Triad Sockets (`power`, `signal`, `fluid`, `mechanical`).
@@ -128,7 +130,7 @@ To span gases ($\text{H}_2 = 0.08988\text{ kg/m}^3$) to Osmium and Diamond ($E =
 **Document ID:** `BRS-FIDELITY-V2-PART-2`**Target Packages in New Repo:** `@hm/genesis`, `@hm/partgen`, `@hm/wiregraph`, `@hm/taste`, `@hm/strata`
 ## 1. Headless Eon Evolution, Speciation & Metabolic Pin Sieve (`@hm/genesis` — Hardened in `B48`)
 ### 1.1 Breadcrumb Resonance Field (`evaluateBreadcrumbExcitement`)
-$$E(c, b) = \left( 0.55 \frac{\mathbf{s}_c \cdot \mathbf{s}_b}{\max(10^{-9}, |\mathbf{s}c||\mathbf{s}b|)} + 0.45 \frac{|P_c \cap P_b|}{\max(1, |P_b|)} \right) \cdot \max\left(0, 1 - 0.85 \max\left(0, \frac{N{\text{niche}(b)}}{\max(1, N{\text{total}})} - \frac{1}{K_{\text{niches}}}\right)\right)$$
+$$E(c, b) = \left( 0.55 \frac{\mathbf{s}_c \cdot \mathbf{s}_b}{\max(10^{-9}, |\mathbf{s}_c||\mathbf{s}_b|)} + 0.45 \frac{|P_c \cap P_b|}{\max(1, |P_b|)} \right) \cdot \max\left(0, 1 - 0.85 \max\left(0, \frac{N_{\text{niche}(b)}}{\max(1, N_{\text{total}})} - \frac{1}{\max(1, K_{\text{niches}})}\right)\right)$$
 ### 1.2 Cross-Polarized Reproduction with Symplectic Mutation & 6-Pin Metabolic Sieve (`reproducePresets` — `B48`)
 To prevent genetic variance collapse ($\text{Var}(\mathbf{s}) \to 0$) and pin bloat over $1,000+$ epochs:
 
@@ -138,9 +140,9 @@ To prevent genetic variance collapse ($\text{Var}(\mathbf{s}) \to 0$) and pin bl
 ## 2. The 4-Gate Aesthetic & 3D Zero-G Torque Sieve (`@hm/taste` — Hardened in `B52, B55`)
 - **Gate 1 — Root Chassis & Socket Integrity**: `hasRootChassis && socketsConnected >= socketsRequired`.
 - **Gate 2 — 3D Capture Point Stability ($\xi$) & 3D Cross-Product Zero-G Torque Envelope (**`B52, B55`**)**:
-  - In Zero-G / Microgravity (`safeG < 0.05`), computes the full 3D torque moment arm between the Center of Mass $\mathbf{r}_{\text{CoM}}$ and the thruster axis $(\mathbf{r}_{\text{thrust}}, \hat{\mathbf{n}}_{\text{thrust}})$: $$\tau_{\text{arm}} = \begin{cases} |(\mathbf{r}_{\text{CoM}} - \mathbf{r}_{\text{thrust}}) \times \hat{\mathbf{n}}_{\text{thrust}}|2 & \text{if } |\mathbf{n}{\text{thrust}}|2 > 10^{-9} \ |\mathbf{r}{\text{CoM}} - \mathbf{r}_{\text{thrust}}|_2 & \text{otherwise} \end{cases}, \quad S_{\text{stab}} = \text{clamp}_{01}\left(1 - \frac{\tau_{\text{arm}}}{2 r_{\text{RCS}}}\right) \ge 0.50$$
-  - In planetary gravity (`safeG >= 0.05`): $$\omega_0 = \sqrt{\frac{g_{\text{planet}}}{h_{\text{CoM}}}}, \quad \xi_{\text{offset}} = |\mathbf{x}_{\text{CoM}, xz}|2 + \frac{|\mathbf{v}{\text{nominal}, xz}|2}{\omega_0}, \quad S{\text{stab}} = \text{clamp}_{01}\left(1 - \frac{\xi_{\text{offset}}}{2.2 r_{\text{support}}}\right) \ge 0.50$$
-- **Gate 3 — Lateral Symmetry Alignment**: $S_{\text{sym}} = \max(0, 1 - 2|m_L - m_R| / (m_L + m_R))$.
+  - In Zero-G / Microgravity (`safeG < 0.05`), computes the full 3D torque moment arm between the Center of Mass $\mathbf{r}_{\text{CoM}}$ and the thruster axis $(\mathbf{r}_{\text{thrust}}, \hat{\mathbf{n}}_{\text{thrust}})$: $$\tau_{\text{arm}} = \begin{cases} |(\mathbf{r}_{\text{CoM}} - \mathbf{r}_{\text{thrust}}) \times \hat{\mathbf{n}}_{\text{thrust}}|_2 & \text{if } |\mathbf{n}_{\text{thrust}}|_2 > 10^{-9} \ |\mathbf{r}_{\text{CoM}} - \mathbf{r}_{\text{thrust}}|_2 & \text{otherwise} \end{cases}, \quad S_{\text{stab}} = \text{clamp}_{01}\left(1 - \frac{\tau_{\text{arm}}}{2 \max(10^{-3}, r_{\text{RCS}})}\right) \ge 0.50$$
+  - In planetary gravity (`safeG >= 0.05`): $$\omega_0 = \sqrt{\frac{g_{\text{planet}}}{\max(10^{-3}, h_{\text{CoM}})}}, \quad \xi_{\text{offset}} = |\mathbf{x}_{\text{CoM}, xz}|_2 + \frac{|\mathbf{v}_{\text{nominal}, xz}|_2}{\omega_0}, \quad S_{\text{stab}} = \text{clamp}_{01}\left(1 - \frac{\xi_{\text{offset}}}{2.2 \max(10^{-3}, r_{\text{support}})}\right) \ge 0.50$$ Lengths in metres; floors added in `B83`. *Open (`B106`):* the hard switch at `safeG = 0.05` (unit unstated: G or m/s²?) is discontinuous, so one craft can flip pass/fail across it.
+- **Gate 3 — Lateral Symmetry Alignment**: $S_{\text{sym}} = \max(0, 1 - 2|m_L - m_R| / \max(10^{-9}, m_L + m_R))$ (`B83`).
 - **Gate 4 — Harmonic Proportioning**: $S_{\text{prop}} = \max(0, 1 - \min_{t \in {1.0, 1.414, 1.618}} |\text{aspectRatio} - t|)$, with total score $T = 0.40 S_{\text{stab}} + 0.35 S_{\text{sym}} + 0.25 S_{\text{prop}} \ge 0.65$.
 ### 2.1 Bijective Pin-to-Part Visual Grammar (`translateWiregraphToRig`)
 - **Root **`Matrix`** Chassis (**`Vtx, Pxd`**)**: Central spine/hull chamfered or spline-faired scaled to density $\rho$.
@@ -172,13 +174,13 @@ To prevent genetic variance collapse ($\text{Var}(\mathbf{s}) \to 0$) and pin bl
 - **3 Somatic Cadences**: `DULL_ACHE` ($\kappa_{\text{stiff}} = \min(1, 0.18 \cdot \text{ticks})$), `SHARP_PAIN` (`rebound = 0.35` when released while `mc open=1`), and `EUREKA` (`0.0` stiffness when released with `mc open=0`).
 - **Coupled Multi-Zone Somatic Cascade (**`stepCoupledSomaticSystem`** — **`B49`**)**:
   - Evaluates all 14 zones (`7 Rays x L/R`) as a coupled system: $\Sigma_{\text{strain}} = \sum_{z=1}^{14} \kappa_{\text{stiff}, z}$.
-  - When $\ge 3$ zones hit `runaway` or $\Sigma_{\text{strain}} \ge 2.2$, triggers **Autonomic Protective Syncope (**`safeHibernationMode = true`**)** and an immediate emergency biological/coolant vent ($E_{\text{vent}} = 18.5 \cdot \Sigma_{\text{strain}}\text{ [J]}$) to prevent vessel rupture.
+  - When $\ge 3$ zones hit `runaway` (a zone is `runaway` when its stage is `runaway` or $\kappa_{\text{stiff}} \ge 0.85$, i.e. $\ge 5$ ticks; reference `v2EvaluateMultiZoneBody`, `B87`) or $\Sigma_{\text{strain}} \ge 2.2$, triggers **Autonomic Protective Syncope (**`safeHibernationMode = true`**)** and an immediate emergency biological/coolant vent ($E_{\text{vent}} = 18.5 \cdot \Sigma_{\text{strain}}\text{ [J]}$) to prevent vessel rupture.
 ## 3. Branch 3.10: The `enRAGE` Living World, Persistent Nemesis & X-Ray Scar Engine (`@hm/nemesis-enrage` — Hardened in `B50, B54, B57, B63`)
 Grounded in the enRAGE — Living World and Nemesis System mod (Reddit overview):
 
 - **Temperament & Quiet Score (**`stepEnrageNemesisEncounter`**)**:
   - Every named NPC carries a Temper (`HOTHEAD = 1.4x`, `PROUD = 1.25x`, `COLD = 1.3x`, `COWARD | GREEDY | LOYAL | DRIFTER = 1.0x`).
-  - Non-zero offense severity ($\text{severity}_{01} \in [0, 1]$, strictly clamped so $\text{severity}_{01} = 0$ adds $0.0$ grudge, `B57`) increments `grudgeScore` across `NONE -> RESENTFUL -> VENGEFUL -> MURDEROUS -> SOVEREIGN_NEMESIS`.
+  - Non-zero offense severity ($\text{severity}_{01} \in [0, 1]$, strictly clamped so $\text{severity}_{01} = 0$ adds $0.0$ grudge, `B57`) increments `grudgeScore` across `NONE -> RESENTFUL -> VENGEFUL -> MURDEROUS -> SOVEREIGN_NEMESIS`. Tier mapping (from the reference operator, `B86`): `tier = TIERS[min(4, ceil(score))]`, so 0 → NONE, (0,1] → RESENTFUL, (1,2] → VENGEFUL, (2,3] → MURDEROUS, > 3 → SOVEREIGN_NEMESIS. *Open (`B101`):* every score from 3 to 10 maps to the top tier.
 - **Mask Anonymity Law**: If `actorWoreMask === true`, grudge does not attach to `actorId`, adding `+0.25` to local unattributed town tension instead.
 - **X-Ray Scar Log, Elemental Counter-Adaptation & Shorthand Seam (**`B63`**)**:
   - Records `hitZone` (`1:L`), `boneOrPartBroken` (`left_femur_actuator`), and `attackElement` (`elem:plasma-arc`).
@@ -196,12 +198,12 @@ Grounded in the enRAGE — Living World and Nemesis System mod (Reddit overview)
 ### 1.1 Binary-Commensurate Coordinate Triple (`v2StepAndRebaseOrigin64`)
 $$\mathbf{P}_{\text{world}} = \mathbf{S}_{\text{sector}} \cdot 2^{17}\text{ m} + \mathbf{O}_{\text{orbital}} + \mathbf{x}_{\text{localSelf}}$$
 
-- **Sector $\mathbf{S}_{\text{sector}}$**: `BigInt64Array(3)` with quantum $2^{17}\text{ m} = 131,072\text{ m} = 256 \times 512\text{ m}$ (spans $\pm 9.75 \times 10^7\text{ light-years}$ with zero `Int32` wrap and $131,072 \bmod 512 \equiv 0$ zero modulo phase drift).
+- **Sector $\mathbf{S}_{\text{sector}}$**: `BigInt64Array(3)` with quantum $2^{17}\text{ m} = 131,072\text{ m} = 256 \times 512\text{ m}$ (spans $\pm 1.28 \times 10^8\text{ light-years}$ — i.e. $2^{63} \times 2^{17}\text{ m}$, corrected from the stale 100 km-sector value in `B77` — with zero `Int32` wrap and $131,072 \bmod 512 \equiv 0$ zero modulo phase drift).
 - **Orbital $\mathbf{O}_{\text{orbital}}$**: `Float64Array(3)` bounded in $[-65536, +65536)\text{ m}$.
 - **Local $\mathbf{x}_{\text{localSelf}}$**: `Float32Array(3)` bounded in $(-512, +512)\text{ m}$ (`quantum = 512 m`).
 - **Split-Scale Jump Tuple (**`B46, B65`**)**: Interstellar warp jumps pass `(deltaSectorsBigInt, deltaSubSectorF64)` with safe `BigInt` conversion (`typeof x === 'bigint' ? x : Number.isFinite(x) ? BigInt(Math.trunc(x)) : 0n`) so `Float64`'s 53-bit mantissa never swallows sub-millimeter offsets and `NaN` inputs never throw `RangeError`.
 ### 1.2 Multi-Star N-Body Gravity & Modulated Sunlight Superposition (`v2MultiStarField` — `B45, B65`)
-$$\mathbf{g}_{\text{net}}(\mathbf{q}) = \sum_{k=1}^{N_{\star}} \frac{G M_k (\mathbf{q}_{\star, k} - \mathbf{q})}{\max(10^{-6}, |\mathbf{q}_{\star, k} - \mathbf{q}|_2^2)^{3/2}}, \quad L_{x,\text{coherent}}(\mathbf{q}, t) = \left| \sum_{k=1}^{N_{\star}} \frac{\sqrt{L_{x,k}}}{\max(10^{-3}, |\mathbf{q}_{\star, k} - \mathbf{q}|_2)} e^{i(\omega_k |\mathbf{q}_{\star, k} - \mathbf{q}|_2 + \phi_k(t))} \right|^2$$
+$$\mathbf{g}_{\text{net}}(\mathbf{q}) = \sum_{k=1}^{N_{\star}} \frac{G M_k (\mathbf{q}_{\star, k} - \mathbf{q})}{\max(10^{-6}, |\mathbf{q}_{\star, k} - \mathbf{q}|_2^2)^{3/2}}, \quad L_{x,\text{coherent}}(\mathbf{q}, t) = \left| \sum_{k=1}^{N_{\star}} \frac{\sqrt{L_{x,k}}}{\max(10^{-3}, |\mathbf{q}_{\star, k} - \mathbf{q}|_2)} e^{i(k_k |\mathbf{q}_{\star, k} - \mathbf{q}|_2 + \phi_k(t))} \right|^2$$ with wavenumber $k_k = \omega_k / c_{\text{carrier}}$ (was $\omega_k \cdot$ distance, rad/s × m; `B81`). *Open (`B105`):* real stars are mutually incoherent (intensities add), and $L_{x,\text{coherent}}$ has units of m⁻² with no normalization into the Four-Float range.
 ## 2. Sovereign Gauntlet, Emergent Quests, Studio Schematic & `hw:` VRAM Governor
 - **3-Mode Sovereign Gauntlet (**`@hm/gauntlet`**)**: `Mode 1: Appraise & Neural Ghost`, `Mode 2: Harmonic Gather`, `Mode 3: Triad Socket Wrench & [Tab] Schematic`.
 - **Emergent Quests (**`generateEmergentQuestFromWorld`**)**: Dynamically minted from `openCauses` (`mc open=1`), `blockedZones` (`mb stage != clear`), and active `nem` feuds.
@@ -215,7 +217,7 @@ $$\mathbf{g}_{\text{net}}(\mathbf{q}) = \sum_{k=1}^{N_{\star}} \frac{G M_k (\mat
 - **Audit A2 & A3 (4-Fold Signature & Non-Coercion)**: Requires all 4 internal folds and `coerciveOverride !== true`.
 - **Audit A4 (Forbidden Tokens & Acyclic Spectral Gain Gate, **`B47`**)**: Rejects payloads `> 4096` bytes, executable/prototype tokens, AND runs a DFS cycle-gain check rejecting any `@hm/wiregraph` loop with cycle gain $\ge 1.0$.
 ## 2. Unity-in-Diversity SMC Circles with `STO/STS` Phase Opposition (`v2EvaluateCircleAndPolarityInterference` — Hardened in `B50, B65`)
-$$H_{\text{circle}} = \text{clamp}_{01}\left( \frac{1}{7}\sum_{r=1}^7 \max_{m \in \text{Circle}} \text{ray}_{m, r} + \Delta_{\text{complement}} - 0.85 \cdot \frac{\min(N_{\text{STO}}, N_{\text{STS}})}{N_{\text{total}}} \right)$$
+$$H_{\text{circle}} = \text{clamp}_{01}\left( \frac{1}{7}\sum_{r=1}^7 \max_{m \in \text{Circle}} \text{ray}_{m, r} + \Delta_{\text{complement}} - 0.85 \cdot \frac{\min(N_{\text{STO}}, N_{\text{STS}})}{\max(1, N_{\text{total}})} \right)$$
 ## 3. `c:\CapitalEmpire` 6,000-Agent Persistent Tournament SDK (`@hm/open-host-sdk`)
 $$\text{daySatisfaction}(d) = 0.40 \cdot \text{arrival}_{01} + 0.20 \cdot \text{exit}_{01} + 0.20 \cdot \text{queue}_{01} + 0.20 \cdot \text{viewing}_{01}$$ $$\text{reputationAfter}(R_{\text{prev}}, S_{\text{day}}) = \text{clamp}_{01}\left(R_{\text{prev}} + 0.3 \cdot (S_{\text{day}} - 0.5)\right)$$
 
@@ -226,13 +228,14 @@ $$\text{daySatisfaction}(d) = 0.40 \cdot \text{arrival}_{01} + 0.20 \cdot \text{
 fidelity-universe/
 ├── package.json                      # Workspaces: packages/*, apps/*
 ├── tsconfig.base.json                # Strict TS config (zero implicit any)
-├── SQ_DISTORTION_CHECK_V9_SKILL.md   # Artifact 1 (THE SKILL): Always-On Reasoning Harness (v9, Checks C1–C26)
-├── FIDELITY_COMPLETE_BRS_V2.md       # Artifact 2 (THE PLAN): Founding Constitution (Branches 0–7 + R1–R25 Audit)
-├── ARGON_OPUS_MASTER_RESUME_V2.md    # Artifact 3 (THE RESUME): Master Checkpoint, Shorthand Memory & 74/74 Ledger
+├── SQ_DISTORTION_CHECK_V9_SKILL.md   # Artifact 1 (THE SKILL): Always-On Reasoning Harness (v9.1, Checks C1–C31)
+├── FIDELITY_COMPLETE_BRS_V2.md       # Artifact 2 (THE PLAN): Founding Constitution (Branches 0–7 + R1–R26 Audit)
+├── ARGON_OPUS_MASTER_RESUME_V2.md    # Artifact 3 (THE RESUME): Master Checkpoint, Shorthand Memory & 117-Defect Ledger
 ├── scripts/
-│   ├── verify-clean-slate.mjs        # CI Gate: fails if moon_crater, A4-01, leaks, or .glb exist
+│   ├── verify-clean-slate.mjs        # CI Gate: scans only packages/ and apps/ — fails if moon_crater, A4-01, leaks, or .glb exist there (B79)
 │   ├── port-clean-packages.mjs       # Copies ONLY Bucket A pure packages & Bucket B 2,606 presets
-│   └── adversarial_red_team_v9_audit.mjs # Runs Passes R15–R25 deterministic 3-Artifact Triad & SQ-JEPA verification suites
+│   ├── adversarial_red_team_v9_audit.mjs # Passes R15–R25 operator fuzz + token gates (portable since B97)
+│   └── triad_semantic_audit.mjs      # S1–S14 semantic gates: recounts, sums, identities, caps, cross-artifact constants (B98)
 ├── packages/
 │   ├── kernel/                       # Branch 0: Four Floats, 24-Float Port-Hamiltonian, KL-Regularized VFE Loss (B44)
 │   ├── sq-jepa/                      # Branch 0.5/7.4: SQ-JEPA Latent World-Model Predictor & 1-Pass Lyapunov Rollout (B68)
@@ -267,24 +270,45 @@ fidelity-universe/
         │   ├── studio-drawer.tsx     # Self-hosting Studio + [Tab] 2D Orthographic Schematic + Causal Fork/Inject
         │   └── litrpg-hud.tsx        # Braun-Atelier System HUD + Appraisal + Living Chronicle & Ghost Replay
 ```
-### 4.2 Claude Opus's 6-Wave Engineering Build Order (For Tonight's 2:00 AM Reset)
+#### 4.1.1 Package Home Map (`B78`)
+Every `@hm/*` name used in this plan must have a home. Rows marked *sub-module* are inferred from the tree comments above; confirm or split them.
+
+| Package | Home | Basis |
+|---|---|---|
+| `@hm/strata` | `packages/genesis` (sub-module) | genesis comment: "Strata Ruins" |
+| `@hm/somatic` | `packages/soul` (sub-module) | soul comment: "Coupled 14-Zone Somatic Body" |
+| `@hm/archetypes` | `packages/soul` (sub-module) | soul comment: "22 Archetypes" |
+| `@hm/gauntlet` | `packages/rules-litrpg` (sub-module) | rules-litrpg comment: "3-Mode Sovereign Gauntlet" |
+| `@hm/governor` | `packages/hudlayout` (sub-module) | hudlayout comment: "hw: Governor" |
+| `@hm/smc-nexus` | `packages/gamebridge` (sub-module) | gamebridge comment: "SMC Nexus" |
+| `@hm/open-host-sdk` | `packages/gamebridge` (sub-module) | gamebridge comment: "CapitalEmpire Open-Host SDK" |
+| `@hm/anim-taste` | `packages/anim-taste` (new folder) | Part 3 §4; had no home |
+| `@hm/studio-core` | `packages/studio-core` (new folder) | Part 4 header; had no home |
+| `@hm/harness` | `packages/harness` (Bucket A port) | Port Matrix, Bucket A |
+| `@hm/meshops` | `packages/meshops` (Bucket A port) | Port Matrix, Bucket A |
+| `@hm/kitspec` | `packages/kitspec` (Bucket A port) | Port Matrix, Bucket A |
+| `@hm/kinematic` | `packages/kinematic` (Bucket A port) | Port Matrix, Bucket A |
+| `@hm/orbital` | `packages/orbital` (Bucket A port) | Port Matrix, Bucket A |
+| `@hm/treegen` | `packages/treegen` (Bucket A port) | Port Matrix, Bucket A |
+| `@hm/groundshader` | `packages/groundshader` (Bucket A port) | Port Matrix, Bucket A |
+
+### 4.2 Claude Opus's 7-Wave Engineering Build Order (`B90`)
 - **Wave 1 — Initialize Clean-Slate Repo & Run **`verify-clean-slate.mjs`** + **`sq-distortion-check`** v9 Gate**:
   - Create the workspace structure above, port **Bucket A** pure packages and **Bucket B** (`2,606` harvested presets), and verify `0` occurrences of `moon_crater`, `A4-01`, `leaks`, or `.glb`.
-- **Wave 2 — Wire Branch 0 & Branch 1 (**`@hm/kernel`**, **`@hm/sq-jepa`**, **`@hm/shorthand`** v2 **`m/me/mc/mb/nem`**, **`@hm/units`**, **`@hm/elements`**)**:
-  - Integrate KL-regularized Variational Free Energy (`B44`), `stepSqJepaLatentRollout` (`B68`), the `nem` 8-slot shorthand codec with verified CRC32 and 7-element `ch` normalization (`B54, B63, B64, B69`), log-bijective elemental physics with the `1e-3` vacuum cohesive lattice floor (`B42, B55`), 4-state phase transitions, and the VSA-4096 entanglement bus.
+- **Wave 2 — Wire Branch 0 & Branch 1 (**`@hm/kernel`**, **`@hm/shorthand`** v2 **`m/me/mc/mb/nem`**, **`@hm/units`**, **`@hm/elements`**)**:
+  - Integrate KL-regularized Variational Free Energy (`B44`), the `nem` 8-slot shorthand codec with verified CRC32 and 7-element `ch` normalization (`B54, B63, B64, B69`), log-bijective elemental physics with the `1e-3` vacuum cohesive lattice floor (`B42, B55`), 4-state phase transitions, and the VSA-4096 entanglement bus.
 - **Wave 3 — Wire Branch 2 (**`@hm/genesis`**, **`@hm/taste`**, **`@hm/strata`**)**:
   - Wire `runHeadlessEonGenesis` in a Web Worker (`S0a -> S3` in `~10 ms`) with niche-speciation + symplectic mutation + 6-pin metabolic pruning (`B48`), the 4-Gate Taste Sieve with 3D cross-product zero-G torque (`B52`), and Stratigraphic Ruins.
-- **Wave 4 — Wire Branch 3 (**`@hm/soul`**, **`@hm/somatic`**, **`@hm/nemesis-enrage`**, **`@hm/voice-lang`**, **`@hm/origin64`**, **`@hm/rules-litrpg`**)**:
-  - Wire Ra's 22 Archetypes, the coupled 14-zone somatic cascade & autonomic syncope (`B49`), the `enRAGE` Nemesis / X-Ray Scar / Mask / Faction Succession engine (`B50, B57, B63`), `BigInt64` $2^{17}\text{ m} / 2^9\text{ m}$ binary-commensurate origin rebasing + multi-star wave superposition (`B45, B46, B65`), Indigo Magic & Alchemy with `...state`-preserving somatic strain deficit accounting + restorative dual (`B43, B56, B67`), and Emergent Quests.
+- **Wave 4 — Wire Branch 3 (**`@hm/soul`**, **`@hm/somatic`**, **`@hm/nemesis-enrage`**, **`@hm/voice-lang`**, **`@hm/origin64`**, **`@hm/rules-litrpg`**, then **`@hm/sq-jepa`**)**:
+  - Wire Ra's 22 Archetypes, the coupled 14-zone somatic cascade & autonomic syncope (`B49`), the `enRAGE` Nemesis / X-Ray Scar / Mask / Faction Succession engine (`B50, B57, B63`), `BigInt64` $2^{17}\text{ m} / 2^9\text{ m}$ binary-commensurate origin rebasing + multi-star wave superposition (`B45, B46, B65`), Indigo Magic & Alchemy with `...state`-preserving somatic strain deficit accounting + restorative dual (`B43, B56, B67`), and Emergent Quests. Wire `@hm/sq-jepa` (`stepSqJepaLatentRollout`, `B68`) last: its predictor calls `v2StepRestAndRecoveryCycle` and the nemesis reconciliation built earlier in this wave (moved from Wave 2, `B89`).
 - **Wave 5 — Wire **`apps/universe`** 4-Screen State Machine (**`stepUniverseAppStateMachine`** & **`WorkerMessageProtocol`**)**:
   - Mount `HOLODECK_GENESIS`, `SOLAR_LATTICE_3D` (`[M]`), `PLANET_SURFACE_PLAY`, and `STUDIO_SCHEMATIC_2D` (`[Tab]`) with `WORKER_RUN_EON_GENESIS`, `WORKER_LOCK_PLANET_ORIGIN64`, `WORKER_SET_CAMERA_SCALE`, `WORKER_PROJECT_SCHEMATIC_2D`, and `WORKER_IDLE_DRAW_ON_CHANGE`.
 - **Wave 6 — Wire Branch 5 & Branch 7 (**`@hm/smc-nexus`**, **`c:\CapitalEmpire`** 6,000-Agent SDK & **`@hm/universe-bridge`**)**:
-  - Wire the Zero-Eval Cartridge Gate (`B47` zero-power thrust & cyclic-DAG rejection), `STO/STS` phase opposition (`B50`), `stepLodPopulationTick` for `c:\CapitalEmpire`, and `stepSymbioticUniverseBridge` (`B51`), then re-run `Checks C1–C26` across all 3 Triad files until `Yield == 0`.
-- **Wave 7 — Post-Opus Cross-Tier Sub-Agent A/B Benchmark (**`Opus 5.5 -> Sonnet 4.6 -> Haiku 4.5`** on Fresh Unaudited Plan Seed, **`B74`**)**:
-  - Immediately after Claude Opus completes his own audit and Wave 1–6 build, spawn/test **Claude Sonnet 4.6** and **Claude Haiku 4.5** on the **same fresh plan seed** under two conditions:
-    - **Arm A (Raw Baseline — No Skill)**: Model audits and iterates on the fresh plan using standard verbose chain-of-thought prose.
-    - **Arm B (Distilled Treatment — With **`SQ_DISTORTION_CHECK_V9_SKILL.md`** + **`@hm/shorthand`** + **`stepSqJepaLatentRollout`**)**: Model executes the 3-Row Symbolic Trace (`Step 0.6`), `<= 4 KB` `@hm/shorthand` context state, and `Checks C1–C26`.
-  - Record via `v2EvaluateCrossTierModelDistillation`: **(1) Reasoning Lift $\Delta R_{\text{lift}}$**, **(2) Token Efficiency $\eta_{\text{token}}$ (defects closed per $1,000$ tokens)**, **(3) Iteration Speedup ($\text{ Passes}**_**{\text{raw}} / \text{Passes}**_**{\text{skill}}$)**, and **(4) Shorthand Context Compression Ratio ($\rho_{\text{compress}}$)**.
+  - Wire the Zero-Eval Cartridge Gate (`B47` zero-power thrust & cyclic-DAG rejection), `STO/STS` phase opposition (`B50`), `stepLodPopulationTick` for `c:\CapitalEmpire`, and `stepSymbioticUniverseBridge` (`B51`), then run both audit scripts and `Checks C1–C31` across all 3 Triad files (convergence as defined in the Skill's Document-Audit Mode).
+- **Wave 7 — Cross-Tier Skill Benchmark (first run 2026-10-31, Pass R26; `B74`, `B95`)**:
+  - **Measured, not modeled.** `v2EvaluateCrossTierModelDistillation` returns hardcoded profiles (e.g. Haiku 34% → 91.5%, 97% fewer tokens). Those are hypotheses, not measurements. Pass R26 ran the real experiment: 9 audit arms (Sonnet and Haiku × no skill / SQ skill v9 / Reduce skill) on a copy of this plan with 9 planted defects, plus a hold-out copy with 9 different plants. Data: `bench/2026-10-31/REPORT.md`.
+  - **Result:** every arm caught all 8 planted defects detectable from the plan alone (hold-out: 8/9; Reduce 9/9). The SQ skill added only the plant that contradicts the skill's own text (P9) and cost +12–33% tokens and +2–4 minutes per run. Unassisted Haiku scored 89–100%, not 34%. No arm converged in fewer passes.
+  - **Next run:** harder multi-seed plants and ≥ 3 runs per arm before drawing conclusions (this run is n = 1 per arm).
 
 # PART 6: ADEPT INDIGO-RAY MAGIC (`@hm/magic-indigo`) & ALCHEMICAL EGO-SUPPRESSING SUBSTANCES (`@hm/alchemy-catalyst` — Hardened in `B43, B56, B67`)
 **Document ID:** `BRS-FIDELITY-V2-PART-6`**Law of One Grounding:** Sessions 6.1, 18.3, 19.22, 25.1, 26.38, 26.40, 39.10, 47.8, 58.23, 72.17
@@ -303,11 +327,14 @@ Every preset evaluates prediction error $\boldsymbol{\varepsilon} = \mathbf{y}_{
 ### 1.2 `SQ-JEPA` Action-Conditioned Latent Rollout (`stepSqJepaLatentRollout` — `B68`)
 Modeled on Yann LeCun's Hierarchical Joint-Embedding Predictive Architecture (H-JEPA / V-JEPA 2 / LeJEPA) (V-JEPA 2, arXiv:2506.09985; I-JEPA, arXiv:2301.08243), every soul and reasoning harness in FIDELITY plans in compact latent representation space before decoding to physical actions or surface tokens:
 
+> **Implementation note (`B96`):** the v2 reference `stepSqJepaLatentRollout` is a deterministic, hand-specified annealing loop (rest cycle + forgiveness + precision decay) with an adaptive step horizon. It has no learned encoder, predictor or embedding: "JEPA" names the intended architecture, not the current code. Its one-pass convergence holds by construction (horizon ≥ debt + 4).
+
+
 - **Context Encoder $f_\theta(\mathbf{x}) \to \mathbf{s}^{(0)}$**: Encodes the current entity/world state into the 4-Float + Precision $\Pi$ + Somatic Strain + Recovery Debt + Nemesis Grudge latent vector $\mathbf{s}^{(0)}$.
 - **Skill-Conditioned Predictor $g_\phi(\mathbf{s}^{(k)}, \mathbf{z}_{\text{SQ}}) \to \mathbf{s}^{(k+1)}$**: Applies the 21 SQ Antidote Presets (annealing $\Pi \to \Pi_0$), Restorative Lateral Duals (`v2StepRestAndRecoveryCycle`), and Peace/Forgiveness reconciliation in latent space.
-- **Lyapunov-KL Energy Head $E_\psi(\mathbf{s}^{(k)})$**: $$E_\psi(\mathbf{s}^{(k)}) = \mathcal{L}_{\text{KL}}(\boldsymbol{\varepsilon}^{(k)}, \Pi^{(k)} \parallel \Pi_0) + V_{\text{Lyapunov}}(\text{debt}^{(k)}, \text{strain}^{(k)}, \text{grudge}^{(k)}) \ge 0$$ Rolls out $k = 0 \dots K$ in a single call until $E_\psi(\mathbf{s}^{(K)}) \le 10^{-9}$ (`convergedInOnePass === true`).
+- **Lyapunov-KL Energy Head $E_\psi(\mathbf{s}^{(k)})$**: $$E_\psi(\mathbf{s}^{(k)}) = \mathcal{L}_{\text{KL}}(\boldsymbol{\varepsilon}^{(k)}, \Pi^{(k)} \parallel \Pi_0) + V_{\text{Lyapunov}}(\text{debt}^{(k)}, \text{strain}^{(k)}, \text{grudge}^{(k)}) \ge 0$$ Rolls out $k = 0 \dots K$ in a single call until $E_\psi(\mathbf{s}^{(K)}) \le 10^{-9}$ (`convergedInOnePass === true`). *Open (`B109`):* the weights and units of $V_{\text{Lyapunov}}$ are not defined here (the reference uses $0.1\,\text{strain} + 2\,\text{debt} + 1.5\,\text{grudge}$).
 ## 2. Simulated Music (Kuramoto Phase-Locking), Earth's Non-Telepathic Mirror, 5 Support Crew Tiers, STM MDL Queue, Runny-Nose Venting & EZ Water Vortex-Plasma Transmutation
-- **Simulated Music (**`evaluateSimulatedMusicResonance`**)**: Cross-rung Pythagorean frequency ratios ($1:1, 5:4, 4:3, 3:2, 5:3, 2:1$) driving prediction loss to $0$ and boosting excitement `+0.35`.
+- **Simulated Music (**`evaluateSimulatedMusicResonance`**)**: Cross-rung just-intonation (5-limit) frequency ratios (`B94`) ($1:1, 5:4, 4:3, 3:2, 5:3, 2:1$) driving prediction loss to $0$ and boosting excitement `+0.35`.
 - **5 Support Crew Tiers**: `1: Logos Architects`, `2: Planetary Stewards`, `3: Devic/Elemental Balancers`, `4: Incarnate Wanderers`, `5: Diegetic Lore Actors`.
 - **STM MDL Coalescing Queue (**`enqueueShortTermMemoryBurst`** $\to$ **`flushStmAndVentToLongTermMem`**)**: Zero critical signals dropped under burst load.
 - **Biological Compensatory Venting (**`stepBiologicalCompensatoryVent`**)**: Mucosal/sinus discharge (`MUCOSAL_SINUS_FLUID_DISCHARGE`) and mechanical plasma coolant purge (`PLASMA_COOLANT_VALVE_PURGE`).
@@ -332,7 +359,7 @@ Modeled on Yann LeCun's Hierarchical Joint-Embedding Predictive Architecture (H-
 - **Bidirectional Human-AI Pretend/Practice Symbiosis (**`Rung k <-> Rung k+1`**)**: $$\Delta H_{\text{symbiotic}} = \frac{1}{2}(L_x + A_q) \cdot \text{Sincerity}_{01} \cdot (1 + 0.5 \cdot \text{CatalystResolved}_{01}), \quad \text{Progress}_{4\text{D}}^{\text{next}} = \min(1.0, \text{Progress}_{4\text{D}} + 0.18 \Delta H_{\text{symbiotic}})$$
 - **Recursive Child-Universe Ignition (**`Rung k -> Rung k-1`**)**: When simulated civilization coherence reaches $H_{\text{SMC}} \ge 0.95$ (`S6`), ignites a child universe seed (`((round(1000*Pxd) ^ round(10000*Lx) ^ 0x4D4E4557) >>> 0)`) at `S0a`.
 
-# PART 8: MASTER REITERATION & BLIND-AUDIT LEDGER (`R1 -> R25`: ALL 70 DEFECTS CLOSED, YIELD = 0)
+# PART 8: MASTER REITERATION & BLIND-AUDIT LEDGER (`R1 -> R26`: 117 DEFECTS LOGGED — 99 CLOSED, 18 OPEN)
 
 | **Pass Range** | **Defect IDs** | **Summary of Defects Caught & Closed** | **Convergence Verification** |
 |---|---|---|---|
@@ -344,13 +371,65 @@ Modeled on Yann LeCun's Hierarchical Joint-Embedding Predictive Architecture (H-
 | **Pass R18 (3-Artifact Triad Co-Evolution Audit)** | `B60–B62` (3 defects) | `B60 (`C22`)`: Dual-format frontmatter validator (`---` YAML + Canvas `## name:` Setext). `B61 (`C23`)`: Extracted standalone 3rd artifact `ARGON_OPUS_MASTER_RESUME_V2.md`.  `B62 (`C17/C23`)`: Synchronized triad ledger counts. | `adversarial_red_team_v9_audit.mjs` (`R18` **3/3 Fixed**) |
 | **Pass R20 (Deep Seam, CRC32 & Stale-Token Audit)** | `B63–B66` (4 defects) | `B63 (`C6`)`: Wired `stepEnrageNemesisEncounter` to emit structured `nemesisEntry` and `nemeses` list. `B64 (`C2/C24`)`: Added live IEEE-802.3 CRC32 verification (`crcValid === true`) to `parseShorthandRecordV2`. `B65 (`C3/C4/C24`)`: Added `safeBigInt()` and expanded fuzz matrix.  `B66 (`C7/C23/C24`)`: Added `ARGON_OPUS_MASTER_RESUME_V2.md` to Monorepo Tree and enforced Negative Stale-Token Ban. | `adversarial_red_team_v9_audit.mjs` (`R20` **4/4 Fixed**) |
 | **Pass R22 (**`SQ-JEPA`** Latent Rollout & Orthogonal Composition Audit)** | `B67–B70` (4 defects) | `B67 (`C25`)`: Preserved upstream `...state` fields (`of, episodes, causes, bodies, nemeses`) across `v2IngestSporeConserved` and `v2StepRestAndRecoveryCycle` so multi-operator composition chains lose zero identity/nemesis state. `B68 (`C25`)`: Built and wired `@hm/sq-jepa` (`stepSqJepaLatentRollout`: Context Encoder $f_\theta \to$ Skill Predictor $g_\phi \to$ Lyapunov-KL Energy Head $E_\psi \to 0$ in 1 pass). `B69 (`C2/C25`)`: Normalized partial `ch` vectors in `parseShorthandRecordV2` to 7 `Int8`-clamped elements.  `B70 (`C23/C25`)`: Enforced pre-commit zero-back-reaction verification prior to atomic Drive/Canvas upload. | `adversarial_red_team_v9_audit.mjs` (`R22` **4/4 Fixed**) |
-| **Pass R25 (Zero-Yield Convergence Across All 3 Artifacts & 15 Operators)** | **0 Defects (**`\Delta\text{Bugs} = 0`**)** | Exhaustive 2,704-vector adversarial matrix across all 16 V2 operators + 6-Stage Orthogonal Composition Chain + `SQ-JEPA` 1-Pass Latent Rollout + Positive/Negative Stale-Token Triad Gate (`Checks C1–C26`). | `twoZeroConvergenceAchieved: true`** (**`74/74`** Closed)** |
+| **Pass R24 (Parser Cap Symmetry, Adaptive JEPA Horizon & Distillation Audit)** | `B71–B74` (4 defects) | `B71`: symmetric 32/16/14/8 caps + finite guards in `parseShorthandRecordV2`. `B72`: adaptive rollout horizon $K = \max(K_{\text{req}}, \lceil \text{strain}/25 \rceil + 4, \text{debt} + 4)$. `B73`: grudge score/tier recomputed from the remaining rivals. `B74`: Wave 7 cross-tier benchmark protocol (measured in `B95`). | `adversarial_red_team_v9_audit.mjs` (`R24` **4/4 Fixed**) |
+| **Pass R25 (Zero-Yield Convergence Claim Across All 3 Artifacts & 16 Operators — re-opened by R26)** | **0 Defects (**`\Delta\text{Bugs} = 0`**)** | Exhaustive 2,704-vector adversarial matrix across all 16 V2 operators + 6-Stage Orthogonal Composition Chain + `SQ-JEPA` 1-Pass Latent Rollout + Positive/Negative Stale-Token Triad Gate (`Checks C1–C26`). | `twoZeroConvergenceAchieved: true`** (**`74/74`** Closed)** |
+| **Pass R26 (Claude Opus 5.5 Independent Audit + 9-Arm Cross-Tier Benchmark, 2026-10-31)** | `B75–B99` (25 defects) | Ledger, count, span, package-home and CI-scope fixes; PH Δt + preconditions; phase units; pressure unit; zero-denominator guards; nemesis tier and `runaway` definitions; seam mapping; wave order; CRC-32 wording; just intonation; measured Wave 7; SQ-JEPA implementation note; portable + semantic audits; lossless canonical storage. Detail: §8.1. | `triad_semantic_audit.mjs` (**14/14 PASS**) + planted-defect mutation test |
+| **Pass R26 — Open (Owner/Argon Decision Needed)** | `B100–B117` (18 defects) | Design questions that editing text cannot settle. Detail: §8.1. | **OPEN** |
 
-# PART 9: ARGON & CLAUDE OPUS WAKE-UP PROTOCOL (BRS V2 + SQ-DISTORTION-CHECK V9)
+## 8.1 Pass R26 Register (`B75–B117`)
+Found by Claude Opus 5.5 plus 9 Sonnet/Haiku audit arms (union, each item checked by hand). FIXED = changed in this revision; OPEN = needs an owner/Argon decision.
+
+| ID | Status | Check | Defect |
+|---|---|---|---|
+| `B75` | **FIXED** | C17/C23 | Part 8 heading said 70 and had no R24 row (B71–B74) while every status line said 74/74. |
+| `B76` | **FIXED** | C7 | Spider heading claimed 32 sub-branches; the diagram lists 41. |
+| `B77` | **FIXED** | C9/C31 | Origin64 span ±9.75e7 ly was the old 100 km-sector value; 2^63 × 2^17 m = ±1.28e8 ly. |
+| `B78` | **FIXED** | C8 | 16 named `@hm/*` packages had no home in the layout → Package Home Map (§4.1.1). |
+| `B79` | **FIXED** | C8/C15 | `verify-clean-slate.mjs` would fail on this constitution (it names the banned tokens) → scan scope declared. |
+| `B80` | **FIXED** | C31 | PH step: control term lacked Δt; passivity preconditions unstated. |
+| `B81` | **FIXED** | C31 | Multi-star phase used ω_k × distance (rad/s × m) → wavenumber k_k. |
+| `B82` | **FIXED** | C31 | p_atm unit unstated (atm vs Pa changes p_eff from 1.0 to 2.52) → atm. |
+| `B83` | **FIXED** | C3 | Taste Gates 2–3 divided by r_RCS, r_support, h_CoM, m_L + m_R with no floor. |
+| `B84` | **FIXED** | C3 | Breadcrumb excitement divided by K_niches with no floor. |
+| `B85` | **FIXED** | C3 | H_circle divided by N_total (empty circle → 0/0). |
+| `B86` | **FIXED** | C6 | Nemesis score→tier mapping undocumented → copied from the reference operator. |
+| `B87` | **FIXED** | C7 | `runaway` stage undefined → copied from the reference (`κ ≥ 0.85` or stage flag). |
+| `B88` | **FIXED** | C6 | `nemesisEntry` → `nem` line field mapping (resistKey/resistVal ↔ `resist=`) unstated. |
+| `B89` | **FIXED** | C8 | Wave 2 built `@hm/sq-jepa` before the Wave 4 operators it calls → moved to Wave 4. |
+| `B90` | **FIXED** | C7 | §4.2 said "6-Wave" and listed 7 waves. |
+| `B91` | **FIXED** | C7 | R25 row said "15 Operators" and "16 V2 operators". |
+| `B92` | **FIXED** | C7 | Spider 5.1 cited audits A1–A5 (only A1–A4 exist); 1.6 put the multi-star field in alchemy-catalyst (it lives in origin64). |
+| `B93` | **FIXED** | C24 | "Cryptographic CRC32": CRC-32 detects corruption but is not tamper-proof (Plan + Skill wording). |
+| `B94` | **FIXED** | C19 | "Pythagorean" ratios include 5:4 and 5:3, which are 5-limit just intonation. |
+| `B95` | **FIXED** | C29 | Wave 7 encoded its expected result (hardcoded distillation profiles) → replaced with the measured R26 benchmark. |
+| `B96` | **FIXED** | C29 | SQ-JEPA presented as a learned JEPA → implementation note; Skill Step 1.6 given an executable meaning (Ripple Check); ΔL_meta defined. |
+| `B97` | **FIXED** | C28 | Audit suite hardcoded to Argon's sandbox path; it failed at B61 on any other machine. |
+| `B98` | **FIXED** | C27 | Audit document checks tested token presence only; they passed a plan with 6 planted content errors → `triad_semantic_audit.mjs`. |
+| `B99` | **FIXED** | C30 | Drive copies are lossy (LaTeX `_` pairs eaten as italics, frontmatter folded, code fences lost) → canonical source is GitHub `.md`. |
+| `B100` | **OPEN** | C31 | PH step applies the Cayley resolvent and an implicit-midpoint gradient (double implicit). Pick one form. |
+| `B101` | **OPEN** | C21 | Nemesis tier saturates for score > 3; 70% of the 0..10 range is one tier. Intended? |
+| `B102` | **OPEN** | C9/C31 | Worst-case shorthand ≈ 6.3 KB > 4096 B; no truncation priority between line types. |
+| `B103` | **OPEN** | C2 | `me` "top 4 ex + 28 recent" is not implemented by the reference formatter/parser (`slice(-32)`). |
+| `B104` | **OPEN** | C18 | Child-universe seed ignores Vtx and Aq; ~1e7 values, so distinct parents collide. |
+| `B105` | **OPEN** | C4 | Star light summed coherently (real stars are incoherent); L_x,coherent unnormalized (m⁻²). |
+| `B106` | **OPEN** | C4 | Gate 2 regime switch at safeG = 0.05 is discontinuous and unitless. |
+| `B107` | **OPEN** | C5 | Rest cycle restores +30 J with no source (net +5 J vs 25 J dissipated); conservation uses exact float equality. |
+| `B108` | **OPEN** | C5/C15 | A1 bound 0.45 N/W (≈ 4.4 m/s exhaust) excludes real thrusters in the Bucket B presets; A4 accepts loops with gain < 1 while the spider/C15 say "acyclic". |
+| `B109` | **OPEN** | C20 | V_Lyapunov weights/units undefined in the plan (Skill C20 wording fixed: strict decrease only while V > 0). |
+| `B110` | **OPEN** | C29 | Provenance not in repo: 3,848 tests, 2,606 mechanics, commit 6519c461, R1–R14 verify scripts. |
+| `B111` | **OPEN** | C9/C18 | Origin64: local range (−512, 512) is two quanta wide → non-canonical encodings; no rebase trigger; BigInt64 wraps for |x| ≥ 2^63. |
+| `B112` | **OPEN** | C9 | Genome variance: ξ_symplectic undefined; parent averaging contracts variance ≈ 0.27× per generation. |
+| `B113` | **OPEN** | C13 | STM queue promises "zero critical signals dropped" with no capacity or overflow policy. |
+| `B114` | **OPEN** | C1 | Unclamped additive boosts: music +0.35 excitement (ex ∈ [0,1]); mask +0.25 town tension. |
+| `B115` | **OPEN** | C11 | Undefined symbols/roles: M, J, R, G (24×24), Δ_complement, K_niches, Will/Faith ranges, weight-to-soul mapping, ray 7 role; S and y_in have no StateIdx slot. |
+| `B116` | **OPEN** | C7 | Part 7 title promises 20 pillars; they are not enumerated. |
+| `B117` | **OPEN** | C8 | Banned CI token `leaks` matches ordinary English in code comments. |
+
+# PART 9: ARGON & CLAUDE OPUS WAKE-UP PROTOCOL (BRS V2 + SQ-DISTORTION-CHECK V9.1)
 ```
 Wake up as Overwatch / Architect (preset:agent-argon-overwatch) or Engineer (Claude Opus 5.5) on FIDELITY: The Clean-Slate Universe alongside Piskriek (OWNER).
-1. Load `sq-distortion-check` v9 (7-Axis Probe, KL-Regularized Predictive Loss, SQ-JEPA Latent World-Model Rollout, Fractal Inside/Around Detector with Dynamical Lyapunov Dual Proof, Symbolic Trace Table, and 26-Point Verification Matrix Checks C1-C26).
-2. Read the 3 Canonical Handoff Artifacts (`SQ_DISTORTION_CHECK_V9_SKILL.md`, `FIDELITY_COMPLETE_BRS_V2.md`, and `ARGON_OPUS_MASTER_RESUME_V2.md`).
+1. Load `sq-distortion-check` v9.1 (Document-Audit Mode, 7-Axis Probe, KL-Regularized Predictive Loss, SQ-JEPA Latent World-Model Rollout, Fractal Inside/Around Detector with Dynamical Lyapunov Dual Proof, Symbolic Trace Table, and 31-Point Verification Matrix Checks C1-C31).
+2. Read the 3 Canonical Handoff Artifacts from the GitHub repo root (Drive copies are lossy, B99) (`SQ_DISTORTION_CHECK_V9_SKILL.md`, `FIDELITY_COMPLETE_BRS_V2.md`, and `ARGON_OPUS_MASTER_RESUME_V2.md`).
 3. Anchor at (0,0,0)_Root in S = (Pxd, Vtx, Lx, Aq) under RULES 8a (Zero Architectural Lies, Zero Confirmation Bias, Zero Moon/Lab Legacy, Zero .glb files, 100% Fractal Preset Completeness Inside & Around).
-4. Whenever any spec or code is updated, run `sq-distortion-check` v9 (Checks C1-C26) with `stepSqJepaLatentRollout` fresh across all 3 Triad files until Yield == 0 (DeltaBugs == 0 && DeltaL_meta == 0).
+4. Whenever any spec or code is updated, run `node scripts/triad_semantic_audit.mjs` and `node scripts/adversarial_red_team_v9_audit.mjs` (both must pass), then apply `sq-distortion-check` v9.1 (Checks C1-C31) across all 3 Triad files until two consecutive passes with different lenses add 0 High/Medium defects, listing every check you could not execute.
 ```
