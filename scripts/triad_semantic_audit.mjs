@@ -166,6 +166,26 @@ check('S14', 'Check range and ledger range agree across the triad', () => {
   return { pass: ok, detail: `check ranges ${[...new Set(all)].join('/')}; ledger ranges ${[...new Set(ledger)].join('/')}` };
 });
 
+// S15 — Markdown tables keep their shape: every row has the header's cell count (an unescaped `|`
+// inside a cell splits it). Fresh reviewers caught this by eye in R27 and R28; now it is mechanical.
+check('S15', 'Every markdown table row has its header\'s column count', () => {
+  const cells = l => l.replace(/\\\|/g, '').split('|').length - 2;
+  const bad = [];
+  for (const [name, doc] of [['skill', skill], ['plan', plan], ['resume', resume]]) {
+    const lines = doc.split('\n');
+    let inCode = false;
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].startsWith('```')) inCode = !inCode;
+      if (inCode || !/^\|.*\|\s*$/.test(lines[i]) || !/^\|[\s:|-]+\|\s*$/.test(lines[i + 1] ?? '')) continue;
+      const want = cells(lines[i]);
+      for (let j = i + 2; j < lines.length && /^\|.*\|\s*$/.test(lines[j]); j++) {
+        if (cells(lines[j]) !== want) bad.push(`${name}:${j + 1} has ${cells(lines[j])} cells, header ${want}`);
+      }
+    }
+  }
+  return { pass: bad.length === 0, detail: bad.length ? bad.slice(0, 6).join('; ') : 'all tables well-formed' };
+});
+
 const failed = results.filter(r => !r.pass);
 for (const r of results) console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.id}  ${r.title}\n        ${r.detail}`);
 console.log(`\n${results.length - failed.length}/${results.length} semantic checks pass` + (failed.length ? ` — failing: ${failed.map(r => r.id).join(', ')}` : ''));

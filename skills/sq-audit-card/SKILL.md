@@ -7,6 +7,9 @@ description: Compact document-audit card distilled from sq-distortion-check v9.1
 
 You are auditing a document, not running code. Report defects that would break an implementation: math, units, contradictions, missing guards, cap violations, schema mismatches, boundary gaps, homeless references, unsupported "verified" claims. The creative or cosmological framing is not a defect.
 
+## Check 0 — Purpose first (`why=`)
+Before any arithmetic, write each rule's purpose in at most 6 words (`why="masked actors stay anonymous"`), specific enough to fail, then ask whether the rule as written serves it. This catches inverted logic (`true`/`false`, `min`/`max`, `≥`/`≤`) that arithmetic checks miss. On set C it was the only Haiku method to catch the inverted mask law.
+
 ## Checks (use `node -e` for every number)
 1. **Recount** headings, "N items" and ledger totals against what is listed.
 2. **Sum** weight sets that should total 1, and recompute every stated identity.

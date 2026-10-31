@@ -22,6 +22,7 @@
 | Haiku + Reduce v2, reader 1 | 20 | 8.5 | C3, C4½ | 214.9k | 8.7 min |
 | Haiku + Reduce v2, blind regrower (cards only, never saw the plan) | 47 | **9** | C3 | 198.6k | 9.6 min |
 | *Reduce v2 pipeline (both readers, union)* | 67 | **9** | C3 | 413.5k | — |
+| Haiku, **why= teleology pass** on the same cards (Pass R28, Argon's hypothesis) | 20 | **9.5** | C2½ | 175.3k | 8.2 min |
 
 **Reading it:**
 - **Haiku hits a ceiling around 8.5 of 10, whatever method it uses.** Every Haiku arm missed C3 (the inverted mask law, which needs you to know what a mask is *for*). Only Sonnet caught it. No skill moved that ceiling.
@@ -46,6 +47,10 @@ The biggest empty regions:
 - **Seven quantities only ever move one way** (B129–B135). Ambient energy is drained and never refilled. Precision is only ever annealed down, so **distortions can be cured but never acquired**. Excitement and town tension never decay. Child universes are unbounded.
 
 Plan §8.2 proposes a fill for each, deduced from parts the plan already has. Example: ambient energy refills from the **Trophic Stellar-to-Core Energy Cascade (spider 2.3)**, which also gives the rest cycle's mystery +30 J a source (B107). Plan §8.3 lists the seven questions only the owner can answer.
+
+## Argon's `why=` hypothesis, tested (Pass R28)
+
+Argon proposed that Haiku missed the mask law because nothing told it what each rule is *for*. A fresh Haiku got the same 11.6 KB cards with one instruction: write each rule's purpose (`why=`, ≤ 6 words) before checking it. It scored **9.5 of 10**, and it was **the first Haiku arm in any run to catch the inverted mask law** (`why="masked actors stay anonymous"`). Its one half-miss shows the limit: it anchored the progress clamp as `why="progress rises"`, too weak to expose a `max` that should be a `min`. The anchor is only as good as the purpose written down. This is n = 1, but it is the clearest lift any method produced for Haiku. It is now part of the Reduce skill and the audit card. The same pass found a new gate defect: `coerciveOverride !== true` fails open if the parser keeps `"true"` as a string.
 
 ## Re-auditing this pass
 

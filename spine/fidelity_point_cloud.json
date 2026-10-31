@@ -111,7 +111,8 @@
       "persistence": "persistent",
       "seam": "nem.resist",
       "monotone": "scars are permanent by design?",
-      "scope": "soul"
+      "scope": "soul",
+      "monotoneConfirmed": "Ra 67.12–67.13: physical scars persist per vessel (Plan §8.4 Q3)"
     },
     {
       "id": "townTension",
@@ -142,13 +143,13 @@
     },
     {
       "id": "progress4D",
-      "ground": "Progress}_{4\\text{D}}",
-      "unit": "fraction",
-      "range": "[0,1]",
+      "ground": "polarity = {sto01, sts01}",
+      "unit": "fraction pair (sto01, sts01)",
+      "range": "sto01 + sts01 <= 1",
       "persistence": "persistent",
       "seam": null,
-      "monotone": "graduation progress only rises?",
-      "scope": "player"
+      "scope": "player",
+      "note": "R28: two-sided polarity, tested at cycle ends (Plan §8.4 Q2)"
     },
     {
       "id": "reputation",
@@ -161,9 +162,9 @@
     },
     {
       "id": "childUniverses",
-      "ground": "child universe seed",
+      "ground": "MAX_ACTIVE_OCTAVE_DEPTH",
       "unit": "count",
-      "range": null,
+      "range": "live nesting <= MAX_ACTIVE_OCTAVE_DEPTH",
       "persistence": "persistent",
       "seam": null,
       "scope": "world"
@@ -629,6 +630,34 @@
       "touches": {},
       "tested": "v2EvaluateCrossTierModelDistillation",
       "note": "returns hardcoded profiles (B95)"
+    },
+    {
+      "id": "polarityLossEvents",
+      "ground": "free-will violations and unforgiven grudges lower it",
+      "pkg": "universe-bridge",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "progress4D": "-"
+      },
+      "tested": null,
+      "note": "Ra 42.9, 55.3, 69.11, 87.6",
+      "normative": "R28"
+    },
+    {
+      "id": "octaveClosure",
+      "ground": "`IGNITED → RUNNING → CLOSING → MERGED`",
+      "pkg": "universe-bridge",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "childUniverses": "-"
+      },
+      "tested": null,
+      "note": "Ra 40.1, 52.12, 78.10, 82.11; emits HarvestPacket",
+      "normative": "R28"
     }
   ],
   "packageDependsOn": {

@@ -19,6 +19,7 @@ v2 changes come from the 2026-10-31 benchmark (`bench/2026-10-31/REPORT.md`): ca
   - **Numbers**: every constant, threshold, cap, count, total and weight the plan states, with its location.
   - Add Operators (`name(inputs) → outputs`), Invariants (testable statements) or Evidence only when a check below needs them.
 - **OPAQUE**: mark a term OPAQUE only when it appears in a formula, invariant or interface and you cannot restate it operationally. Framing and lore vocabulary is not a finding.
+- **`why=` anchor on every rule** (formula, gate, clamp, inequality, min/max, true/false condition, table entry). Write its purpose in the world being built, in at most 6 words, *before* checking the rule: `mask_law :: why="masked actors stay anonymous"`. Make the anchor specific enough to fail: "progress toward graduation, capped at 1" exposes a `max` that should be `min`; "progress rises" does not. Then mark each rule SERVES / CONTRADICTS / UNCLEAR against its anchor. (Measured on set C: this was the only Haiku method to catch an inverted logic rule.)
 
 Write R0–R2 to a file (`reduce_cards.md`). The file is the handoff to Step 3.
 

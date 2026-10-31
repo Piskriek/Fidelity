@@ -50,7 +50,7 @@ const has = (o, ...roles) => o.role.some(r => roles.includes(r));
 const ungrounded = [];
 for (const q of cloud.quantities) if (!plan.includes(q.ground)) ungrounded.push(`quantity ${q.id} (ground "${q.ground}")`);
 for (const o of OPS) {
-  if (!plan.includes(o.proposed ? o.ground : o.id)) ungrounded.push(`operator ${o.id}${o.proposed ? ` (proposal "${o.ground}")` : ''}`);
+  if (!plan.includes(o.proposed || o.normative ? o.ground : o.id)) ungrounded.push(`operator ${o.id}${o.ground && (o.proposed || o.normative) ? ` (ground "${o.ground}")` : ''}`);
   if (o.tested && !audit.includes(`function ${o.tested}(`)) ungrounded.push(`operator ${o.id}: test reference ${o.tested} not in the v9 suite`);
   for (const q of Object.keys(o.touches ?? {})) if (!Q[q]) ungrounded.push(`operator ${o.id} touches unknown quantity ${q}`);
   for (const c of o.calls ?? []) if (!opById[c]) ungrounded.push(`operator ${o.id} calls unknown operator ${c}`);
@@ -89,7 +89,8 @@ for (const o of OPS) for (const [q, d] of Object.entries(o.touches ?? {})) {
 }
 for (const q of cloud.quantities) {
   const d = dirs[q.id] ?? new Set();
-  if (d.size === 1) {
+  if (d.size === 1 && q.monotoneConfirmed) { /* deliberate one-way quantity, confirmed against the source */ }
+  else if (d.size === 1) {
     const only = [...d][0] === '+' ? 'only ever increases' : 'only ever decreases';
     const by = OPS.filter(o => o.touches?.[q.id]).map(o => o.id).join(', ');
     hole('Lateral Dual (C12/C20)', q.id, `${only} (via ${by})${q.monotone ? ` — ${q.monotone}` : ''}`, q.monotone ? 'owner: confirm monotone by design, or add a dual' : 'add the restoring/releasing operator');
