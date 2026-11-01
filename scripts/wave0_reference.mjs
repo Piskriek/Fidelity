@@ -8,6 +8,11 @@
  * Not implemented: the per-episode update of `arch=`/`pol=` (no rule set, `B179`), the byte-budget eviction order of
  * `B102`, and misuse consequences (no values set). The balance level, gate width, P_local by stage, birth values and the
  * rebirth blend of `s=` were set in R38 (the owner approved Argon's proposals); other choices made here are listed in `B179`.
+ * Bridge (end of file, proposed after R38, nothing in it ruled): the gateway composed across levels, with a two-sided
+ * source, a helicity ledger, a tower check, a phased port, a split-amplitude check and harvest by merging; plus the D2
+ * options on rebirthTransfer and a merge port on the energy ledger. Every bridge option is off unless passed, and with
+ * none passed every R38 function gives the same output, bit for bit (tested on a fixed grid of inputs against a frozen copy
+ * of the R38 module in scripts/fixtures).
  * Tests: scripts/wave0_reference_test.mjs.
  */
 
@@ -40,15 +45,18 @@ function runningSum() {
 // leaves to the thermal sink, which only receives energy. A port's supply can be negative (energy leaving through it).
 export const INFLOW_PORTS = Object.freeze(['stellar', 'ambient', 'gateway']);
 export const THERMAL = 'thermal';
+// Bridge option: `merge: true` also declares the merge port, through which harvest moves a child up (harvestUp).
+export const MERGE_PORT = 'merge';
 
-export function createEnergyLedger() {
+export function createEnergyLedger(opts = {}) {
+  const ports = opts?.merge === true ? [...INFLOW_PORTS, MERGE_PORT] : INFLOW_PORTS;
   const entries = [];
   const inflow = runningSum(), thermal = runningSum(), drawn = new Map();
   let scale = 0;
   return {
     entries,
     post(port, joules, meta = {}) {
-      if (port !== THERMAL && !INFLOW_PORTS.includes(port)) throw new Error(`undeclared energy port: ${port}`);
+      if (port !== THERMAL && !ports.includes(port)) throw new Error(`undeclared energy port: ${port}`);
       if (!Number.isFinite(joules)) throw new Error(`non-finite ledger entry on port ${port}`);
       if (port === THERMAL && joules < 0) throw new Error('the thermal sink only receives energy');
       entries.push({ ...meta, port, joules });
@@ -307,15 +315,265 @@ export const VESSEL_WEIGHT = 0.8;
 // Incarnation transfer: arch, pol, the unresolved-pattern flags (open `mc` lines), debt (as healing time) and chose carry;
 // vital, strain, hp and doses are rebuilt at birth; s blends as above (the vessel template defaults to 0.5 throughout);
 // the episode window does not carry.
-export function rebirthTransfer(record = {}, { vesselTemplate = [0.5, 0.5, 0.5, 0.5], vesselWeight = VESSEL_WEIGHT, birth = BIRTH } = {}) {
+// Bridge options (the D2 proposal, off by default; whether to use them and their values are owner decisions): when
+// `reviewed` is true, a between-life review heals `reviewShare` (clamped to 0..1) of the carried debt, truncated like
+// every debt value; each open cause adds `strainPerOpenCause` (at least 0) to the strain set at birth. Non-finite values
+// have no effect. Turning them on departs from the R34 ruling (§8.6 Q3: debt carries in full, strain is rebuilt at
+// birth) and is a variant of Argon's carry proposal, which B179 lists as conflicting with R34.
+export function rebirthTransfer(record = {}, { vesselTemplate = [0.5, 0.5, 0.5, 0.5], vesselWeight = VESSEL_WEIGHT, birth = BIRTH,
+  reviewShare = 0, reviewed = false, strainPerOpenCause = 0 } = {}) {
   const m = normalizeMs(record.ms);
   const tpl = normalizeMs({ s: vesselTemplate }).s;
   const w = clamp(vesselWeight, 0, 1, VESSEL_WEIGHT);
   const s = [w * tpl[0] + (1 - w) * m.s[0], w * tpl[1] + (1 - w) * m.s[1], m.s[2], m.s[3]];
   const born = normalizeMs({ ...birth, s });
+  const causes = (record.causes ?? []).filter(c => c?.open);
+  const share = reviewed === true ? clamp(reviewShare, 0, 1, 0) : 0;
+  const q = Math.max(0, finiteOr(strainPerOpenCause, 0));
+  const debt = share > 0 ? normalizeMs({ debt: m.debt * (1 - share) }).debt : m.debt;
+  const strain = q > 0 ? normalizeMs({ strain: born.strain + q * causes.length }).strain : born.strain;
   return structuredClone({
-    ms: { ...born, arch: m.arch, pol: m.pol, debt: m.debt, chose: m.chose },
-    causes: (record.causes ?? []).filter(c => c?.open),
+    ms: { ...born, strain, arch: m.arch, pol: m.pol, debt, chose: m.chose },
+    causes,
     episodes: [],
   });
+}
+
+// ============================================================================
+// Bridge: the gateway composed across levels (proposed after R38; every option here is off unless passed)
+// ============================================================================
+// The fractal principle (§8.6): each level's energy comes from the level that encloses it. These functions let a draw
+// take its energy from the enclosing level's store, book both sides under one tag, carry helicity on its own ledger, and
+// check that every level's books close. No R38 function calls them. Nothing here is ruled: whether to use each option,
+// the port type, what antidrive does, Λ, a source floor, harvest by merging and the D2 options are owner decisions,
+// listed in B179 (R39).
+
+// Helicity ledger. K changes only through these ports: relaxation keeps K (stepToroidRelaxation), so a level's change
+// in K must equal what its ports booked.
+export const HELICITY_PORTS = Object.freeze(['gateway', MERGE_PORT]);
+export function createHelicityLedger() {
+  const entries = [], total = runningSum();
+  let scale = 0;
+  return {
+    entries,
+    post(port, dK, meta = {}) {
+      if (!HELICITY_PORTS.includes(port)) throw new Error(`undeclared helicity port: ${port}`);
+      if (!Number.isFinite(dK)) throw new Error(`non-finite helicity entry on port ${port}`);
+      entries.push({ ...meta, port, dK });
+      total.add(dK);
+      scale += Math.abs(dK);
+    },
+    total: () => total.value,
+    magnitude: () => scale,
+  };
+}
+
+// A balanced three-phase set: harmonic k is positive sequence when k ≡ 1 (mod 3), negative sequence when k ≡ 2, and
+// zero sequence (no rotating field) when k ≡ 0.
+export function threePhaseSequence(order) {
+  if (!(Number.isInteger(order) && order >= 0)) throw new Error('a harmonic order must be a whole number >= 0');
+  return [0, 1, -1][order % 3];
+}
+
+// The phased port, an option: with no port the factor is 1, as in R38. With { type: 'three-phase', order, phase,
+// antidrive } the factor is the sequence sign times sin(phase), after oscillating-field current drive on MST, whose
+// helicity injection goes as sin δ (McCollam et al., PRL 96, 035003, 2006; cited, not reproduced in this repository);
+// using it for the gateway is a design. A non-finite phase
+// gives 0. A negative sequence or a negative sin(phase) is antidrive (factor −|sin(phase)|), and what it does is the
+// owner's decision, so the port must name it: 'close' moves nothing; 'reverse' runs the port backwards at the same rate
+// law, returning energy (and helicity) from the toroid to the enclosing level, never below the toroid's Taylor floor and
+// never past K = 0 (driving K through zero into the other handedness is not implemented). Because C carries the headroom
+// factor (1 − W/Wmax), a reversed flow also scales with headroom: a full toroid returns nothing, an emptier one returns
+// faster. The factor returned is before
+// that choice. Two sign conventions here are also owner decisions: a negative sequence at a negative phase is antidrive
+// (the two signs do not cancel, as their product would), and the factor is read against the toroid's own handedness
+// (bridgeDraw adds helicity of the sign of K), whereas in OFCD the sign of sin δ fixes the sign of the injected helicity.
+export const ANTIDRIVE = Object.freeze(['close', 'reverse']);
+export function portFactor(port) {
+  if (port === null || port === undefined) return 1;
+  if (port.type !== 'three-phase') throw new Error(`unknown port type: ${port.type}`);
+  if (!ANTIDRIVE.includes(port.antidrive)) throw new Error(`antidrive is the owner's decision: name it ('close' or 'reverse'), got ${port.antidrive}`);
+  const seq = threePhaseSequence(port.order), sin = Math.sin(port.phase);
+  const f = seq < 0 || sin < 0 ? -Math.abs(seq * sin) : seq * sin;
+  return Number.isFinite(f) && f !== 0 ? f : 0;
+}
+
+// The split bound, from the review of the bridge proposals after R38 (its derivation, by Cauchy–Schwarz and the
+// Rayleigh bound, is not yet in this repository): for an axisymmetric field with ψ = 0 on the wall, in a domain that
+// contains the axis, |f_tor − ½| ≤ ½√(1 − c²), where f_tor is the toroidal share of the energy and c the coherence. A
+// port that sloshes energy between the poloidal and toroidal parts at amplitude a keeps coherence c only while a is
+// within the bound. A check for callers; no draw here calls it. Outside 0 ≤ c ≤ 1 the bound is 0.
+export function splitAmplitudeBound(c) {
+  return Number.isFinite(c) && c >= 0 && c <= 1 ? 0.5 * Math.sqrt(1 - c * c) : 0;
+}
+export function splitWithinBound(amplitude, c) {
+  const bound = splitAmplitudeBound(c);
+  return { ok: Number.isFinite(amplitude) && Number.isFinite(c) && c >= 0 && c <= 1 && Math.abs(amplitude) <= bound, bound };
+}
+
+// One gateway draw composed with the enclosing level. With no option it is drawGateway (the tests compare the two bit
+// for bit). Options, none with a default value:
+//   source  { name, ledger, store, hledger?, floor? }, the enclosing level. What the toroid gains is debited from
+//           `store` and posted on both ledgers under one tag. The store is never drawn below its own Taylor floor (0 for
+//           a store without K and λ), nor below `floor` when one is passed, nor filled past a finite Wmax.
+//   lambda  Λ, energy per unit helicity. Each joule moved carries 1/Λ of helicity in the toroid's own handedness,
+//           booked on `hledger` (the toroid's level) and on the source's hledger; neither side may end below its
+//           Taylor floor, and the toroid's K never changes sign (a reversed flow stops at K = 0).
+//   port    the phased port above. pool  as in drawGateway; a reversed flow leaves it untouched.
+// Returns { toroid, store, E, dK, factor, requested, tag }: E is the energy moved into the toroid (negative when the port
+// runs backwards), `requested` is E before the source and helicity caps, and `store` is the source's new store (a copy,
+// like the toroid; the caller keeps it).
+export function bridgeDraw(toroid, entity, params, dt, ledger, { source = null, lambda, hledger = null, port = null, pool = null } = {}) {
+  if (typeof entity !== 'string' || entity.length === 0) throw new Error('a gateway draw needs a named entity');
+  const factor = portFactor(port);
+  const helicity = lambda !== undefined;
+  if (helicity && !(Number.isFinite(lambda) && lambda > 0)) throw new Error('lambda must be a positive finite energy per unit helicity');
+  if (helicity && typeof hledger?.post !== 'function') throw new Error('a helicity draw needs the helicity ledger of the toroid\'s level');
+  if (source !== null) {
+    if (typeof source?.name !== 'string' || source.name.length === 0) throw new Error('a source needs a name');
+    if (typeof source.ledger?.post !== 'function' || !Array.isArray(source.ledger.entries)) throw new Error('a source needs its energy ledger');
+    if (helicity && typeof source.hledger?.post !== 'function') throw new Error('a helicity draw needs the source\'s helicity ledger');
+    if (source.floor !== undefined && !(Number.isFinite(source.floor) && source.floor >= 0)) throw new Error('a source floor must be a finite energy >= 0');
+  }
+  const store = source ? { ...source.store } : null;
+  const none = { toroid: { ...toroid }, store, E: 0, dK: 0, factor, requested: 0, tag: null };
+  if (toroid?.owner !== undefined && toroid.owner !== entity) return none;
+  if (!(Number.isFinite(toroid?.W) && Number.isFinite(toroid?.Wmax) && toroid.Wmax > 0 && toroid.W >= 0)) return none;
+  if (helicity && !Number.isFinite(toroid.K)) return none;
+  if (source && !(Number.isFinite(store.W) && store.W >= 0)) return none;
+  if (helicity && source && store.K !== undefined && !Number.isFinite(store.K)) return none;
+  const { P } = gatewayPower({ ...params, toroid });
+  const h = Math.max(0, finiteOr(dt, 0));
+  const forward = !(factor < 0);
+  let E;
+  if (forward) {
+    E = Math.min((port ? factor * P : P) * h, Math.max(0, toroid.Wmax - toroid.W));
+    if (pool) E = Math.min(E, Math.max(0, finiteOr(pool.remaining, 0)));
+  } else if (port.antidrive === 'close') E = 0;
+  else E = -Math.min(-factor * P * h, Math.max(0, toroid.W - toroidFloor(toroid)));   // never below its own floor
+  const requested = E;
+  const sigma = helicity ? Math.sign(toroid.K) : 0;
+  const Ks = helicity && source ? finiteOr(store.K, 0) : 0;
+  // Every constraint is concave in e, so the moves that fit form an interval; bisection keeps the largest fraction of E
+  // found to fit, or 0 when none does (as when the source already sits below its floor).
+  const fits = e => {
+    const dk = helicity ? sigma * e / lambda : 0;
+    if (helicity && !(sigma * (toroid.K + dk) >= 0)) return false;   // K never crosses zero (binds only when reversed)
+    if ((helicity || e < 0) && !(toroid.W + e >= toroidFloor({ ...toroid, K: toroid.K + dk }))) return false;
+    if (!source) return true;
+    const s = { ...store, W: store.W - e, ...(helicity ? { K: Ks - dk } : {}) };
+    return s.W >= Math.max(toroidFloor(s), finiteOr(source.floor, 0)) && !(Number.isFinite(store.Wmax) && !(s.W <= store.Wmax));
+  };
+  if ((source || helicity || E < 0) && E !== 0 && !fits(E)) {
+    let lo = 0, hi = 1;
+    for (let k = 0; k < 64; k++) { const mid = 0.5 * (lo + hi); if (fits(mid * E)) lo = mid; else hi = mid; }
+    E = lo * E;
+  }
+  if (Object.is(E, -0)) E = 0;
+  const dK = helicity ? sigma * E / lambda : 0;
+  if (pool && forward) pool.remaining -= E;
+  const tag = source && E !== 0 ? `${source.name}>${entity}#${source.ledger.entries.length}` : null;
+  if (E !== 0) {
+    ledger.post('gateway', E, tag ? { entity, obj: toroid.id, tag } : { entity, obj: toroid.id });
+    if (source) source.ledger.post('gateway', -E, { entity, obj: toroid.id, tag });
+    if (helicity && dK !== 0) {
+      hledger.post('gateway', dK, tag ? { entity, tag } : { entity });
+      if (source) source.hledger.post('gateway', -dK, { entity, tag });
+    }
+  }
+  return {
+    toroid: { ...toroid, W: toroid.W + E, ...(helicity ? { K: toroid.K + dK } : {}) },
+    store: source ? { ...store, W: store.W - E, ...(helicity ? { K: Ks - dK } : {}) } : null,
+    E, dK, factor, requested, tag,
+  };
+}
+
+// Harvest up (§8.6: energy flows down the levels, harvest flows up). By default it books nothing and returns a readout
+// of the toroid; whether harvest moves energy is the owner's decision (B179). With `merge: true` the whole toroid (W and
+// K) joins the parent's store through the merge port, booked on both sides under one tag (helicity on both sides or on
+// neither). The merge is refused, and nothing booked, if the parent would end below its Taylor floor or past a finite
+// Wmax. child = { name, ledger, hledger? }, parent = { name, ledger, store, hledger? }; their ledgers need the merge
+// port (createEnergyLedger({ merge: true })). Without helicity ledgers K still moves with the toroid but is not booked,
+// so the tower check cannot see it; pass both helicity ledgers for a booked merge.
+export function harvestUp(toroid, { merge = false, child = null, parent = null } = {}) {
+  const readout = { W: toroid?.W, K: toroid?.K, coherence: toroidCoherence(toroid ?? {}) };
+  const out = { merged: false, toroid: { ...toroid }, store: parent?.store ? { ...parent.store } : null, readout, tag: null };
+  if (merge !== true) return out;
+  for (const [side, x] of [['child', child], ['parent', parent]]) {
+    if (typeof x?.name !== 'string' || x.name.length === 0) throw new Error(`a merge needs the ${side}'s name`);
+    if (typeof x.ledger?.post !== 'function' || !Array.isArray(x.ledger.entries)) throw new Error(`a merge needs the ${side}'s energy ledger`);
+  }
+  const helicity = Boolean(child.hledger) || Boolean(parent.hledger);
+  if (helicity && !(typeof child.hledger?.post === 'function' && typeof parent.hledger?.post === 'function')) {
+    throw new Error('a merge books helicity on both sides or on neither');
+  }
+  const st = parent.store ?? {};
+  const Kc = toroid?.K === undefined ? 0 : toroid.K, Kp = st.K === undefined ? 0 : st.K;
+  if (!(Number.isFinite(toroid?.W) && toroid.W >= 0 && Number.isFinite(Kc) && Number.isFinite(st.W) && st.W >= 0 && Number.isFinite(Kp))) {
+    return { ...out, refused: 'damaged toroid or store' };
+  }
+  const after = { ...st, W: st.W + toroid.W, K: Kp + Kc };
+  if (!(after.W >= toroidFloor(after)) || (Number.isFinite(st.Wmax) && !(after.W <= st.Wmax))) {
+    return { ...out, refused: 'the parent would end below its Taylor floor or past its Wmax' };
+  }
+  const tag = `merge:${child.name}>${parent.name}#${parent.ledger.entries.length}`;
+  if (toroid.W !== 0) {
+    parent.ledger.post(MERGE_PORT, toroid.W, { obj: toroid.id, tag });
+    child.ledger.post(MERGE_PORT, -toroid.W, { obj: toroid.id, tag });
+  }
+  if (helicity && Kc !== 0) {
+    parent.hledger.post(MERGE_PORT, Kc, { obj: toroid.id, tag });
+    child.hledger.post(MERGE_PORT, -Kc, { obj: toroid.id, tag });
+  }
+  return { merged: true, toroid: { ...toroid, W: 0, K: 0 }, store: after, readout, tag };
+}
+
+// Tower check: every level's books close (energy, and helicity where the level keeps a helicity ledger), and every
+// tagged gateway or merge entry has exactly one partner: the opposite value, same port and tag, on its parent or child.
+// An untagged gateway entry is allowed only on a root (the tower's own inflow); stellar and ambient stay declared
+// inflows and are not paired. levels = [{ name, parent (a level's name, or null for a root), stored0, stored1, ledger,
+// K0?, K1?, hledger? }]. Returns { ok, problems }.
+export function towerCheck(levels, { tol = 1e-12 } = {}) {
+  const problems = [];
+  const byName = new Map();
+  for (const l of levels ?? []) {
+    if (typeof l?.name !== 'string' || byName.has(l.name)) problems.push(`level name missing or repeated: ${l?.name}`);
+    else byName.set(l.name, l);
+  }
+  for (const l of byName.values()) {
+    if (l.parent !== null && !byName.has(l.parent)) problems.push(`${l.name}: parent must be a level in the tower or null, got ${l.parent}`);
+    let p = l.parent, n = 0;
+    while (p !== null && byName.has(p) && n <= byName.size) { p = byName.get(p).parent; n++; }
+    if (n > byName.size) problems.push(`${l.name}: the parent chain has a cycle`);
+    if (typeof l.ledger?.inflow !== 'function') { problems.push(`${l.name}: no energy ledger`); continue; }
+    const c = ledgerCloses({ stored0: l.stored0, stored1: l.stored1, ledger: l.ledger, tol });
+    if (!c.ok) problems.push(`${l.name}: energy books do not close (residual ${c.residual})`);
+    if (l.hledger) {
+      const r = (l.K1 - l.K0) - l.hledger.total();
+      const scale = Math.max(1, Math.abs(l.K0), Math.abs(l.K1), l.hledger.magnitude());
+      if (!(Math.abs(r) <= tol * scale)) problems.push(`${l.name}: helicity books do not close (residual ${r})`);
+    }
+  }
+  const pair = (booksOf, valueOf, what) => {
+    const tags = new Map();
+    for (const l of byName.values()) {
+      for (const e of booksOf(l)?.entries ?? []) {
+        if (e.port !== 'gateway' && e.port !== MERGE_PORT) continue;
+        if (e.tag === undefined) {
+          if (e.port === MERGE_PORT || l.parent !== null) problems.push(`${l.name}: untagged ${what} entry on port ${e.port}`);
+          continue;
+        }
+        if (!tags.has(e.tag)) tags.set(e.tag, []);
+        tags.get(e.tag).push({ l, e });
+      }
+    }
+    for (const [tag, list] of tags) {
+      const [a, b] = list;
+      const linked = list.length === 2 && a.e.port === b.e.port && (a.l.parent === b.l.name || b.l.parent === a.l.name);
+      if (!linked || valueOf(a.e) !== -valueOf(b.e)) problems.push(`${what} tag ${tag}: not one opposite pair on a parent and its child`);
+    }
+  };
+  pair(l => l.ledger, e => e.joules, 'energy');
+  pair(l => l.hledger, e => e.dK, 'helicity');
+  return { ok: problems.length === 0, problems };
 }

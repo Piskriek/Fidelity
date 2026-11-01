@@ -3,9 +3,12 @@
  * Tests for scripts/wave0_reference.mjs (`B178`), based on the physics brief's invariants T1–T6
  * (bench/2026-10-31-wave0/vortex_hypothesis.md §5.4) and the §8.6 memory and soul-line rules.
  * T6 checks the stored model results (taylor_relax_results.json), not a fresh run; T2 does not cover merges.
+ * The "Bridge" tests cover the bridge section: its default path against a frozen copy of the R38 module, and each option
+ * run through the real functions.
  * Usage: node scripts/wave0_reference_test.mjs   (exit code 1 on any failure)
  */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +17,13 @@ import {
   stepToroidRelaxation, gatewayPower, drawGateway, selectEpisodes, ME_SLOTS, ME_PIN_MAX,
   normalizeMs, formatMsLine, parseMsLine, sessionSave, rebirthTransfer, GATE, P_LOCAL_BY_STAGE, BIRTH,
 } from './wave0_reference.mjs';
+import * as wave0 from './wave0_reference.mjs';
+import * as r38 from './fixtures/wave0_reference_r38.mjs';
+// Bridge names are read from the namespace, so this file still loads against the R38 module (to record its digest).
+const {
+  bridgeDraw, towerCheck, harvestUp, createHelicityLedger, threePhaseSequence, portFactor, splitAmplitudeBound,
+  splitWithinBound, ANTIDRIVE,
+} = wave0;
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const results = [];
@@ -322,6 +332,393 @@ test('Q3 rebirth scope', 'rebirth carries arch, pol, open causes, debt and chose
   const vessel = rebirthTransfer(record, { vesselTemplate: [1, 0, 0.2, 0.2] });
   assert.ok(close(vessel.ms.s, [0.8 + 0.02, 0.18, 0.4, 0.6]), 'only Pxd and Vtx take from the vessel');
   assert.equal(rebirthTransfer(record, { birth: { vital: 50, strain: 7, hp: 0.9, doses: 1 } }).ms.vital, 50, 'birth values are a parameter');
+});
+
+// ============================================================================
+// Bridge (the section at the end of wave0_reference.mjs)
+// ============================================================================
+// Canonical text of a value, every number as its float64 bit pattern (NaN as one token), so equal text means equal bits.
+function canon(v) {
+  if (typeof v === 'number') {
+    if (Number.isNaN(v)) return 'NaN';
+    const b = new DataView(new ArrayBuffer(8));
+    b.setFloat64(0, v);
+    return `n${b.getBigUint64(0).toString(16)}`;
+  }
+  if (Array.isArray(v)) return `[${v.map(canon).join(',')}]`;
+  if (v && typeof v === 'object') return `{${Object.keys(v).map(k => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}`;
+  return v === undefined ? 'u' : JSON.stringify(v);
+}
+
+// The default path: the R38 functions over a fixed grid of inputs (arithmetic and square roots only, so the bits do not
+// depend on the platform's sin or pow). A thrown error is recorded by its type, not its message (V8 wording varies).
+const Mq = [[2, 0.3, 0], [0.3, 1, 0.1], [0, 0.1, 1.5]];
+const drivenMul = {
+  ...driven,
+  H: x => 0.5 * x.reduce((s, xi, i) => s + xi * Mq[i].reduce((t, m, j) => t + m * x[j], 0), 0) + 0.25 * x[0] * x[0] * x[0] * x[0],
+  gradH: x => Mq.map((row, i) => row.reduce((t, m, j) => t + m * x[j], 0) + (i === 0 ? x[0] * x[0] * x[0] : 0)),
+};
+function defaultPathRuns(W) {
+  const out = [];
+  const run = f => { try { return f(); } catch (e) { return `throws ${e.constructor.name}`; } };
+  const toroids = [toroid0, { ...toroid0, W: 0 }, { ...toroid0, W: 50 }, { ...toroid0, K: 0 }, { ...toroid0, K: -3, W: 30 },
+    { ...toroid0, Wmax: undefined }, { ...toroid0, lambdaGeom: NaN }, { ...toroid0, W: 2 }];
+  const balances = [-1, 0, 0.5, 0.6, 0.62, 0.81, 0.8100001, 0.83, 0.855, 0.89, 0.9, 1, NaN, undefined, Infinity];
+  const supplies = [{ pLocal: 2 }, { stage: 'S3' }, { stage: 'S0a' }, { stage: 'S9' }, { pLocal: NaN }, { pLocal: -1 }, {}];
+  const gates = [{}, { setLevel: 0.6, gateWidth: 0.1 }, { gateWidth: 0 }, { setLevel: NaN }];
+  for (const t of toroids) for (const balance of balances) for (const s of supplies) for (const g of gates) {
+    out.push(run(() => W.gatewayPower({ ...g, ...s, balance, toroid: t })));
+  }
+  for (const t of toroids) for (const balance of [0.62, 0.72, 0.85, 0.95, NaN]) for (const usePool of [false, true]) {
+    const ledger = W.createEnergyLedger();
+    const pool = usePool ? { remaining: 0.3 } : null;
+    let x = { ...t };
+    for (let k = 0; k < 20; k++) {
+      x = W.drawGateway(x, 'entity:7', { ...gate, balance }, 0.1, ledger, pool);
+      x = W.stepToroidRelaxation(x, 0.1, ledger);
+    }
+    out.push([x, ledger.entries, ledger.inflow(), ledger.thermal(), ledger.drawnBy('entity:7'), pool, W.ledgerCloses({ stored0: t.W, stored1: x.W, ledger })]);
+  }
+  for (const dt of [0, -1, NaN, 1e6, 0.05]) {
+    const l = W.createEnergyLedger();
+    out.push([run(() => W.drawGateway({ ...toroid0, W: 49 }, 'e', { ...gate, balance: 0.9, stage: 'S2', pLocal: undefined }, dt, l)), l.entries]);
+  }
+  out.push(run(() => W.drawGateway({ ...toroid0, owner: 'a' }, 'b', { ...gate, balance: 0.9 }, 0.1, W.createEnergyLedger())));
+  out.push(run(() => W.drawGateway({ ...toroid0 }, '', { ...gate, balance: 0.9 }, 0.1, W.createEnergyLedger())));
+  for (const l of [W.createEnergyLedger(), W.createEnergyLedger(null)]) {
+    for (const [port, j] of [['stellar', 1.5], ['ambient', -0.25], ['gateway', 2], ['thermal', 0.75], ['merge', 1], ['zero-point', 1], ['thermal', -1], ['gateway', NaN]]) {
+      out.push(run(() => { l.post(port, j, { entity: 'e' }); return l.entries.length; }));
+    }
+    out.push([l.entries, l.inflow(), l.thermal(), l.magnitude(), l.drawnBy('e')]);
+  }
+  const recs = [record, {}, { ms: { debt: 64, strain: 500, vital: 5, s: [0.9, 0.1, 0.3, 0.7] }, causes: [{ by: 'a', d: 'b', open: true }, { by: 'c', d: 'd', open: 1 }, null] }];
+  const opts = [undefined, {}, { vesselTemplate: [1, 0, 0.2, 0.2] }, { vesselWeight: 0.3 }, { vesselWeight: NaN }, { birth: { vital: 50, strain: 7, hp: 0.9, doses: 1 } }, { birth: { strain: '7' } }];
+  for (const r of recs) for (const o of opts) out.push(run(() => W.rebirthTransfer(r, o)));
+  for (const line of ['ms s=0.1,0.2 vital= strain=abc debt=9.5 hp=0.5 arch=0.5,0.5,0.5 pol=0,0 doses=200', W.formatMsLine(record.ms), '', 'ms', null]) out.push(W.parseMsLine(line));
+  for (const ms of [record.ms, {}, { vital: 500, strain: -4, s: [7, NaN], chose: ['a', 'b c', 'd!', 'e', 'f'] }]) out.push([W.normalizeMs(ms), W.formatMsLine(ms)]);
+  out.push(W.sessionSave(record));
+  out.push(W.selectEpisodes(Array.from({ length: 40 }, (_, t) => (t < 20 ? ep(t, 'heart', 'pride') : ep(t))), [{ by: 'heart', d: 'pride', open: true }]));
+  let x = [0.8, -0.4, 0.3];
+  const pl = W.createEnergyLedger();
+  for (let k = 0; k < 20; k++) {
+    const s = W.stepPortHamiltonian(x, { ...drivenMul, u: [0.3], dt: 0.05 });
+    W.postStep(pl, s, { step: k });
+    out.push([s.x, s.iterations, s.dissipated, s.supplied]);
+    x = s.x;
+  }
+  out.push(pl.entries);
+  out.push([W.GATE, W.P_LOCAL_BY_STAGE, W.BIRTH, W.VESSEL_WEIGHT, W.INFLOW_PORTS, W.THERMAL, W.ME_SLOTS, W.ME_PIN_MAX, W.MS_CHOSE_MAX, W.MS_CHOSE_ID_MAX]);
+  return out;
+}
+// The test compares the live module with the frozen R38 copy in scripts/fixtures (commit a1ed9e0), run on the same Node,
+// so it does not depend on the Node version. SHA-256 of canon(defaultPathRuns(...)) for R38, as recorded on Node 24; a
+// different digest on another Node is reported as a note, not a failure.
+const R38_DEFAULT_DIGEST = 'c191d4882d4ce583410962f1f0f471c5863f9222df3c4ee86fafebb60370ea35';
+
+test('Bridge default path (R38 differential)', 'on a fixed grid of inputs, with no bridge option every R38 function gives the same outputs as the frozen R38 module, bit for bit; bridgeDraw with no option is drawGateway; the D2 options at their off values change nothing', () => {
+  const now = canon(defaultPathRuns(wave0));
+  assert.ok(now === canon(defaultPathRuns(r38)), 'default-path outputs differ from the frozen R38 module');
+  const digest = createHash('sha256').update(now).digest('hex');
+  if (digest !== R38_DEFAULT_DIGEST) console.log(`note: default-path digest ${digest.slice(0, 8)}… differs from the one recorded on Node 24 (${R38_DEFAULT_DIGEST.slice(0, 8)}…)`);
+  const toroids = [toroid0, { ...toroid0, W: 49 }, { ...toroid0, W: 50 }, { ...toroid0, K: 0 }, { ...toroid0, W: NaN }, { ...toroid0, owner: 'other' }];
+  let drew = 0;
+  for (const t of toroids) for (const balance of [0.5, 0.62, 0.72, 0.95, NaN]) for (const dt of [0.1, 1e6, 0, NaN]) for (const usePool of [false, true]) {
+    const la = createEnergyLedger(), lb = createEnergyLedger(), lc = createEnergyLedger();
+    const pa = usePool ? { remaining: 0.3 } : null, pb = usePool ? { remaining: 0.3 } : null, pc = usePool ? { remaining: 0.3 } : null;
+    let a = { ...t }, b = { ...t }, c = { ...t };
+    for (let k = 0; k < 4; k++) {
+      a = drawGateway(a, 'e', { ...gate, balance }, dt, la, pa);
+      const rb = bridgeDraw(b, 'e', { ...gate, balance }, dt, lb, { pool: pb });
+      const rc = usePool ? rb : bridgeDraw(c, 'e', { ...gate, balance }, dt, lc);
+      assert.deepEqual([rb.store, rb.dK, rb.factor, rb.tag], [null, 0, 1, null]);
+      b = rb.toroid;
+      c = usePool ? b : rc.toroid;
+    }
+    assert.equal(canon([b, lb.entries, pb]), canon([a, la.entries, pa]), `bridgeDraw = drawGateway for ${JSON.stringify({ t, balance, dt, usePool })}`);
+    if (!usePool) assert.equal(canon([c, lc.entries]), canon([a, la.entries]));
+    drew += la.entries.length;
+  }
+  assert.ok(drew > 0, 'the comparison includes real draws');
+  assert.throws(() => bridgeDraw({ ...toroid0 }, '', { ...gate, balance: 0.9 }, 0.1, createEnergyLedger()), /named entity/);
+  const recs = [record, { ...record, ms: { ...record.ms, debt: 64 } }, {}];
+  const off = [{}, { reviewShare: 0, reviewed: true }, { reviewShare: 0.5 }, { reviewShare: 0.5, reviewed: 'yes' }, { reviewShare: NaN, reviewed: true },
+    { strainPerOpenCause: 0 }, { strainPerOpenCause: NaN }, { strainPerOpenCause: -5 }];
+  for (const r of recs) for (const o of off) assert.equal(canon(rebirthTransfer(r, o)), canon(rebirthTransfer(r)), `D2 off: ${JSON.stringify(o)}`);
+  assert.throws(() => createEnergyLedger({ merge: false }).post('merge', 1), /undeclared/);
+});
+
+const level = (name, merge = false) => ({ name, ledger: createEnergyLedger({ merge }), hledger: createHelicityLedger() });
+const params95 = { balance: 0.95, stage: 'S3' };
+
+test('Bridge books', 'a draw from the enclosing level: the child\'s credit and the source\'s debit are the reported E under one tag, on energy and helicity; each store moves by exactly E, dK = sign(K) · E / Λ in the toroid\'s own handedness; the tower check passes', () => {
+  for (const K of [2, -2]) {
+    const parent = level('planet'), child = level('e1');
+    const store0 = { id: 'planet', W: 400, K: 400, lambdaGeom: 4.955 / 3, Wmax: 1500 };
+    const t0 = { ...toroid0, K };
+    const r = bridgeDraw(t0, 'e1', { balance: 0.95, stage: 'S1' }, 0.1, child.ledger, { source: { ...parent, store: store0 }, lambda: 3, hledger: child.hledger });
+    assert.ok(r.E > 0 && r.E === r.requested, `E ${r.E}`);
+    assert.ok(near(r.E, gatewayPower({ balance: 0.95, stage: 'S1', toroid: t0 }).P * 0.1), 'the R38 rate law sets E');
+    const [ce] = child.ledger.entries, [pe] = parent.ledger.entries;
+    assert.deepEqual([ce.port, ce.joules, ce.tag, ce.entity, pe.port, pe.joules, pe.tag], ['gateway', r.E, r.tag, 'e1', 'gateway', -r.E, r.tag]);
+    assert.deepEqual([child.ledger.entries.length, parent.ledger.entries.length], [1, 1]);
+    assert.ok(typeof r.tag === 'string' && r.tag.startsWith('planet>e1#'));
+    assert.equal(r.dK, Math.sign(K) * r.E / 3);
+    assert.deepEqual([child.hledger.entries.map(e => [e.dK, e.tag]), parent.hledger.entries.map(e => [e.dK, e.tag])], [[[r.dK, r.tag]], [[-r.dK, r.tag]]]);
+    assert.ok(Object.is(r.toroid.W, t0.W + r.E) && Object.is(r.toroid.K, K + r.dK), 'the toroid moves by exactly what was booked');
+    assert.ok(Object.is(r.store.W, store0.W - r.E) && Object.is(r.store.K, store0.K - r.dK), 'the store moves by exactly what was booked');
+    assert.ok(Math.abs(r.toroid.K) > Math.abs(K), 'charge in the toroid\'s own handedness');
+    assert.deepEqual([r.store.id, r.store.Wmax, store0.W], ['planet', 1500, 400], 'the store is returned as a copy; the caller\'s is untouched');
+    const chk = towerCheck([
+      { ...parent, parent: null, stored0: store0.W, stored1: r.store.W, K0: store0.K, K1: r.store.K },
+      { ...child, parent: 'planet', stored0: t0.W, stored1: r.toroid.W, K0: K, K1: r.toroid.K },
+    ]);
+    assert.ok(chk.ok, chk.problems.join('; '));
+  }
+  const second = level('p'), c2 = level('c');
+  const s1 = bridgeDraw({ ...toroid0 }, 'c', params95, 0.01, c2.ledger, { source: { ...second, store: { W: 400 } } });
+  const s2 = bridgeDraw(s1.toroid, 'c', params95, 0.01, c2.ledger, { source: { ...second, store: s1.store } });
+  assert.ok(s1.tag !== s2.tag && s1.store.K === undefined, 'tags are unique per draw; without Λ no K is added to the store');
+  const stuck = [[{ W: NaN }, {}], [{ W: -1 }, {}], [{ W: 400, K: NaN }, { lambda: 3 }], [{ W: 5 }, { floor: 6 }], [{ W: 5, K: 20, lambdaGeom: 1 }, {}]];
+  for (const [store, extra] of stuck) {
+    const p = level('p'), c = level('c');
+    const r = bridgeDraw({ ...toroid0 }, 'c', params95, 0.01, c.ledger, { source: { ...p, store, floor: extra.floor }, lambda: extra.lambda, hledger: c.hledger });
+    assert.ok(Object.is(r.E, 0) && p.ledger.entries.length + c.ledger.entries.length === 0 && r.toroid.W === toroid0.W, `nothing moves from ${JSON.stringify(store)} ${JSON.stringify(extra)}`);
+  }
+  assert.throws(() => createHelicityLedger().post('zero-point', 1), /undeclared helicity port/);
+  assert.throws(() => createHelicityLedger().post('gateway', NaN), /non-finite/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'c', params95, 0.1, createEnergyLedger(), { lambda: 0, hledger: createHelicityLedger() }), /positive finite/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'c', params95, 0.1, createEnergyLedger(), { lambda: 3 }), /helicity ledger/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'c', params95, 0.1, createEnergyLedger(), { source: { name: 'p', ledger: createEnergyLedger(), store: { W: 1 }, floor: NaN } }), /floor/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'c', params95, 0.1, createEnergyLedger(), { source: { ledger: createEnergyLedger(), store: { W: 1 } } }), /needs a name/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'c', params95, 0.1, createEnergyLedger(), { source: { name: 'p', store: { W: 1 } } }), /energy ledger/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'c', params95, 0.1, createEnergyLedger(), { source: { name: 'p', ledger: createEnergyLedger(), store: { W: 1 } }, lambda: 3, hledger: createHelicityLedger() }), /source's helicity ledger/);
+});
+
+test('Bridge ladder', 'parent-to-child draws down the stage ladder S6 → S0a: where a source floor binds, the draw stops at it and E / P_local is the same at every rung; with helicity neither side ends below its Taylor floor; a three-level tower with relaxation at every level closes', () => {
+  const stages = Object.keys(P_LOCAL_BY_STAGE);
+  const rows = [];
+  for (let k = 0; k + 1 < stages.length; k++) {
+    const up = stages[k + 1], s = P_LOCAL_BY_STAGE[up];
+    const params = { balance: 0.95, stage: up };
+    const t = { id: stages[k], W: 10 * s, K: 2 * s, lambdaGeom: 4.955, kappa: 0.5, Wmax: 50 * s };
+    // (a) a floor given as an option binds
+    const pool = { remaining: 10 * s };
+    const a = bridgeDraw(t, `e${k}`, params, 1, createEnergyLedger(), { source: { ...level(up), store: { W: 30 * s }, floor: 29.8 * s }, pool });
+    assert.ok(a.E > 0 && a.E < a.requested, `rung ${k}: the floor binds (${a.E} of ${a.requested})`);
+    assert.ok(a.store.W >= 29.8 * s && a.store.W - 29.8 * s <= 1e-12 * s, `rung ${k}: stops at the floor (${a.store.W - 29.8 * s} above)`);
+    assert.ok(Object.is(pool.remaining, 10 * s - a.E), 'the pool is charged what was drawn, not what was asked');
+    // (b) the source's own Taylor floor binds, with helicity
+    const pb = level(up), cb = level(stages[k]);
+    const b = bridgeDraw(t, `e${k}`, params, 1, cb.ledger, { source: { ...pb, store: { W: 30 * s, K: 59.6 * s, lambdaGeom: 1 } }, lambda: 4.955, hledger: cb.hledger });
+    assert.ok(b.E > 0 && b.E < b.requested && b.store.W >= toroidFloor(b.store) && b.toroid.W >= toroidFloor(b.toroid), `rung ${k}: Taylor floors hold`);
+    assert.ok(b.store.W - toroidFloor(b.store) <= 1e-12 * s, `rung ${k}: the source stops at its Taylor floor`);
+    // (c) the child's Taylor floor binds: a charge with too little energy per unit helicity (Λ < λ/2)
+    const cc = level(stages[k]);
+    const c = bridgeDraw({ ...t, W: 5 * s }, `e${k}`, params, 1, cc.ledger, { lambda: 1, hledger: cc.hledger });
+    assert.ok(c.E > 0 && c.E < c.requested && c.toroid.W >= toroidFloor(c.toroid) && c.toroid.W - toroidFloor(c.toroid) <= 1e-12 * s, `rung ${k}: the child stops at its Taylor floor`);
+    rows.push([a.E / s, a.requested / s, b.E / s, b.dK / s, c.E / s]);
+  }
+  for (const row of rows) row.forEach((v, j) => assert.ok(near(v, rows[0][j], 1e-12), `E / P_local differs across rungs in column ${j}: ${v} vs ${rows[0][j]}`));
+  assert.ok(near(rows[0][0], 0.2, 1e-12), `the option floor leaves 0.2 · P_local to draw, got ${rows[0][0]}`);
+
+  const names = ['S2', 'S1', 'S0a'];
+  const lv = names.map(n => level(n));
+  let ts = [{ id: 'S2', W: 300, K: 200, lambdaGeom: 1.2, kappa: 0.05, Wmax: 900 }, { id: 'S1', W: 60, K: 30, lambdaGeom: 2.5, kappa: 0.2, Wmax: 200 }, { ...toroid0, id: 'S0a' }];
+  const init = ts.map(t => ({ ...t }));
+  for (let k = 0; k < 300; k++) {
+    ts[0] = bridgeDraw(ts[0], 'S2', { balance: 0.95, stage: 'S3' }, 0.1, lv[0].ledger, { lambda: 2, hledger: lv[0].hledger }).toroid;
+    for (let i = 1; i < 3; i++) {
+      const r = bridgeDraw(ts[i], names[i], { balance: [0, 0.9, 0.86][i], stage: names[i - 1] }, 0.1, lv[i].ledger,
+        { source: { ...lv[i - 1], store: ts[i - 1] }, lambda: 2, hledger: lv[i].hledger });
+      ts[i] = r.toroid;
+      ts[i - 1] = r.store;
+    }
+    ts = ts.map((t, i) => stepToroidRelaxation(t, 0.1, lv[i].ledger));
+  }
+  const levels = names.map((n, i) => ({ ...lv[i], parent: i === 0 ? null : names[i - 1], stored0: init[i].W, stored1: ts[i].W, K0: init[i].K, K1: ts[i].K }));
+  const chk = towerCheck(levels);
+  assert.ok(chk.ok, chk.problems.join('; '));
+  for (let i = 0; i < 3; i++) {
+    assert.ok(lv[i].ledger.entries.some(e => e.port === 'gateway' && e.joules > 0), `${names[i]} drew`);
+    assert.ok(lv[i].ledger.thermal() > 0, `${names[i]} booked its dissipation to its own thermal sink`);
+    assert.ok(ts[i].W >= toroidFloor(ts[i]) - 1e-12 * ts[i].W, `${names[i]} stays realizable`);
+  }
+});
+
+test('Bridge gate closed', 'through the composed draw (source, helicity, phased port): at or below 0.81, on a missing or non-finite balance, an unknown stage or no supply, nothing moves either way and nothing is booked on either side', () => {
+  const run = (params, port) => {
+    const parent = level('p'), child = level('c');
+    const store = { W: 400, K: 50, lambdaGeom: 1 };
+    const r = bridgeDraw({ ...toroid0, W: 30 }, 'c', params, 0.1, child.ledger, { source: { ...parent, store }, lambda: 3, hledger: child.hledger, port });
+    return { r, n: [parent.ledger, child.ledger, parent.hledger, child.hledger].reduce((s, l) => s + l.entries.length, 0), store };
+  };
+  const tp = (order, antidrive) => ({ type: 'three-phase', order, phase: Math.PI / 2, antidrive });
+  for (const port of [null, tp(1, 'reverse'), tp(2, 'reverse')]) {
+    const closed = [-1, 0, 0.5, 0.8, 0.81, NaN, -Infinity, undefined].map(balance => ({ balance, stage: 'S3' }))
+      .concat([{ stage: 'S3' }, { balance: 0.95, stage: 'S9' }, { balance: 0.95 }, { balance: 0.95, pLocal: NaN }]);
+    for (const params of closed) {
+      const { r, n, store } = run(params, port);
+      assert.ok(Object.is(r.E, 0) && n === 0 && r.tag === null, `moved ${r.E} with ${n} entries at ${JSON.stringify(params)}, port ${port?.order}`);
+      assert.deepEqual([r.toroid, r.store], [{ ...toroid0, W: 30 }, store]);
+    }
+    const open = run(params95, port).r.E;
+    assert.ok(port?.order === 2 ? open < 0 : open > 0, `the open gate does move (port ${port?.order}: ${open})`);
+  }
+});
+
+test('Bridge antidrive', 'the phased port: the antidrive handling must be named; orders 1, 4, 7 drive at sin(phase) > 0, 3, 6, 9 move nothing; antidrive (orders 2, 5, 8, or sin(phase) < 0, both together included) closes the port under \'close\' and runs it backwards under \'reverse\', returning energy and charge to the source, never below the toroid\'s floor, never past K = 0 nor past the source\'s Wmax', () => {
+  const tp = (order, phase, antidrive) => ({ type: 'three-phase', order, phase, antidrive });
+  assert.throws(() => portFactor({ type: 'three-phase', order: 2, phase: 1 }), /owner's decision/);
+  assert.throws(() => bridgeDraw({ ...toroid0 }, 'e', params95, 0.1, createEnergyLedger(), { port: { type: 'three-phase', order: 1, phase: 1 } }), /owner's decision/);
+  assert.throws(() => portFactor({ type: 'dc', antidrive: 'close' }), /unknown port type/);
+  for (const order of [1.5, -1, NaN, undefined]) assert.throws(() => portFactor(tp(order, 1, 'close')), /whole number/);
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(threePhaseSequence), [0, 1, -1, 0, 1, -1, 0, 1, -1, 0]);
+  assert.deepEqual(ANTIDRIVE, ['close', 'reverse']);
+  const draw = (port, t = toroid0, dt = 0.01) => { const ledger = createEnergyLedger(); const r = bridgeDraw({ ...t }, 'e', params95, dt, ledger, { port }); return { r, ledger }; };
+  const full = draw(null).r.E;
+  assert.ok(full > 0);
+  for (const order of [1, 4, 7]) assert.ok(Object.is(draw(tp(order, Math.PI / 2, 'close')).r.E, full), `order ${order}`);
+  assert.ok(near(draw(tp(1, Math.PI / 6, 'close')).r.E, Math.sin(Math.PI / 6) * full, 1e-15), 'sin(phase) scales the draw');
+  for (const port of [tp(3, Math.PI / 2, 'close'), tp(6, Math.PI / 2, 'reverse'), tp(9, 1, 'reverse'), tp(3, -Math.PI / 2, 'reverse'), tp(1, 0, 'reverse'), tp(1, NaN, 'reverse'), tp(2, Infinity, 'reverse')]) {
+    const { r, ledger } = draw(port);
+    assert.ok(Object.is(r.E, 0) && ledger.entries.length === 0 && r.factor === 0, `nothing moves for ${JSON.stringify(port)}`);
+  }
+  for (const port of [tp(2, Math.PI / 2, 'close'), tp(5, 1, 'close'), tp(8, 1, 'close'), tp(1, -Math.PI / 2, 'close'), tp(4, 4, 'close'),
+    tp(2, -Math.PI / 2, 'close'), tp(5, -1, 'close'), tp(8, 4, 'close')]) {
+    const { r, ledger } = draw(port, { ...toroid0, W: 30 });
+    assert.ok(Object.is(r.E, 0) && ledger.entries.length === 0 && r.factor < 0, `'close' moves nothing for ${JSON.stringify(port)}`);
+  }
+  assert.deepEqual([portFactor(tp(2, -Math.PI / 2, 'close')), portFactor(tp(5, -1, 'close'))], [-1, -Math.sin(1)], 'a negative sequence at a negative phase is antidrive at |sin(phase)|');
+  assert.ok(Object.is(draw(tp(2, -Math.PI / 2, 'reverse'), { ...toroid0, W: 30 }).r.E, draw(tp(2, Math.PI / 2, 'reverse'), { ...toroid0, W: 30 }).r.E), 'both negative reverses like one');
+  const parent = level('p'), child = level('c'), pool = { remaining: 0.3 };
+  const store = { W: 400, K: 50, lambdaGeom: 1, Wmax: 1000 };
+  const t = { ...toroid0, W: 30 };
+  const r = bridgeDraw(t, 'c', params95, 0.01, child.ledger, { source: { ...parent, store }, lambda: 3, hledger: child.hledger, port: tp(2, Math.PI / 2, 'reverse'), pool });
+  assert.ok(r.E < 0 && r.factor === -1 && near(r.E, -gatewayPower({ ...params95, toroid: t }).P * 0.01, 1e-15), `reversed at the same rate law: ${r.E}`);
+  assert.ok(Object.is(r.toroid.W, 30 + r.E) && Object.is(r.store.W, 400 - r.E) && r.store.W > 400, 'the energy returns to the source');
+  assert.ok(r.dK < 0 && Math.abs(r.toroid.K) < Math.abs(t.K) && Object.is(r.store.K, 50 - r.dK), 'antidrive takes charge out of the toroid');
+  assert.deepEqual([child.ledger.entries[0].joules, parent.ledger.entries[0].joules], [r.E, -r.E]);
+  assert.equal(pool.remaining, 0.3, 'a reversed flow leaves the pool untouched');
+  assert.ok(near(draw(tp(2, Math.PI / 6, 'reverse'), t).r.E, Math.sin(Math.PI / 6) * r.E, 1e-15), 'a partial factor reverses a partial flow');
+  const chk = towerCheck([{ ...parent, parent: null, stored0: 400, stored1: r.store.W, K0: 50, K1: r.store.K }, { ...child, parent: 'p', stored0: 30, stored1: r.toroid.W, K0: t.K, K1: r.toroid.K }]);
+  assert.ok(chk.ok, chk.problems.join('; '));
+  const big = bridgeDraw(t, 'c', params95, 1e6, createEnergyLedger(), { port: tp(2, Math.PI / 2, 'reverse') });
+  assert.ok(big.E < 0 && big.toroid.W >= toroidFloor(big.toroid) && big.toroid.W - toroidFloor(big.toroid) <= 1e-12 * 30, `a huge reversed step stops at the toroid's floor: W ${big.toroid.W}, floor ${toroidFloor(big.toroid)}`);
+  // With helicity, a reversed flow returns at most the charge the toroid holds: K stops at 0, never in the other handedness.
+  for (const K0 of [2, -2]) for (const lambda of [0.01, 0.1, 3]) for (const dt of [0.01, 0.05, 0.2, 1e6]) {
+    const src = { ...level('q'), store: { W: 400, K: 50, lambdaGeom: 1 } }, ch = createHelicityLedger();
+    const rv = bridgeDraw({ ...t, K: K0 }, 'c', params95, dt, createEnergyLedger(), { source: src, port: tp(2, Math.PI / 2, 'reverse'), lambda, hledger: ch });
+    const K1 = rv.toroid.K;
+    assert.ok(rv.E < 0 && Math.sign(K1) !== -Math.sign(K0) && Math.abs(K1) <= Math.abs(K0) && rv.toroid.W >= toroidFloor(rv.toroid), `K ${K0} → ${K1} (Λ ${lambda}, dt ${dt})`);
+    assert.ok(Math.abs(src.hledger.total()) <= Math.abs(K0) && Object.is(ch.total(), -src.hledger.total()), `the source receives at most the toroid's charge (Λ ${lambda}, dt ${dt})`);
+    if (dt === 1e6) assert.ok(Math.abs(K1) <= 1e-12 * Math.abs(K0) || rv.toroid.W - toroidFloor(rv.toroid) <= 1e-12 * 30, `a huge reversed step stops at K = 0 or the floor (Λ ${lambda}): K ${K1}`);
+  }
+  const lone = createEnergyLedger();
+  const out = bridgeDraw(t, 'c', params95, 0.01, lone, { port: tp(1, -Math.PI / 2, 'reverse') });
+  assert.ok(out.E < 0 && lone.drawnBy('c') === out.E && ledgerCloses({ stored0: 30, stored1: out.toroid.W, ledger: lone }).ok, 'without a source the energy leaves through the gateway port, booked');
+  const full2 = bridgeDraw(t, 'c', params95, 1e6, createEnergyLedger(), { source: { ...level('q'), store: { W: 999.99, Wmax: 1000 } }, port: tp(2, Math.PI / 2, 'reverse') });
+  assert.ok(full2.E < 0 && full2.store.W <= 1000 && 1000 - full2.store.W <= 1e-9, `never past the source's Wmax: ${full2.store.W}`);
+});
+
+test('Bridge D2 rebirth', 'D2 options on rebirthTransfer: a review heals the given share of debt only when reviewed is true; each open cause adds the given strain at birth; everything else is the R38 transfer', () => {
+  const r64 = { ...record, ms: { ...record.ms, debt: 64 }, causes: [...record.causes, { by: 'a', d: 'b', open: true }, { by: 'c', d: 'd', open: false }] };
+  const base = rebirthTransfer(r64);
+  assert.deepEqual([base.ms.debt, base.ms.strain, base.causes.length], [64, 0, 2]);
+  const debt = o => rebirthTransfer(r64, o).ms.debt;
+  assert.deepEqual([debt({ reviewShare: 0.25 }), debt({ reviewShare: 0.25, reviewed: 1 }), debt({ reviewShare: 0.25, reviewed: true })], [64, 64, 48], 'no review, no healing');
+  assert.deepEqual([debt({ reviewShare: 0.5, reviewed: true }), debt({ reviewShare: 1, reviewed: true }), debt({ reviewShare: 0, reviewed: true }), debt({ reviewShare: 7, reviewed: true })], [32, 0, 64, 0]);
+  assert.equal(rebirthTransfer(record, { reviewShare: 0.5, reviewed: true }).ms.debt, 4, 'debt 9 halved is truncated to 4, like every debt value');
+  const strain = (rec, o) => rebirthTransfer(rec, o).ms.strain;
+  assert.deepEqual([strain(r64, { strainPerOpenCause: 25 }), strain(record, { strainPerOpenCause: 25 }), strain({ ...record, causes: [] }, { strainPerOpenCause: 25 })], [50, 25, 0], 'strain per open cause, closed causes not counted');
+  assert.equal(strain(r64, { strainPerOpenCause: 300 }), 500, 'strain stays within its range');
+  assert.equal(strain(r64, { strainPerOpenCause: 25, birth: { ...BIRTH, strain: 7 } }), 57, 'added to the birth strain');
+  const both = rebirthTransfer(r64, { reviewShare: 0.5, reviewed: true, strainPerOpenCause: 10 });
+  assert.deepEqual({ ...both, ms: { ...both.ms, debt: base.ms.debt, strain: base.ms.strain } }, base, 'nothing else changes');
+  assert.deepEqual([both.ms.debt, both.ms.strain], [32, 20]);
+});
+
+test('Bridge harvest', 'harvest books nothing by default (merge only when merge is exactly true); merge moves the whole toroid up with mirrored energy and helicity entries and the tower closes; a merge that would leave the parent below its Taylor floor is refused; helicity is booked on both sides or neither; only a ledger built with the merge port takes it', () => {
+  const t = { ...toroid0, id: 'e1' };
+  const parent = { ...level('planet', true), store: { id: 'planet', W: 400, K: 300, lambdaGeom: 2 } };
+  const child = level('e1', true);
+  const count = () => [parent.ledger, child.ledger, parent.hledger, child.hledger].reduce((s, l) => s + l.entries.length, 0);
+  const ro = harvestUp(t, { child, parent });
+  assert.ok(!ro.merged && count() === 0, 'the default books nothing');
+  for (const merge of [1, 'yes', {}]) assert.ok(!harvestUp(t, { merge, child, parent }).merged && count() === 0, `merge only on true, not ${JSON.stringify(merge)}`);
+  assert.deepEqual([ro.toroid, ro.store, ro.readout], [t, parent.store, { W: 10, K: 2, coherence: toroidCoherence(t) }]);
+  const m = harvestUp(t, { merge: true, child, parent });
+  assert.ok(m.merged && m.toroid.W === 0 && m.toroid.K === 0 && m.store.W === 410 && m.store.K === 302 && parent.store.W === 400);
+  assert.deepEqual([parent.ledger.entries[0].joules, child.ledger.entries[0].joules, parent.hledger.entries[0].dK, child.hledger.entries[0].dK], [10, -10, 2, -2]);
+  assert.ok([parent.ledger, child.ledger, parent.hledger, child.hledger].every(l => l.entries[0].tag === m.tag && l.entries[0].port === 'merge'));
+  const chk = towerCheck([{ ...parent, parent: null, stored0: 400, stored1: m.store.W, K0: 300, K1: m.store.K }, { ...child, parent: 'planet', stored0: 10, stored1: 0, K0: 2, K1: 0 }]);
+  assert.ok(chk.ok, chk.problems.join('; '));
+  const tight = { ...level('p', true), store: { W: 301.5, K: 300, lambdaGeom: 2 } }, c2 = level('c', true);
+  const refused = harvestUp({ W: 1, K: 10 }, { merge: true, child: c2, parent: tight });
+  assert.ok(!refused.merged && refused.refused && tight.ledger.entries.length === 0 && c2.ledger.entries.length === 0, 'refused below the parent\'s floor, nothing booked');
+  assert.ok(harvestUp({ W: 1, K: -10 }, { merge: true, child: c2, parent: tight }).merged, 'opposite charge lowers the floor, so it merges');
+  const full = { ...level('f', true), store: { W: 45, Wmax: 50 } }, c3 = level('c3', true);
+  for (const bad of [{ W: 6 }, { W: NaN }, { W: -1 }, { W: 1, K: NaN }]) {
+    const out = harvestUp(bad, { merge: true, child: c3, parent: full });
+    assert.ok(!out.merged && out.refused && full.ledger.entries.length + c3.ledger.entries.length === 0, `refused: ${JSON.stringify(bad)}`);
+  }
+  assert.ok(harvestUp({ W: 5 }, { merge: true, child: c3, parent: full }).merged, 'a merge that exactly fills the parent is allowed');
+  assert.throws(() => harvestUp(t, { merge: true, child: { name: 'c', ledger: createEnergyLedger({ merge: true }) }, parent }), /both sides or on neither/);
+  assert.throws(() => harvestUp(t, { merge: true, child: { name: 'c', ledger: createEnergyLedger() }, parent: { name: 'p', ledger: createEnergyLedger(), store: { W: 1 } } }), /undeclared energy port: merge/);
+});
+
+test('Bridge tower check', 'the tower check passes a correct tower and fails each broken one, each on the check it targets: a one-sided draw below the root, a store not debited, a debit of the wrong size, a reused tag, unclosed helicity (also by 1e-9), helicity mirrored under another tag, siblings sharing a tag, a gateway entry paired with a merge entry, an untagged merge on the root, an unknown parent (also with no draws), a missing parent, a cycle and a level with no energy ledger', () => {
+  const build = () => {
+    const parent = level('p', true), child = level('c', true);
+    const r = bridgeDraw({ ...toroid0 }, 'c', params95, 0.01, child.ledger, { source: { ...parent, store: { W: 400, K: 50, lambdaGeom: 1 } }, lambda: 3, hledger: child.hledger });
+    const levels = [{ ...parent, parent: null, stored0: 400, stored1: r.store.W, K0: 50, K1: r.store.K }, { ...child, parent: 'p', stored0: toroid0.W, stored1: r.toroid.W, K0: toroid0.K, K1: r.toroid.K }];
+    return { levels, parent, child, r };
+  };
+  assert.ok(towerCheck(build().levels).ok);
+  // Each broken tower must report the problem its check gives. Every other book stays closed, so each fails on that
+  // check alone, except the unknown and missing parent cases on the drawn pair, which also break its link.
+  const add = (x, name, parent, stored0, stored1, K0 = 0, K1 = 0) => { const l = { ...level(name, true), parent, stored0, stored1, K0, K1 }; x.levels.push(l); return l; };
+  const broken = {
+    'one-sided draw below the root': [/c: untagged energy entry on port gateway/, x => { x.levels[1].stored1 = drawGateway(x.r.toroid, 'c', params95, 0.01, x.child.ledger).W; }],
+    'store not debited': [/p: energy books do not close/, x => { x.levels[0].stored1 = 400; }],
+    'debit of the wrong size': [/energy tag .*not one opposite pair/, x => { x.parent.ledger.entries[0].joules *= 2; }],
+    'reused tag': [/energy tag .*not one opposite pair/, x => { x.child.ledger.post('gateway', x.r.E, { entity: 'c', tag: x.r.tag }); x.levels[1].stored1 += x.r.E; }],
+    'helicity not closed': [/c: helicity books do not close/, x => { x.levels[1].K1 = toroid0.K; }],
+    'helicity off by 1e-9': [/c: helicity books do not close/, x => { x.levels[1].K1 += 1e-9; }],
+    'helicity mirrored under another tag': [/helicity tag .*not one opposite pair/, x => { x.parent.hledger.entries[0].tag = 'other'; }],
+    'siblings share a tag': [/energy tag T: not one opposite pair/, x => {
+      add(x, 'a', 'p', 0, 2).ledger.post('gateway', 2, { entity: 'a', tag: 'T' });
+      add(x, 'b', 'p', 2, 0).ledger.post('gateway', -2, { entity: 'b', tag: 'T' });
+    }],
+    'gateway paired with merge': [/energy tag Z: not one opposite pair/, x => {
+      x.child.ledger.post('gateway', 2, { entity: 'c', tag: 'Z' }); x.levels[1].stored1 += 2;
+      x.parent.ledger.post('merge', -2, { tag: 'Z' }); x.levels[0].stored1 -= 2;
+    }],
+    'untagged merge on the root': [/p: untagged energy entry on port merge/, x => { x.parent.ledger.post('merge', 5, {}); x.levels[0].stored1 += 5; }],
+    'unknown parent': [/c: parent must be a level/, x => { x.levels[1].parent = 'q'; }],
+    'unknown parent, no draws': [/z: parent must be a level/, x => { add(x, 'z', 'nowhere', 1, 1); }],
+    'missing parent': [/c: parent must be a level/, x => { delete x.levels[1].parent; }],
+    'cycle': [/the parent chain has a cycle/, x => { x.levels[0].parent = 'c'; }],
+    'repeated level name': [/repeated/, x => { x.levels.push({ ...x.levels[1] }); }],
+    'no energy ledger': [/q: no energy ledger/, x => { x.levels.push({ name: 'q', parent: 'p', stored0: 0, stored1: 0 }); }],
+  };
+  for (const [what, [expected, breakIt]] of Object.entries(broken)) {
+    const x = build();
+    breakIt(x);
+    const chk = towerCheck(x.levels);
+    assert.ok(!chk.ok, `the tower check passed a tower with: ${what}`);
+    assert.ok(chk.problems.some(p => expected.test(p)), `${what}: expected ${expected}, got ${chk.problems.join('; ')}`);
+  }
+});
+
+test('Bridge split bound', 'the split bound ½√(1 − c²): 0.5 at c = 0, 0 at c = 1, 0.4 at c = 0.6 and 0.3 at c = 0.8, 0 outside [0, 1]; amplitudes within it pass and beyond it fail (either sign); the helicity ledger sums signed entries and their magnitude', () => {
+  assert.deepEqual([splitAmplitudeBound(0), splitAmplitudeBound(1)], [0.5, 0]);
+  assert.ok(near(splitAmplitudeBound(0.6), 0.4) && near(splitAmplitudeBound(0.8), 0.3));
+  for (const c of [NaN, -0.1, 1.1, Infinity, undefined]) assert.equal(splitAmplitudeBound(c), 0, `c = ${c}`);
+  assert.ok(splitWithinBound(0.4, 0.6).ok && splitWithinBound(-0.39, 0.6).ok && splitWithinBound(0, 1).ok);
+  for (const [a, c] of [[0.41, 0.6], [-0.41, 0.6], [NaN, 0.6], [0.1, NaN], [0.01, 1], [0.1, 1.2]]) assert.ok(!splitWithinBound(a, c).ok, `a = ${a}, c = ${c}`);
+  const hl = createHelicityLedger();
+  hl.post('gateway', 2); hl.post('merge', -3);
+  assert.deepEqual([hl.total(), hl.magnitude()], [-1, 5], 'the helicity ledger sums signed entries and their magnitude');
 });
 
 const failed = results.filter(r => !r.ok);
