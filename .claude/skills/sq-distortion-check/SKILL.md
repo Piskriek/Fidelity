@@ -11,4 +11,4 @@ This file is a pointer, not the Skill. The canonical Skill is `SQ_DISTORTION_CHE
 2. Apply it: Document-Audit Mode for a plan, spec or handoff document; Step 0.7 (the 3/6/9 check plus the plain check) on plans, designs and replies.
 3. Never force a third, and describe fit, not worth.
 
-Do not copy the Skill's content here. Edit the root file; this pointer stays valid.
+Do not copy the Skill's content here. Edit the root file; this pointer stays valid. Its twin for the installed plugin is `skills/sq-distortion-check/SKILL.md`, which adds notes for use outside this repository; change the steps they share in both together.

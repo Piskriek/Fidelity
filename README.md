@@ -1,6 +1,30 @@
 # Fidelity
 The Fidelity Simulated Universe incl. Harness/Universe Translator
 
+## Install
+
+The `fidelity` plugin installs a copy of this repository and adds one skill, `sq-distortion-check`. That skill tells the agent to read `SQ_DISTORTION_CHECK_V9_SKILL.md` (the Skill) and apply it.
+
+Claude Code:
+
+```bash
+claude plugin marketplace add Piskriek/Fidelity
+claude plugin install fidelity@fidelity
+```
+
+Codex:
+
+```bash
+codex plugin marketplace add Piskriek/Fidelity
+codex plugin add fidelity@fidelity
+```
+
+The agent can load the skill when you plan, design, audit a document or check your own reply before sending it. In Claude Code you can also call it with `/fidelity:sq-distortion-check`. Each use has the agent read the Skill, a 47 KB file of about 6,600 words.
+
+In Claude Code, no version is pinned, so each commit counts as a new version, and this marketplace does not auto-update by default. To update there, run `claude plugin marketplace update fidelity`, then `claude plugin update fidelity@fidelity`. For Codex, see its plugin documentation.
+
+For other agents, have them read `AGENTS.md` in this repository.
+
 ## Repository map
 
 | Path | What it is |
@@ -9,6 +33,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 | `FIDELITY_COMPLETE_BRS_V2.md` | Artifact 2, THE PLAN: clean-slate constitution, Parts 1–9, defect ledger and open-item register (§8.1) |
 | `ARGON_OPUS_MASTER_RESUME_V2.md` | Artifact 3, THE RESUME: checkpoint, shorthand memory, wake-up prompt |
 | `AGENTS.md`, `CLAUDE.md`, `.claude/skills/sq-distortion-check/` | Pointers that send any agent to THE SKILL: Document-Audit Mode for documents, Step 0.7 (the 3/6/9 check) on plans, designs and replies |
+| `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `skills/sq-distortion-check/` | Plugin packaging for Claude Code and Codex (see Install): the marketplace and plugin manifests, and the pointer skill they install |
 | `scripts/triad_semantic_audit.mjs` | Semantic gate S1–S15: recounts, sums, identities, caps, cross-artifact constants |
 | `scripts/adversarial_red_team_v9_audit.mjs` | v9 operator fuzz + token gates (Argon) |
 | `scripts/mutation_test_audits.mjs` | Plants known defects and checks that the gates fail |
