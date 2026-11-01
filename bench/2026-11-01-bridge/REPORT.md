@@ -376,9 +376,9 @@ Pick an option for each item, or write your own. Each option says whose proposal
 - (b) Skip it (Argon's proposal).
 - What it is: an engine-exhaust retrofit promoted as plasmoid energy. Search summaries say its energy comes from the engine's fuel [unverified].
 
-**19. Commit.**
-- (a) Commit the R39 work now (the Bridge code and tests with the frozen R38 copy in `scripts/fixtures/`, the Plan, Resume and README lines, and this folder), with every option off and nothing ruled.
-- (b) Hold it until you have read this report and ruled.
+**19. Keep the R39 commit.** Under your overnight go-ahead, the R39 work (the Bridge code and tests with the frozen R38 copy in `scripts/fixtures/`, the Plan, Resume and README lines, and this folder) was committed to the PR branch with every option off and nothing ruled.
+- (a) Keep it.
+- (b) Revert it (one commit) until you have read this report and ruled.
 
 **Reference choices you may change** (answer only if you object):
 - the tag format, `source>entity#n` for draws and `merge:child>parent#n` for merges;

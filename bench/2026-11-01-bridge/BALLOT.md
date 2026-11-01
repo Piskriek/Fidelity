@@ -22,5 +22,5 @@
 | 16 | The sweep's eleven additions | adopt, change or drop each | |
 | 17 | D1–D10 | the panel's proposals: D1 C, D2 C, D3 1, D4 A, D5 2, D6 2, D7 2, D8 B, D9 2, D10 1 (Argon endorsed all ten; see item 10 for D6) | |
 | 18 | The Thunderstorm triage | (a) run it (1 agent; it only specifies a test) · (b) skip it (Argon's proposal) | |
-| 19 | Commit the R39 work | (a) now, every option off · (b) hold until you rule | |
+| 19 | Keep the R39 commit (made overnight under your go-ahead, every option off) | (a) keep · (b) revert it until you rule | |
 | — | The reference choices at the end of `REPORT.md` §10 (tag format, outside inflows, merge refusal, reversed flow and the pool, unbooked helicity in a merge, first-come pool) | object to any, or leave blank | |
