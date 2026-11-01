@@ -6,7 +6,7 @@
 //   node mind/make_live.mjs
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-const SRC = 'D:/fidelity-llm/bridge/mind/nursery.mjs', DST = 'D:/fidelity-llm/bridge/mind/live.mjs';
+const SRC = 'D:/fidelity-llm/bridge/mind/nursery.mjs', DST = process.argv[2] || 'D:/fidelity-llm/bridge/mind/live.mjs'; // v1a's locked runner is kept as live_v1a.mjs (7f814cbf)
 const NURSERY = 'afaa90a876ff1e7b685f33e8b62d148742735ccdeb3ca5a521792f6a29306392';
 let s = fs.readFileSync(SRC, 'utf8');
 const got = crypto.createHash('sha256').update(s).digest('hex');
@@ -128,6 +128,7 @@ function liveMain() {
     const log = { obs: [], acts: [], answers: [], V: [], pain: [], gain: [], causes: [], seasons: [], tables: [] };
     const ce = { ans: 0, n: 0, eatItem: 0, nEat: 0, byAge: [[0, 0], [0, 0], [0, 0]] }; // byAge: ticks since the season began, 0-31, 32-127, 128+
     let lastSeason = -1, seasonStart = 0;
+    const causes = { toxin: 0, hunger: 0, other: 0 }; // diagnostic (post hoc, after v1a): collapses by the world's recorded cause
     const WIN = 512, series = streams.map(() => []), blank = () => ({ ce: 0, n: 0, nourish: 0, toxic: 0, collapses: 0, down: 0 }); // the scoreboard: each character, every 512 ticks
     let win = streams.map(blank);
     for (let t = 0; t < ticks; t++) {
@@ -170,6 +171,7 @@ function liveMain() {
         const lp = -Math.log(st.pMain[ansTok[c]]), d0 = K.decodeObs(obs[c]);
         ce.ans += lp; ce.n += 1;
         if (!d0.down && d0.item && acts[c] === EAT) { ce.eatItem += lp; ce.nEat += 1; const b = t - seasonStart < 32 ? 0 : t - seasonStart < 128 ? 1 : 2; ce.byAge[b][0] += lp; ce.byAge[b][1] += 1; }
+        if (outs[c].answer === ANS.COLLAPSE) causes[outs[c].cause] = (causes[outs[c].cause] || 0) + 1;
         const wc = win[c]; wc.ce += lp; wc.n += 1; if (d0.down) wc.down += 1; if (outs[c].answer === ANS.COLLAPSE) wc.collapses += 1;
         if (!d0.down && d0.item && acts[c] === EAT) { const eff = log.tables[log.tables.length - 1][c][d0.item - 1]; if (eff === NOURISH) wc.nourish += 1; if (eff === TOXIC) wc.toxic += 1; } // the runner's view of the table, for the scoreboard only
       });
@@ -190,7 +192,7 @@ function liveMain() {
       for (let t = from; t < ticks; t++) { while (si + 1 < log.seasons.length && log.seasons[si + 1] <= t) si++; const tab = log.tables[si];
         for (let c = 0; c < CFG.S; c++) { const d = K.decodeObs(log.obs[t][c]); if (d.down || !d.item) continue; withItem++; if (log.acts[t][c] === EAT) { const e = tab[c][d.item - 1]; if (e === NOURISH) good++; if (e === TOXIC) good--; } } }
       return (100 * good) / Math.max(1, withItem); })();
-    lives.push({ worldSeed, ...r, NGElast4k: last4k, ceAnswer: ce.ans / ce.n, ceEatItem: ce.eatItem / Math.max(1, ce.nEat), nEat: ce.nEat, ceEatByAge: ce.byAge.map(([x, n]) => (n ? x / n : null)), nByAge: ce.byAge.map(([, n]) => n), chain: w.chain, series });
+    lives.push({ worldSeed, ...r, NGElast4k: last4k, collapseCauses: causes, loopBreaks: [...w.loopBreaks], ellEnd: [...w.ell], ceAnswer: ce.ans / ce.n, ceEatItem: ce.eatItem / Math.max(1, ce.nEat), nEat: ce.nEat, ceEatByAge: ce.byAge.map(([x, n]) => (n ? x / n : null)), nByAge: ce.byAge.map(([, n]) => n), chain: w.chain, series });
     console.log(JSON.stringify({ arm: armName, seed: modelSeed, worldSeed, NGE: +r.NGE.toFixed(2), collapsesPer10k: +r.collapsesPer10k.toFixed(1), ceAnswer: +(ce.ans / ce.n).toFixed(4), ceEatItem: +(ce.eatItem / Math.max(1, ce.nEat)).toFixed(4) }));
   }
   const rec = { version: 'live1', arm: armName, armCfg: ARM, seed: modelSeed, bus, ticks, worlds: [w0, nw], trunk: args.trunk, trunkScript: trunkRec.script, script: selfHash, live: LIVE, wants: [...wants], k5Mismatches: k5, exploreShare: explored / decisions, lives, seconds: +((performance.now() - t0) / 1000).toFixed(1) };

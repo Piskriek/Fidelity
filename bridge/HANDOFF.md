@@ -22,11 +22,21 @@ For whoever picks this up next (Argon, or a fresh session). This file is the ent
 
 E1 passed, partly by construction, as the design expected (§2.7, §6.5). In this world design, with a value table still pending the owner's review and over 16 worlds, characters whose private heads keep learning from their own answers scored higher on NGE than their frozen copies: 33.2 against 28.6, in all 48 pairs and on every seed. NGE was counted inside the runner, a stated departure from §6.3. They ate toxic fruit about a third less often. Eat-fruit fit changes with ticks since the season began: right after a turn their fruit predictions fit worse than the frozen minds' (eat-fruit CE 2.46 against 1.11), and from 128 ticks on they fit better (0.59 against 0.95). That they relearn is an inference, not tested. The secondary readouts split by model seed. On seed 1 they collapse less, with higher V per tick; on seeds 2 and 3 they collapse more. No locked rule weighs collapses against NGE. The tabular learner beats them on NGE in every pair, though it is not like for like. Help from another timeline made no NGE difference beyond the noise floor (−0.13 against a margin of 1.02). On answer CE and toxic eating it was slightly worse. H1 is reported, not tested. "Evolved" is not licensed until E2 (the yoked arm) passes, E3 (the stationary control) does not downgrade, and M1–M3 and G0 hold. G0 ran with stated departures. Full detail: `mind/runs/v1a/RESULTS_bridge_v1a.md` (revised after a fresh check).
 
+**Runner versions.** The locked v1a runner is `mind/live_v1a.mjs` (7f814cbf), and the v1a records cite that hash. `mind/live.mjs` currently matches it. `mind/make_live.mjs` now also tallies collapse causes: `node mind/make_live.mjs mind/live_diag.mjs` writes the diagnostic runner (539a05ef). Run without a path, it would overwrite live.mjs with that version.
+
 ## Next, in order
 
-1. **v1b:** E2, the yoked arm Y (§6.1). It learns from character (c+1)'s logged tokens, with the same head steps. Add it to `make_live.mjs`, pre-register, review, run (about 45 minutes on the PC).
+1. **v1b:** E2, the yoked arm Y (§6.1). Spec for building it in `make_live.mjs`:
+   - Y runs two lockstep sets of four streams on the same world seed and trunk.
+     - The **source**: an exact L run. Same arm logic, its own world and its own live heads.
+     - The **actor**: Y's own four characters, acting in their own copy of the world by the §4.4 rule, with their own private heads.
+   - Each tick, actor character c takes one Adam step on its heads (same lr, β and clip as L). The loss is the ANSWER loss computed on the source's character (c + 1) mod 4 tokens. Give the actor a second, shadow stream state per character that reads those source tokens through the frozen trunk with the actor's own heads, so the gradient lands on the actor's heads.
+   - The actor never trains on its own answers. Its own stream only forwards, for its choices.
+   - Checks before any counted run: K5 on the actor; the source's NGE must equal the scored L record for the same seed and world (determinism); and with lr = 0, Y must equal F.
+   - Pre-register E2 (L ahead of Y) with the §6.4 rule, review with a Haiku triad, run on worlds 101–116 (about 25 minutes on the PC), and score.
+   - **Also record each character's loop-break tick** (see `mind/runs/diag_collapse/DIAG_COLLAPSE.md`: every character in all 192 scored lives hit it, by tick 4,096 at the latest from the scoreboard bound, so at least 75% of each life ran at intensity 1).
 2. **E3:** a stationary nursery (one fixed table). It needs a world option for a fixed table; the world code is frozen and mutant-tested, so add it as a declared preset field and re-run the tests.
-3. **Why L collapses more on seeds 2 and 3, and less on seed 1:** add a readout (hunger collapses against toxin collapses per arm) before anyone interprets it.
+3. **Why L collapses more on seeds 2 and 3, and less on seed 1:** the post-hoc diagnostic (`mind/runs/diag_collapse/DIAG_COLLAPSE.md`) found the extra collapses in both causes, toxin and hunger. It found that every character in the 48 re-run lives hit the loop-break and ended at intensity 1; the scoreboard bound puts every break in all 192 scored lives by tick 4,096. Exact break ticks are not recorded. Next: loop-break ticks, and readouts before and after the break.
 4. **Nursery v2**, pre-registered: weight answer targets more, give the heads direct access to the rungs, a season-scale node, a shuffled life order per seed.
 5. **Stage-2 arms the owner proposed:** prayer (ASK plus the Call answered in proportion, Ra's doubling), gratitude (relief returned to the donor), groups (dyads and triads). See `MARBLEGP_MECHANICS_REVIEW.md` and `MIND_STEP7.md`.
 
