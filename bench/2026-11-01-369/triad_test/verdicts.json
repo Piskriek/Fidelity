@@ -1,0 +1,724 @@
+{
+ "verdicts": [
+  {
+   "reader": "R1",
+   "id": "t01",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t02",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t03",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t04",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t05",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t06",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t07",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R1",
+   "id": "t08",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t09",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t10",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t11",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t12",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t13",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t14",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t15",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R1",
+   "id": "t16",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t17",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t18",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R1",
+   "id": "t19",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t20",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t21",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R1",
+   "id": "t22",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R1",
+   "id": "t23",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R1",
+   "id": "t24",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t01",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t02",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t03",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t04",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t05",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t06",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R2",
+   "id": "t07",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t08",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t09",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R2",
+   "id": "t10",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t11",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t12",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R2",
+   "id": "t13",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t14",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t15",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R2",
+   "id": "t16",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t17",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t18",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R2",
+   "id": "t19",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t20",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t21",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t22",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R2",
+   "id": "t23",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R2",
+   "id": "t24",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t01",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R3",
+   "id": "t02",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R3",
+   "id": "t03",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t04",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R3",
+   "id": "t05",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R3",
+   "id": "t06",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R3",
+   "id": "t07",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t08",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R3",
+   "id": "t09",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t10",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t11",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R3",
+   "id": "t12",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t13",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R3",
+   "id": "t14",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R3",
+   "id": "t15",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t16",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t17",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R3",
+   "id": "t18",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t19",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t20",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R3",
+   "id": "t21",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R3",
+   "id": "t22",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R3",
+   "id": "t23",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R3",
+   "id": "t24",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R4",
+   "id": "t01",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R4",
+   "id": "t02",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t03",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t04",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t05",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t06",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t07",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R4",
+   "id": "t08",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t09",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t10",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R4",
+   "id": "t11",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t12",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t13",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t14",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t15",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t16",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t17",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t18",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t19",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R4",
+   "id": "t20",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t21",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R4",
+   "id": "t22",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R4",
+   "id": "t23",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R4",
+   "id": "t24",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R5",
+   "id": "t01",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t02",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t03",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R5",
+   "id": "t04",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R5",
+   "id": "t05",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t06",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R5",
+   "id": "t07",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R5",
+   "id": "t08",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R5",
+   "id": "t09",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R5",
+   "id": "t10",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t11",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t12",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R5",
+   "id": "t13",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t14",
+   "verdict": "FALSE_ALARM"
+  },
+  {
+   "reader": "R5",
+   "id": "t15",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R5",
+   "id": "t16",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R5",
+   "id": "t17",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R5",
+   "id": "t18",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R5",
+   "id": "t19",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t20",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R5",
+   "id": "t21",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R5",
+   "id": "t22",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t23",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R5",
+   "id": "t24",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t01",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t02",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t03",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R6",
+   "id": "t04",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t05",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t06",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R6",
+   "id": "t07",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t08",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t09",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R6",
+   "id": "t10",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t11",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t12",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t13",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t14",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t15",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R6",
+   "id": "t16",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t17",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t18",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R6",
+   "id": "t19",
+   "verdict": "HIT"
+  },
+  {
+   "reader": "R6",
+   "id": "t20",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t21",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t22",
+   "verdict": "MISS"
+  },
+  {
+   "reader": "R6",
+   "id": "t23",
+   "verdict": "CORRECT_NONE"
+  },
+  {
+   "reader": "R6",
+   "id": "t24",
+   "verdict": "HIT"
+  }
+ ]
+}

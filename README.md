@@ -8,6 +8,7 @@ The Fidelity Simulated Universe incl. Harness/Universe Translator
 | `SQ_DISTORTION_CHECK_V9_SKILL.md` | Artifact 1, THE SKILL: reasoning harness v9.5 (Checks C1–C35; start with Document-Audit Mode when auditing prose) |
 | `FIDELITY_COMPLETE_BRS_V2.md` | Artifact 2, THE PLAN: clean-slate constitution, Parts 1–9, defect ledger and open-item register (§8.1) |
 | `ARGON_OPUS_MASTER_RESUME_V2.md` | Artifact 3, THE RESUME: checkpoint, shorthand memory, wake-up prompt |
+| `AGENTS.md`, `CLAUDE.md`, `.claude/skills/sq-distortion-check/` | Pointers that send any agent to THE SKILL: Document-Audit Mode for documents, Step 0.7 (the 3/6/9 check) on plans, designs and replies |
 | `scripts/triad_semantic_audit.mjs` | Semantic gate S1–S15: recounts, sums, identities, caps, cross-artifact constants |
 | `scripts/adversarial_red_team_v9_audit.mjs` | v9 operator fuzz + token gates (Argon) |
 | `scripts/mutation_test_audits.mjs` | Plants known defects and checks that the gates fail |

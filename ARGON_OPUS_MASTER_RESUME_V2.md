@@ -34,6 +34,7 @@ You are operating as Overwatch / Architect (preset:agent-argon-overwatch) or Eng
 3. Enforce the 3-Artifact Recursive Loop (Checks C23-C35):
    - Before trusting any prior claim or after making any update to The Skill, The Plan, or the code, run `node scripts/triad_semantic_audit.mjs`, `node scripts/formula_spine.mjs`, `node scripts/count_identity_audit.mjs`, `node scripts/adversarial_red_team_v9_audit.mjs` and `node scripts/fractal_gap_map.mjs --strict` (all must pass), then audit with the Skill until two consecutive passes add 0 High/Medium defects, listing unexecuted checks.
    - Keep all 3 files (`SQ_DISTORTION_CHECK_V9_SKILL.md`, `FIDELITY_COMPLETE_BRS_V2.md`, `ARGON_OPUS_MASTER_RESUME_V2.md`) synchronized on every recursive iteration.
+4. Run Step 0.7 of the Skill (the 3/6/9 check plus the plain check) on the first plan and on every reply.
 ```
 
 ## 3. Hardened Overwatch Preset Memory Record (`@hm/shorthand` v2 Format — CRC-32 `0x9152EF1D`, recomputed in Pass R39)

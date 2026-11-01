@@ -1,0 +1,8 @@
+46d0453157a7b2d529e2a7aa03e5da1271e81b680704f8f5618d6b99571fa3ab *PLACES_PREREG.md
+2026-11-01T11:08:13Z prereg hashed, before any agent ran
+2026-11-01T11:09:54Z workflow w6bfpamd0 (run wf_66af6092-e34) launched: 3 Sonnet place-checkers, 9 judges (Opus/Sonnet/Haiku x 3 places), 1 critic. Prereg sha 46d04531... unchanged.
+737e6b9e0e341d4ae9a719f3d50f89082d0c8d8e07aaee09fdba75b0b1693bae *PLACES_PREREG_r2.md
+2026-11-01T11:18:19Z round-2 prereg hashed, before any round-2 agent ran (written after reading round 1)
+2026-11-01T11:19:03Z round-2 workflow wlc3v6500 (run wf_8dca9c4f-553) launched: 3 proposers, 9 judges, 1 critic. Prereg r2 sha 737e6b9e... unchanged.
+36988b07bee4d964726bf905be675d1c73df5c2e608c5bcaa5d0a6dca4e9f41b *PLACES_PREREG_r3.md
+2026-11-01T11:23:32Z round-3 prereg hashed; round 2 still running and unread
