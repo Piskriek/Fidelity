@@ -1,0 +1,150 @@
+{
+  "name": "valleys_v1",
+  "note": "Every world value of Four Valleys v1 (BRIDGE_DESIGN.md §2). All are design choices pending the owner's review. Its SHA-256 goes into the World Ledger.",
+  "valleys": 4,
+  "kinds": 3,
+  "effects": [
+    "NOURISH",
+    "PLAIN",
+    "TOXIC"
+  ],
+  "actions": [
+    "EAT",
+    "PASS",
+    "REST"
+  ],
+  "body": {
+    "Emax": 15,
+    "Hmax": 15,
+    "birthE": 12,
+    "birthH": 15
+  },
+  "season": {
+    "minLength": 384,
+    "lengthSpan": 257
+  },
+  "eat": {
+    "NOURISH": 5,
+    "PLAIN": 1,
+    "TOXIC": 1,
+    "toxicHealthLossPerIntensity": 2
+  },
+  "rest": {
+    "healthGain": 1,
+    "energyCost": 1
+  },
+  "metabolism": {
+    "energyCost": 1,
+    "starvingHealthLoss": 2
+  },
+  "collapse": {
+    "downTicks": 8,
+    "note": "H rises by 1 per down tick, so the body wakes at H = 8; E is unchanged. Death is off (owner switch)."
+  },
+  "refusalPrecedence": [
+    "ERR_DOWN",
+    "ERR_EMPTY",
+    "ERR_FULL",
+    "ERR_SPENT"
+  ],
+  "intensity": {
+    "default": 2,
+    "min": 1,
+    "max": 3
+  },
+  "loopBreak": {
+    "collapsesFromOneCause": 3,
+    "intensityAfter": 1,
+    "note": "per character, per life (Plan Rule 2); acts in every arm (critique finding 2a)"
+  },
+  "stage": {
+    "max": 7,
+    "note": "S0a..S6 as 0..7; rises by one at a season end with no collapse in that valley; never falls; only the lens reads it"
+  },
+  "warnings": {
+    "HUNGRY": [
+      1,
+      4
+    ],
+    "STARVING": [
+      0,
+      0
+    ],
+    "WEAK": [
+      1,
+      4
+    ],
+    "note": "fear: visible before acting; HUNGRY and STARVING exclude each other. WEAK is H 1-4 (was 1-5) so that it is an exact predicate of the observation bands (critique finding 1)."
+  },
+  "values": {
+    "gain": {
+      "FED": 3,
+      "PLAIN": 1,
+      "RESTED": 1,
+      "OK": 0,
+      "ERR_DOWN": 0
+    },
+    "pain": {
+      "ERR_EMPTY": 1,
+      "ERR_FULL": 1,
+      "ERR_SPENT": 1,
+      "TOXIC_PER_INTENSITY": 2,
+      "STARVING": 2,
+      "COLLAPSE": 8
+    },
+    "note": "V = gain - pain is the character's preference table (its wants) and the scorer's readout. It is not felt: felt pain is off (see feltPain). COLLAPSE replaces the tick's other terms."
+  },
+  "lifeTicks": 16384,
+  "death": false,
+  "observation": {
+    "Ebands": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        4
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        11,
+        15
+      ]
+    ],
+    "Hbands": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        11,
+        14
+      ],
+      [
+        15,
+        15
+      ]
+    ],
+    "note": "body and item fused into one OBS token (critique finding 1), so the slot that chooses the action sees the body; H 15 has its own band so ERR_FULL is decidable; H 1-2 and 3-4 make most collapses decidable at intensity 2"
+  },
+  "feltPain": {
+    "default": false,
+    "rule": "Owner ruling 2026-11-01: pain is a choice made at the higher-self level, never a designer setting; higher selves bring it down, not push it up. Felt pain is off: characters act on wants (the value table as preferences) and learn from answers. A character feels pain only once it has a higher self that chooses its catalysts (chose= on its soul line, stage 2); within a life intensity can only be lowered (world/valleys.mjs lowerIntensity; test W7)."
+  }
+}

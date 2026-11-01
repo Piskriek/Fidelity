@@ -1,0 +1,38 @@
+bridge v1a score, 2026-11-01T20:50:50.344Z, records from mind/runs/v1a
+live.mjs hashes: 7f814cbf959b6e9c885c28b0340b565abf15462f33c643f22532e1dcce9a20bc; scorer ace75df0d387ed69b4cc9f3f0234fb5dd3dd31e8ba86044978820ce1e45dbcb6
+noise floor: sd(F - F') over 48 pairs = 0.34; margin m = max(1.0, 3 sd) = 1.02 NGE
+
+NGE by arm (mean over its pairs; per model seed):
+  F    28.61   (29.08 28.34 28.42)
+  F2   28.58   (29.01 28.35 28.38)
+  L    33.20   (33.83 33.29 32.48)
+  LH   33.07   (33.83 33.04 32.35)
+  O    50.53
+  T    42.68
+  S    31.10
+  RND  11.13
+
+Regime checks: M1 S ahead of RND: YES (mean 19.96, need >= 1.02; 16 of 16 pairs favour S)
+               M2 O ahead of F by 3m: YES (mean 21.92, need >= 3.07; per model seed 21.45 22.19 22.11; 48 of 48 pairs favour O)
+               M3 T ahead of F by m: YES (mean 14.06, need >= 1.02; per model seed 13.60 14.34 14.26; 48 of 48 pairs favour T)
+
+E1 (L ahead of F): YES (mean 4.59, need >= 1.02; per model seed 4.75 4.95 4.06; 48 of 48 pairs favour L)
+H1 (LH against L, two-sided, reported only): mean -0.13; per model seed -0.00 -0.25 -0.14; 18 of 48 favour LH
+T against L (reported): mean T - L 9.48; 48 of 48 favour T
+
+Secondary readouts (decide nothing): mean per arm
+  F    meanV 0.62  painPer100 45.38  collapsesPer10k 196.57  toxicEatRate 0.61  nourishEatRate 0.78  NGElast4k 29.55  ceAnswer 0.46  ceEatItem 0.97
+  F2   meanV 0.61  painPer100 45.45  collapsesPer10k 196.93  toxicEatRate 0.61  nourishEatRate 0.78  NGElast4k 29.62  ceAnswer 0.46  ceEatItem 0.97
+  L    meanV 0.60  painPer100 43.81  collapsesPer10k 205.84  toxicEatRate 0.40  nourishEatRate 0.79  NGElast4k 33.46  ceAnswer 0.38  ceEatItem 0.85
+  LH   meanV 0.60  painPer100 43.53  collapsesPer10k 202.32  toxicEatRate 0.41  nourishEatRate 0.79  NGElast4k 33.24  ceAnswer 0.39  ceEatItem 0.86
+  O    meanV 1.30  painPer100 3.43  collapsesPer10k 13.07  toxicEatRate 0.00  nourishEatRate 1.00  NGElast4k n/a  ceAnswer n/a  ceEatItem n/a
+  T    meanV 0.87  painPer100 25.01  collapsesPer10k 131.35  toxicEatRate 0.13  nourishEatRate 0.88  NGElast4k n/a  ceAnswer n/a  ceEatItem n/a
+  S    meanV 0.91  painPer100 37.48  collapsesPer10k 180.57  toxicEatRate 1.00  nourishEatRate 1.00  NGElast4k n/a  ceAnswer n/a  ceEatItem n/a
+  RND  meanV -0.60  painPer100 95.56  collapsesPer10k 520.03  toxicEatRate 0.33  nourishEatRate 0.33  NGElast4k n/a  ceAnswer n/a  ceEatItem n/a
+
+Locked predictions (PREREG_bridge_v1a.md):
+  M1 passes: RIGHT
+  M2 passes: RIGHT
+  M3 passes: RIGHT
+  E1 fails: WRONG
+  T matches or beats L (mean T - L >= -m): RIGHT

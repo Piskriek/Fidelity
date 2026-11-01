@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Four Valleys, live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #172932; --ridge: #0e1c22; --ink: #efe7d3; --muted: #9db1b5; --line: #2c4651;
+    --energy: #e8a93a; --health: #e3778b;
+    --nourishing: #8fc25b; --plain: #cdbe8e; --toxic: #d0505f;
+    --m0: #f2e6b8; --m1: #79c6be; --m2: #b9a3e3; --m3: #8e9da3;
+    --sky-h: 190;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); }
+  body { font: 16px/1.5 "Atkinson Hyperlegible", system-ui, sans-serif; }
+  h1, h2 { font-family: "Bricolage Grotesque", system-ui, sans-serif; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  h1 { font-size: clamp(1.6rem, 3.2vw, 2.4rem); line-height: 1.1; }
+  h2 { font-size: 1.15rem; margin-bottom: 0.6rem; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+  .clock { display: flex; gap: 18px; align-items: baseline; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .clock strong { color: var(--ink); font-weight: 700; }
+  .controls { display: flex; gap: 6px; align-items: center; }
+  .controls button { font: inherit; font-size: 0.9rem; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+  .controls button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .controls button:focus-visible, a:focus-visible { outline: 2px solid var(--energy); outline-offset: 2px; }
+
+  /* the one bold element: a single ridgeline holding four valleys, sky tinted by the season */
+  .land { position: relative; border-radius: 18px; overflow: hidden; background: linear-gradient(hsl(var(--sky-h) 38% 30%), hsl(var(--sky-h) 30% 18%) 70%); transition: background 1.2s ease; }
+  .land svg { display: block; width: 100%; height: auto; }
+  .season-note { position: absolute; left: 18px; top: 12px; color: var(--ink); opacity: 0.85; font-size: 0.95rem; }
+
+  .valleys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0 18px; margin-top: 14px; }
+  .v { padding: 4px 2px 0; }
+  .v .who { display: flex; align-items: baseline; gap: 8px; }
+  .v .who h2 { margin: 0; }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; flex: none; transform: translateY(1px); }
+  .v .note { color: var(--muted); font-size: 0.9rem; margin: 0 0 8px; }
+  .gauge { display: grid; grid-template-columns: 58px 1fr 26px; gap: 8px; align-items: center; font-size: 0.9rem; margin: 3px 0; font-variant-numeric: tabular-nums; }
+  .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 4px; transition: width 0.25s linear; }
+  .seen { margin-top: 10px; font-size: 0.95rem; }
+  .seen .truth { color: var(--muted); }
+  .eff-nourishing { color: var(--nourishing); } .eff-plain { color: var(--plain); } .eff-toxic { color: var(--toxic); }
+  .last { color: var(--muted); font-size: 0.9rem; min-height: 1.4em; }
+  .row { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .score { font-family: "Bricolage Grotesque", sans-serif; font-size: 1.6rem; line-height: 1; }
+  .score small { font-family: "Atkinson Hyperlegible", sans-serif; font-size: 0.8rem; color: var(--muted); display: block; margin-top: 4px; }
+  .stage { display: flex; gap: 4px; align-items: center; }
+  .stage b { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--muted); display: inline-block; }
+  .stage b.on { background: var(--ink); border-color: var(--ink); }
+
+  .lower { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; margin-top: 30px; }
+  .chart-box canvas { width: 100%; height: 220px; display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+  .events { list-style: none; padding: 0; margin: 0; font-size: 0.95rem; }
+  .events li { padding: 6px 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 70px 1fr; gap: 10px; }
+  .events li span { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .exp { margin-top: 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .exp p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+  .exp p strong { color: var(--ink); font-weight: 700; }
+  .rule { height: 1px; background: var(--line); margin: 30px 0 0; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 0.85rem; max-width: 72ch; }
+
+  @media (max-width: 860px) {
+    .valleys { grid-template-columns: repeat(2, 1fr); gap: 22px 18px; }
+    .lower, .exp { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) { .land, .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Four Valleys, live</h1>
+    <div class="clock" aria-live="off">
+      <span>Season <strong id="season">1</strong></span>
+      <span>Tick <strong id="tick">0</strong></span>
+      <span>Life <strong id="life">1</strong></span>
+    </div>
+    <div class="controls" role="group" aria-label="Speed">
+      <button data-tps="5">Slow</button>
+      <button data-tps="20" aria-pressed="true">Normal</button>
+      <button data-tps="120">Fast</button>
+      <button id="pause" aria-pressed="false">Pause</button>
+    </div>
+  </header>
+
+  <div class="land" id="land">
+    <div class="season-note" id="seasonNote">The characters are not told when a season turns.</div>
+    <svg id="ridge" viewBox="0 0 1200 300" role="img" aria-label="Four valleys along one ridgeline, one character in each"></svg>
+  </div>
+
+  <section class="valleys" id="valleys" aria-label="The four characters"></section>
+
+  <div class="lower">
+    <div class="chart-box">
+      <h2>How well each one eats</h2>
+      <p class="note" style="margin:-4px 0 8px;color:var(--muted);font-size:0.9rem">Eating score: nourishing minus toxic fruit eaten, per 100 fruit seen. The oracle knows the season; the others must find out.</p>
+      <canvas id="chart" width="900" height="220" aria-label="Nourishing minus toxic per 100 fruit seen, over this life"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div>
+      <h2>What just happened</h2>
+      <ul class="events" id="events"></ul>
+    </div>
+  </div>
+
+  <div class="rule"></div>
+  <section class="exp" aria-label="Experiments">
+    <div><h2>v6 on the 3080</h2><p id="pc">Asking the PC…</p></div>
+    <div><h2>v5, scored</h2><p><strong>R saw where help came from</strong> and was ahead of always-open, a constant gate and a blind gate. It did not yet close cleanly on help from another timeline.</p></div>
+    <div><h2>This world's checks</h2><p><strong>Same world on both machines.</strong> Lossless tokens, true warnings, and 28 of 28 planted leaks caught. Felt pain is off.</p></div>
+  </section>
+
+  <footer>Everything here is read from the world's own state; the page never changes it. The marks beside each fruit show what is true this season. The characters only see the fruit's letter and their own body, and must learn the rest.</footer>
+</div>
+
+<script>
+const COLORS = ['var(--m0)', 'var(--m1)', 'var(--m2)', 'var(--m3)'];
+const RAW = () => { const s = getComputedStyle(document.documentElement); return ['--m0','--m1','--m2','--m3','--energy','--health','--nourishing','--plain','--toxic','--line','--muted','--ridge'].reduce((o,k)=>(o[k]=s.getPropertyValue(k).trim(),o),{}); };
+const $ = id => document.getElementById(id);
+let C = RAW(), lastSeason = 0;
+
+// the ridgeline: four valley floors between five peaks, drawn once
+const W = 1200, H = 300, floors = [150, 450, 750, 1050];
+function ridgePath() {
+  const peaks = [[0, 70], [300, 54], [600, 82], [900, 60], [1200, 76]];
+  let d = `M0,${H} L0,${peaks[0][1]}`;
+  for (let i = 0; i < 4; i++) { const [x0, y0] = peaks[i], [x1, y1] = peaks[i + 1], mx = (x0 + x1) / 2; d += ` C${x0 + 60},${y0 + 10} ${mx - 90},215 ${mx},218 S${x1 - 60},${y1 + 12} ${x1},${y1}`; }
+  return d + ` L${W},${H} Z`;
+}
+function drawRidge() {
+  $('ridge').innerHTML = `
+    <path d="${ridgePath()}" fill="${C['--ridge']}"/>
+    ${floors.map((x, i) => `<g id="g${i}" transform="translate(${x},0)">
+      <ellipse cx="0" cy="226" rx="70" ry="9" fill="#ffffff" opacity="0.05"/>
+      <g class="fig"><circle id="head${i}" cx="-16" cy="176" r="9" fill="${C['--m' + i]}"/><rect id="body${i}" x="-24" y="187" width="16" height="30" rx="7" fill="${C['--m' + i]}"/></g>
+      <circle id="fruit${i}" cx="20" cy="207" r="0" stroke="${C['--ridge']}" stroke-width="2"/>
+      <text id="kind${i}" x="20" y="212" text-anchor="middle" font-size="13" font-family="Atkinson Hyperlegible" fill="${C['--ridge']}"></text>
+      <text id="say${i}" x="0" y="262" text-anchor="middle" font-size="15" font-family="Atkinson Hyperlegible" fill="${C['--muted']}"></text>
+    </g>`).join('')}`;
+}
+drawRidge();
+
+function valleyCard(v, i) {
+  const pct = (x) => `${Math.round((100 * x) / 15)}%`;
+  const fear = v.down ? 'resting' : [v.fear.STARVING ? 'starving' : v.fear.HUNGRY ? 'hungry' : '', v.fear.WEAK ? 'weak' : ''].filter(Boolean).join(', ');
+  const truth = v.truth ? ` <span class="truth">(true this season: <span class="eff-${v.truth}">${v.truth}</span>)</span>` : '';
+  const SAY = { FED: 'well fed', PLAIN: 'plain, a little energy', TOXIC: 'it was toxic', OK: 'nothing happened', RESTED: 'rested a little', ERR_EMPTY: 'there was no fruit', ERR_FULL: 'already at full health', ERR_SPENT: 'too tired to rest', ERR_DOWN: 'still resting', COLLAPSE: 'collapsed' };
+  const did = v.down ? 'lay still' : v.lastAct === 'eat' ? (v.lastItem ? `ate ${v.lastItem}` : 'reached for fruit') : v.lastAct === 'rest' ? 'tried to rest' : 'waited';
+  const last = v.lastAct ? `Last: ${did}. The world: ${SAY[v.lastAnswer] || v.lastAnswer}${v.starving ? ', and it is starving' : ''}.` : '';
+  const dots = Array.from({ length: 8 }, (_, k) => `<b class="${k < v.stage ? 'on' : ''}"></b>`).join('');
+  return `<div class="v">
+    <div class="who"><span class="swatch" style="background:${COLORS[i]}"></span><h2>${v.mind}</h2></div>
+    <p class="note">${v.note}</p>
+    <div class="gauge"><span>Energy</span><span class="bar"><i style="width:${pct(v.E)};background:var(--energy)"></i></span><span>${v.E}</span></div>
+    <div class="gauge"><span>Health</span><span class="bar"><i style="width:${pct(v.H)};background:var(--health)"></i></span><span>${v.H}</span></div>
+    <div class="seen">Sees ${v.sees}${fear ? `, feels ${fear}` : ''}${truth}</div>
+    <div class="last">${last}</div>
+    <div class="row"><div class="score" title="Nourishing minus toxic fruit eaten, per 100 fruit seen">${v.score.toFixed(1)}<small>eating score</small></div>
+      <div><div class="stage" title="Stage rises after a season without collapse">${dots}</div><div class="last">${v.collapses} collapse${v.collapses === 1 ? '' : 's'}</div></div></div>
+  </div>`;
+}
+
+function drawChart(vs) {
+  const cv = $('chart'), ctx = cv.getContext('2d'), w = cv.width, h = cv.height;
+  ctx.clearRect(0, 0, w, h);
+  const lo = -30, hi = 100, y = s => h - ((Math.max(lo, Math.min(hi, s)) - lo) / (hi - lo)) * h;
+  ctx.strokeStyle = C['--line']; ctx.lineWidth = 1;
+  for (const g of [0, 25, 50, 75]) { ctx.beginPath(); ctx.moveTo(0, y(g)); ctx.lineTo(w, y(g)); ctx.stroke(); ctx.fillStyle = C['--muted']; ctx.font = '13px Atkinson Hyperlegible'; ctx.fillText(String(g), 4, y(g) - 4); }
+  const n = Math.max(2, ...vs.map(v => v.history.length));
+  vs.forEach((v, i) => {
+    const hs = v.history; if (hs.length < 2) return;
+    ctx.strokeStyle = C['--m' + i]; ctx.lineWidth = 2.5; ctx.beginPath();
+    hs.forEach((s, k) => { const x = 30 + (k / (n - 1)) * (w - 34); k ? ctx.lineTo(x, y(s)) : ctx.moveTo(x, y(s)); }); ctx.stroke();
+  });
+}
+
+function render(d) {
+  $('season').textContent = d.season; $('tick').textContent = d.t.toLocaleString(); $('life').textContent = d.life;
+  if (d.season !== lastSeason) { document.documentElement.style.setProperty('--sky-h', String((190 + (d.season - 1) * 53) % 360)); lastSeason = d.season; }
+  $('valleys').innerHTML = d.valleys.map(valleyCard).join('');
+  d.valleys.forEach((v, i) => {
+    const fruit = $('fruit' + i), kind = $('kind' + i), body = $('body' + i), head = $('head' + i);
+    const hasFruit = v.truth && !v.down;
+    fruit.setAttribute('r', hasFruit ? 13 : 0); fruit.setAttribute('fill', hasFruit ? C['--' + v.truth] : 'none');
+    kind.textContent = hasFruit ? v.sees.replace('fruit ', '') : '';
+    const lying = v.down > 0;
+    body.setAttribute('transform', lying ? 'rotate(-90 -16 205)' : ''); head.setAttribute('cy', lying ? 205 : 176); head.setAttribute('cx', lying ? 4 : -16);
+    $('say' + i).textContent = v.lastAct ? (v.down ? 'resting' : v.lastAct === 'eat' ? (v.lastAnswer === 'TOXIC' ? 'ate a toxic one' : v.lastAnswer === 'FED' ? 'well fed' : v.lastAnswer === 'PLAIN' ? 'plain' : 'nothing to eat') : v.lastAct === 'rest' ? 'resting' : 'waiting') : '';
+  });
+  drawChart(d.valleys);
+  $('legend').innerHTML = d.valleys.map((v, i) => `<span><span class="swatch" style="background:${COLORS[i]}"></span> ${v.mind}</span>`).join('');
+  $('events').innerHTML = d.events.map(e => `<li><span>${e.t.toLocaleString()}</span>${e.text}</li>`).join('');
+  document.querySelectorAll('[data-tps]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.tps === d.tps)));
+  $('pause').setAttribute('aria-pressed', String(d.paused)); $('pause').textContent = d.paused ? 'Resume' : 'Pause';
+}
+
+const es = new EventSource('/events');
+es.onmessage = ev => render(JSON.parse(ev.data));
+es.onerror = () => { $('seasonNote').textContent = 'The lens lost the world. Restart the lens server to reconnect.'; };
+document.querySelectorAll('[data-tps]').forEach(b => b.onclick = () => fetch(`/control?tps=${b.dataset.tps}`, { method: 'POST' }));
+$('pause').onclick = () => fetch(`/control?pause=${$('pause').getAttribute('aria-pressed') === 'true' ? 0 : 1}`, { method: 'POST' });
+async function pc() {
+  try {
+    const r = await (await fetch('/pc')).json();
+    $('pc').innerHTML = r.reachable ? `<strong>${r.v6done} of ${r.v6total} runs finished.</strong> The closed triangle and compassion, at below-normal priority. Checked every 30 seconds.` : 'The PC is not answering right now.';
+  } catch { $('pc').textContent = 'The PC is not answering right now.'; }
+}
+pc(); setInterval(pc, 30000);
+</script>
+</body>
+</html>

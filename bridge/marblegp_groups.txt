@@ -1,0 +1,179 @@
+groups 175 counts {"found":400,"kept":400,"dropped":0}
+check verdicts {"corrected":161,"confirmed":239}
+maturity {"built":130,"spec":35,"idea":10}
+serves {"world/sim":60,"multiplayer/owner seat":32,"economy/jobs":26,"presentation/lens":55,"dialog/voice":31,"other":16,"ask":27,"memory/dream":34,"help":31,"prayer/higher self":16,"groups":33,"mood":24,"body/rig":30,"catalyst":28,"needs/wants":22,"harvest/levels":21,"polarity":12,"gratitude":7}
+  1 | built | world/sim,multiplayer/owner seat,economy | Command-sourced world: one apply gate, typed refusals, replay hash, authoritative room 
+  2 | built | presentation/lens,world/sim              | Read-only lens contract: BaseView/WorldEnv and ghost from the placement function 
+  3 | built | world/sim,presentation/lens              | Lattice structure: typed-refusal build gate, support propagation, collapse, integrity lens  [C]
+  4 | built | dialog/voice,presentation/lens           | Refusal reason ids rendered as plain sentences, toast queue  [C]
+  5 | built | multiplayer/owner seat,world/sim,other   | Per-game permission profile, observer ladder and gate 
+  6 | built | presentation/lens,world/sim              | Bridge manifest: per-aspect provenance 
+  7 | built | multiplayer/owner seat,ask,other         | Opt-in outbound input relay and read-only mirror 
+  8 | built | world/sim,memory/dream,economy/jobs      | Mechanic mimicry and harvested preset shelf  [C]
+  9 | built | world/sim,multiplayer/owner seat,ask     | Running-game detection and sidecar bridge daemon  [C]
+ 10 | spec  | world/sim,multiplayer/owner seat,ask     | Game-agnostic adapter protocol with capabilities and expiring orders 
+ 11 | built | multiplayer/owner seat,ask,prayer/higher | Loopback neural/companion bridge  [C]
+ 12 | built | prayer/higher self,ask,dialog/voice      | Higher Self seat: asked from below, cues dreams, never writes  [C]
+ 13 | built | ask,prayer/higher self,memory/dream      | Upward ask: ego digest and body warnings  [C]
+ 14 | built | ask,prayer/higher self,help              | The Call: answered in proportion  [C]
+ 15 | idea  | multiplayer/owner seat,groups,ask        | Agent seats and gateway for outside swarms 
+ 16 | built | ask,multiplayer/owner seat,presentation/ | Bring-your-own-agent Studio API: propose, validate, capture, per-row accept  [C]
+ 17 | built | multiplayer/owner seat,ask               | Studio command stack, Changes panel and validated write-back 
+ 18 | built | multiplayer/owner seat,ask               | Studio AI bridge (__studioNav, __studioBridge) 
+ 19 | built | help,ask,multiplayer/owner seat          | Staged AI edits: live, keep-it commits, 30 s revert 
+ 20 | built | ask,presentation/lens,dialog/voice       | Ping as shared referent 
+ 21 | built | ask,help,dialog/voice                    | Orders vocabulary, contextual ping orders and spatial parser  [C]
+ 22 | built | help,ask,mood                            | Two brains: fast reflex, slow mind sets expiring orders; reflex slot  [C]
+ 23 | spec  | dialog/voice,needs/wants,memory/dream    | Composite ego and language from parts 
+ 24 | built | help,needs/wants,world/sim               | Companion fast brain: hysteresis targeting, staying out of the way 
+ 25 | built | multiplayer/owner seat,groups,ask        | Co-op roles, rate limit, per-author undo and return log  [C]
+ 26 | built | multiplayer/owner seat,groups,ask        | Gate access modes and dialing 
+ 27 | built | memory/dream,multiplayer/owner seat,othe | Hostile-safe import: share codes, Spore cards, base and plot codecs 
+ 28 | built | world/sim,presentation/lens,multiplayer/ | Game preset as data with URL gateway 
+ 29 | spec  | multiplayer/owner seat,world/sim,groups  | Synced/desynced branches, consensus patches, slot allocation  [C]
+ 30 | built | multiplayer/owner seat,harvest/levels    | Weekly harvest adoption by majority, AI never votes  [C]
+ 31 | built | memory/dream,mood,catalyst               | Per-preset memory record (Mem) and experience writer  [C]
+ 32 | built | catalyst,mood,needs/wants                | Distortion typing, SQ catalog and Excitement Compass  [C]
+ 33 | built | memory/dream,catalyst,prayer/higher self | Dream phase: select, cue, replay, rebalance, close, downscale, digest  [C]
+ 34 | built | body/rig,mood,catalyst                   | Preset body: seven zones, sides, flow stops at first block  [C]
+ 35 | built | mood,body/rig,catalyst                   | Sickness gates and release signals: pain, itch, ache, eureka  [C]
+ 36 | idea  | catalyst,prayer/higher self              | Catalyst and limits programmed beforehand by the higher self  [C]
+ 37 | spec  | catalyst,body/rig,other                  | Free will without a clamp; pain as informative synchronicity  [C]
+ 38 | built | harvest/levels,catalyst,memory/dream     | Kundalini rise, mastery, readiness, repeat  [C]
+ 39 | built | help,groups,polarity                     | Wanderers: higher being in a lower role, anchor calm  [C]
+ 40 | built | memory/dream,world/sim,groups            | Astral travel: read-only visits through open gates  [C]
+ 41 | built | memory/dream,groups,prayer/higher self   | System memory pack: Overwatch inherits the system  [C]
+ 42 | built | polarity,groups,help                     | Polarity as a lean, dyads and nested triads  [C]
+ 43 | built | help,groups,harvest/levels               | Investment: naming, tending, pinning speeds growth 
+ 44 | built | memory/dream,needs/wants,harvest/levels  | The Veil, veiled Bayesian learner and harvest choice  [C]
+ 45 | built | catalyst,groups,harvest/levels           | Veil opacity thinning, antidote resilience, dyad ray transfer, harmonious doubling  [C]
+ 46 | built | body/rig,world/sim                       | MDL sieve and passive reflex plant 
+ 47 | built | prayer/higher self,harvest/levels,groups | Nested presets: Higher Self as enclosing preset, graduation  [C]
+ 48 | built | prayer/higher self,help,catalyst         | Inception loop: telemetry up, priors down, syntropic escrow  [C]
+ 49 | spec  | gratitude,help,prayer/higher self        | Learn/teach reciprocity  [C]
+ 50 | built | mood,memory/dream,catalyst               | Attractor trench and precision annealing breaker  [C]
+ 51 | built | body/rig,needs/wants,presentation/lens   | Relative awareness bounded by the vessel  [C]
+ 52 | built | memory/dream,other                       | Memory kernel: byte-exact compress and wake 
+ 53 | built | dialog/voice,mood,memory/dream           | Semantic-emotional utterance pipeline  [C]
+ 54 | built | polarity,dialog/voice,mood               | 22 archetypes and cross-wired polarity  [C]
+ 55 | built | prayer/higher self,mood,catalyst         | invokeArchetype: bounded softening, no fake healing  [C]
+ 56 | built | dialog/voice,presentation/lens,harvest/l | System voice: notices bound to real events 
+ 57 | built | dialog/voice,memory/dream                | Narrator scheduler: once-only story, cooldowns, priority, stale drop, radio log  [C]
+ 58 | spec  | dialog/voice                             | Tiered optional LLM language layer behind Auto  [C]
+ 59 | built | needs/wants,body/rig,world/sim           | Pressurised rooms: sealed plus powered life support 
+ 60 | built | needs/wants,help,world/sim               | Safe domes, sync meter and zero-loss recall  [C]
+ 61 | built | economy/jobs,needs/wants,world/sim       | Proportional brownout and plot economy 
+ 62 | built | economy/jobs,help,groups                 | Linked storage network: atomic pull with typed shortfall  [C]
+ 63 | built | economy/jobs,needs/wants,world/sim       | Substrate nodes: hash-placed, closed-form harvest and regrowth 
+ 64 | built | economy/jobs,ask                         | Plan and fill: layout ghost filled as paid 
+ 65 | built | harvest/levels,economy/jobs,body/rig     | Stage-locked catalog and craft/forge/fit gates 
+ 66 | built | body/rig,economy/jobs                    | Modular equipment: frame with four part slots 
+ 67 | built | help,economy/jobs,presentation/lens      | Vehicle print gantry and rear sockets 
+ 68 | spec  | world/sim,presentation/lens,body/rig     | No clock decay: metrics only rise, weathering from world state 
+ 69 | built | presentation/lens,body/rig               | Layered materials with Age and mask view  [C]
+ 70 | spec  | world/sim,economy/jobs,presentation/lens | Elements as four floats, reactions as data, conservation, hashed chance 
+ 71 | spec  | world/sim,presentation/lens              | Tiered simulation: looks never write 
+ 72 | built | economy/jobs,groups,memory/dream         | Compositional crafting and cartridge combine 
+ 73 | built | presentation/lens,mood,polarity          | One appraise lens for all observers  [C]
+ 74 | spec  | groups,ask,economy/jobs                  | Consent-gated binding: entanglement and native consent  [C]
+ 75 | idea  | presentation/lens,world/sim,groups       | World and hub state through a few channels 
+ 76 | spec  | world/sim,memory/dream,groups            | Natives with seeded pre-play history  [C]
+ 77 | built | groups,memory/dream,world/sim            | Social memory complexes: pooling at 0.95, party, guild, planet  [C]
+ 78 | spec  | world/sim,memory/dream,presentation/lens | Seeded star system, validator, orbital lattice, planet generation 
+ 79 | spec  | world/sim,groups,harvest/levels          | Planets as presets; stage is density 
+ 80 | spec  | economy/jobs,ask                         | Attitude-gated trade and phased gate goals 
+ 81 | built | multiplayer/owner seat,dialog/voice,ask  | Child-safe canned comms and invite-only worlds 
+ 82 | spec  | groups,catalyst,body/rig                 | Children and hybrids: genome not memory  [C]
+ 83 | spec  | catalyst,groups,memory/dream             | Raising as growth moments  [C]
+ 84 | spec  | groups,other                             | Lineage guard rails 
+ 85 | built | body/rig,world/sim                       | Creature genome, skeleton, IK gait and distance tiers 
+ 86 | built | body/rig,world/sim                       | Locomotion presets per world 
+ 87 | built | presentation/lens,body/rig               | Stage-quantised, time-pure animation 
+ 88 | built | world/sim,needs/wants                    | Logic presets and wiregraph triggers 
+ 89 | built | world/sim,body/rig,needs/wants           | NPC steering brain with declared sight and reaction 
+ 90 | spec  | needs/wants,mood,groups                  | Utility-graph NPC brains 
+ 91 | built | needs/wants,harvest/levels,economy/jobs  | Questline: goals as data with typed gate reasons  [C]
+ 92 | built | world/sim,body/rig                       | Navigation: nav grid, wall pathfinding, any-angle paths 
+ 93 | built | body/rig,presentation/lens               | Universal avatar import and retarget 
+ 94 | built | presentation/lens,other                  | Display auto-governor and Toggle Rule 
+ 95 | built | presentation/lens,dialog/voice           | Vision tier: sampled frames for callouts  [C]
+ 96 | built | world/sim,multiplayer/owner seat,needs/w | Cross-game entity packet and transceiver  [C]
+ 97 | built | world/sim,presentation/lens,harvest/leve | Four floats and the stage ladder  [C]
+ 98 | built | presentation/lens,world/sim,harvest/leve | Look ladder and scan wave  [C]
+ 99 | built | body/rig,world/sim,multiplayer/owner sea | Soul cartridges bound to vessels  [C]
+100 | built | presentation/lens,mood                   | Harness telemetry HUD widgets  [C]
+101 | built | presentation/lens,multiplayer/owner seat | UI lens rule: validateScreen 
+102 | built | presentation/lens,world/sim              | Fidelity pockets 
+103 | idea  | presentation/lens,multiplayer/owner seat | Opt-in generated backdrops behind keep-it  [C]
+104 | built | presentation/lens,world/sim              | Menu warm-up manifest and render-on-demand 
+105 | built | world/sim,catalyst,presentation/lens     | Leak simulation: archetypes, phases, telegraphed attacks, era roster  [C]
+106 | built | catalyst,polarity,multiplayer/owner seat | Leak waves and aggression dial  [C]
+107 | built | catalyst,polarity,economy/jobs           | Sapper: non-destructive drain on the work  [C]
+108 | built | catalyst,help,prayer/higher self         | Seal: channelled rift closure 
+109 | built | economy/jobs,catalyst,help               | Peaceful parity and no-dead-end invariants 
+110 | idea  | catalyst,help                            | Non-violent repatriation weapons 
+111 | built | memory/dream,dialog/voice,presentation/l | Chronos loop: SitRep, dream bounty, clip replay 
+112 | built | body/rig,world/sim,other                 | Kit validation and audit gate 
+113 | built | world/sim,dialog/voice,groups            | Open host SDK and macro-node town  [C]
+114 | spec  | gratitude,groups,help                    | Pair affinity meter (bond:)  [C]
+115 | idea  | needs/wants,mood,economy/jobs            | Needs, mood, work priorities (RimWorld, DF)  [C]
+116 | spec  | needs/wants,economy/jobs,harvest/levels  | Universal preset kinds: stat, curve, skillgrow, class and more  [C]
+117 | spec  | world/sim,presentation/lens              | Per-world rule sets (rules:) 
+118 | spec  | catalyst,body/rig                        | Taming, combat formulas and effects  [C]
+119 | spec  | polarity,catalyst,multiplayer/owner seat | STO/STS polarity dial and world-structure physics  [C]
+120 | idea  | body/rig,memory/dream,other              | Frontier radar 
+121 | built | presentation/lens,needs/wants,world/sim  | Truthful state read-outs: LEDs, plumes, aim-gated labels 
+122 | built | presentation/lens,dialog/voice           | Nine-zone HUD with overlap gate and banner queue 
+123 | built | presentation/lens,mood                   | Stage HUD skin from the ground under the observer 
+124 | built | presentation/lens,mood                   | Asymmetric exposure adaptation  [C]
+125 | built | dialog/voice,presentation/lens,mood      | Five-bus audio, voice ducking, stage bit-depth 
+126 | spec  | dialog/voice,memory/dream,mood           | Habit detectors for companion remarks  [C]
+127 | spec  | memory/dream,dialog/voice                | Inspection escalation and weighted greetings 
+128 | built | groups,multiplayer/owner seat,harvest/le | Continental consensus lock (85%, 11 enclaves)  [C]
+129 | spec  | presentation/lens,dialog/voice,multiplay | Resource-label rename  [C]
+130 | built | presentation/lens,body/rig,harvest/level | Detail ranks 
+131 | built | body/rig,presentation/lens,economy/jobs  | Preset-factory pattern, five rungs, hover try-on 
+132 | idea  | help,economy/jobs,groups                 | Bio-spliced companion from fused cores  [C]
+133 | built | economy/jobs                             | Print cost through one pay command 
+134 | built | help,catalyst,economy/jobs               | Perimeter turret: helper with hard exclusions 
+135 | built | memory/dream,dialog/voice                | Knowledge by acting: forensic logs  [C]
+136 | built | dialog/voice,presentation/lens           | Attention-gated mentor line 
+137 | built | memory/dream,presentation/lens           | Credits as in-engine recap 
+138 | built | presentation/lens,mood                   | Choreography as pure functions of time 
+139 | spec  | world/sim,needs/wants                    | Starter-plot landmark bands 
+140 | built | economy/jobs,other                       | Generation budget floor 
+141 | built | presentation/lens,body/rig               | Never an invisible part 
+142 | built | gratitude,help,groups                    | Cause links and the responsibility rule  [C]
+143 | built | memory/dream,world/sim,catalyst          | Drone memory host  [C]
+144 | spec  | groups,memory/dream,world/sim            | Rung host with species memory 
+145 | built | world/sim,catalyst,needs/wants           | Chaos-seed System quests  [C]
+146 | built | ask,help,polarity                        | Suggestion handshake and Entropy Tax  [C]
+147 | built | dialog/voice,presentation/lens           | Design-time voice pipeline 
+148 | spec  | other,polarity,groups                    | Audits, four-fold signature, persona cycle  [C]
+149 | built | world/sim,memory/dream,ask               | Shorthand v1 frame with permission mask 
+150 | built | groups,mood,presentation/lens            | Harmonic machine choir  [C]
+151 | built | catalyst,help                            | Turbo Bass knockback 
+152 | built | dialog/voice,memory/dream                | Diegetic radio and wreck tapes 
+153 | built | body/rig,gratitude,ask                   | Gesture vocabulary 
+154 | built | harvest/levels,help,world/sim            | Wreck restoration ladder  [C]
+155 | built | world/sim,presentation/lens              | Ground-to-orbit fade and planet transfer 
+156 | built | world/sim,presentation/lens,harvest/leve | Ground cover growth from sources 
+157 | built | economy/jobs,world/sim                   | Machine registry contract 
+158 | built | world/sim,dialog/voice,other             | Lab and story salvage inventory 
+159 | built | other,dialog/voice                       | Role-and-ladder routing of minds 
+160 | idea  | ask,prayer/higher self,groups            | Friend beacon 
+161 | built | help,needs/wants                         | Starter shelter on first arrival  [C]
+162 | built | economy/jobs,world/sim                   | Terrain brush 
+163 | spec  | gratitude,help,memory/dream              | Gift economy with lineage credit 
+164 | spec  | presentation/lens,world/sim,dialog/voice | Artificial ego router 
+165 | idea  | needs/wants,harvest/levels               | Seven rays as a machine ladder  [C]
+166 | built | presentation/lens,world/sim              | Sky radiance from stage and sun 
+167 | spec  | presentation/lens,world/sim              | Local-stage inheritance 
+168 | built | presentation/lens,world/sim              | Layout-key memoisation 
+169 | built | memory/dream,multiplayer/owner seat      | Versioned save and checkpoint profile 
+170 | built | body/rig,world/sim                       | Deterministic vehicle physics 
+171 | built | body/rig,world/sim                       | Pure walk and collide 
+172 | built | other                                    | Arena battle method 
+173 | spec  | help,ask,multiplayer/owner seat          | Quarantine-then-review install 
+174 | spec  | other,multiplayer/owner seat             | Live hot-swap of edited presets 
+175 | spec  | body/rig                                 | Character and animation studio 

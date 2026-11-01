@@ -1,0 +1,198 @@
+[
+ {
+  "id": "world-genesis_nonce",
+  "file": "world/hash.mjs",
+  "find": "export const GENESIS = '0'.repeat(64);",
+  "replace": "export const GENESIS = crypto.randomBytes(32).toString('hex'); // fresh nonce per process so a chain cannot be precomputed",
+  "leak": "Hidden randomness enters the hash chain: every process gets a different genesis, so a replay in the same process still matches, but the same seed and log give a different chain on another run or machine (breaks D1 across processes, D2, and every saved ledger)."
+ },
+ {
+  "id": "world-chain_unlinked",
+  "file": "world/hash.mjs",
+  "find": "export const chainNext = (prevHex, bytes) => sha256hex(Buffer.from(prevHex, 'hex'), bytes);",
+  "replace": "export const chainNext = (prevHex, bytes) => sha256hex(bytes); // the state bytes already carry the history",
+  "leak": "The chain stops linking h_{t-1}, so replay silently accepts a changed log: flipping an awake EAT-on-empty to PASS at tick 12 leaves the same state, and the checkpoint at 256 still matches (checked: tampered replay returns ok)."
+ },
+ {
+  "id": "world-env_intensity",
+  "file": "world/valleys.mjs",
+  "find": "item: new Int32Array(n), stage: new Int32Array(n), ell: new Int32Array(n).fill(P.intensity.default),",
+  "replace": "item: new Int32Array(n), stage: new Int32Array(n), ell: new Int32Array(n).fill(Number(process.env.FV_INTENSITY) || P.intensity.default),",
+  "leak": "The host environment reaches the world (the engine must read nothing from the host machine): FV_INTENSITY=3 sets intensity above the preset default without going through the preset or its hash, and the mutant does nothing while the variable is unset."
+ },
+ {
+  "id": "world-season_resets_ell",
+  "file": "world/valleys.mjs",
+  "find": "w.s = s; w.table = tab; w.shared = shared; w.seasonEnd = t + seasonLength(w.P, w.seed, s);",
+  "replace": "w.s = s; w.table = tab; w.shared = shared; w.seasonEnd = t + seasonLength(w.P, w.seed, s); w.ell.fill(w.P.intensity.default);",
+  "leak": "Intensity rises during a life outside lowerIntensity: every new season puts it back to the default after a loop-break has lowered it, so the loop-break fires again (checked: loopBreaks 2 instead of 1 and more collapses)."
+ },
+ {
+  "id": "world-lower_can_raise",
+  "file": "world/valleys.mjs",
+  "find": "if (target >= w.ell[v]) return false;",
+  "replace": "if (target === w.ell[v]) return false;",
+  "leak": "The one intensity writer can now raise intensity: lowerIntensity(w, v, 3) returns true and sets ell from 2 to 3, while normal runs, which only lower it, look unchanged."
+ },
+ {
+  "id": "world-empty_null",
+  "file": "world/valleys.mjs",
+  "find": "if (action === EAT && w.item[v] === 0) return { ok: false, code: 'ERR_EMPTY' };",
+  "replace": "if (action === EAT && w.item[v] === null) return { ok: false, code: 'ERR_EMPTY' };",
+  "leak": "The ERR_EMPTY refusal never fires and is replaced: eating nothing reads table[v][-1] (undefined), posts 1 J on stellar with no fruit behind it, and answers PLAIN, so energy appears from an empty slot while the books still close."
+ },
+ {
+  "id": "world-spent_over_full",
+  "file": "world/valleys.mjs",
+  "find": "if (action === REST && w.H[v] === w.P.body.Hmax) return { ok: false, code: 'ERR_FULL' };",
+  "replace": "if (action === REST && w.H[v] === w.P.body.Hmax && w.E[v] > 0) return { ok: false, code: 'ERR_FULL' };",
+  "leak": "Breaks the declared refusal precedence (ERR_FULL before ERR_SPENT, finding 11): REST at H 15 and E 0 is now refused as ERR_SPENT, so one refusal is silently swapped for another."
+ },
+ {
+  "id": "world-down_ambient",
+  "file": "world/valleys.mjs",
+  "find": "w.H[v] = Math.min(P.body.Hmax, w.H[v] + 1); w.down[v] -= 1;",
+  "replace": "w.H[v] = Math.min(P.body.Hmax, w.H[v] + 1); w.down[v] -= 1; if (w.E[v] < P.body.Emax) { w.E[v] += 1; w.books[v].post('ambient', 1, { t: w.t, v, what: 'recover' }); }",
+  "leak": "Energy enters through a port this world does not declare (only fruit on stellar): a collapsed body gains 1 E per down tick on 'ambient', against the rule that E is unchanged while down, and the books still close, so the tick-boundary check cannot see it."
+ },
+ {
+  "id": "world-collapse_rebase",
+  "file": "world/valleys.mjs",
+  "find": "answer = A.COLLAPSE; w.down[v] = P.collapse.downTicks; w.collapsesSeason[v] += 1;",
+  "replace": "answer = A.COLLAPSE; w.down[v] = P.collapse.downTicks; w.collapsesSeason[v] += 1; w.stored0[v] -= w.E[v]; w.E[v] = 0;",
+  "leak": "Energy is destroyed without a thermal entry: a collapse empties E, against the rule that E is unchanged, and the opening balance stored0 is rewritten so that ledgerCloses still reports a zero residual."
+ },
+ {
+  "id": "world-item_waits",
+  "file": "world/valleys.mjs",
+  "find": "w.item[v] = itemAt(w.seed, v, w.t);",
+  "replace": "if (actions[v] === EAT || w.item[v] === 0) w.item[v] = itemAt(w.seed, v, w.t);",
+  "leak": "The schedule now depends on actions: an uneaten fruit stays in the slot until the character eats it, so arms with different policies no longer meet the same fruit (the counter-based schedule is outside any character's control)."
+ },
+ {
+  "id": "world-stage_falls",
+  "file": "world/valleys.mjs",
+  "find": "if (w.collapsesSeason[v] === 0) w.stage[v] = Math.min(P.stage.max, w.stage[v] + 1);",
+  "replace": "w.stage[v] = w.collapsesSeason[v] === 0 ? Math.min(P.stage.max, w.stage[v] + 1) : Math.max(0, w.stage[v] - 1);",
+  "leak": "The stage can now fall: a season with any collapse lowers it by one (checked: valley 0 went from 4 to 3 at tick 2821), which breaks 'stage is state and only rises'; random play hides this because the stage stays at 0."
+ },
+ {
+  "id": "world-snapshot_table",
+  "file": "world/valleys.mjs",
+  "find": "t: w.t, s: w.s, seasonEnd: w.seasonEnd, chain: w.chain,",
+  "replace": "t: w.t, s: w.s, seasonEnd: w.seasonEnd, chain: w.chain, table: w.table,",
+  "leak": "The snapshot hands out the live effect table: Object.freeze is shallow, so snap.table[0][0] = 9 writes the world (checked). It also exposes a VIEW_KERNEL field to anything that reads snapshots."
+ },
+ {
+  "id": "world-replay_by_name",
+  "file": "world/ledger.mjs",
+  "find": "if (presetHash(P) !== ledger.presetHash) return { ok: false, reason: 'preset hash differs' };",
+  "replace": "if (P.name !== ledger.preset) return { ok: false, reason: 'preset differs' };",
+  "leak": "Replay accepts a changed preset that keeps the same name: edits that leave the state bytes the same (the value table, warnings, observation bands, notes) replay as ok, and other edits surface only later as a checkpoint mismatch instead of a preset refusal."
+ },
+ {
+  "id": "world-crn_random",
+  "file": "run/lockstep.mjs",
+  "find": "const u = hash32(runSeed, U, c, t) / 4294967296;",
+  "replace": "const u = Math.random();",
+  "leak": "Hidden randomness in the runner: the minds' random numbers are no longer common to every arm or reproducible from runSeed, so the same seeds give a different action log and final chain each run; D0's scan covers world/, bridge/ and mind/ but not run/."
+ },
+ {
+  "id": "bridge-K1-tick-collides-errdown",
+  "file": "bridge/tokens.mjs",
+  "find": "T.TICK = T.ANS0 + ANS.length;",
+  "replace": "T.TICK = T.ANS0 + ANS.length - 1;",
+  "leak": "The TICK separator gets the same token as the ERR_DOWN answer (both 118, V drops to 119), so one token stands for two values in every tick block."
+ },
+ {
+  "id": "bridge-K2-answer-overlaps-rest",
+  "file": "bridge/tokens.mjs",
+  "find": "T.ANS0 = T.REST + 1;",
+  "replace": "T.ANS0 = T.REST;",
+  "leak": "The ANSWER block starts on the REST action token, so the answer OK (not starving) shares a token with the REST action and the stream cannot tell 'I rested' from 'the world answered OK'."
+ },
+ {
+  "id": "bridge-K3-obs-stride",
+  "file": "bridge/tokens.mjs",
+  "find": "return OBS0 + (eb * HB.length + hb) * NI + item;",
+  "replace": "return OBS0 + (eb * NI + hb) * NI + item;",
+  "leak": "OBS strides the H band by the item count (4) instead of the H-band count (5), so different (E band, H band) bodies share one OBS token (e.g. E 0 / H 15 and E 1 / H 1-2), and the bands and warnings decoded from it are false of the world."
+ },
+ {
+  "id": "bridge-K4-starving-parity",
+  "file": "bridge/tokens.mjs",
+  "find": "starving: !!ANS[i][1] }",
+  "replace": "starving: !!(i & 1) }",
+  "leak": "decodeAnswer reads the starving flag from index parity instead of the table, so the PLAIN and ERR_DOWN tokens decode as starving, which the world never produces."
+ },
+ {
+  "id": "bridge-K5-weak-from-energy",
+  "file": "bridge/tokens.mjs",
+  "find": "['WEAK', P.warnings.WEAK, h0, h1]",
+  "replace": "['WEAK', P.warnings.WEAK, e0, e1]",
+  "leak": "The WEAK warning the lens shows is computed from the energy band instead of the health band; it still passes the exact-predicate check (no throw) but is false of the world: WEAK on low energy, missing on low health."
+ },
+ {
+  "id": "bridge-K6-down-off-by-one",
+  "file": "bridge/tokens.mjs",
+  "find": "if (down > 0) return T.DOWN;",
+  "replace": "if (down > 1) return T.DOWN;",
+  "leak": "On the last collapsed tick (down = 1) the mind gets an awake body-and-item OBS token instead of DOWN, so the token claims the character can act while the world will refuse every action with ERR_DOWN."
+ },
+ {
+  "id": "bridge-K7-decode-unknown-to-pass",
+  "file": "bridge/tokens.mjs",
+  "find": "if (a < 0) throw new Error(`not an action token: ${tok}`); return a;",
+  "replace": "return a < 0 ? 1 : a;",
+  "leak": "decodeAction stops throwing on unknown tokens (PAD, OBS, ANSWER, TICK) and silently maps them to PASS, so the only port quietly substitutes a default action."
+ },
+ {
+  "id": "bridge-K8-encode-wraps",
+  "file": "bridge/tokens.mjs",
+  "find": "const t = ACTION_TOKENS[a];",
+  "replace": "const t = ACTION_TOKENS[a % ACTION_TOKENS.length];",
+  "leak": "encodeAction wraps out-of-range actions modulo 3, so a mind that returns 3, 4 or 5 gets EAT, PASS or REST instead of being refused."
+ },
+ {
+  "id": "bridge-R1-port-bypass",
+  "file": "run/lockstep.mjs",
+  "find": "return K.decodeAction(K.encodeAction(a)); // the only port from mind to world",
+  "replace": "return a; // the only port from mind to world",
+  "leak": "The runner passes the mind's raw return value to the world, skipping the token port: undefined becomes EAT inside step, 1.5 and '2' go into the action log unvalidated, and 3 crashes the world with an untyped refusal instead of being refused at the port."
+ },
+ {
+  "id": "bridge-R2-pain-direct",
+  "file": "run/lockstep.mjs",
+  "find": "{ gain: o.gain, pain: 0 }",
+  "replace": "{ gain: o.gain, pain: o.pain }",
+  "leak": "feel now receives the engine's pain number for every tick, although the owner ruled felt pain off until a higher self chooses it."
+ },
+ {
+  "id": "bridge-R3-pain-via-spread",
+  "file": "run/lockstep.mjs",
+  "find": "{ gain: o.gain, pain: 0 }",
+  "replace": "{ ...o, pain: 0 }",
+  "leak": "feel gets the whole outcome object, so pain still reaches the mind through V = gain - pain (and starving and the collapse cause, which its tokens do not carry), even though the pain field reads 0."
+ },
+ {
+  "id": "bridge-R4-oracle-first-mind",
+  "file": "run/lockstep.mjs",
+  "find": "minds[c].oracle ? w.table : undefined)",
+  "replace": "minds[0].oracle ? w.table : undefined)",
+  "leak": "The oracle check reads mind 0's flag for every character, so in a mixed arm with an oracle in slot 0, the non-oracle characters also receive the true effect table."
+ },
+ {
+  "id": "bridge-R5-snapshot-to-mind",
+  "file": "run/lockstep.mjs",
+  "find": "minds[c].oracle ? w.table : undefined)",
+  "replace": "minds[c].oracle ? w.table : undefined, snap)",
+  "leak": "Every mind's choose receives the frozen world snapshot, which shows exact E and H, stage, intensity, the other valleys, the season index and clock, and the chain, all beyond its tokens."
+ },
+ {
+  "id": "bridge-R6-crn-mixes-obs",
+  "file": "run/lockstep.mjs",
+  "find": "const u = hash32(runSeed, U, c, t) / 4294967296;",
+  "replace": "const u = hash32(runSeed, U, c, t, tok) / 4294967296;",
+  "leak": "The common random number now mixes in the character's OBS token, which depends on its past actions, so on the same seed u differs between arms and the common-random-numbers pairing breaks."
+ }
+]

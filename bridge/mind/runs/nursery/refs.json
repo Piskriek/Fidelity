@@ -1,0 +1,59 @@
+{
+ "refs": {
+  "ansMemoryless": {
+   "ce": 0.3096994566997321,
+   "n": 131072,
+   "contexts": 303
+  },
+  "ansLastOutcome": {
+   "ce": 0.02511804924376278,
+   "n": 131072,
+   "contexts": 825
+  },
+  "ansTableOracle": {
+   "ce": 0.0042813342817017725,
+   "n": 131072,
+   "contexts": 753
+  },
+  "ansLastOutcomeWithin4": {
+   "ce": 0.19382656086805997,
+   "n": 131072,
+   "contexts": 952
+  },
+  "ansLastOutcomeWithin7": {
+   "ce": 0.14210756551209838,
+   "n": 131072,
+   "contexts": 975
+  },
+  "ansLastOutcomeFeedForward": {
+   "ce": 0.18949860385676875,
+   "n": 131072,
+   "contexts": 970
+  },
+  "obsMemoryless": {
+   "ce": 2.9949193537339105,
+   "n": 131071,
+   "contexts": 14
+  },
+  "obsPrevTick": {
+   "ce": 1.6933506730993793,
+   "n": 131068,
+   "contexts": 469
+  },
+  "obsPrevTickAdd001": {
+   "ce": 1.6791647237792433,
+   "n": 131068,
+   "contexts": 469
+  },
+  "obsPrevTickFitOnHeldOut": {
+   "ce": 1.6697659670150797,
+   "n": 131068,
+   "contexts": 462
+  }
+ },
+ "check": {
+  "ansCountCE": 0.3096994566997321,
+  "expected": 0.3096994566997321,
+  "identical": true
+ }
+}

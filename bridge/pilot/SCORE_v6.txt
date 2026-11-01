@@ -1,0 +1,55 @@
+v6 score, 2026-11-01T16:01:31.607Z, v6 runs from results_v6, A, B and R from results_v5
+v6 script hashes: fcec7505596ca9ed518f523f9e66f681ccc95336a1083cd7bb78c53345d6b89c; steps (all runs): 40000
+margin m = 0.0140 (v5 B seeds 2.0176 2.0181 2.0156 2.0168 2.0214 2.0146)
+
+CE by arm (eval.ce / clean text / scrambled):
+  A      s1 2.1033/2.1033/n/a  s2 2.1028/2.1028/n/a  s3 2.0999/2.0999/n/a  mean 2.1020
+  B      s1 2.0176/1.9547/n/a  s2 2.0181/1.9537/n/a  s3 2.0156/1.9503/n/a  mean 2.0171
+  R      s1 1.9903/1.9325/2.1342  s2 1.9877/1.9318/2.1394  s3 1.9864/1.9294/2.1278  mean 1.9881
+  R9     s1 1.9907/1.9367/2.1311  s2 1.9865/1.9282/2.1649  s3 1.9806/1.9212/2.1395  mean 1.9859
+  Rskip  s1 1.9909/1.9351/2.1426  s2 1.9789/1.9181/2.1573  s3 1.9861/1.9298/2.1374  mean 1.9853
+  Rup    s1 1.9947/1.9392/2.1322  s2 1.9877/1.9326/2.1375  s3 1.9841/1.9269/2.1150  mean 1.9888
+  RC     s1 1.9451/1.9038/2.3418  s2 1.9465/1.9018/2.2999  s3 1.9624/1.9147/2.3292  mean 1.9513
+  RCtop  s1 1.9904/1.9334/2.1300  s2 1.9870/1.9289/2.1687  s3 1.9865/1.9303/2.1350  mean 1.9880
+  RCx    s1 1.9862/1.9288/2.1287  s2 1.9824/1.9232/2.1871  s3 1.9867/1.9327/2.1386  mean 1.9851
+
+Regime gate (from v5): M1 holds; M3 holds
+
+Rules:
+  V1 closed triangle: fail
+     R9 ahead of R: no (diffs -0.0004 0.0012 0.0058, mean 0.0022)
+     R9 ahead of Rskip: no (diffs 0.0002 -0.0076 0.0055, mean -0.0006)
+     R9 ahead of Rup: no (diffs 0.0040 0.0012 0.0035, mean 0.0029)
+  V2 compassion: pass  (RC ahead of R9: YES (diffs 0.0456 0.0400 0.0182, mean 0.0346))
+  V3 who feels: the top alone helps: fail (RCtop ahead of R9: no (diffs 0.0002 -0.0006 -0.0059, mean -0.0021)); the gates add: pass (RC ahead of RCtop: YES (diffs 0.0454 0.0406 0.0241, mean 0.0367))
+  V4 whose sting: pass  (RC ahead of RCx: YES (diffs 0.0412 0.0359 0.0244, mean 0.0338))
+
+Readouts (decide nothing):
+  R      gap0 0.0877 [v5 cells 0/4] 0.0849 [v5 cells 0/4] 0.0985 [v5 cells 0/4] | gap1 0.0000 0.0028 -0.0062
+         scramble cost 0.1439 0.1518 0.1415
+  R9     gap0 0.0866 [pure cell n 164263/47532] 0.0816 [pure cell n 164263/47532] 0.0981 [pure cell n 164263/47532] | gap1 -0.0014 0.0115 -0.0005
+         gap2 (all characters) 0.0077 -0.0004 -0.0003 | CE on bridge-2 clean/marked 1.9895/1.9938 1.9844/1.9921 1.9805/1.9807 | G02 mean 0.8910 0.8334 0.9501 sd 0.2910 0.3571 0.1978
+         scramble cost 0.1404 0.1785 0.1589
+  Rskip  gap0 0.0735 [pure cell n 168155/48433] 0.0880 [pure cell n 168155/48433] 0.0934 [pure cell n 168155/48433] | gap1 0.0032 0.0111 0.0074
+         gap2 (all characters) 0.0081 -0.0010 -0.0001 | CE on bridge-2 clean/marked 1.9892/1.9953 1.9776/1.9823 1.9856/1.9874 | G02 mean n/a n/a n/a sd n/a n/a n/a
+         scramble cost 0.1517 0.1784 0.1512
+  Rup    gap0 0.0776 [pure cell n 230113/65901] 0.0732 [pure cell n 230113/65901] 0.0938 [pure cell n 230113/65901] | gap1 0.0017 0.0029 -0.0038
+         gap2 (all characters) n/a n/a n/a | CE on bridge-2 clean/marked n/a/n/a n/a/n/a n/a/n/a | G02 mean 0.8420 0.8114 0.9002 sd 0.3286 0.3715 0.2767
+         scramble cost 0.1376 0.1498 0.1309
+  RC     gap0 0.0889 [pure cell n 164263/47532] 0.0902 [pure cell n 164263/47532] 0.0484 [pure cell n 164263/47532] | gap1 -0.0005 0.0000 0.0000
+         gap2 (all characters) 0.0056 0.0001 0.0034 | CE on bridge-2 clean/marked 1.9409/1.9561 1.9433/1.9549 1.9611/1.9658 | G02 mean 0.3471 0.8653 0.1741 sd 0.4473 0.3233 0.3681
+         scramble cost 0.3968 0.3534 0.3668
+  RCtop  gap0 0.0920 [pure cell n 164263/47532] 0.0793 [pure cell n 164263/47532] 0.0937 [pure cell n 164263/47532] | gap1 -0.0043 0.0057 -0.0034
+         gap2 (all characters) 0.0071 -0.0005 0.0071 | CE on bridge-2 clean/marked 1.9886/1.9954 1.9860/1.9898 1.9853/1.9896 | G02 mean 0.9012 0.9342 0.6755 sd 0.2802 0.2173 0.4308
+         scramble cost 0.1396 0.1816 0.1485
+  RCx    gap0 0.0917 [pure cell n 164263/47532] 0.0927 [pure cell n 164263/47532] 0.0847 [pure cell n 164263/47532] | gap1 -0.0034 0.0050 -0.0020
+         gap2 (all characters) 0.0063 -0.0004 0.0026 | CE on bridge-2 clean/marked 1.9842/1.9915 1.9818/1.9839 1.9865/1.9873 | G02 mean 0.9403 0.9627 0.2770 sd 0.2219 0.1729 0.4296
+         scramble cost 0.1425 0.2047 0.1519
+  mechanism: RC gap0 - R9 gap0 (pure cell, seed means) = -0.0129
+
+Locked predictions:
+  V1 fails: RIGHT
+  V2 passes: RIGHT
+  V3 RCtop not ahead of R9: RIGHT; RC ahead of RCtop: RIGHT
+  V4 passes: RIGHT
+  mechanism RC gap0 exceeds R9's by >= 0.05: WRONG

@@ -1,0 +1,23 @@
+[
+ {
+  "id": "bridge-R1-port-bypass",
+  "file": "run/lockstep.mjs",
+  "find": "return K.decodeAction(K.encodeAction(a)); // the only port from mind to world",
+  "replace": "return a; // the only port from mind to world",
+  "leak": "The runner passes the mind's raw return value to the world, skipping the token port: undefined becomes EAT inside step, 1.5 and '2' go into the action log unvalidated, and 3 crashes the world with an untyped refusal instead of being refused at the port."
+ },
+ {
+  "id": "bridge-R4-oracle-first-mind-v2",
+  "file": "run/lockstep.mjs",
+  "find": "const a = minds[c].oracle ? minds[c].choose(c, tok, u, t, w.table)",
+  "replace": "const a = minds[0].oracle ? minds[c].choose(c, tok, u, t, w.table)",
+  "leak": "The oracle check reads mind 0's flag for every character, so in a mixed arm with an oracle in slot 0, the non-oracle characters also receive the true effect table."
+ },
+ {
+  "id": "bridge-R5-snapshot-to-mind-v2",
+  "file": "run/lockstep.mjs",
+  "find": ": minds[c].choose(c, tok, u, t);",
+  "replace": ": minds[c].choose(c, tok, u, t, snap);",
+  "leak": "Every mind's choose receives the frozen world snapshot, which shows exact E and H, stage, intensity, the other valleys, the season index and clock, and the chain, all beyond its tokens."
+ }
+]

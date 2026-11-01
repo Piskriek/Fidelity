@@ -1,0 +1,3 @@
+2026-11-01T18:06:08.426Z [3080 PC] W0 RC s3 exit 0: RC seed 3: valid ce 0.6279 (clean text 0.6260), gap0/gap1/gap2 null/null/0.0121, g02 0.5902, aux0 1.110, gate0 open/band/shut 0.000/1.000/0.000, gate1 0.000/1.000/0.000, 1467.5s
+2026-11-01T18:08:07.935Z [3080 PC] W0 RC s2 exit 0: RC seed 2: valid ce 0.6308 (clean text 0.6305), gap0/gap1/gap2 null/null/0.0219, g02 0.734, aux0 1.109, gate0 open/band/shut 0.000/1.000/0.000, gate1 0.017/0.983/0.000, 1587.6s
+2026-11-01T18:08:58.254Z [3080 PC] W0 RC s1 exit 0: RC seed 1: valid ce 0.6403 (clean text 0.6400), gap0/gap1/gap2 null/null/0.001, g02 0.8621, aux0 1.110, gate0 open/band/shut 0.000/1.000/0.000, gate1 0.311/0.689/0.000, 1639.4s

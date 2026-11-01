@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Four Valleys Live</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+  /* Night over four valleys: each character's prediction score is drawn as its valley's ridgeline, so learning raises the mountains. */
+  :root {
+    --bg: #101e25; --panel: #162933; --panel-2: #1c323d; --ink: #eef2ea; --muted: #93a8a5; --line: #284450;
+    --frozen: #8ab4d6; --fprime: #6c8595; --live: #f4c55a; --help: #f08d6e; --good: #8fd19e; --warn: #f0b35a;
+    --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif; --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 28px max(16px, env(safe-area-inset-right, 0px)) 48px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 28px; }
+  header { display: grid; gap: 10px; }
+  h1 { font-family: var(--display); font-weight: 700; font-size: clamp(30px, 5vw, 46px); letter-spacing: -0.01em; margin: 0; line-height: 1; }
+  h1 span { color: var(--live); }
+  .lede { color: var(--muted); margin: 0; max-width: 72ch; line-height: 1.5; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; display: grid; }
+  .stat b { font-family: var(--display); font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .stat small { color: var(--muted); font-size: 12px; }
+  .stat.warn b { color: var(--warn); }
+  h2 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0 0 4px; }
+  .note { color: var(--muted); font-size: 13px; margin: 0 0 12px; max-width: 80ch; line-height: 1.45; }
+  .race { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; font-weight: 700; }
+  svg text { font-family: var(--body); }
+  .arms { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); }
+  .arm h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-family: var(--display); font-size: 17px; font-weight: 600; }
+  .arm .what { color: var(--muted); font-size: 12.5px; margin: 2px 0 10px; line-height: 1.4; min-height: 2.8em; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+  .valleys { display: grid; gap: 8px; }
+  .valley { position: relative; border-radius: 10px; overflow: hidden; background: var(--panel-2); border: 1px solid var(--line); }
+  .valley svg { display: block; width: 100%; height: 74px; }
+  .vlabel { position: absolute; left: 10px; top: 7px; font-size: 12px; color: var(--ink); text-shadow: 0 1px 2px #0008; }
+  .vscore { position: absolute; right: 10px; top: 4px; font-family: var(--display); font-weight: 700; font-size: 22px; font-variant-numeric: tabular-nums; text-shadow: 0 1px 3px #0009; }
+  .vmeta { display: flex; gap: 12px; padding: 5px 10px 7px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  .vmeta b { color: var(--ink); font-weight: 700; }
+  .empty { color: var(--muted); font-size: 13px; padding: 18px 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; color: var(--muted); font-weight: 700; font-size: 12px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px; border-bottom: 1px solid var(--line); }
+  td.num, th.num { text-align: right; }
+  .bar { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; min-width: 60px; }
+  .bar i { display: block; height: 100%; border-radius: 4px; }
+  .scroll { overflow-x: auto; }
+  footer { color: var(--muted); font-size: 12px; }
+  .err { color: var(--warn); }
+  @media (prefers-reduced-motion: no-preference) { .valley path.ridge { transition: d 600ms ease-out; } }
+  .titlebar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+  .laybtn { font: 600 15px var(--display); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px 9px 12px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+  .laybtn:hover { border-color: var(--live); }
+  .laybtn:focus-visible { outline: 2px solid var(--live); outline-offset: 2px; }
+  .laybtn[aria-pressed="true"] { background: var(--live); color: #1b1606; border-color: var(--live); }
+  .layicon { width: 18px; height: 10px; border-bottom: 2px solid currentColor; border-radius: 0 0 10px 10px; position: relative; }
+  .layicon::before, .layicon::after { content: ""; position: absolute; bottom: -2px; width: 2px; height: 9px; background: currentColor; }
+  .layicon::before { left: 0; } .layicon::after { right: 0; }
+  .lay-only { display: none; }
+  body.lay .lay-only { display: block; }
+  body.lay .tech-only { display: none; }
+  .plain { border-color: color-mix(in srgb, var(--live) 45%, var(--line)); }
+  #plain p { margin: 0 0 8px; font-size: 16.5px; line-height: 1.55; max-width: 75ch; }
+  #plain b { color: var(--live); font-weight: 700; }
+  .flight { border-color: color-mix(in srgb, var(--live) 30%, var(--line)); }
+  .flighthead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .pill { font: 600 14px var(--display); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.over { color: #10200f; background: var(--good); border-color: var(--good); }
+  .pill.under { color: #24140b; background: var(--warn); border-color: var(--warn); }
+  .pill.close { color: var(--ink); border-color: var(--live); }
+  .burst { animation: none; }
+  @media (prefers-reduced-motion: no-preference) {
+    .burst { animation: burst 1.6s ease-out 1; }
+    @keyframes burst { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 80%, transparent); transform: scale(1); } 30% { transform: scale(1.12); } 100% { box-shadow: 0 0 0 26px transparent; transform: scale(1); } }
+    .spark { animation: spark 1.4s ease-out 1; transform-origin: center; transform-box: fill-box; }
+    @keyframes spark { 0% { transform: scale(0.2); opacity: 0; } 40% { transform: scale(1.6); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+  }
+  .eta { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="titlebar">
+      <h1>Four Valleys, <span>live</span></h1>
+      <button type="button" id="layBtn" class="laybtn" aria-pressed="false"><span class="layicon" aria-hidden="true"></span>Layman's bridge</button>
+    </div>
+    <p class="lede tech-only">192 lives running on the PC: frozen minds against minds that keep learning from their own answers. Every number here goes up when a character does better. Each little landscape is one character: its ridge is how sure it is of what the world will answer, and the sky turns with the seasons.</p>
+    <p class="lede lay-only">Four little characters live in four valleys full of fruit. Some fruit feeds them, some is poison, and which is which changes with the seasons without anyone telling them. We are watching 192 of their lives at once. Half the minds never learn after they are born; the other half keep learning from what happens to them. Higher is better everywhere on this page.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <section class="card flight" id="flightCard">
+    <div class="flighthead">
+      <h2 data-tech="The verdict in flight: L against F" data-plain="Will the learners win?">The verdict in flight: L against F</h2>
+      <span class="pill" id="flightPill">waiting</span>
+    </div>
+    <p class="note tech-only">Each dot is the running mean of L − F good-eats score over the paired lives finished so far (same trunk, same world), with a band of ±2 standard errors that narrows as pairs come in. The dashed line is the margin m = max(1, 3 × sd(F − F′)) from the pairs so far: the pre-registered winning line. This is a running estimate; the scorer gives the verdict once all 48 pairs are in, and watching changes nothing.</p>
+    <p class="note lay-only">The dot is how far ahead the learners are, so far. The dashed line is how far ahead they must finish to count as a clear win, decided before the race began. The shaded band shows how sure we can be yet: it narrows as more lives finish. Nobody can change the rules now; every life runs to the end.</p>
+    <div id="flight"></div>
+  </section>
+
+  <section class="card plain lay-only" aria-live="polite">
+    <h2>What's happening, in plain words</h2>
+    <div id="plain"><p>Waiting for the first numbers.</p></div>
+    <p class="note">Every sentence here is made from the numbers below, nothing else.</p>
+  </section>
+
+  <section>
+    <h2>The race</h2>
+    <p class="note tech-only">Averaged over every character in every life so far, at each point in a life (windows of 512 ticks). A season can turn without warning, which knocks the learners' predictions down until they relearn.</p>
+    <p class="note lay-only">Each line is one kind of mind. Left is the start of a life, right is the end. When a season turns, the learners suddenly guess wrong for a while, then catch up again. The never-learners cannot relearn; their line only moves with how well the season happens to suit them.</p>
+    <div class="race">
+      <div class="card"><h3 data-tech="Prediction score" data-plain="How often they guess right what will happen">Prediction score</h3><div id="raceScore"></div></div>
+      <div class="card"><h3 data-tech="Good eats per 512 ticks (nourishing minus toxic)" data-plain="Good meals minus poison meals, per stretch of time">Good eats per 512 ticks (nourishing minus toxic)</h3><div id="raceGood"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="playingTitle">Now playing</h2>
+    <p class="note tech-only">The life updated most recently, in all four arms: the same world and the same trunk, so the only difference is how each mind works.</p>
+    <p class="note lay-only">The same world, played four times by four kinds of mind, so any difference comes from the mind and not from luck of the world. Each strip is one character: the higher its hills, the better it is guessing. Good meals counts fruit that fed it minus fruit that poisoned it. A collapse is when it fainted from hunger, poison or tiredness and had to rest.</p>
+    <div class="arms" id="arms"></div>
+  </section>
+
+  <section>
+    <h2>Finished lives</h2>
+    <p class="note tech-only">From each finished life's record, counted from the first season turn. The good-eats score is nourishing minus toxic fruit eaten, per 100 times a fruit was there.</p>
+    <p class="note lay-only">Whole lives that are over. The good-meals score is: out of every 100 times a fruit was in front of them, how many good fruits they ate minus how many poisonous ones.</p>
+    <div class="card scroll"><div id="done"></div></div>
+  </section>
+
+  <footer id="foot">Read-only. The board asks the PC for a summary every 15 seconds and writes nothing.</footer>
+</div>
+
+<script>
+const ARMS = [
+  { id: 'F', name: 'Frozen', plainName: 'Never learns', who: 'the never-learner', color: 'var(--frozen)', what: 'The nursery mind as it was born. It never learns during its life.', plainWhat: 'Born knowing a little, and stays exactly that way all its life.' },
+  { id: 'F2', name: 'Frozen, second dice', plainName: 'Never learns, other dice', who: 'the never-learner with other dice', color: 'var(--fprime)', what: 'The same frozen mind with different exploration dice: the noise floor.', plainWhat: 'The same as never-learns, with different luck. It shows how much is just chance.' },
+  { id: 'L', name: 'Live', plainName: 'Keeps learning', who: 'the learner', color: 'var(--live)', what: 'Learns from every answer the world gives it, in its own private head.', plainWhat: 'Learns a little from everything that happens to it, every time.' },
+  { id: 'LH', name: 'Live, with help', plainName: 'Learns, hears the neighbours', who: 'the learner who hears the neighbours', color: 'var(--help)', what: 'Live, and sometimes takes help from another valley’s mind.', plainWhat: 'Keeps learning, and now and then can listen to a mind from another valley.' },
+];
+let LAY = false;
+try { LAY = localStorage.getItem('fv-lay') === '1'; } catch { /* storage may be blocked */ }
+const nameOf = a => (LAY ? a.plainName : a.name), whatOf = a => (LAY ? a.plainWhat : a.what), say = (tech, plain) => (LAY ? plain : tech);
+function applyLay() {
+  document.body.classList.toggle('lay', LAY);
+  const b = document.getElementById('layBtn'); if (b) b.setAttribute('aria-pressed', String(LAY));
+  document.querySelectorAll('[data-tech]').forEach(n => { n.textContent = LAY ? n.dataset.plain : n.dataset.tech; });
+}
+// the layman's bridge: plain sentences made only from the numbers on the page
+function plainStory(d) {
+  const out = [], running = Math.max(0, d.started - d.finished - d.failed);
+  out.push(`<b>${d.finished}</b> of ${d.total} lives are over so far, and <b>${running}</b> are being lived right now.`);
+  const at = arm => { const s = d.byArm[arm] || []; return s.length ? s[s.length - 1] : null; };
+  const f = at('F'), l = at('L');
+  if (f && l) {
+    const tf = Math.min(f.t, l.t), sf = (d.byArm.F.find(p => p.t === tf) || f), sl = (d.byArm.L.find(p => p.t === tf) || l);
+    const lead = sl.score - sf.score;
+    out.push(`At the same point in their lives, the learners guess right about <b>${Math.round(100 * sl.score)}%</b> of the time and the never-learners about <b>${Math.round(100 * sf.score)}%</b>. ${Math.abs(lead) < 0.02 ? 'That is about even.' : lead > 0 ? 'The learners are ahead.' : 'The never-learners are ahead here.'}`);
+  }
+  const pl = d.playing, live = pl && pl.arms.L;
+  if (live) {
+    const s = live.seasons, turned = s.length > 1 && s[s.length - 1][1] !== s[s.length - 2][1];
+    const scores = live.chars.map(c => c[c.length - 1]?.score ?? 0), prev = live.chars.map(c => c[c.length - 2]?.score ?? null);
+    const best = scores.indexOf(Math.max(...scores));
+    out.push(`In world ${pl.world}, the learner in <b>valley ${best + 1}</b> is doing best right now, guessing right <b>${Math.round(100 * scores[best])}%</b> of the time.`);
+    const dropped = prev.filter((p, i) => p != null && scores[i] < p - 0.1).length;
+    if (turned && dropped) out.push(`A season just turned there, and ${dropped === 1 ? 'one learner is suddenly guessing worse. Its fruit knowledge went stale; watch whether it climbs back.' : `${dropped} learners are suddenly guessing worse. Their fruit knowledge went stale; watch whether they climb back.`}`);
+    else if (turned) out.push('A season just turned there; the fruit that was safe may not be any more.');
+  }
+  if (pl) {
+    let worst = null;
+    for (const a of ARMS) { const r = pl.arms[a.id]; if (!r) continue; r.chars.forEach((c, i) => { const n = c.reduce((s, w) => s + w.collapses, 0); if (!worst || n > worst.n) worst = { a, i, n }; }); }
+    if (worst && worst.n > 0) out.push(`The one having the hardest time is ${worst.a.who} in valley ${worst.i + 1}: it has fainted <b>${worst.n}</b> times so far. Root for it.`);
+  }
+  const fl = flightState(d);
+  if (fl.path.length && fl.m != null) { const lm = fl.path[fl.path.length - 1].mean; out.push(`Race to the line: the learners are <b>${lm >= 0 ? '' : 'behind by '}${Math.abs(lm).toFixed(1)}</b>${lm >= 0 ? ' ahead' : ''} on good meals over ${fl.n} finished pairs, and a clear win needs <b>${fl.m.toFixed(1)}</b>. ${{ 'warming up': 'Too early to tell.', 'heading over the line': 'They are heading for a clear win.', 'heading under the line': 'They are heading short of a clear win.', 'too close to call': 'Too close to call yet.', 'over the line': 'They made it: a clear win!', 'under the line': 'All lives are in: not a clear win.' }[fl.status] || ''}`); }
+  if (live) { const rs = live.chars.map(c => recoveries(c, live.seasons)); const bounced = rs.reduce((a, r) => a + r.done.length, 0), climbing = rs.filter(r => r.open).length; if (bounced || climbing) out.push(`After season turns, the learners in this world have bounced back <b>${bounced}</b> times${climbing ? `, and ${climbing} ${climbing === 1 ? 'is' : 'are'} climbing back right now (the dashed line is the level they are aiming for)` : ''}.`); }
+  const fin = id => d.done.filter(r => r.arm === id), avg = xs => xs.reduce((s, r) => s + r.NGE, 0) / xs.length;
+  if (fin('F').length && fin('L').length) {
+    const a = avg(fin('L')), b = avg(fin('F'));
+    out.push(`Over the lives that are finished, learners score <b>${a.toFixed(1)}</b> on good meals against <b>${b.toFixed(1)}</b> for the never-learners (${fin('L').length} and ${fin('F').length} lives). Early numbers jump around; the verdict waits for all ${d.total}.`);
+  }
+  if (d.failed > 0) out.push(`${d.failed} ${d.failed === 1 ? 'life' : 'lives'} stopped with an error; I will look at ${d.failed === 1 ? 'it' : 'them'}.`);
+  return out.map(p => `<p>${p}</p>`).join('');
+}
+const SKY = [['#1f4a4f', '#13282e'], ['#4a4322', '#1c2a24'], ['#4f3123', '#21262a'], ['#243a5a', '#141f2c']]; // season hues, cycling
+const pct = v => (v == null || Number.isNaN(v) ? '—' : `${(100 * v).toFixed(1)}%`);
+const num = (v, d = 1) => (v == null || Number.isNaN(v) ? '—' : v.toFixed(d));
+const el = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function lineChart(target, series, { yFmt, yMin, yMax }) {
+  const longest = Math.max(0, ...series.map(sr => (sr.name || '').length + 6)), W = Math.max(300, target.clientWidth || 500), H = 230, ml = 46, mr = Math.max(118, Math.round(longest * 6.8) + 20), mt = 10, mb = 26;
+  const pts = series.flatMap(s => s.pts);
+  if (!pts.length) { target.innerHTML = '<div class="empty">Waiting for the first 512 ticks.</div>'; return; }
+  const xMax = Math.max(16384, ...pts.map(p => p.x)), lo = yMin ?? Math.min(...pts.map(p => p.y)), hi = yMax ?? Math.max(...pts.map(p => p.y));
+  const pad = (hi - lo) * 0.08 || 0.05, y0 = lo - pad, y1 = hi + pad;
+  const X = x => ml + (x / xMax) * (W - ml - mr), Y = y => mt + (1 - (y - y0) / (y1 - y0)) * (H - mt - mb);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">`;
+  for (let i = 0; i <= 4; i++) { const v = y0 + ((y1 - y0) * i) / 4, yy = Y(v); s += `<line x1="${ml}" x2="${W - mr}" y1="${yy}" y2="${yy}" stroke="var(--line)"/><text x="${ml - 6}" y="${yy + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${yFmt(v)}</text>`; }
+  for (const t of [4096, 8192, 12288, 16384]) s += `<text x="${X(t)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${t / 1024}k ticks</text>`;
+  const ends = [];
+  for (const sr of series) {
+    if (!sr.pts.length) continue;
+    s += `<path d="${sr.pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join('')}" fill="none" stroke="${sr.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const last = sr.pts[sr.pts.length - 1]; ends.push({ y: Y(last.y), x: X(last.x), label: `${sr.name} ${yFmt(last.y)}`, color: sr.color });
+  }
+  ends.sort((a, b) => a.y - b.y); for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+  for (const e of ends) s += `<circle cx="${e.x}" cy="${e.y}" r="3" fill="${e.color}"/><text x="${W - mr + 8}" y="${e.y + 4}" font-size="12" fill="${e.color}">${esc(e.label)}</text>`;
+  target.innerHTML = s + '</svg>';
+}
+
+// one character as a landscape: the ridge is the prediction score over its life, the sky bands are its seasons
+function valley(c, i, seasons, color, key) {
+  const W = 300, H = 74, last = c[c.length - 1];
+  const X = t => (t / 16384) * W, Y = v => H - 6 - v * (H - 18);
+  let sky = '';
+  const bounds = []; let prev = null;
+  for (const [t, s] of seasons) { if (s !== prev) { bounds.push([t, s]); prev = s; } }
+  bounds.forEach(([t, s], k) => {
+    const x0 = k === 0 ? 0 : X(t - 512), x1 = k + 1 < bounds.length ? X(bounds[k + 1][0] - 512) : W, [top, bot] = SKY[s % 4];
+    sky += `<rect x="${x0.toFixed(1)}" y="0" width="${Math.max(0, x1 - x0).toFixed(1)}" height="${H}" fill="url(#sky${s % 4})"/>`;
+  });
+  const grads = SKY.map(([top, bot], k) => `<linearGradient id="sky${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bot}"/></linearGradient>`).join('');
+  const ridge = c.length ? `M0,${H} ` + c.map(w => `L${X(w.t).toFixed(1)},${Y(w.score).toFixed(1)}`).join(' ') + ` L${X(last.t).toFixed(1)},${H} Z` : '';
+  const good = c.reduce((a, w) => a + w.goodEats, 0), col = c.reduce((a, w) => a + w.collapses, 0), awake = c.length ? c.reduce((a, w) => a + w.awake, 0) / c.length : null;
+  const rec = recoveries(c, seasons);
+  let marks = '';
+  if (rec.open) marks += `<line x1="${X(rec.open.from).toFixed(1)}" x2="${W}" y1="${Y(rec.open.target).toFixed(1)}" y2="${Y(rec.open.target).toFixed(1)}" stroke="var(--ink)" stroke-width="1.4" stroke-dasharray="4 4" opacity="0.85"/>`; // the target in flight
+  for (const r of rec.done) { const id = `${key}|${r.at}`, fresh = !seenSparks.has(id); seenSparks.add(id); marks += `<g class="${fresh ? 'spark' : ''}"><circle cx="${X(r.at).toFixed(1)}" cy="${Y(r.score).toFixed(1)}" r="4.2" fill="var(--ink)" stroke="${color}" stroke-width="2"/></g>`; }
+  return `<div class="valley"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Valley ${i + 1} prediction score over its life"><defs>${grads}</defs>${sky}
+    <path class="ridge" d="${ridge}" fill="${color}" fill-opacity="0.82"/><path d="${ridge}" fill="none" stroke="${color}" stroke-width="1.5"/>${marks}</svg>
+    <span class="vlabel">Valley ${i + 1}</span><span class="vscore" style="color:${color}">${pct(last?.score)}</span>
+    <div class="vmeta"><span>${say('good eats', 'good meals')} <b>${good}</b></span><span>${say('collapses', 'faints')} <b>${col}</b></span><span>awake <b>${pct(awake)}</b></span><span>${say('recoveries', 'bounced back')} <b>${rec.done.length}</b>${rec.open ? say(' (one in flight)', ' (climbing now)') : ''}</span><span>${say('tick', 'moment')} <b>${last ? last.t : 0}</b></span></div></div>`;
+}
+
+// ---- convergence: the verdict in flight, recoveries, the finish ----
+const seenSparks = new Set(), finishSamples = [];
+let lastPill = null;
+function pairs(d) {
+  const by = new Map();
+  for (const r of d.done) { const k = `${r.seed}|${r.world}`; if (!by.has(k)) by.set(k, { seed: r.seed, world: r.world }); by.get(k)[r.arm] = r.NGE; }
+  return [...by.values()].sort((a, b) => a.world - b.world || a.seed - b.seed); // the worker runs world by world, so this is close to the order they finish
+}
+const sdOf = xs => { if (xs.length < 2) return NaN; const m = xs.reduce((a, b) => a + b, 0) / xs.length; return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1)); };
+function flightState(d) {
+  const ps = pairs(d), lf = ps.filter(p => p.L != null && p.F != null), ff = ps.filter(p => p.F != null && p.F2 != null);
+  const floor = sdOf(ff.map(p => p.F - p.F2)), m = Number.isNaN(floor) ? null : Math.max(1, 3 * floor);
+  const path = []; let sum = 0;
+  lf.forEach((p, i) => { sum += p.L - p.F; const diffs = lf.slice(0, i + 1).map(q => q.L - q.F), n = i + 1, mean = sum / n, se = n >= 2 ? sdOf(diffs) / Math.sqrt(n) : NaN; path.push({ n, mean, lo: mean - 2 * se, hi: mean + 2 * se }); });
+  const last = path[path.length - 1];
+  let status = 'waiting', cls = '';
+  if (last && m != null) {
+    if (lf.length === 48 && ff.length === 48) {
+      const d2 = lf.map(p => p.L - p.F), perSeed = [1, 2, 3].map(s => { const xs = lf.filter(p => p.seed === s).map(p => p.L - p.F); return xs.reduce((a, b) => a + b, 0) / xs.length; });
+      const win = perSeed.every(v => v > 0) && d2.filter(v => v > 0).length >= 36 && last.mean >= m;
+      status = win ? 'over the line' : 'under the line'; cls = win ? 'over' : 'under';
+    } else if (last.n < 6 || Number.isNaN(last.lo)) { status = 'warming up'; }
+    else if (last.lo > m) { status = 'heading over the line'; cls = 'close'; }
+    else if (last.hi < m) { status = 'heading under the line'; cls = 'close'; }
+    else { status = 'too close to call'; cls = 'close'; }
+  }
+  return { path, m, n: lf.length, nff: ff.length, status, cls, done: lf.length === 48 && ff.length === 48 };
+}
+function drawFlight(d) {
+  const f = flightState(d), box = el('flight'), pill = el('flightPill');
+  const label = LAY ? { 'waiting': 'waiting for the first pairs', 'warming up': 'warming up', 'heading over the line': 'heading for a clear win', 'heading under the line': 'heading short of a clear win', 'too close to call': 'too close to call', 'over the line': 'a clear win!', 'under the line': 'not a clear win' }[f.status] : f.status;
+  pill.textContent = label; pill.className = `pill ${f.cls}`;
+  if (f.done && lastPill !== f.status) { pill.classList.add('burst'); setTimeout(() => pill.classList.remove('burst'), 1700); }
+  lastPill = f.status;
+  if (!f.path.length) { box.innerHTML = `<div class="empty">${say('No paired lives finished yet.', 'No life has finished in both kinds of mind yet.')}</div>`; return; }
+  const W = Math.max(300, box.clientWidth || 600), H = 210, ml = 44, mr = 150, mt = 12, mb = 26;
+  const ys = f.path.flatMap(p => [p.mean, Number.isNaN(p.lo) ? p.mean : p.lo, Number.isNaN(p.hi) ? p.mean : p.hi]).concat(f.m != null ? [f.m] : [], [0]);
+  const lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * 0.12 || 1, y0 = lo - pad, y1 = hi + pad;
+  const X = n => ml + (n / 48) * (W - ml - mr), Y = v => mt + (1 - (v - y0) / (y1 - y0)) * (H - mt - mb);
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Running learner minus frozen good-eats score against the winning line">`;
+  for (let i = 0; i <= 4; i++) { const v = y0 + ((y1 - y0) * i) / 4; s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${ml - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v >= 0 ? '+' : ''}${v.toFixed(1)}</text>`; }
+  for (const n of [12, 24, 36, 48]) s += `<text x="${X(n)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${n} ${say('pairs', 'lives')}</text>`;
+  s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)" stroke-opacity="0.5"/>`;
+  const band = f.path.filter(p => !Number.isNaN(p.lo));
+  if (band.length > 1) s += `<path d="M${band.map(p => `${X(p.n)},${Y(p.hi)}`).join(' L')} L${band.slice().reverse().map(p => `${X(p.n)},${Y(p.lo)}`).join(' L')} Z" fill="var(--live)" fill-opacity="0.16"/>`;
+  s += `<path d="M${f.path.map(p => `${X(p.n)},${Y(p.mean)}`).join(' L')}" fill="none" stroke="var(--live)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if (f.m != null) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(f.m)}" y2="${Y(f.m)}" stroke="var(--good)" stroke-width="2" stroke-dasharray="7 5"/><text x="${W - mr + 8}" y="${Y(f.m) + 4}" font-size="12" fill="var(--good)">${say(`winning line m = ${f.m.toFixed(1)}`, `win line ${f.m.toFixed(1)}`)}</text>`;
+  const last = f.path[f.path.length - 1];
+  s += `<circle cx="${X(last.n)}" cy="${Y(last.mean)}" r="5.5" fill="var(--live)"/><text x="${W - mr + 8}" y="${Y(last.mean) + (f.m != null && Math.abs(Y(last.mean) - Y(f.m)) < 16 ? 18 : 4)}" font-size="12" fill="var(--live)">${say(`L − F ${last.mean >= 0 ? '+' : ''}${last.mean.toFixed(1)} (${last.n} of 48)`, `learners ${last.mean >= 0 ? '+' : ''}${last.mean.toFixed(1)} ahead`)}</text>`;
+  box.innerHTML = s + '</svg>';
+}
+// a season turn that knocks a character's score down sets a target: its score before the turn. Climbing back to it is a recovery.
+function recoveries(c, seasons) {
+  const out = []; let open = null;
+  for (let k = 1; k < c.length; k++) {
+    const turned = seasons[k] && seasons[k - 1] && seasons[k][1] !== seasons[k - 1][1];
+    if (open && c[k].score >= open.target) { out.push({ ...open, at: c[k].t, score: c[k].score }); open = null; }
+    if (turned && c[k - 1].score - c[k].score > 0.08) open = { from: c[k].t, target: c[k - 1].score };
+  }
+  return { done: out, open };
+}
+function etaText(d) {
+  const now = Date.now(); finishSamples.push([now, d.finished]); while (finishSamples.length > 2 && now - finishSamples[0][0] > 15 * 60000) finishSamples.shift();
+  const [t0, f0] = finishSamples[0], rate = (d.finished - f0) / ((now - t0) / 60000);
+  if (now - t0 < 120000 && d.finished < d.total) return say('estimating time to go', 'working out how long is left');
+  if (!(rate > 0) || d.finished >= d.total) return d.finished >= d.total ? say('all lives finished', 'every life is over') : say('estimating time to go', 'working out how long is left');
+  return say(`about ${Math.ceil((d.total - d.finished) / rate)} min to go (estimate)`, `about ${Math.ceil((d.total - d.finished) / rate)} minutes left (a guess)`);
+}
+
+let lastAt = null, lastData = null;
+function render(d) {
+  const running = Math.max(0, d.started - d.finished - d.failed);
+  el('stats').innerHTML = [[d.finished, say(`of ${d.total} lives finished`, `of ${d.total} lives over`)], [running, say('running now', 'being lived now')], [d.failed, say('failed', 'stopped by an error'), d.failed > 0], [new Date(d.at).toLocaleTimeString(), say('last update', 'last news')], [etaText(d), say('finish', 'the end')]]
+    .map(([v, l, w]) => `<div class="stat${w ? ' warn' : ''}"><b>${esc(v)}</b><small>${esc(l)}</small></div>`).join('');
+  el('plain').innerHTML = plainStory(d);
+  drawFlight(d);
+  lineChart(el('raceScore'), ARMS.map(a => ({ name: nameOf(a), color: a.color, pts: (d.byArm[a.id] || []).map(p => ({ x: p.t, y: p.score })) })), { yFmt: v => `${(100 * v).toFixed(0)}%` });
+  lineChart(el('raceGood'), ARMS.map(a => ({ name: nameOf(a), color: a.color, pts: (d.byArm[a.id] || []).map(p => ({ x: p.t, y: p.good })) })), { yFmt: v => v.toFixed(0) });
+  const pl = d.playing;
+  el('playingTitle').textContent = pl ? say(`Now playing: world ${pl.world}, trunk seed ${pl.seed}`, `Now playing: world ${pl.world}`) : 'Now playing';
+  el('arms').innerHTML = ARMS.map(a => {
+    const r = pl && pl.arms[a.id];
+    const body = r ? r.chars.map((c, i) => valley(c, i, r.seasons, a.color, `${a.id}|${pl.seed}|${pl.world}|${i}`)).join('') : `<div class="empty">${say('Not started yet in this world.', 'Has not started this world yet.')}</div>`;
+    return `<div class="card arm"><h3><span class="dot" style="background:${a.color}"></span>${esc(nameOf(a))}</h3><p class="what">${esc(whatOf(a))}</p><div class="valleys">${body}</div></div>`;
+  }).join('');
+  const rows = ARMS.map(a => {
+    const xs = d.done.filter(r => r.arm === a.id), m = k => (xs.length ? xs.reduce((s, r) => s + (r[k] ?? 0), 0) / xs.length : null);
+    return { a, n: xs.length, nge: m('NGE'), avoid: xs.length ? 1 - m('toxic') : null, nourish: m('nourish'), awake: m('awake') };
+  });
+  const top = Math.max(1, ...rows.map(r => r.nge ?? 0));
+  el('done').innerHTML = `<table><thead><tr><th>${say('Arm', 'Kind of mind')}</th><th class="num">Lives</th><th>${say('Good-eats score', 'Good-meals score')}</th><th class="num">${say('Toxic avoided', 'Poison avoided')}</th><th class="num">${say('Nourishing eaten', 'Good fruit eaten')}</th><th class="num">Awake</th></tr></thead><tbody>${rows.map(r => `<tr><td><span class="dot" style="background:${r.a.color}"></span> ${esc(nameOf(r.a))}</td><td class="num">${r.n}</td><td><div style="display:flex;gap:10px;align-items:center"><div class="bar" style="flex:1"><i style="width:${r.nge == null ? 0 : Math.max(2, (100 * Math.max(0, r.nge)) / top)}%;background:${r.a.color}"></i></div><b style="min-width:3.2em;text-align:right">${num(r.nge)}</b></div></td><td class="num">${pct(r.avoid)}</td><td class="num">${pct(r.nourish)}</td><td class="num">${pct(r.awake)}</td></tr>`).join('')}</tbody></table>`;
+  el('foot').textContent = say(`Read-only. Source: ${d.source}. The board asks for a summary every 15 seconds and writes nothing.`, 'This page only watches. It checks the PC for news every 15 seconds and never changes anything.');
+}
+async function tick() {
+  let d;
+  try { d = await (await fetch('/data', { cache: 'no-store' })).json(); } catch { el('foot').innerHTML = '<span class="err">The board server is not answering.</span>'; return; }
+  if (d.error && !d.at) { el('stats').innerHTML = `<div class="stat warn"><b>…</b><small>${esc(d.error)}</small></div>`; return; }
+  if (d.at === lastAt) return; lastAt = d.at; lastData = d;
+  render(d);
+}
+document.getElementById('layBtn').addEventListener('click', () => {
+  LAY = !LAY;
+  try { localStorage.setItem('fv-lay', LAY ? '1' : '0'); } catch { /* storage may be blocked */ }
+  applyLay(); if (lastData) render(lastData);
+});
+applyLay(); tick(); setInterval(tick, 5000);
+</script>
+</body>
+</html>
