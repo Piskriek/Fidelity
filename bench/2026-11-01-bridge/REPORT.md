@@ -250,6 +250,7 @@ Pick an option for each item, or write your own. Each option says whose proposal
 - (b) Turn some options on by default (name them).
 - (c) Take it out.
 - Reference: kept, all off; nothing in R38 calls it.
+- Argon's overnight view (after this report was drafted; from a summary, since it could not read the code): keep it, strictly default-off. It would change its mind if cross-level transfers are ruled read-only, or if the Bridge should move to its own module so that the Wave 0 file stays a minimal R38 baseline [design proposal].
 
 **2. Port type.**
 - (a) None: a factor of 1, as in R38 (reference default).
@@ -257,6 +258,7 @@ Pick an option for each item, or write your own. Each option says whose proposal
 - (c) A steady DC port, like a coaxial gun (not built; the reference throws on any other port type).
 - (d) Both (not built).
 - Argon proposes the phased port so that 3-6-9 has a role [design proposal]. The reply check noted that this reason is design, not physics: MST has no 3-6-9 structure, and a DC port needs no phase layer. A related choice is one port or two, since MST pairs OFCD with a main transformer [design].
+- Argon's overnight view changes its R39 proposal: a steady DC port as the base for ordinary draws, with the phased port as an opt-in for resonant or multi-entity coupling, or a hybrid (DC baseline plus a small phased trim, as on MST). Its reasons: a universal phased port adds a phase and an order to every draw and cuts default draws by sin δ, and with #13's ceiling a second sin δ factor would count phase lock twice [design proposal; the double-count point is inference].
 
 **3. Antidrive, and the sign conventions.**
 - (a) Close: a backward drive moves nothing (Argon's A1).
@@ -264,11 +266,13 @@ Pick an option for each item, or write your own. Each option says whose proposal
 - Reference: no default. A phased port must name one, or the draw throws.
 - Signs: (i) a backward harmonic at a negative phase counts as antidrive (reference), or the two signs cancel into forward drive; (ii) helicity is added in the toroid's own handedness (reference), or its sign is fixed by sin δ, as in OFCD.
 - (iii) A reversed flow that carries K through zero into the other handedness is not built. The stop at K = 0 came from the audit's one High finding.
+- Argon's overnight view: reverse, with the gate, floor and K = 0 stop as built. It would switch to close if multi-step runs show chatter as δ jitters around 0, or if you want upward return only through harvest by merge [design proposal].
 
 **4. Λ, the energy per unit helicity.**
 - (a) Passed per draw, with no default; without it no helicity moves (reference).
 - (b) One value for the whole tower, which the composed prototype needed [model, one parameter set].
 - (c) Argon's Λ = 9 [design proposal, not approved].
+- Argon's overnight view: one tower-wide value, with 9 so that the S0a unit charge is P_local(S0a)/Λ = 1. Its argument: if neighbouring levels used different Λ, a lossless transfer could not keep both energy and helicity with ΔE = ΛΔK on both sides, so every transfer would create energy or force heat [design proposal; the argument is algebra on the design rules, matching the composed prototype's finding]. It would drop Λ if K never evolves apart from E.
 
 **5. A source floor beyond the Taylor floor.**
 - (a) None (reference). Once a source is passed, its own Taylor floor and a finite Wmax are always respected. That was the builder's choice, and you may see it differently.

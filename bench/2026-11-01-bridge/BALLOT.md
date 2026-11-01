@@ -5,9 +5,9 @@
 | # | Decision | Options | Your answer |
 |---|---|---|---|
 | 1 | Keep the Bridge section, and adopt any of its options? | (a) keep, all off (as built, Argon's step 1) · (b) turn some on (name them) · (c) take it out | |
-| 2 | Port type | (a) none, as in R38 · (b) phased (built; Argon's proposal, so that 3-6-9 has a role) · (c) steady DC (not built) · (d) both (not built); also one port or two | |
+| 2 | Port type | (a) none, as in R38 · (b) phased (built; Argon's R39 proposal, so that 3-6-9 has a role; overnight Argon proposed DC as the base with phased as an opt-in, or a hybrid) · (c) steady DC (not built) · (d) both (not built); also one port or two | |
 | 3 | Antidrive and the sign conventions | (a) close (Argon's A1) · (b) reverse (a version of Argon's A2: gated, floor-capped, stops at K = 0, no dissipation split, a full toroid returns nothing). Signs: a double negative is antidrive, or cancels; helicity in the toroid's own handedness, or fixed by sin δ; crossing K = 0 allowed or not | |
-| 4 | Λ, the energy per unit helicity | (a) per draw, no default · (b) one value for the whole tower · (c) Argon's 9 (not approved) | |
+| 4 | Λ, the energy per unit helicity | (a) per draw, no default · (b) one value for the whole tower · (c) Argon's 9 (not approved; overnight Argon proposed one tower-wide value of 9) | |
 | 5 | A source floor beyond the Taylor floor | (a) none · (b) passed per draw · (c) Argon's 0.15·P_local (not approved; needs a span of time) | |
 | 6 | Whose P_local, and links that skip levels | the enclosing level's (§8.6, Argon) or the target's; skip-level links yes (Argon's two-sided scaling) or no | |
 | 7 | A port that exceeds the split bound | (a) report only · (b) refuse or clip · (c) log | |
