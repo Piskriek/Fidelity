@@ -1,0 +1,70 @@
+bridge v1b score, 2026-11-02T04:28:12.976Z, Y records from mind/runs/y_checks, v1a records from mind/runs/v1a
+live_y.mjs hashes: none; scorer 9a315f123a0d9bef37595fe56854667a2111d8b84455510cfe27a67ef1bcc19f
+PROBLEMS (48):
+  missing Y_s1_w101.json
+  missing Y_s1_w102.json
+  missing Y_s1_w103.json
+  missing Y_s1_w104.json
+  missing Y_s1_w105.json
+  missing Y_s1_w106.json
+  missing Y_s1_w107.json
+  missing Y_s1_w108.json
+  missing Y_s1_w109.json
+  missing Y_s1_w110.json
+  missing Y_s1_w111.json
+  missing Y_s1_w112.json
+  missing Y_s1_w113.json
+  missing Y_s1_w114.json
+  missing Y_s1_w115.json
+  missing Y_s1_w116.json
+  missing Y_s2_w101.json
+  missing Y_s2_w102.json
+  missing Y_s2_w103.json
+  missing Y_s2_w104.json
+  missing Y_s2_w105.json
+  missing Y_s2_w106.json
+  missing Y_s2_w107.json
+  missing Y_s2_w108.json
+  missing Y_s2_w109.json
+  missing Y_s2_w110.json
+  missing Y_s2_w111.json
+  missing Y_s2_w112.json
+  missing Y_s2_w113.json
+  missing Y_s2_w114.json
+  missing Y_s2_w115.json
+  missing Y_s2_w116.json
+  missing Y_s3_w101.json
+  missing Y_s3_w102.json
+  missing Y_s3_w103.json
+  missing Y_s3_w104.json
+  missing Y_s3_w105.json
+  missing Y_s3_w106.json
+  missing Y_s3_w107.json
+  missing Y_s3_w108.json
+noise floor (v1a): sd(F - F') over 48 pairs = 0.34; margin m = max(1.0, 3 sd) = 1.02 NGE
+
+NGE by arm (mean over its pairs; per model seed):
+  F    28.61   (29.08 28.34 28.42)
+  F2   28.58   (29.01 28.35 28.38)
+  L    33.20   (33.83 33.29 32.48)
+  Y    n/a   (n/a n/a n/a)
+  O    50.53
+  T    42.68
+  S    31.10
+  RND  11.13
+
+Regime checks (as in v1a): M1 YES (mean 19.96, need >= 1.02; 16 of 16 pairs favour S); M2 YES (mean 21.92, need >= 3.07; per model seed 21.45 22.19 22.11; 48 of 48 pairs favour O); M3 YES (mean 14.06, need >= 1.02; per model seed 13.60 14.34 14.26; 48 of 48 pairs favour T)
+
+E2 (L ahead of Y): n/a (missing or refused records)
+Y against F (two-sided, reported only): mean n/a; per model seed n/a n/a n/a; 0 of 48 favour Y
+
+Secondary readouts (decide nothing): mean per arm
+  F    meanV 0.62  painPer100 45.38  collapsesPer10k 196.57  toxicEatRate 0.61  nourishEatRate 0.78  NGElast4k 29.55  ceAnswer 0.46  ceEatItem 0.97
+  F2   meanV 0.61  painPer100 45.45  collapsesPer10k 196.93  toxicEatRate 0.61  nourishEatRate 0.78  NGElast4k 29.62  ceAnswer 0.46  ceEatItem 0.97
+  L    meanV 0.60  painPer100 43.81  collapsesPer10k 205.84  toxicEatRate 0.40  nourishEatRate 0.79  NGElast4k 33.46  ceAnswer 0.38  ceEatItem 0.85
+  Y    meanV n/a  painPer100 n/a  collapsesPer10k n/a  toxicEatRate n/a  nourishEatRate n/a  NGElast4k n/a  ceAnswer n/a  ceEatItem n/a
+
+Locked predictions (PREREG_bridge_v1b.md):
+  E2 passes: not scored (missing or refused records)
+  Y ahead of F on mean NGE (mean Y - F > 0): not scored (missing or refused records)
+  INCOMPLETE: 48 problem(s) above; refused records were scored as missing

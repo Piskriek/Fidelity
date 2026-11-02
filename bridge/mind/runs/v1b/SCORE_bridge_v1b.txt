@@ -1,0 +1,29 @@
+bridge v1b score, 2026-11-02T04:33:28.354Z, Y records from mind/runs/v1b, v1a records from mind/runs/v1a
+live_y.mjs hashes: 1360ab19561fd26ee9300055f558357a58a11af1a5e00f644ada1421552992ef; scorer 9a315f123a0d9bef37595fe56854667a2111d8b84455510cfe27a67ef1bcc19f
+noise floor (v1a): sd(F - F') over 48 pairs = 0.34; margin m = max(1.0, 3 sd) = 1.02 NGE
+
+NGE by arm (mean over its pairs; per model seed):
+  F    28.61   (29.08 28.34 28.42)
+  F2   28.58   (29.01 28.35 28.38)
+  L    33.20   (33.83 33.29 32.48)
+  Y    28.51   (28.55 28.41 28.56)
+  O    50.53
+  T    42.68
+  S    31.10
+  RND  11.13
+
+Regime checks (as in v1a): M1 YES (mean 19.96, need >= 1.02; 16 of 16 pairs favour S); M2 YES (mean 21.92, need >= 3.07; per model seed 21.45 22.19 22.11; 48 of 48 pairs favour O); M3 YES (mean 14.06, need >= 1.02; per model seed 13.60 14.34 14.26; 48 of 48 pairs favour T)
+
+E2 (L ahead of Y): YES (mean 4.69, need >= 1.02; per model seed 5.28 4.88 3.93; 48 of 48 pairs favour L)
+Y against F (two-sided, reported only): mean -0.11; per model seed -0.53 0.07 0.14; 21 of 48 favour Y
+
+Secondary readouts (decide nothing): mean per arm
+  Y collapse causes (sum over its lives): toxin 33887, hunger 34212, other 0; loop-breaks per character 1.00; characters ending at intensity 1: 192 of 192 (the v1a records do not carry these)
+  F    meanV 0.62  painPer100 45.38  collapsesPer10k 196.57  toxicEatRate 0.61  nourishEatRate 0.78  NGElast4k 29.55  ceAnswer 0.46  ceEatItem 0.97
+  F2   meanV 0.61  painPer100 45.45  collapsesPer10k 196.93  toxicEatRate 0.61  nourishEatRate 0.78  NGElast4k 29.62  ceAnswer 0.46  ceEatItem 0.97
+  L    meanV 0.60  painPer100 43.81  collapsesPer10k 205.84  toxicEatRate 0.40  nourishEatRate 0.79  NGElast4k 33.46  ceAnswer 0.38  ceEatItem 0.85
+  Y    meanV 0.53  painPer100 46.52  collapsesPer10k 217.02  toxicEatRate 0.52  nourishEatRate 0.75  NGElast4k 28.76  ceAnswer 0.76  ceEatItem 1.73
+
+Locked predictions (PREREG_bridge_v1b.md):
+  E2 passes: RIGHT
+  Y ahead of F on mean NGE (mean Y - F > 0): WRONG

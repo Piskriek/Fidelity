@@ -83,7 +83,7 @@ function wantsTable(PP, K) {
 const cloneStream = st => ({ ...st, hist0: [...st.hist0], hist1: [...st.hist1], m: [...st.m], ceE: [...st.ceE], gain: [...st.gain], mH: [...st.mH], sting: [...st.sting] });
 
 // one Adam step on a character's own heads, from the gradient its own ANSWER loss left there (scaled back to one character)
-function adamHeads(st, scale) {
+function adamHeads(st, scale, lr = LIVE.lr) {
   const a = st.adam; a.t += 1;
   const b1 = 0.9, b2 = 0.999, c1 = 1 - b1 ** a.t, c2 = 1 - b2 ** a.t;
   let gn = 0;
@@ -96,7 +96,7 @@ function adamHeads(st, scale) {
       const gi = g[i] * sc;
       m[i] = b1 * m[i] + (1 - b1) * gi;
       v[i] = b2 * v[i] + (1 - b2) * gi * gi;
-      p[i] -= LIVE.lr * (m[i] / c1) / (Math.sqrt(v[i] / c2) + 1e-8);
+      p[i] -= lr * (m[i] / c1) / (Math.sqrt(v[i] / c2) + 1e-8);
     }
     g.fill(0);
   }
@@ -107,7 +107,8 @@ function liveMain() {
   const ARM = { F: { live: false, bus: false, stream: 1 }, F2: { live: false, bus: false, stream: 2 }, L: { live: true, bus: false, stream: 1 }, LH: { live: true, bus: true, stream: 1 } }[armName];
   const bus = ARM && ARM.bus;
   const [w0, nw] = String(args.worlds || '31000,1').split(',').map(Number);
-  if (!ARM) throw new Error('live: --arm F, F2, L or LH');
+  if (armName === 'Y') return yokedMain(); // the yoked arm (E2), its own code path; every other arm runs unchanged below
+  if (!ARM) throw new Error('live: --arm F, F2, L, LH or Y');
   const trunkRec = JSON.parse(fs.readFileSync(args.trunk, 'utf8'));
   if (trunkRec.arm !== 'RC' || !trunkRec.nursery) throw new Error('live: the trunk must be a nursery RC run');
   const PP = JSON.parse(fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'preset', 'valleys_v1.json'), 'utf8'));
@@ -208,5 +209,9 @@ rep(`if (args.info) {`, `if (args.live) {
   liveMain();
 } else if (args.info) {`);
 
+const YOKED = fs.readFileSync(new URL('./yoked_part.js', import.meta.url), 'utf8');
+const NL = String.fromCharCode(10), LM = NL + 'function liveMain() {';
+if (s.split(LM).length !== 2) throw new Error('liveMain not found once');
+s = s.replace(LM, () => NL + YOKED + LM);
 fs.writeFileSync(DST, s);
 console.log(`wrote ${DST}: ${crypto.createHash('sha256').update(s).digest('hex')}`);

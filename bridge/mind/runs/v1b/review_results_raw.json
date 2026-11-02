@@ -1,0 +1,218 @@
+[
+ {
+  "findings": [
+   {
+    "quote": "It comes from learning from its own timeline.",
+    "problem": "A mechanism stated as fact. E2 shows the L arm beats the Y arm under matched learning steps. It does not show what causes L's gain over F. The Whole paragraph says E3 is open and that 'own timeline' is not yet separated from 'a changing world needs any learning'. The 'does not come from taking learning steps as such' claim rests on Y being within the margin of F, which is a null.",
+    "fix": "Replace with: 'In this world the gain goes with training on a character's own valley's answers rather than the neighbour's (E2). Whether the cause is the own timeline or any learning in a changing world is open until E3 is run.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "a character whose heads learn from its own answers beat one",
+    "problem": "The unit of comparison is a life (four characters, one life per world-seed pair) compared by arm mean, not a character. 'A character beat one' misstates what was compared.",
+    "fix": "Replace with: 'With the same number of learning steps at the same rate, the L arm's life beat the Y arm's life in all 48 world-seed pairs (arm means over four characters).'",
+    "severity": "wrong"
+   },
+   {
+    "quote": "The two moves cancel on NGE.",
+    "problem": "Stated as a decomposition, which the write-up does not compute. The eat rates are not shown to be on NGE's scale. Read naively as nourishing minus toxic, the gap is 0.17 for F, 0.23 for Y and 0.39 for L. That puts Y above F, while Y's NGE is 0.11 below F's. L's gap is 0.22 above F's, and L's NGE is 4.6 above. The rates do not reproduce NGE's ordering, so no offset is shown.",
+    "fix": "Replace with: 'Y's mean NGE is 0.11 below F's, inside the margin. Y's toxic and nourishing eat rates are both lower than F's, but the write-up does not show how those rates combine into NGE, so no offset is claimed.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Learning from a neighbour changed behaviour, but not the score.",
+    "problem": "Reads as no effect on the score. The data show a mean Y − F of −0.11 against m = 1.02, with 21 of 48 pairs favouring Y. Seed 1 is −0.53, which is not tested. The supported claim is 'no difference beyond the margin'.",
+    "fix": "Replace with: 'Learning from a neighbour changed behaviour, but did not move the mean score beyond the margin (Y − F = −0.11 against m = 1.02; seed 1 is −0.53, not tested).'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Y ahead of F on mean (about 70%)",
+    "problem": "The grade WRONG is mechanically right under Amendment 1's grading (mean(Y − F) > 0). But 'wrong' with no magnitude reads as a reversal, while the mean is inside the margin. The grading rule was added at 04:28, after the first Y records finished at 04:21, and the table does not say so.",
+    "fix": "Replace the cell's '**wrong**' with 'not borne out: mean Y − F = −0.11, inside m = 1.02; graded as mean > 0 by Amendment 1, logged after the first Y records.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The v1a diagnostic found the same pattern in F and L",
+    "problem": "The diagnostic was post hoc and re-ran 48 of the 192 v1a lives: arms F and L, seeds 1 to 3, worlds 101 to 108 only. 'The same pattern' holds for those lives only. The cited path is also incomplete; the file is at mind/runs/diag_collapse/DIAG_COLLAPSE.md.",
+    "fix": "Replace with: 'A post-hoc diagnostic of 48 of the 192 v1a lives (F and L, worlds 101 to 108) found the same end state: every character hit one loop-break and ended at intensity 1 (mind/runs/diag_collapse/DIAG_COLLAPSE.md).'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The source-lane check shows the shared code reproduces the v1a L lives exactly.",
+    "problem": "The check compared NGE, collapses and answer CE only, not whole lives. The amendment says world chains cannot be compared because the source chain is not in the Y record. 'Lives exactly' claims more than the check.",
+    "fix": "Replace with: 'The source-lane check shows the shared code reproduces the v1a L records' NGE, collapses and answer CE exactly. World chains were not compared, since the Y record does not carry them.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Test: E2. Closed.",
+    "problem": "'Closed' for the node. E2 tests one yoke, one world design and one value table. The Choice line says another yoke was not tried, and the Plain check lists E3 as missing, so the same section contradicts 'Closed'.",
+    "fix": "Replace with: 'Test: E2. Answered for this yoke, world design and value table. Still open to other yokes (see Choice) and to E3.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "F, L and Y now form a closed triangle on NGE",
+    "problem": "Three pairwise comparisons exist, but Y vs F is reported only, has no locked rule, and is within the margin. The same paragraph then says 'The open corner is E3'. A closed triangle with an open corner contradicts itself.",
+    "fix": "Replace with: 'F, L and Y have three pairwise comparisons on NGE: L > F (E1), L > Y (E2), and Y within the margin of F (reported only). E3 is still open.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The worse fit and the fewer nourishing eats fit Y's heads being confidently wrong on the kinds that differ.",
+    "problem": "'Confidently' describes a confidence state that is never measured. Answer CE rises whether heads are confident or not. The same bracket calls the lower toxic rate 'learning something real', a vague judging phrase.",
+    "fix": "Replace with: 'The worse fit and the fewer nourishing eats are what wrong or poorly calibrated heads on the differing kinds would predict; confidence was not measured. The lower toxic eat rate is what learning the shared kinds would predict. Neither was tested.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "A different table could change every number here.",
+    "problem": "Too broad. Only F, L and Y depend on the choice rule. S and RND do not use it, and T uses its own rule. v1a's matching sentence said 'NGE and the secondary readouts'.",
+    "fix": "Replace with: 'A different table could change the F, L and Y numbers. S and RND do not use the choice rule; O and T need checking before any claim about them.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The value table is still pending",
+    "problem": "Missing. The v1a diagnostic found the wants table assumes intensity 2 (TOXIC at −4), while every character ended at intensity 1 (all 192 Y characters here, and the F and L lives it re-ran). The mismatch bears on the choice rule for F, L and Y, and the write-up does not mention it next to the table caveat.",
+    "fix": "Add after this sentence: 'The wants table assumes intensity 2, but every Y character ended at intensity 1; the v1a diagnostic found the same end state for F and L on worlds 101 to 108 (mind/runs/diag_collapse/DIAG_COLLAPSE.md).'",
+    "severity": "missing"
+   },
+   {
+    "quote": "One world design, one value table, three trunks that share their nursery data order, 16 worlds, and one life per pair.",
+    "problem": "Missing. The pre-registration is not blind: it followed v1a's results, the design and check runs on world 31000 (PREREG line 5). The margin m = 1.02 and the stated confidences come from v1a. The results do not say so, while E2 is called a pass.",
+    "fix": "Add to Limits: 'The pre-registration is not blind. It followed v1a's results, the design and check runs on world 31000. Its margin (m = 1.02) is v1a's.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "splits like v1a's L − F",
+    "problem": "The per-seed Y − F readouts are post hoc, from three seeds, recomputed, and not in the scorer output. 'Splits like' implies a pattern shown across arms. The signs do match (seed 1 lower; seeds 2 and 3 higher, for collapses and pain), but the cause is untested.",
+    "fix": "Replace with: 'Per seed, Y − F has the same sign pattern as v1a's L − F: seed 1 lower, seeds 2 and 3 higher, for collapses and pain. This is post hoc from three seeds; its cause is not tested.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "They fit worse at every season age",
+    "problem": "The previous sentence uses answer CE (0.76 against 0.46). This sentence uses eat-fruit CE (1.62 against 0.95) without naming it, so 'every season age' can be read as answer CE, which was not split by age.",
+    "fix": "Replace with: 'Eat-fruit CE is worse at every season age (2.52, 1.92, 1.62 against F's 1.11, 0.98, 0.95) and stays worse after 128 ticks; L's eat-fruit CE after 128 ticks is 0.59.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "The secondary readouts mostly favour L over Y.",
+    "problem": "'Favour' makes a value call on readouts the section says decide nothing; v1a left the collapse direction undecided. 'Less pain' uses the world's value-table pain term, a preference quantity the diagnostic calls never felt, in a write-up that says it says nothing about feeling.",
+    "fix": "Replace with: 'On the secondary readouts, L is higher on mean V (46 of 48 pairs), lower on the pain readout (46 of 48; a value-table term, not felt) and lower on collapses (40 of 48) than Y. These decide nothing.'",
+    "severity": "minor"
+   }
+  ],
+  "checkedCount": 40,
+  "note": "Read RESULTS_bridge_v1b.md, PREREG_bridge_v1b.md, SCORE_bridge_v1b.txt and RESULTS_bridge_v1a.md in full. Also read D:\\fidelity-llm\\bridge\\mind\\runs\\diag_collapse\\DIAG_COLLAPSE.md to check the 'same pattern' sentence and the value-table intensity point. Every table value matches SCORE_bridge_v1b.txt. Pair-count directions were checked by complement, assuming no ties. Per-seed values and smallest-gap figures are not in the scorer output and were checked for internal consistency only; the 48 records were not opened. No file was edited. No hedge found that hides a clear result; the one clearly stated null (Y vs F) is the place where a strong word is used (finding 5). Dropped under the 3/6/9 check: 'It changed no threshold' (true, and the grading change is already disclosed in the timing caveat); the origin of the margin's noise floor (locked, not a sentence error); and the fact that 48 runs of 180 to 401 s fit in 17 minutes, which implies parallel workers the write-up does not state (provenance, not claim strength)."
+ },
+ {
+  "findings": [
+   {
+    "quote": "It changed no threshold.",
+    "problem": "Not accurate for the second prediction. Under the locked §6.4 rule (PREREG: X ahead of Y needs (a) each seed's mean of X-Y above 0, (b) at least 36 of 48 pairs, and (c) mean at least m = 1.02), 'Y ahead of F' needed all three. Amendment 1 grades it as mean(Y-F) > 0, which drops (b) and the 1.02 bar and drops the per-seed condition (a). The verdict is 'wrong' under both gradings (mean -0.11, seed 1 at -0.53, 21 of 48 pairs), so the result does not change, but the bar did change.",
+    "fix": "Replace with: 'It changed no verdict. It did change the bar for the second prediction: under the §6.4 rule it needed each seed's mean above 0, at least 36 of 48 pairs and a mean of at least 1.02; the amended grading needs only mean(Y-F) > 0. The prediction is wrong under both.'",
+    "severity": "wrong"
+   },
+   {
+    "quote": "The two moves cancel on NGE.",
+    "problem": "Asserted without the arithmetic, and the rate changes do not show cancellation. Toxic eat rate fell 0.093 and nourishing fell 0.031, so the per-eat share of good minus toxic rose from 0.172 (F) to 0.235 (Y). Y also made 8.5% fewer item eats (mean nEat 28,685 against 31,365; fewer in 41 of 48 pairs), a count the write-up never reports. Whether these offset depends on counts and on NGE's denominator (ticks with an item), which the records here do not carry, so the claim is not checked.",
+    "fix": "Replace with: 'Y's rate of good minus toxic eats rose (0.23 against 0.17) while Y made 8.5% fewer item eats, and NGE is flat (-0.11). Which of these accounts for the flat NGE was not measured.' Or report nEat per arm and the NGE denominator and state the offset in numbers.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "stay worse after 128 ticks (1.62 against F's 0.95)",
+    "problem": "The figure 1.62 is the unweighted mean of the per-life bin means (matches v1a's method: F 1.106/0.977/0.952, L 2.463/1.367/0.592). Pooling all eat events by bin gives Y 1.6252, which rounds to 1.63. F (0.95) and L (0.59) round the same either way. The write-up does not say which average it uses.",
+    "fix": "State the method, e.g. 'mean of per-life bin means (pooled over eat events: 1.63)', or use 1.63 if the pooled average is intended.",
+    "severity": "minor"
+   }
+  ],
+  "checkedCount": 120,
+  "note": "Recomputed the write-up's figures with node from the 48 Y records and the 48-pair v1a F, F2 and L records (read-only; script at <local scratch path>, output alongside as out_v1b.json). Everything else matched at the displayed precision: arm and per-seed NGE means (F 28.61, F2 28.58, L 33.20, Y 28.51, and per-seed values); E2 (L-Y 4.69; per seed 5.28, 4.88, 3.93; 48 of 48; smallest 1.57); Y-F (-0.11; -0.53, +0.07, +0.14; 21 of 48); sample sd of F-F2 0.3415 gives m 1.02 (population sd would give 1.01); all 8 secondary rows for F, L, Y and all 16 pair counts; CE by age bins for F, L, Y (apart from the method note); Y collapse causes 33,887 and 34,212 with 0 other, 192 of 192 loop-breaks at 1 and 192 of 192 ending at intensity 1; per-seed Y-F collapses (-37, +50, +49) and pain (-4.7, +4.1, +4.0); L-Y collapses negative on all three seeds; L-F collapses on seeds 2 and 3 positive. Source-lane check: NGE, collapses and answer CE match the v1a L life exactly in all 48 records; k5 is 0 everywhere; 48 records, 16 worlds, 16,384 ticks, one life each. Run times: all 48 entries in mind/runs/v1b/RUNLOG.txt match record seconds to 0.1 s and exit 0; range 179.8-400.9 s (write-up 180-401 s correct); worker start 04:14:43, last finish 04:31:24, first finish 04:21:13, so the 'seven minutes' before Amendment 1 (04:28:36 in RUNLOG_bridge.txt) is 7 min 23 s. RUNLOG_bridge.txt has the lock (04:14:06) and amendment entries but no run-time entries; SCORE header gives 04:33:28 for the scoring time. Not checked: M1-M3 reference values (the scorer re-runs run/baselines.mjs; no reference records are on disk), and the write-up gives no M1-M3 numbers beyond 'all pass'. The count of 120 is approximate: each table cell, pair count, per-seed value, bin value and run-time figure counted once."
+ },
+ {
+  "findings": [
+   {
+    "quote": "The first Y records finished at 04:21 UTC, seven minutes before Amendment 1 was logged. The live board could show running Y values in that window.",
+    "problem": "Understates what the files show. runs/v1b/RUNLOG.txt and RUNLOG_bridge.txt give 39 of 48 Y records finished before Amendment 1 was logged (04:28:36Z): 20 by 04:21:57, and 19 more between 04:27:50 and 04:28:28. The other 9 finished 04:28:37 to 04:31:24. The worker log prints only K5 and explore share, with no NGE. The running values were in runs/v1b/progress/*.jsonl, which carry per-character goodEats, nourish and toxic at checkpoints. The files cannot show what the author looked at, so 'cannot confirm or refute' is fair, but the count and the progress files are what a reader needs.",
+    "fix": "Replace the two sentences with: 'Before Amendment 1 was logged (04:28:36Z), 39 of 48 Y records had finished and been written: 20 by 04:21:57 and 19 more by 04:28:28. The worker log printed only K5 and explore share. The per-run progress files (runs/v1b/progress) carried running per-character eat counts, from which a running NGE can be read. The files cannot show what the author viewed.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "**Scorer:** `score_bridge_v1b.mjs` 9a315f12…, as amended (Amendment 1, logged at 04:28 UTC).",
+    "problem": "The write-up never mentions the three-reader Haiku review that produced Amendment 1. Its timing (runs/review_v1b_raw.json and its workflow fields): readers started 04:14:55Z, 12 s after the worker launched and 49 s after the 04:14:06Z lock; the last progress was about 04:26:43Z; the file was written 04:27:00Z. The amendment says the review ran 'after launch', and its findings changed the scorer (file edited 04:27:25Z) and the grading. BRIDGE_DESIGN.md §6.7 requires 'a fresh code review before launch'. v1a's write-up disclosed its review as 'after launch and before scoring'; v1b's does not. The review file cites no v1b Y record (it cites the 600-tick check files and synthetic records), but it keeps findings, not the reviewers' tool calls, so whether a reviewer opened a real Y record cannot be shown.",
+    "fix": "Add a Provenance line after the Runs line: 'Review: three Haiku readers (code, scorer, prereg) ran 04:14:55 to 04:26:43 UTC, after launch and before scoring. §6.7 asks for a review before launch. Their findings produced Amendment 1 (runs/review_v1b_raw.json). The saved file holds findings, not tool calls, so whether a reviewer opened a v1b record cannot be shown.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "The amendment changed checks and how the second prediction is graded (as mean Y − F > 0, which is the prediction's own wording). It changed no threshold.",
+    "problem": "The locked text did not grade 'Y ahead of F': the Y-vs-F line is 'Reported only' and the scorer graded only E2. The locked 'Readouts and rule' section defines 'X is ahead of Y' as rules (a) to (c), so 'the prediction's own wording' does not settle the reading. The scorer reviewer (review file, 04:27) listed three plausible readings: mean > 0, the §6.4 rule, and 48 of 48. Amendment 1 adopted mean > 0, the reviewer's wording. All three give 'not ahead': the mean is −0.11; seed 1 is −0.53, so (a) fails; 21 of 48 favour Y, so (b) fails; and −0.11 is below m = 1.02, so (c) fails. 'Changed no threshold' omits that a zero cut-off was introduced after 39 records were written. The verdict is robust, but the sentence is not.",
+    "fix": "Replace with: 'The locked text did not grade this prediction. Amendment 1 (04:28:36Z) graded it as mean(Y − F) > 0, one of three readings the scorer reviewer listed. The locked rule for X ahead of Y, (a) to (c), and 48 of 48 also give not ahead, so the row reads wrong on every reading.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "**Records:** 48 Y records, all from `live_y.mjs` 1360ab19…. K5 = 0 in every record, and none was refused.",
+    "problem": "The write-up reports none of the pre-lock checks, though PREREG says they were run before the lock. RUNLOG_bridge.txt (lock 04:14:06Z) records 'Checks (600 ticks, world 31000): K5 0; source == L; Y(lr 0) == F', and Amendment 1 says there were four check runs (F, L, Y, Y at rate 0) in runs/y_checks. Their files show the source matched L on NGE (48.36), collapses (163.04) and answer CE (0.2308), and Y at rate 0 matched F on NGE (55.32). The 600-tick actor at rate 0.002 (Y.json) equals L.json on NGE to full precision (48.36065573770492), on collapses, eat counts and collapse causes, while its world chain, mean V (1.065 against 1.082) and answer CE (0.258 against 0.231) differ. The 48 scored pairs are not affected, since L minus Y is above zero in all 48, but a reader would want that coincidence noted.",
+    "fix": "Add a 'Pre-lock checks' paragraph: 'Four 600-tick runs on world 31000, seed 1, before the 04:14:06Z lock (runs/y_checks): K5 0 in all four; the source matched L on NGE, collapses and answer CE; Y at head rate 0 matched F on NGE. At head rate 0.002 the actor matched L on NGE, collapses and eat counts, while its chain, mean V and answer CE differed. No scored pair is affected, since L minus Y is above zero in all 48; the coincidence is not explained here.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "The source-lane check shows the shared code reproduces the v1a L lives exactly.",
+    "problem": "The check compares NGE, collapses and answer CE, not world chains. Amendment 1 says chains cannot be compared because the Y record does not carry the source chain. The code reviewer proposed adding the chain test and refusing on mismatch; Amendment 1 does not adopt it, and the write-up does not say so. Two reviewers (code and scorer) said equal NGE and collapses do not establish the same life, and the 600-tick actor ties L on those counts while its chain differs. 'Exactly' overstates what was tested.",
+    "fix": "'The source-lane check reproduces the v1a L lives on NGE, collapses and answer CE in all 48 pairs. World chains were not compared: the Y record does not carry the source chain (Amendment 1), and a reviewer proposed adding that comparison, which was not adopted. Identity to the v1a L lives is therefore shown only on these three readouts.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Y's comparison with F and L uses the v1a records.",
+    "problem": "Amendment 1 corrects PREREG's statement that the F, F2, L and LH code paths are 'unchanged in text'; that statement is false. live_y.mjs adds a collapse-cause tally, three record fields (collapseCauses, loopBreaks, ellEnd), a Y dispatch line, a changed error message and an lr argument on adamHeads whose default is unchanged. The write-up says nothing about this. The source lanes re-run L, but F was not re-run on live_y.mjs. The only F-path check on the new file is the 600-tick rate-0 run, which the write-up does not report. The prereg reviewer recommended re-running one F life and one L life on live_y.mjs before scoring; the F re-run was not done, and the write-up does not say so.",
+    "fix": "Add to Limits: 'live_y.mjs differs in text from live.mjs: a collapse-cause tally, three record-only fields, a Y dispatch line, a changed error message, and an lr argument whose default is unchanged. Amendment 1 corrects the prereg's \"unchanged in text\". The source lanes reproduced the v1a L lives. F was not re-run on live_y.mjs, and the reviewer's suggested F re-run was not done.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "| M1, M2, M3 (regime checks, recomputed) | all pass, as in v1a | |",
+    "problem": "PREREG's departures list includes 'the references on worlds 101–116 are known'. v1a's write-up states the consequence: 'M1 to M3 were not real tests of my predictions.' v1b's table gives M1 to M3 as passing with no caveat. The v1b write-up also never lists the departures: PREREG names four (per-tick tests B2, W2, W3, L1 not inside the runner; live.mjs, live_y.mjs and baselines outside the planted-mutant set; NGE counted inside the runner; references known), and the write-up mentions only the NGE item.",
+    "fix": "Under the table, add: 'M1 to M3 are not independent tests: the reference values on worlds 101–116 were known before the lock, a stated departure carried from v1a.' Then list the four departures from PREREG.",
+    "severity": "missing"
+   },
+   {
+    "quote": "E3 (the stationary control) has not been run, and G0 ran with the stated departures.",
+    "problem": "'The stated departures' are not listed anywhere in v1b. v1a's write-up lists them for G0: per-tick tests not inside the runner, the planted-mutant exclusion, N4 not run, and K7 stated but not tested in code. PREREG says its departures are 'as in v1a', but its list drops N4 and K7. §6.6 requires G0 to hold for 'evolved', so the status of N4 and K7 bears on the licence.",
+    "fix": "Replace with: 'G0 ran with these departures: per-tick tests B2, W2, W3 and L1 not inside the runner; live.mjs, live_y.mjs and baselines outside the planted-mutant set; N4 not run; K7 stated but not tested in code.' If PREREG's list dropped N4 and K7 by mistake, say so in PREREG's departures.",
+    "severity": "missing"
+   },
+   {
+    "quote": "- One world design, one value table, three trunks that share their nursery data order, 16 worlds, and one life per pair.",
+    "problem": "PREREG says the secondary readouts are v1a's. v1a's write-up says §6.3's recovery readout and mechanism readout were not produced, and that pain was not reported beside mean E/15 as §6.3 asks. The v1b write-up says nothing about any of the three, so a reader cannot tell whether they are still missing.",
+    "fix": "Add to Limits: '§6.3's recovery readout and mechanism readout were not produced in v1b, and pain is not reported beside mean E/15 (as in v1a).' Or produce them and report them.",
+    "severity": "missing"
+   },
+   {
+    "quote": "So, in this world, L's gain over F does not come from taking learning steps as such. It comes from learning from its own timeline.",
+    "problem": "E2 (locked, passed) compares L with Y, which takes the same learning steps on a neighbour's answers. 'Not from steps as such' also needs Y ≈ F, which is reported only and not a locked test. The write-up's own 'Whole' section says the stationary control E3, not run, is the open corner that separates 'own timeline' from 'a changing world needs any learning'. The causal sentence runs ahead of E2 and against that open corner.",
+    "fix": "Replace with: 'E2 shows that, with the same learning steps, learning from its own answers beats learning from a neighbour's (L − Y 4.69, 48 of 48). Y against F (−0.11) is reported only. Whether L's gain over F comes from its own timeline rather than from learning as such is what E3 tests, and E3 has not been run.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The v1a diagnostic found the same pattern in F and L (`diag_collapse/DIAG_COLLAPSE.md`).",
+    "problem": "The post-hoc diagnostic covered F and L on worlds 101–108 only (seeds 1–3; RUNLOG 21:07 entry), not all 16 worlds. The sentence reads as full coverage.",
+    "fix": "'The post-hoc v1a diagnostic found the same pattern in F and L on worlds 101–108 (8 of 16; diag_collapse/DIAG_COLLAPSE.md).'",
+    "severity": "minor"
+   },
+   {
+    "quote": "48 of 48 pairs (smallest 1.57)",
+    "problem": "I recomputed all 48 L − Y gaps from the records: minimum 1.5731, mean 4.6938, all positive, so 1.57 is right. But the Provenance sentence lists the recomputed items as per-seed secondary readouts, pair counts and CE by season age, and leaves out pair gaps.",
+    "fix": "Add 'smallest pair gaps' to the recomputed items in the Provenance sentence.",
+    "severity": "minor"
+   },
+   {
+    "quote": "**Scorer:** `score_bridge_v1b.mjs` 9a315f12…, as amended (Amendment 1, logged at 04:28 UTC).",
+    "problem": "The locked scorer hash was ab865cc3… (RUNLOG 04:14:06Z; PREREG hash table), and the write-up does not give it, so a reader cannot see that the scorer changed. The lock time is also missing: 04:14:06Z, 37 s before the worker started at 04:14:43Z. The amended scorer was first run at 04:28:12Z on the check folder, about 23 s before the amendment was logged. No Y value was printed (no v1b records there), but the timeline should show the run.",
+    "fix": "'Scorer locked at ab865cc3… (04:14:06Z) and amended to 9a315f12… (Amendment 1, 04:28:36Z); the amended scorer was first run, on the check folder only, at 04:28:12Z.' And in Runs: 'Locked 04:14:06 UTC, before the first run at 04:14:43 UTC.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "and Y ≈ F (reported).",
+    "problem": "PREREG has no equivalence test for Y against F. The value −0.11 lies inside m = 1.02, the margin the prereg uses, but '≈' is an unlocked reading presented in the closed-triangle summary.",
+    "fix": "'and Y − F = −0.11, inside m = 1.02 (reported, not tested).'",
+    "severity": "minor"
+   }
+  ],
+  "checkedCount": 26,
+  "note": "I read the write-up, PREREG_bridge_v1b.md with Amendment 1, SCORE_bridge_v1b.txt and the v1a write-up. I then checked the timing and checks against runs/v1b (RUNLOG, progress files, records), runs/y_checks, runs/review_v1b_raw.json, RUNLOG_bridge.txt and BRIDGE_DESIGN.md §6.7. I recomputed the 48 pairs from the records: L minus Y has mean 4.69, minimum 1.57, 48 of 48 positive, and per seed 5.28, 4.88, 3.93. Y minus F has mean −0.11, 21 of 48 favouring Y, and per seed −0.53, +0.07, +0.14. These match the write-up, so the E2 and Y-vs-F numbers and grades are right. The problems are disclosure and wording. Not checked: the per-seed collapse claims, CE by season age, and point 2's numbers. Not a write-up sentence, but the review reported it unaddressed: make_live.mjs still defaults its output to mind/live.mjs. No result is affected. No files were edited."
+ }
+]

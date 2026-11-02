@@ -1,0 +1,227 @@
+{
+ "summary": "Haiku triad reviews the yoked arm code, the v1b scorer and the pre-registration, each lens running its own 3/6/9 check",
+ "agentCount": 3,
+ "logs": [],
+ "result": {
+  "code": {
+   "problems": [
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 36,
+     "problem": "The source-exactness refusal rule compares only the source's NGE and collapsesPer10k with the v1a L life. The prereg calls the source an exact L life (prereg line 14), but the rule does not test that. The source ceAnswer is written to the Y record and never compared. The source world chain is computed (live_y.mjs line 1132) and then dropped from the record (line 1170).",
+     "scenario": "3/6/9 on the rule: thing = equal NGE and equal collapses; opposite = identical action log; test = world chains. In the 600-tick check, Y.json's life (actor) and L.json have identical NGE (48.36065573770492), identical collapsesPer10k (163.04), and identical collapseCauses, loopBreaks and ellEnd, but their chains differ. F.json and Y0.json chains are equal, so the chain does detect action-log differences. So equal NGE and collapses do not imply the same action log. A source life whose actions differ from L's on ticks where the action changes only the logged action byte and not the body state would pass the rule. The shadows would then train on ACTION tokens that are not L's logged tokens, which BRIDGE_DESIGN section 6.1 requires. No present result is wrong: the check-run source matches L on NGE, collapses and ceAnswer.",
+     "changesResults": false,
+     "fix": "Add src.ceAnswer === l.ceAnswer to the refusal test; the value is already in the Y record, so no record change is needed. In live_y.mjs line 1170, add chain: src.chain to the source object (laneLife already returns it, line 1132), and refuse when it differs from l.chain (the v1a L record carries chain). Both files are in the lock, so record this as a dated RUNLOG amendment before any Y record is scored."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 31,
+     "problem": "The lock on live_y.mjs is enforced only when the scorer is run with --expect. Without the flag, a Y record from any script version passes.",
+     "scenario": "3/6/9: thing = the Y script check; opposite = the hash is always enforced; test = the condition on line 31, arm === 'Y' && expect && r.script !== expect, which short-circuits when expect is null. Running the scorer without the flag accepts Y records made from an edited live_y.mjs with no problem line. The only trace is the 'live_y.mjs hashes' header, which lists whatever scripts are present. The prereg locks live_y.mjs at 1360ab19 (prereg hash table), so the lock is not enforced by the scorer. No current record is affected.",
+     "changesResults": false,
+     "fix": "Hard-code the locked Y script hash (1360ab19...) as the expected value, as V1A is hard-coded for the v1a records (lines 16 and 32), and refuse on mismatch. The scorer hash changes from ab865cc3, so record it as an amendment in RUNLOG before scoring."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/live_y.mjs",
+     "line": 1207,
+     "problem": "The prereg says the F, F2, L and LH code paths are unchanged in text (prereg line 30). live_y.mjs changes them.",
+     "scenario": "3/6/9: thing = the prereg sentence; opposite = text identical to live.mjs (7f814cbf); test = diff and grep. The diff against live.mjs shows: a new const causes tally in liveMain (line 1207); a new causes[...] tally after each ANSWER (line 1250); three new fields on every life record, collapseCauses, loopBreaks and ellEnd (line 1271); a changed ARM error message (line 1186); and an lr argument on adamHeads (lines 1012 and 1025). grep finds no collapseCauses, loopBreaks or ellEnd in live.mjs. The tally writes only to causes and does not feed the world, the heads or NGE, and the 600-tick F and L checks match, so the numbers are unaffected. The sentence is still false as written.",
+     "changesResults": false,
+     "fix": "Record a dated RUNLOG amendment before scoring that lists the diagnostic lines, the lr argument and the message change, and states that they do not touch state or NGE. Do not edit the locked prereg."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 91,
+     "problem": "The scorer's report omits two things the prereg names. The collapse-cause, loop-break and end-intensity readouts are never printed. The second locked prediction, Y ahead of F, is never graded.",
+     "scenario": "3/6/9: thing = the printed report; opposite = it prints those fields and grades both locked predictions; test = grep. KEYS (line 91) has eight entries, none of collapseCauses, loopBreaks or ellEnd, though every Y life carries them (live_y.mjs line 1271). The Locked predictions block (lines 95-97) grades only E2. The prereg's predictions table (lines 67-68) also locks Y ahead of F on mean NGE. Neither omission changes a decision, but BRIDGE_DESIGN section 6.7 says the report is generated by the scorer, and the prereg (line 45) names the readouts.",
+     "changesResults": false,
+     "fix": "Print collapseCauses, loopBreaks and ellEnd in the secondary block, and add a graded line for mean(Y - F) > 0 in the Locked predictions block. The scorer hash changes, so include this in the same RUNLOG amendment as the first two problems."
+    }
+   ]
+  },
+  "scorer": {
+   "problems": [
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 97,
+     "problem": "The locked prediction 'Y ahead of F on mean NGE' is never graded; the prediction block prints a grade for E2 only.",
+     "scenario": "PREREG_bridge_v1b.md's prediction table (lines 65-68) locks two predictions: E2 passes (about 80%) and Y ahead of F on mean NGE (about 70%). The scorer's locked-predictions block (lines 95-98) prints a RIGHT/WRONG line for E2 only. After the 48 Y runs, SCORE_bridge_v1b.txt prints the Y-minus-F mean and a count of pairs, but no RIGHT or WRONG for the second prediction, whichever way the mean falls. v1a's scorer graded every row of its table; D:/fidelity-llm/bridge/mind/runs/v1a/SCORE_bridge_v1a.txt shows RIGHT or WRONG for M1, M2, M3, E1 and T. Test that decides: the grade lines in the v1b scorer name E2 only.",
+     "changesResults": false,
+     "fix": "Add a line after line 97: 'Y ahead of F on mean NGE' graded RIGHT when mean(Y - F) > 0 and WRONG otherwise, and 'not scored (missing or refused records)' when any Y or F value is NaN. The scorer is hashed in RUNLOG_bridge.txt, so record the change as a dated amendment there before any Y record is scored."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md",
+     "line": 30,
+     "problem": "The prereg says the F, F2, L and LH code paths are unchanged in text, but live_y.mjs's liveMain differs from live.mjs (7f814cbf) for those arms, and the prereg does not disclose it.",
+     "scenario": "Diffing live_y.mjs against live.mjs (the v1a file) shows three edits inside liveMain that run for F, F2, L and LH: a per-life causes counter (live_y.mjs line 1207), a write of each collapse's cause (line 1250), and three new record fields collapseCauses, loopBreaks and ellEnd (line 1271). Line 1185 adds the Y dispatch and changes the error text on line 1186. The causes counter is write-only, so NGE, K5 and the other dynamics readouts for F, F2, L and LH are unaffected; the sentence is still false as written. The prereg's description of the live_y.mjs change (line 30) names only the Y path and the optional rate argument. The live.mjs diff also shows the adamHeads default-rate edit, which is value-neutral. Test that decides: the hunks at 1185, 1207, 1250 and 1271 are present in live_y.mjs and absent from live.mjs.",
+     "changesResults": false,
+     "fix": "Amend line 30 to list the three record-only additions and the dispatch line, and state that they do not change any arm's dynamics. Any edit to live_y.mjs changes its locked hash, so record the amendment in RUNLOG_bridge.txt before scoring."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 91,
+     "problem": "The secondary readouts the prereg names (collapse causes, loop-breaks, end intensity) are never printed, and the locked v1a L and F records cannot supply them.",
+     "scenario": "PREREG_bridge_v1b.md line 45 lists the collapse causes, loop-breaks and end intensity as secondary readouts that live_y.mjs records. The scorer's KEYS (line 91) are v1a's eight keys, so SCORE_bridge_v1b.txt shows none of the three for any arm. The data does not support them either: the locked v1a records L_s1_w101.json, F_s1_w101.json and LH_s1_w101.json carry none of collapseCauses, loopBreaks or ellEnd, and the Y source object (live_y.mjs line 1170) does not carry them, so only each Y actor's own record has them. The prereg does not say whether the three are reported for Y only or compared with L. Test that decides: grep the v1a and v1b record keys and the KEYS line; L has no such fields and nothing prints them.",
+     "changesResults": false,
+     "fix": "Amend the prereg to say which arms these readouts are reported for. If Y only, print the Y actors' mean collapse-cause counts, loop-break count and end intensity per model seed. A comparison with L would need an L run that the arm table does not provide, so do not promise one."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 36,
+     "problem": "The source-lane reproduction check compares only NGE and collapsesPer10k, which two different lives can share; the record carries a second readout and the world chain, and neither is used.",
+     "scenario": "The scorer refuses a Y record only when source NGE or collapsesPer10k differs from the v1a L record (lines 35-36), while the prereg says this check establishes determinism. The Y record already stores the source's ceAnswer (live_y.mjs line 1170), which the scorer does not compare, and drops the source's world chain, which the v1a L record does carry (for example, the L_s1_w101 chain 3af8397b...). The 600-tick check shows the two readouts are not enough to decide identity: in D:/fidelity-llm/bridge/mind/runs/y_checks/Y.json the actor life, which trains different heads, has NGE 48.36065573770492 and collapsesPer10k 163.04347826086956, exactly equal to the source and to L.json, while its meanV (1.0652 against 1.0815) and ceAnswer (0.2575 against 0.2308) differ. A source life that diverged from the L life but tied on those two readouts would be accepted. No recorded run shows such a divergence, so the wrong result is not observed in the data.",
+     "changesResults": false,
+     "fix": "Carry the source's chain into the Y record (live_y.mjs line 1170) and have the scorer compare source chain and ceAnswer to the v1a L record as well as NGE and collapses. Both files are hashed, so this needs the same dated RUNLOG amendment, and the 600-tick checks would need to be rerun on the amended code."
+    }
+   ]
+  },
+  "prereg": {
+   "problems": [
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 31,
+     "problem": "The scorer never reads a Y record's live.headLr, bus or armCfg, and the runner-hash check runs only when --expect is passed, which the prereg never states. The source-equals-L check cannot catch a frozen actor, because the source always trains at LIVE.lr (live_y.mjs line 1111, adamHeads(st, streams.length) with no headLr).",
+     "scenario": "3/6/9: thing = the actor learns at 2e-3 (the arm); opposite = a frozen actor from --headlr 0; decider = live.headLr in the record, which no check reads. A headLr-0 full-life record passes every check: mind/runs/y_checks/Y0.json (600 ticks) already shows source NGE 48.36 = L and actor NGE 55.32 = F, K5 0. If all 48 Y records were like that, E2 would reduce to L minus F, which v1a measured as 4.59 with 48/48 pairs, so the scorer would print E2 YES. Confirmed on 48 synthetic records in the scratchpad (one with live.headLr 0): no PROBLEMS line, E2 graded.",
+     "changesResults": false,
+     "fix": "Refuse any Y record unless live.headLr === 0.002, bus === false and armCfg.yoke === '(c + 1) mod 4'. State the exact scorer command in PREREG with --expect 1360ab19561fd26ee9300055f558357a58a11af1a5e00f644ada1421552992ef, and amend before scoring as v1a Amendment 1 did. run_worker_v1b.mjs passes no --headlr, so the locked launches are not affected."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 97,
+     "problem": "The Y-against-F prediction ('Y ahead of F on mean NGE', about 70%) is in the locked table but is never graded, and 'ahead' has no defined threshold for it.",
+     "scenario": "3/6/9: thing = Y ahead of F; opposite = Y not ahead of F; decider = a graded line. The scorer's 'Locked predictions' block (lines 95-98) grades only E2, confirmed in the synthetic output. PREREG line 51 calls Y vs F 'reported only' while line 68 lists it as a locked prediction. Mean > 0, the section 6.4 rule at k=1, and 48/48 are all plausible readings, and the scorer prints the numbers without a verdict. The prereg is also silent on E2's grade when a regime check fails; the scorer prints 'no test', while v1a's text said so.",
+     "changesResults": false,
+     "fix": "Define the Y-vs-F pass in PREREG (for example mean > 0) and add a grade line to the scorer. State the no-test rule for E2 in PREREG."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md",
+     "line": 72,
+     "problem": "The statement 'The v1a records' hashes are in RUNLOG_bridge.txt' is false. RUNLOG has no per-record hashes, and mind/runs/v1a has no hash list.",
+     "scenario": "3/6/9: thing = the v1a records used as L, F and F2 (E2's comparison and the margin m); opposite = a record edited after lock; decider = a SHA-256 per record in RUNLOG. None exists, so a v1a record can change while its internal script field stays 7f814cbf, and the scorer accepts it. The source-equals-L check covers only L's NGE and collapses on the 48 pairs. F, F2, and L's ceAnswer and readouts are not checked.",
+     "changesResults": false,
+     "fix": "Add a SHA-256 list for the 192 v1a records and the W0_s1-3 weight files to RUNLOG before scoring, or delete the sentence."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md",
+     "line": 74,
+     "problem": "The hash table omits the files the Y runner reads and the trunk weights that v1a pinned, and the PC copies that actually run (F:/fidelity-llm/bridge) are not hashed anywhere.",
+     "scenario": "live_y.mjs imports world/valleys.mjs, world/hash.mjs, bridge/tokens.mjs, run/lockstep.mjs and run/baselines.mjs (runLife, step, snapshot, hash32, makeTokens, readouts) and loads mind/runs/nursery/W0_s1-3.weights.bin. v1a's table pinned all of them. The current D: values match v1a's table (valleys 7be9f53d, hash 52361ef6, tokens d3e37b93, lockstep d02b6c15, baselines f312ad69, W0 weights 6efe544d, 085c273c, 7eb30edc), so there is no visible drift on D:. F: is not reachable from this machine, so the PC copies are unverified.",
+     "changesResults": false,
+     "fix": "Add those rows to the lock table and record the hashes of the F: copies that ran, before scoring."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md",
+     "line": 30,
+     "problem": "The sentence 'The F, F2, L and LH code paths are unchanged in text' is false for live_y.mjs.",
+     "scenario": "3/6/9: thing = the F/F2/L/LH path that produced the scored v1a records (live.mjs 7f814cbf); opposite = a path changed in text; decider = a diff against live.mjs. The diff finds: liveMain's collapse-cause tally (live_y.mjs line 1207, incremented at 1250), a causes field in each record (line 1271), a new error text (line 1186), and adamHeads with an lr parameter (line 1012, default unchanged). These diagnostics feed no trajectory state, and live_diag.mjs reproduced 48/48 scored records, so results are not affected. The sentence is simply wrong.",
+     "changesResults": false,
+     "fix": "Replace the sentence with a list of these diagnostic edits. Re-run one F life and one L life on live_y.mjs and compare them with the v1a records before scoring."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs",
+     "line": 91,
+     "problem": "The secondary readouts that PREREG line 45 promises (collapse causes, loop-breaks, end intensity) are not in the scorer's report, and the locked v1a F, F2, L and LH records do not contain them.",
+     "scenario": "KEYS on line 91 omit collapseCauses, loopBreaks and ellEnd. mind/runs/v1a/L_s1_w101.json lives[0] has none of these fields (checked). For the comparison arms they exist only in the post-hoc diagnostic on 8 worlds (RUNLOG 21:07, DIAG_COLLAPSE.md). Only Y records will carry them, so the promised comparison cannot be made from the lock.",
+     "changesResults": false,
+     "fix": "Either report these fields for Y and state that the F, F2, L and LH values are not in the locked records, or delete the phrase from PREREG line 45."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/make_live.mjs",
+     "line": 9,
+     "problem": "The default output path is mind/live.mjs, so the documented usage 'node mind/make_live.mjs' (line 6) overwrites the locked v1a runner.",
+     "scenario": "make_live now emits the Y build, since it inserts yoked_part.js (lines 212-216). Run with no argument, it writes that build over mind/live.mjs (lock 7f814cbf), so the v1a runner file no longer matches its lock. Writing to a scratch path reproduces live_y.mjs exactly (SHA-256 1360ab19...), so the generation claim in PREREG line 30 holds. Only the default path is wrong.",
+     "changesResults": false,
+     "fix": "Require the output argument, or default it to mind/live_y.mjs and keep live.mjs as the v1a emitter."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md",
+     "line": 53,
+     "problem": "No fresh pre-launch code review is recorded for the yoked code or the scorer's Y branch, and the departures list drops the v1a sentence that said the new code faces one.",
+     "scenario": "BRIDGE_DESIGN.md section 6.7 requires a fresh code review before launch. v1a's departures (its line 75) say the new live.mjs faces one. v1b copies v1a's list without that sentence, and RUNLOG has no review entry for v1b. Before lock, the scorer's Y branch had run only on 48 missing records (mind/runs/v1b_dry). I ran it on 48 synthetic Y records and it executed without error, so the branch is not broken, but its first real test comes at scoring.",
+     "changesResults": false,
+     "fix": "Record the review, or state that it is outstanding. Before scoring, run the scorer on the y_checks records and confirm the 600-tick records are refused."
+    },
+    {
+     "file": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md",
+     "line": 5,
+     "problem": "The intro says 'three 600-tick check runs'; mind/runs/y_checks holds four records (F, L, Y, Y0).",
+     "scenario": "Count mismatch only. No check or result depends on it.",
+     "changesResults": false,
+     "fix": "Say four and name them."
+    }
+   ]
+  }
+ },
+ "workflowProgress": [
+  {
+   "type": "workflow_phase",
+   "index": 1,
+   "title": "Review"
+  },
+  {
+   "type": "workflow_agent",
+   "index": 1,
+   "label": "review:code",
+   "phaseIndex": 1,
+   "phaseTitle": "Review",
+   "agentId": "a4ffb0707c22524af",
+   "model": "claude-haiku-5-5",
+   "state": "done",
+   "startedAt": 1793592895311,
+   "queuedAt": 1793592895186,
+   "attempt": 1,
+   "lastToolName": "StructuredOutput",
+   "promptPreview": "Review a pre-registered experiment that has just launched. Edit nothing. Files: D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md; D:/fidelity-llm/bridge/mind/yoked_part.js (the yoked arm's code, inserted into D:/fidelity-llm/bridge/mind/live_y.mjs before liveMain); D:/fidelity-llm/bridge/mind/live_y.mjs (runStep is the model step; makeStream, cloneStream, adamHeads, wantsTable are helpers); D:/fid…",
+   "promptFramed": true,
+   "lastProgressAt": 1793593495119,
+   "tokens": 258420,
+   "toolCalls": 18,
+   "durationMs": 599804,
+   "resultPreview": "{\"problems\":[{\"file\":\"D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs\",\"line\":36,\"problem\":\"The source-exactness refusal rule compares only the source's NGE and collapsesPer10k with the v1a L life. The prereg calls the source an exact L life (prereg line 14), but the rule does not test that. The source ceAnswer is written to the Y record and never compared. The source world chain is computed (liv…"
+  },
+  {
+   "type": "workflow_agent",
+   "index": 2,
+   "label": "review:scorer",
+   "phaseIndex": 1,
+   "phaseTitle": "Review",
+   "agentId": "acab369adb81d4b5e",
+   "model": "claude-haiku-5-5",
+   "state": "done",
+   "startedAt": 1793592895312,
+   "queuedAt": 1793592895187,
+   "attempt": 1,
+   "lastToolName": "StructuredOutput",
+   "promptPreview": "Review a pre-registered experiment that has just launched. Edit nothing. Files: D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md; D:/fidelity-llm/bridge/mind/yoked_part.js (the yoked arm's code, inserted into D:/fidelity-llm/bridge/mind/live_y.mjs before liveMain); D:/fidelity-llm/bridge/mind/live_y.mjs (runStep is the model step; makeStream, cloneStream, adamHeads, wantsTable are helpers); D:/fid…",
+   "promptFramed": true,
+   "lastProgressAt": 1793593420365,
+   "tokens": 259981,
+   "toolCalls": 21,
+   "durationMs": 522946,
+   "resultPreview": "{\"problems\":[{\"file\":\"D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs\",\"line\":97,\"problem\":\"The locked prediction 'Y ahead of F on mean NGE' is never graded; the prediction block prints a grade for E2 only.\",\"scenario\":\"PREREG_bridge_v1b.md's prediction table (lines 65-68) locks two predictions: E2 passes (about 80%) and Y ahead of F on mean NGE (about 70%). The scorer's locked-predictions block …"
+  },
+  {
+   "type": "workflow_agent",
+   "index": 3,
+   "label": "review:prereg",
+   "phaseIndex": 1,
+   "phaseTitle": "Review",
+   "agentId": "a22af3e54d54f98b4",
+   "model": "claude-haiku-5-5",
+   "state": "done",
+   "startedAt": 1793592895312,
+   "queuedAt": 1793592895187,
+   "attempt": 1,
+   "lastToolName": "StructuredOutput",
+   "promptPreview": "Review a pre-registered experiment that has just launched. Edit nothing. Files: D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md; D:/fidelity-llm/bridge/mind/yoked_part.js (the yoked arm's code, inserted into D:/fidelity-llm/bridge/mind/live_y.mjs before liveMain); D:/fidelity-llm/bridge/mind/live_y.mjs (runStep is the model step; makeStream, cloneStream, adamHeads, wantsTable are helpers); D:/fid…",
+   "promptFramed": true,
+   "lastProgressAt": 1793593603197,
+   "tokens": 288721,
+   "toolCalls": 24,
+   "durationMs": 705776,
+   "resultPreview": "{\"problems\":[{\"file\":\"D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs\",\"line\":31,\"problem\":\"The scorer never reads a Y record's live.headLr, bus or armCfg, and the runner-hash check runs only when --expect is passed, which the prereg never states. The source-equals-L check cannot catch a frozen actor, because the source always trains at LIVE.lr (live_y.mjs line 1111, adamHeads(st, streams.length)…"
+  }
+ ],
+ "totalTokens": 807122,
+ "totalToolCalls": 63
+}

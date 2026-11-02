@@ -18,7 +18,7 @@ function refresh() {
   const [cmd, args] = SOURCE.startsWith('local:')
     ? [process.execPath, [path.join(here, 'pc_summary.mjs'), SOURCE.slice(6)]]
     : ['ssh', ['-o', 'ConnectTimeout=8', '-o', 'BatchMode=yes', '-o', 'LogLevel=ERROR', '-i', process.env.PC_KEY || path.join(os.homedir(), '.ssh', 'pc_key'), process.env.PC_HOST || 'user@pc-host',
-      'node F:/fidelity-llm/bridge/lens2/pc_summary.mjs F:/fidelity-llm/bridge/mind/runs/v1a']];
+      'node F:/fidelity-llm/bridge/lens2/pc_summary.mjs F:/fidelity-llm/bridge/mind/runs/v1a F:/fidelity-llm/bridge/mind/runs/v1b']];
   const p = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '', err = '';
   p.stdout.on('data', d => { out += d; });

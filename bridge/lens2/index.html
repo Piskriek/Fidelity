@@ -10,7 +10,7 @@
   /* Night over four valleys: each character's prediction score is drawn as its valley's ridgeline, so learning raises the mountains. */
   :root {
     --bg: #101e25; --panel: #162933; --panel-2: #1c323d; --ink: #eef2ea; --muted: #93a8a5; --line: #284450;
-    --frozen: #8ab4d6; --fprime: #6c8595; --live: #f4c55a; --help: #f08d6e; --good: #8fd19e; --warn: #f0b35a;
+    --frozen: #8ab4d6; --fprime: #6c8595; --live: #f4c55a; --help: #f08d6e; --yoked: #b993ec; --good: #8fd19e; --warn: #f0b35a;
     --display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif; --body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
@@ -105,6 +105,16 @@
     <div id="flight"></div>
   </section>
 
+  <section class="card flight" id="flightCard2">
+    <div class="flighthead">
+      <h2 data-tech="The verdict in flight: L against Y (E2)" data-plain="Does learning from your own life beat learning from a neighbour's?">The verdict in flight: L against Y (E2)</h2>
+      <span class="pill" id="flightPill2">waiting</span>
+    </div>
+    <p class="note tech-only">Running mean of L − Y good-eats score over the finished paired lives (same trunk, same world), with ±2 standard errors, against v1a's winning line m. The scorer gives the verdict.</p>
+    <p class="note lay-only">The dot is how far the learners who learn from their own life are ahead of the ones who learn from the valley next door. The dashed line is the win line, set before the race.</p>
+    <div id="flight2"></div>
+  </section>
+
   <section class="card plain lay-only" aria-live="polite">
     <h2>What's happening, in plain words</h2>
     <div id="plain"><p>Waiting for the first numbers.</p></div>
@@ -143,6 +153,7 @@ const ARMS = [
   { id: 'F', name: 'Frozen', plainName: 'Never learns', who: 'the never-learner', color: 'var(--frozen)', what: 'The nursery mind as it was born. It never learns during its life.', plainWhat: 'Born knowing a little, and stays exactly that way all its life.' },
   { id: 'F2', name: 'Frozen, second dice', plainName: 'Never learns, other dice', who: 'the never-learner with other dice', color: 'var(--fprime)', what: 'The same frozen mind with different exploration dice: the noise floor.', plainWhat: 'The same as never-learns, with different luck. It shows how much is just chance.' },
   { id: 'L', name: 'Live', plainName: 'Keeps learning', who: 'the learner', color: 'var(--live)', what: 'Learns from every answer the world gives it, in its own private head.', plainWhat: 'Learns a little from everything that happens to it, every time.' },
+  { id: 'Y', name: 'Yoked', plainName: 'Learns from a neighbour', who: 'the neighbour-learner', color: 'var(--yoked)', what: 'Takes the same learning steps as Live, but on the next valley\'s answers, never its own.', plainWhat: 'Learns only from what happened to the character in the next valley, never from its own life.' },
   { id: 'LH', name: 'Live, with help', plainName: 'Learns, hears the neighbours', who: 'the learner who hears the neighbours', color: 'var(--help)', what: 'Live, and sometimes takes help from another valley’s mind.', plainWhat: 'Keeps learning, and now and then can listen to a mind from another valley.' },
 ];
 let LAY = false;
@@ -250,16 +261,16 @@ function pairs(d) {
   return [...by.values()].sort((a, b) => a.world - b.world || a.seed - b.seed); // the worker runs world by world, so this is close to the order they finish
 }
 const sdOf = xs => { if (xs.length < 2) return NaN; const m = xs.reduce((a, b) => a + b, 0) / xs.length; return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1)); };
-function flightState(d) {
-  const ps = pairs(d), lf = ps.filter(p => p.L != null && p.F != null), ff = ps.filter(p => p.F != null && p.F2 != null);
+function flightState(d, X = 'L', Y = 'F') {
+  const ps = pairs(d), lf = ps.filter(p => p[X] != null && p[Y] != null), ff = ps.filter(p => p.F != null && p.F2 != null);
   const floor = sdOf(ff.map(p => p.F - p.F2)), m = Number.isNaN(floor) ? null : Math.max(1, 3 * floor);
   const path = []; let sum = 0;
-  lf.forEach((p, i) => { sum += p.L - p.F; const diffs = lf.slice(0, i + 1).map(q => q.L - q.F), n = i + 1, mean = sum / n, se = n >= 2 ? sdOf(diffs) / Math.sqrt(n) : NaN; path.push({ n, mean, lo: mean - 2 * se, hi: mean + 2 * se }); });
+  lf.forEach((p, i) => { sum += p[X] - p[Y]; const diffs = lf.slice(0, i + 1).map(q => q[X] - q[Y]), n = i + 1, mean = sum / n, se = n >= 2 ? sdOf(diffs) / Math.sqrt(n) : NaN; path.push({ n, mean, lo: mean - 2 * se, hi: mean + 2 * se }); });
   const last = path[path.length - 1];
   let status = 'waiting', cls = '';
   if (last && m != null) {
     if (lf.length === 48 && ff.length === 48) {
-      const d2 = lf.map(p => p.L - p.F), perSeed = [1, 2, 3].map(s => { const xs = lf.filter(p => p.seed === s).map(p => p.L - p.F); return xs.reduce((a, b) => a + b, 0) / xs.length; });
+      const d2 = lf.map(p => p[X] - p[Y]), perSeed = [1, 2, 3].map(s => { const xs = lf.filter(p => p.seed === s).map(p => p[X] - p[Y]); return xs.reduce((a, b) => a + b, 0) / xs.length; });
       const win = perSeed.every(v => v > 0) && d2.filter(v => v > 0).length >= 36 && last.mean >= m;
       status = win ? 'over the line' : 'under the line'; cls = win ? 'over' : 'under';
     } else if (last.n < 6 || Number.isNaN(last.lo)) { status = 'warming up'; }
@@ -269,12 +280,13 @@ function flightState(d) {
   }
   return { path, m, n: lf.length, nff: ff.length, status, cls, done: lf.length === 48 && ff.length === 48 };
 }
-function drawFlight(d) {
-  const f = flightState(d), box = el('flight'), pill = el('flightPill');
+const lastPills = {};
+function drawFlight(d, armA = 'L', armB = 'F', boxId = 'flight', pillId = 'flightPill') {
+  const f = flightState(d, armA, armB), box = el(boxId), pill = el(pillId);
   const label = LAY ? { 'waiting': 'waiting for the first pairs', 'warming up': 'warming up', 'heading over the line': 'heading for a clear win', 'heading under the line': 'heading short of a clear win', 'too close to call': 'too close to call', 'over the line': 'a clear win!', 'under the line': 'not a clear win' }[f.status] : f.status;
   pill.textContent = label; pill.className = `pill ${f.cls}`;
-  if (f.done && lastPill !== f.status) { pill.classList.add('burst'); setTimeout(() => pill.classList.remove('burst'), 1700); }
-  lastPill = f.status;
+  if (f.done && lastPills[boxId] !== f.status) { pill.classList.add('burst'); setTimeout(() => pill.classList.remove('burst'), 1700); }
+  lastPills[boxId] = f.status;
   if (!f.path.length) { box.innerHTML = `<div class="empty">${say('No paired lives finished yet.', 'No life has finished in both kinds of mind yet.')}</div>`; return; }
   const W = Math.max(300, box.clientWidth || 600), H = 210, ml = 44, mr = 150, mt = 12, mb = 26;
   const ys = f.path.flatMap(p => [p.mean, Number.isNaN(p.lo) ? p.mean : p.lo, Number.isNaN(p.hi) ? p.mean : p.hi]).concat(f.m != null ? [f.m] : [], [0]);
@@ -289,7 +301,7 @@ function drawFlight(d) {
   s += `<path d="M${f.path.map(p => `${X(p.n)},${Y(p.mean)}`).join(' L')}" fill="none" stroke="var(--live)" stroke-width="2.4" stroke-linejoin="round"/>`;
   if (f.m != null) s += `<line x1="${ml}" x2="${W - mr}" y1="${Y(f.m)}" y2="${Y(f.m)}" stroke="var(--good)" stroke-width="2" stroke-dasharray="7 5"/><text x="${W - mr + 8}" y="${Y(f.m) + 4}" font-size="12" fill="var(--good)">${say(`winning line m = ${f.m.toFixed(1)}`, `win line ${f.m.toFixed(1)}`)}</text>`;
   const last = f.path[f.path.length - 1];
-  s += `<circle cx="${X(last.n)}" cy="${Y(last.mean)}" r="5.5" fill="var(--live)"/><text x="${W - mr + 8}" y="${Y(last.mean) + (f.m != null && Math.abs(Y(last.mean) - Y(f.m)) < 16 ? 18 : 4)}" font-size="12" fill="var(--live)">${say(`L − F ${last.mean >= 0 ? '+' : ''}${last.mean.toFixed(1)} (${last.n} of 48)`, `learners ${last.mean >= 0 ? '+' : ''}${last.mean.toFixed(1)} ahead`)}</text>`;
+  s += `<circle cx="${X(last.n)}" cy="${Y(last.mean)}" r="5.5" fill="var(--live)"/><text x="${W - mr + 8}" y="${Y(last.mean) + (f.m != null && Math.abs(Y(last.mean) - Y(f.m)) < 16 ? 18 : 4)}" font-size="12" fill="var(--live)">${say(`${armA} − ${armB} ${last.mean >= 0 ? '+' : ''}${last.mean.toFixed(1)} (${last.n} of 48)`, `${last.mean >= 0 ? '+' : ''}${last.mean.toFixed(1)} ahead`)}</text>`;
   box.innerHTML = s + '</svg>';
 }
 // a season turn that knocks a character's score down sets a target: its score before the turn. Climbing back to it is a recovery.
@@ -317,6 +329,7 @@ function render(d) {
     .map(([v, l, w]) => `<div class="stat${w ? ' warn' : ''}"><b>${esc(v)}</b><small>${esc(l)}</small></div>`).join('');
   el('plain').innerHTML = plainStory(d);
   drawFlight(d);
+  drawFlight(d, 'L', 'Y', 'flight2', 'flightPill2');
   lineChart(el('raceScore'), ARMS.map(a => ({ name: nameOf(a), color: a.color, pts: (d.byArm[a.id] || []).map(p => ({ x: p.t, y: p.score })) })), { yFmt: v => `${(100 * v).toFixed(0)}%` });
   lineChart(el('raceGood'), ARMS.map(a => ({ name: nameOf(a), color: a.color, pts: (d.byArm[a.id] || []).map(p => ({ x: p.t, y: p.good })) })), { yFmt: v => v.toFixed(0) });
   const pl = d.playing;

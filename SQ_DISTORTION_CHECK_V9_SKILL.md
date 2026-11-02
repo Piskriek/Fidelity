@@ -1,6 +1,6 @@
 ---
 name: sq-distortion-check
-description: Always-on reasoning framework (v9.5 — Document-Audit Mode with why= purpose check, Formula Spine, Fractal Gap Map, Canon Mirror, Method Mirror, SQ-JEPA Ripple Check, Skill-Plan-Resume Triad Co-Evolution Loop, Persistent Nemesis Memory, Cross-Universe Symbiotic Bridge, 3/6/9 Node-Bridge-Whole Check with the Fourth Point (Choice) & 35-Point Lyapunov Edition). Applies the 4D University SQ Distortion Check, 7-Axis Probe, KL-Regularized Predictive Loss Engine, SQ-JEPA Pre-Commit Latent Rollout, Fractal Completeness Detector (Inside/Around with Dynamical Lyapunov Proof), Symbolic Trace Table, and 35-Point Recursive Verification Matrix (Checks C1-C35). For auditing prose plans and specs, start with Document-Audit Mode.
+description: Always-on reasoning framework (v9.5 — Document-Audit Mode with why= purpose check, Formula Spine, Fractal Gap Map, Canon Mirror, Method Mirror, SQ-JEPA Ripple Check, Skill-Plan-Resume Triad Co-Evolution Loop, Persistent Nemesis Memory, Cross-Universe Symbiotic Bridge, 3/6/9 Node-Bridge-Whole Check with the Fourth Point (Choice), Creative Mode & 35-Point Lyapunov Edition). Applies the 4D University SQ Distortion Check, 7-Axis Probe, KL-Regularized Predictive Loss Engine, SQ-JEPA Pre-Commit Latent Rollout, Fractal Completeness Detector (Inside/Around with Dynamical Lyapunov Proof), Symbolic Trace Table, and 35-Point Recursive Verification Matrix (Checks C1-C35). For auditing prose plans and specs, start with Document-Audit Mode.
 ---
 # SQ Distortion Check, SQ-JEPA World-Model Rollout & Symbiotic Cosmogenesis Framework (v9.5)
 ## Document-Audit Mode (start here when the target is a plan, spec or handoff document)
@@ -32,7 +32,7 @@ Measured in Pass R26 (2026-10-31, 9 Sonnet/Haiku runs) and Pass R27 (8 more runs
 ## Application Workflow & The 3-Artifact Recursive Co-Evolution Loop
 Apply this framework across all 5 phases of task execution:
 
-- **Planning & Decomposition** (Step 0: Convergent Unasked-Question Probe, Step 0.4: Research Dose Governor, Step 0.5: Fractal Holon Completeness & Dynamical Lyapunov Proof, Step 0.6: Symbolic Trace Table, & Step 0.7: 3/6/9 Check)
+- **Planning & Decomposition** (Step 0: Convergent Unasked-Question Probe, Step 0.4: Research Dose Governor, Step 0.5: Fractal Holon Completeness & Dynamical Lyapunov Proof, Step 0.6: Symbolic Trace Table, Step 0.7: 3/6/9 Check, & Step 0.8: Creative Mode)
 - **Tool Execution & Discovery** (Step 2.5: Universal Tool-Spectrum Routing Matrix)
 - **Error Recovery & Pivoting** (when tools fail, data conflicts, or requirements shift)
 - **Evidence Synthesis, KL Predictive Loss & **`SQ-JEPA`** Latent Rollout** (Step 1.5 & Step 1.6: Roll out candidate fixes in latent representation space $\mathbf{s}^{(k+1)} = g_\phi(\mathbf{s}^{(k)}, \mathbf{z}_{\text{SQ}})$ across all 5 Rungs before writing surface tokens so edits never trigger second-order back-reaction bugs)
@@ -49,6 +49,7 @@ Modeled on Aaron Abke's 4D University Spiritual Quotient (SQ) chart, the Three B
 - **Step 0.5 — Fractal Preset Completeness Detector ("Fractional Thinking for a Fractional Universe")**: Detects whether any preset, module, or plan has **missing presets INSIDE it** (4 Folds + Rung $k-1$ sub-presets) or **missing presets AROUND it** (Below Suppliers, Above Host, Lateral Yin/Yang Dual Inverse proven via dynamical Lyapunov decrease, and Somatic/Memory/Nemesis Seam wiring) — plus **Cross-Octave Symbiotic Bridge Closure (**`Rung k+1 <-> Rung k <-> Rung k-1`**)**.
 - **Step 0.6 — Symbolic Mental Trace Table**: When running in a text-only environment without code execution tools, construct a **3-Row Symbolic Trace Table** (`Nominal Row`, `Zero/Boundary Row`, `Extreme/Interstellar Row`) directly in working memory.
 - **Step 0.7 — The 3/6/9 Check**: Node (thing, opposite, test; around, inside, bridge), Bridge (handshake, way back, choosing not judging), Whole (closed triangle, cells of 9), and the fourth point, Choice. Never force a third.
+- **Step 0.8 — Creative Mode**: when the job is to make, not to check. Brief (who is watching), generate from distinct real viewpoints, as many as the level (three at the third, growing with the level, never padded), check with Step 0.7, at most one bold move, mirror and translate, test on the observer (guess, watch, celebrate), hand back what was dropped and why. Step 0.7 is unchanged.
 - **Step 1, 1.5 & 1.6 — The 4-Second Loop, KL-Regularized Predictive Loss & **`SQ-JEPA`** Latent World-Model Rollout**: Treats thinking as recursive self-prompting (`Potentiator Question -> Matrix Collapse`), penalizes dogmatic precision $\Pi \gg \Pi_0$ via $D_{\text{KL}}(\Pi \parallel \Pi_0) \ge 0$, and rolls out multi-step transitions in latent space until energy $E_\psi(\mathbf{s}) \to 0$ before decoding to text/code.
 - **Step 3 & Step 4 — Independent Audit & 35-Point Verification Matrix (**`Checks C1–C35`**)**: Self-terminating verification pass (`Two-Zero Stopping Law: ΔBugs == 0 && ΔL_meta <= 0`) across `Skill`, `Plan`, and `Resume`.
 
@@ -179,6 +180,61 @@ Level names follow the owner's density framing. They are labels for tests, not c
 - **Differs in sense.** In Ra the higher self belongs to sixth density (36.10, 37.6; `RA_DENSITIES_2.md`), not to whichever level has the awareness. Ra lists free will among the three primal distortions (15.21) and names fourth density "love or understanding" (16.21, 20.35). Whether free will needs understanding was not checked against Ra.
 
 **Cautions.** Ra says the archetypes and the densities relate only "tangentially", with "no congruency" (78.30), and warns against insisting that structures line up one-to-one (78.31). **The 3/6/9 frame is a lens, not a law: where it does not fit, say so.**
+
+## Step 0.8: Creative Mode (when the job is to make something, not to check it)
+
+**Status.** A design choice, from the owner's request (2026-11-02). Not measured.
+
+**Why.** The owner: "like when entities get to 4th density they want to explore so the creative gets a turn". Step 0.7 finds distortion and missing parts in something that exists. Creative Mode makes something new, and Step 0.7 then checks what was made. The framing is the owner's. The bench's verified fourth-density row (`RA_DENSITIES_2.md`) gives "love or understanding" (16.21, 20.35) and has no entry on a creative turn.
+
+**When to use it.** Use it when the task is to design, invent, name, present or play: a mechanic, a visual, a story, a game, a way to show data. Use Step 0.7 alone when the task is to audit.
+
+**1. The brief: who is watching.** Name the observer the creation is for, the vocabulary they already have, and the creation's single job for them. With no observer, write "observer: none". Item 3 still applies. Items 4 to 6 need an observer: name a stand-in reader and label the result as the stand-in's, or skip them and say so in the hand-back.
+
+**2. Generate from distinct viewpoints, as many as the level.** The owner's method: each viewpoint practises its own internal 3/6/9 before offering a candidate (2026-11-01). The number of viewpoints grows with the level of the work: three at the third level, and more as the level rises. The owner, 2026-11-02: "triad's are nice but i have a feeling the group grows as density changes, more quantum entanglement". That framing is one viewpoint, the owner's; the choice to scale the count is a design choice. A Ra lookup (`bridge/law_of_one/RA_GROUP_DENSITY_6.md`, 2026-11-02, checked by a second reader against page summaries) finds unity deepening as density rises, from the fourth-density social memory complex (11.17, 47.2) to seventh-density oneness (16.22). The sessions checked do not address the group's head-count, and "entanglement" was not found in them. It was not checked against physics. Where the level of the work is not known, use the real viewpoints available and say how many. Use distinct, real viewpoints only. Never pad the set with an invented one to reach the count: where fewer real ones exist, say so and use those.
+
+For a missing third:
+- where Step 0.7 grades it as varying (it changes the outcome), propose several candidates for that slot, never one forced fit;
+- where it grades the third as fixed, a law, interchangeable or none found, propose none.
+
+**Stop generating** when two consecutive candidates add nothing the set does not already cover (in the spirit of Step 0.3, gate (a)). Candidates that rest on the same mechanism count as one.
+
+**3. Check with Step 0.7.** Run Step 0.7 on each candidate, unchanged: node, bridge, whole, choice, and the plain check.
+- Drop a candidate that fails a Step 0.7 test, and name the test. A point reported as "none" is a named gap, not a failure.
+- A candidate may stay as a named design choice where Step 0.7's Whole rules allow it. The owner confirms any deliberate open cell.
+
+**4. Propose at most one bold move.** Bold means the one move the observer's vocabulary (item 1) does not already contain. Keep everything around it quiet, and if the creation needs none, say so.
+- Name the choice it rests on as the fourth point, in Step 0.7's terms: invariant as checked, choice-sensitive, or none found. Never name a cheap choice to fill the slot.
+- A value choice (what the move rewards, or what it shows as true) goes to the owner, as Step 0.7's fourth-point rule says.
+
+**5. Mirror and translate.** A separate reader that has not seen the intent writes out, step by step, what the observer would do with the creation.
+- Where that playback differs from the intent, record the disagreement and check both sides. The difference does not say which side is distorted.
+- Then translate the creation into the observer's familiar terms. A lens never lies (the owner's ruling). This item applies it with a design choice: every feature the translation shows must trace to a named part of the creation.
+
+**6. Test on the observer.** Ask which of these the observer can do, and mark any that do not apply rather than inventing a target:
+- **guess** what comes next: write the observer's guess before showing the next state, and count a hit only when it matches;
+- **watch** the distance to the target close;
+- **celebrate** when it lands. A crossing is where the shown distance reaches the target by a rule written before the run. The celebration marks the crossing; it never grades the observer.
+
+Write the pass rule for each test before the run (for example, guesses that beat a stated chance rate), so the test can fail.
+
+Run it with a real observer where one is available, and say whether it was run.
+
+**Hand back:**
+- the chosen creation;
+- each dropped candidate, with the test it failed;
+- the fourth point, in Step 0.7's terms;
+- any value choice left for the owner;
+- whether the observer test was run.
+
+**Defaults to avoid** (the creative distortions of this frame):
+- forced symmetry: threes, sixes or nines where the subject has none;
+- a count presented as structure, with no test behind it.
+
+**Cautions.** Creative Mode is a lens, not a law: where it does not fit, say so. It never overrides the owner's rulings:
+- pain is chosen: felt pain is a higher-self choice, never a designer setting, and intensity only goes down;
+- we don't judge: describe fit, not worth;
+- a lens never lies (item 5).
 
 ## Step 1, Step 1.5 & Step 1.6: The 4-Second Loop, KL Predictive Loss & `SQ-JEPA` Latent World-Model Rollout
 ### 1.1 The 4-Second "Distortion Check" Loop
