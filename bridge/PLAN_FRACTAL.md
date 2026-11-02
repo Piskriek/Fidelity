@@ -198,6 +198,28 @@ Longer horizon (the owner, 2026-11-02):
 
 
 
+## The universe loop (how the framework builds its universe)
+
+The owner (2026-11-02, one viewpoint, theirs): "the next bridge loop is how you build your universe". The same unit at the world scale:
+
+- **ask:** a design question, from the owner, a session, or the beings' own surprise;
+- **work:** build a world version or an arm (the engine);
+- **check:** the beings live it, and the thought recorder and the lens show it, with pre-registered tests;
+- **report:** a results page and a picture;
+- **route:** the lessons go into the next world's design and into the roster;
+- **landed:** the owner sees it, in an observation round.
+
+Tracks A, B and C are the parts of this one loop.
+
+First steps, in order:
+1. Give the beings the two missing steps: the ask, and the way back (gratitude). See WORLD_V2_DESIGN.md.
+2. The kind-trace sense, the strongest in the probes.
+3. Patterned fruit, so the slower rungs have something to read.
+
+The V-1a and E3 measurements run after the owner's usage reset.
+
+## Decisions waiting on the owner
+
 **The lens:**
 - **A-1.** Should the board show the share of time awake (higher is better) in place of a faint count (fewer is better)? Recommended: yes.
 - **A-2.** Stop the host game's server once the lens shows a life? Your call.
