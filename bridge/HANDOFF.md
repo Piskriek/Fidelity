@@ -31,6 +31,9 @@ E2 passed: with the same learning steps at the same rate, characters whose heads
 
 ## Next, in order
 
+**The current plan is `PLAN_FRACTAL.md` (2026-11-02).** It has three tracks: the lens (the beings' own point of view), E3 (the still-world test) and a fractal world with richer senses. It lists the decisions waiting on the owner. The list below is the earlier order, kept for its specs.
+
+
 1. **v1b: done** (2026-11-02). The build spec below is kept for the record. `live_y.mjs` records each character's collapse causes, loop-breaks and end intensity, but not the loop-break tick. Spec for building it in `make_live.mjs`:
    - Y runs two lockstep sets of four streams on the same world seed and trunk.
      - The **source**: an exact L run. Same arm logic, its own world and its own live heads.

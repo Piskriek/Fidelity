@@ -81,6 +81,7 @@
     @keyframes spark { 0% { transform: scale(0.2); opacity: 0; } 40% { transform: scale(1.6); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
   }
   .eta { color: var(--muted); font-size: 13px; }
+  .finish { font-size: 1.12rem; line-height: 1.5; margin: 14px 0 0; padding: 10px 14px; border-left: 4px solid var(--good); background: color-mix(in srgb, var(--good) 10%, transparent); border-radius: 6px; max-width: 70ch; }
 </style>
 </head>
 <body>
@@ -90,9 +91,10 @@
       <h1>Four Valleys, <span>live</span></h1>
       <button type="button" id="layBtn" class="laybtn" aria-pressed="false"><span class="layicon" aria-hidden="true"></span>Layman's bridge</button>
     </div>
-    <p class="lede tech-only">192 lives running on the PC: frozen minds against minds that keep learning from their own answers. Every number here goes up when a character does better. Each little landscape is one character: its ridge is how sure it is of what the world will answer, and the sky turns with the seasons.</p>
-    <p class="lede lay-only">Four little characters live in four valleys full of fruit. Some fruit feeds them, some is poison, and which is which changes with the seasons without anyone telling them. We are watching 192 of their lives at once. Half the minds never learn after they are born; the other half keep learning from what happens to them. Higher is better everywhere on this page.</p>
+    <p class="lede tech-only"><span class="totalLives">240</span> lives run on the PC: frozen minds against minds that keep learning from their own answers (v1a), and learners against neighbour-learners (v1b). Every number here goes up when a character does better, except faints, where fewer is better. Each little landscape is one character: its ridge is how sure it is of what the world will answer, and the sky turns with the seasons.</p>
+    <p class="lede lay-only">Four little characters live in four valleys full of fruit. Some fruit feeds them, some is poison, and which is which changes with the seasons without anyone telling them. We are watching <span class="totalLives">240</span> of their lives. Two of the five kinds of mind never learn after they are born. Two keep learning from what happens to them, and one learns only from what happens in the valley next door. Higher is better everywhere on this page, except faints, where fewer is better.</p>
     <div class="stats" id="stats"></div>
+    <p class="finish" id="finish" hidden></p>
   </header>
 
   <section class="card flight" id="flightCard">
@@ -101,7 +103,7 @@
       <span class="pill" id="flightPill">waiting</span>
     </div>
     <p class="note tech-only">Each dot is the running mean of L − F good-eats score over the paired lives finished so far (same trunk, same world), with a band of ±2 standard errors that narrows as pairs come in. The dashed line is the margin m = max(1, 3 × sd(F − F′)) from the pairs so far: the pre-registered winning line. This is a running estimate; the scorer gives the verdict once all 48 pairs are in, and watching changes nothing.</p>
-    <p class="note lay-only">The dot is how far ahead the learners are, so far. The dashed line is how far ahead they must finish to count as a clear win, decided before the race began. The shaded band shows how sure we can be yet: it narrows as more lives finish. Nobody can change the rules now; every life runs to the end.</p>
+    <p class="note lay-only">The dot is how far ahead the learners are, so far. The dashed line is how far ahead they must finish to count as a clear win. Its rule was set before the race; its height comes from how much two identical never-learners differ. Calls like "heading for a clear win" are this page's own reading of the lives so far; only the final verdict follows the registered rule. The shaded band shows how sure we can be yet: it narrows as more lives finish. Nobody can change the rules now; every life runs to the end.</p>
     <div id="flight"></div>
   </section>
 
@@ -111,7 +113,7 @@
       <span class="pill" id="flightPill2">waiting</span>
     </div>
     <p class="note tech-only">Running mean of L − Y good-eats score over the finished paired lives (same trunk, same world), with ±2 standard errors, against v1a's winning line m. The scorer gives the verdict.</p>
-    <p class="note lay-only">The dot is how far the learners who learn from their own life are ahead of the ones who learn from the valley next door. The dashed line is the win line, set before the race.</p>
+    <p class="note lay-only">The dot is how far the learners who learn from their own life are ahead of the ones who learn from the valley next door. The dashed line is the win line: its rule was set before the race, and its height comes from how much two identical never-learners differ.</p>
     <div id="flight2"></div>
   </section>
 
@@ -123,10 +125,10 @@
 
   <section>
     <h2>The race</h2>
-    <p class="note tech-only">Averaged over every character in every life so far, at each point in a life (windows of 512 ticks). A season can turn without warning, which knocks the learners' predictions down until they relearn.</p>
-    <p class="note lay-only">Each line is one kind of mind. Left is the start of a life, right is the end. When a season turns, the learners suddenly guess wrong for a while, then catch up again. The never-learners cannot relearn; their line only moves with how well the season happens to suit them.</p>
+    <p class="note tech-only">Averaged over every character in every life so far, at each point in a life (windows of 512 ticks). A season can turn without warning. Measured over the finished lives: right after a turn the learners' fruit predictions fit worse than the frozen minds' (eat-fruit CE 2.46 against 1.11 in the first 32 ticks), and from 128 ticks on they fit better (0.59 against 0.95). That they relearn is an inference, not tested.</p>
+    <p class="note lay-only">Each line is one kind of mind. Left is the start of a life, right is the end. When a season turns, the learners suddenly guess worse for a while, and later in the season they guess better than the never-learners. We think they are relearning, but that has not been tested. The never-learners cannot change; their line only moves with how well the season happens to suit them.</p>
     <div class="race">
-      <div class="card"><h3 data-tech="Prediction score" data-plain="How often they guess right what will happen">Prediction score</h3><div id="raceScore"></div></div>
+      <div class="card"><h3 data-tech="Prediction score" data-plain="How sure they were of what really happened">Prediction score</h3><div id="raceScore"></div></div>
       <div class="card"><h3 data-tech="Good eats per 512 ticks (nourishing minus toxic)" data-plain="Good meals minus poison meals, per stretch of time">Good eats per 512 ticks (nourishing minus toxic)</h3><div id="raceGood"></div></div>
     </div>
   </section>
@@ -173,16 +175,16 @@ function plainStory(d) {
   if (f && l) {
     const tf = Math.min(f.t, l.t), sf = (d.byArm.F.find(p => p.t === tf) || f), sl = (d.byArm.L.find(p => p.t === tf) || l);
     const lead = sl.score - sf.score;
-    out.push(`At the same point in their lives, the learners guess right about <b>${Math.round(100 * sl.score)}%</b> of the time and the never-learners about <b>${Math.round(100 * sf.score)}%</b>. ${Math.abs(lead) < 0.02 ? 'That is about even.' : lead > 0 ? 'The learners are ahead.' : 'The never-learners are ahead here.'}`);
+    out.push(`At the same point in their lives, the learners were on average <b>${Math.round(100 * sl.score)}%</b> sure of what really happened, and the never-learners <b>${Math.round(100 * sf.score)}%</b>. ${Math.abs(lead) < 0.02 ? 'That is about even.' : lead > 0 ? 'The learners are ahead.' : 'The never-learners are ahead here.'}`);
   }
   const pl = d.playing, live = pl && pl.arms.L;
   if (live) {
     const s = live.seasons, turned = s.length > 1 && s[s.length - 1][1] !== s[s.length - 2][1];
     const scores = live.chars.map(c => c[c.length - 1]?.score ?? 0), prev = live.chars.map(c => c[c.length - 2]?.score ?? null);
     const best = scores.indexOf(Math.max(...scores));
-    out.push(`In world ${pl.world}, the learner in <b>valley ${best + 1}</b> is doing best right now, guessing right <b>${Math.round(100 * scores[best])}%</b> of the time.`);
+    out.push(`In world ${pl.world}, the learner in <b>valley ${best + 1}</b> is doing best right now: on average <b>${Math.round(100 * scores[best])}%</b> sure of what really happened.`);
     const dropped = prev.filter((p, i) => p != null && scores[i] < p - 0.1).length;
-    if (turned && dropped) out.push(`A season just turned there, and ${dropped === 1 ? 'one learner is suddenly guessing worse. Its fruit knowledge went stale; watch whether it climbs back.' : `${dropped} learners are suddenly guessing worse. Their fruit knowledge went stale; watch whether they climb back.`}`);
+    if (turned && dropped) out.push(`A season just turned there, and ${dropped === 1 ? 'one learner is suddenly less sure of what happens. What it had learned may no longer fit; watch whether it climbs back.' : `${dropped} learners are suddenly less sure of what happens. What they had learned may no longer fit; watch whether they climb back.`}`);
     else if (turned) out.push('A season just turned there; the fruit that was safe may not be any more.');
   }
   if (pl) {
@@ -327,6 +329,18 @@ function render(d) {
   const running = Math.max(0, d.started - d.finished - d.failed);
   el('stats').innerHTML = [[d.finished, say(`of ${d.total} lives finished`, `of ${d.total} lives over`)], [running, say('running now', 'being lived now')], [d.failed, say('failed', 'stopped by an error'), d.failed > 0], [new Date(d.at).toLocaleTimeString(), say('last update', 'last news')], [etaText(d), say('finish', 'the end')]]
     .map(([v, l, w]) => `<div class="stat${w ? ' warn' : ''}"><b>${esc(v)}</b><small>${esc(l)}</small></div>`).join('');
+  const finBox = el('finish'), finOf = id => d.done.filter(r => r.arm === id), avgOf = xs => xs.reduce((a, r) => a + r.NGE, 0) / xs.length;
+  if (d.total > 0 && d.finished >= d.total) {
+    const verdict = fl => ({ 'over the line': 'a clear win', 'under the line': 'not a clear win' })[fl.status] || fl.status;
+    const pair = (x, y) => (finOf(x).length && finOf(y).length ? [avgOf(finOf(x)).toFixed(1), avgOf(finOf(y)).toFixed(1)] : null);
+    const e1 = pair('L', 'F'), e2 = pair('L', 'Y'), parts = [];
+    parts.push(say(`All ${d.total} lives finished${d.failed ? `, ${d.failed} failed` : ', none failed'}. No experiment is running now.`, `Every one of the ${d.total} lives is over${d.failed ? ` (${d.failed} stopped by an error)` : ''}. No new test is running right now.`));
+    if (e1) parts.push(say(`E1, L against F: ${e1[0]} to ${e1[1]}, ${verdict(flightState(d))}.`, `Learners against never-learners: ${e1[0]} to ${e1[1]} good meals, ${verdict(flightState(d))}.`));
+    if (e2) parts.push(say(`E2, L against Y: ${e2[0]} to ${e2[1]}, ${verdict(flightState(d, 'L', 'Y'))}.`, `Learning from your own life against learning from a neighbour's: ${e2[0]} to ${e2[1]}, ${verdict(flightState(d, 'L', 'Y'))}.`));
+    parts.push(say('Next: E3, the stationary control. Not started (see the handoff).', 'Next: test 3, a world where the seasons never change, to check that the learners really need a changing world. It has not started yet.'));
+    finBox.textContent = parts.join(' '); finBox.hidden = false;
+  } else finBox.hidden = true;
+  document.querySelectorAll('.totalLives').forEach(n => { n.textContent = d.total; });
   el('plain').innerHTML = plainStory(d);
   drawFlight(d);
   drawFlight(d, 'L', 'Y', 'flight2', 'flightPill2');
