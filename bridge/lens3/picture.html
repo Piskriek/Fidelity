@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Four Valleys picture</title>
+<!-- lens3 picture view (LENS_BRIEF.md §10): the same record as the words view, drawn as shapes, colour and motion.
+     No words on screen by default; hover any shape, or press Aa, for plain words and the field it comes from. -->
+<style>
+:root {
+  --bg: #f4f1ea; --ink: #1d2422; --muted: #66706b; --line: #d8d3c8; --panel: #fffdf8;
+  --sky0: #cfe3ea; --sky1: #f1d9b5; --ground: #d9cfb8; --bubble: #fffdf8; --fog: #b8b4aa;
+  --body: #2f5d62; --fed: #2e8b57; --plain: #b39a64; --poison: #8b4db3; --faint: #6a2440; --fine: #6d9cc6; --refused: #9aa1a4; --down: #8a8d8e;
+  --ripple: #2f5d62; --gold: #e0a412; --tip: rgba(29, 36, 34, .92);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141716; --ink: #e5e9e7; --muted: #a0a9a5; --line: #333a37; --panel: #1d2220;
+    --sky0: #1d3640; --sky1: #4a3a24; --ground: #2c281f; --bubble: #222826; --fog: #4d4b45;
+    --body: #8cc7cc; --fed: #4cb57c; --plain: #c9b07a; --poison: #ad78d4; --faint: #c0607f; --fine: #7fb0da; --refused: #6f7679; --down: #8a8d8e;
+    --ripple: #8cc7cc; --gold: #f0b93a; --tip: rgba(240, 242, 241, .95);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141716; --ink: #e5e9e7; --muted: #a0a9a5; --line: #333a37; --panel: #1d2220;
+  --sky0: #1d3640; --sky1: #4a3a24; --ground: #2c281f; --bubble: #222826; --fog: #4d4b45;
+  --body: #8cc7cc; --fed: #4cb57c; --plain: #c9b07a; --poison: #ad78d4; --faint: #c0607f; --fine: #7fb0da; --refused: #6f7679; --down: #8a8d8e;
+  --ripple: #8cc7cc; --gold: #f0b93a; --tip: rgba(240, 242, 241, .95);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 14px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+.bar { position: fixed; left: 0; right: 0; top: 0; height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 10px; }
+.bar button, .bar a { width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 16px; display: grid; place-items: center; cursor: pointer; text-decoration: none; padding: 0; }
+.bar button.on { background: var(--body); color: var(--bg); border-color: var(--body); }
+.bar .sp { font: 600 12px system-ui; }
+#time { flex: 1; height: 26px; cursor: pointer; min-width: 80px; }
+#stage { position: fixed; left: 0; right: 0; top: 44px; bottom: 0; }
+#tip { position: fixed; pointer-events: none; background: var(--tip); color: var(--bg); padding: 6px 9px; border-radius: 8px; font-size: 13px; max-width: 290px; display: none; z-index: 5; }
+#tip .f { display: block; font: 11px ui-monospace, Consolas, monospace; opacity: .75; margin-top: 2px; }
+@media (max-width: 700px) { html, body { overflow: auto; } #stage { position: absolute; bottom: auto; } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button id="play" title="play / pause (space)">❚❚</button>
+  <button id="speed" class="sp" title="speed">1×</button>
+  <canvas id="time" title="the whole recorded window: the line is the season turn, gold dots are crossings; click to jump"></canvas>
+  <button id="guess" title="guess first: pick a being, then tap where it will go before it moves">✋</button>
+  <button id="words" class="sp" title="show words on the picture">Aa</button>
+  <a href="/game" title="the game view: the same beings in game conventions">🎮</a>
+  <a href="/words" title="the words view: every number, in sentences">≡</a>
+</div>
+<canvas id="stage"></canvas>
+<div id="tip"></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const FRUIT = ['', 'a', 'b', 'c'];
+const KIND = { FED: 'fed', PLAIN: 'plain', TOXIC: 'poison', COLLAPSE: 'faint', OK: 'fine', RESTED: 'fine', ERR_EMPTY: 'refused', ERR_FULL: 'refused', ERR_SPENT: 'refused', ERR_DOWN: 'down' };
+const WORD = { FED: 'fed', PLAIN: 'nothing happened', TOXIC: 'poisoned', COLLAPSE: 'fainted', OK: 'ok', RESTED: 'rested', ERR_EMPTY: 'nothing there to eat', ERR_FULL: 'health already full', ERR_SPENT: 'no energy to rest', ERR_DOWN: 'down, cannot act' };
+const CLASS = { NOURISH: 'fed', PLAIN: 'plain', TOXIC: 'poison' };
+const CLASS_WORD = { NOURISH: 'feeds', PLAIN: 'does nothing', TOXIC: 'poisons' };
+const ACTS = ['EAT', 'PASS', 'REST'];
+const LEVEL = 0.5;          // the crossing level: the owner's value choice (LENS_BRIEF §3), default until ruled
+const START_BEFORE = 14;    // play starts 14 ticks before the first tick under the new fruit rules
+const base = n => n.replace('/1', '');
+
+let H, rows = [], T0 = 0, T1 = 0, ix, inForce = [], turns = [], flips = [];
+let i = 0, p = 0, playing = true, speed = 1, last = 0, words = false, C = {};
+const G = { on: false, v: -1, waiting: false, tap: null, taps: {} };
+const SPEEDS = [1, 2, 4], TICK_S = 0.42, GUESS_TICK_S = 2.2; // seconds per tick at 1×, and per revealed tick when guessing
+
+// ------------------------------------------------------------------ data (same record as the words view)
+async function load() {
+  const files = await (await fetch('/thoughts/')).json();
+  const text = await (await fetch('/thoughts/' + encodeURIComponent(files[0]))).text();
+  const L = text.trim().split('\n'); H = JSON.parse(L[0]); rows = L.slice(1).map(l => JSON.parse(l));
+  T0 = rows[0].t; T1 = rows[rows.length - 1].t; ix = n => H.answers.indexOf(n);
+  inForce = rows.map((r, k) => (k ? rows[k - 1].season : r.season));       // the row's season is read after its tick
+  turns = []; for (let k = 1; k < rows.length; k++) if (inForce[k] !== inForce[k - 1]) turns.push(k);
+  flips = [];
+  turns.forEach((ti, n) => {
+    const end = turns[n + 1] ?? rows.length, start = n ? turns[n - 1] : 0;
+    for (let v = 0; v < 4; v++) for (let f = 1; f <= 3; f++) {
+      let from = null, to = null, cross = null;
+      for (let k = start; k < ti; k++) { const c = rows[k].chars[v]; if (!c.sees.down && c.sees.item === f) from = c.world.kindClass; }
+      for (let k = ti; k < end; k++) { const c = rows[k].chars[v]; if (c.sees.down || c.sees.item !== f) continue; if (to === null) to = c.world.kindClass; if (cross === null && fit(c) >= LEVEL) cross = k; }
+      if (from && to && from !== to) flips.push({ v, f, from, to, cross });
+    }
+  });
+  i = Math.max(0, (turns[0] ?? START_BEFORE) - START_BEFORE); p = 0;
+  readColors(); resize(); requestAnimationFrame(frame);
+}
+function fit(c) {
+  const g = c.guess[0].p, k = c.world.kindClass;
+  if (c.sees.down || !c.sees.item || !k) return null;
+  return k === 'NOURISH' ? g[ix('FED')] : k === 'PLAIN' ? g[ix('PLAIN')] : g[ix('TOXIC')] + g[ix('COLLAPSE')];
+}
+const reach = val => Math.max(0.2, Math.min(1, (val + 4) / 7)); // weight 3 reaches all the way, 0 about half, -4 or less stays short
+const topOf = g => { let b = 0; g.p.forEach((x, j) => { if (x > g.p[b]) b = j; }); return { j: b, p: g.p[b], kind: KIND[base(H.answers[b])], name: base(H.answers[b]) }; };
+
+// ------------------------------------------------------------------ canvas
+const stage = $('#stage'), ctx = stage.getContext('2d'), tl = $('#time'), tctx = tl.getContext('2d');
+let W = 0, Hh = 0, scenes = [], hits = [];
+function readColors() { const cs = getComputedStyle(document.documentElement); ['bg', 'ink', 'muted', 'line', 'panel', 'sky0', 'sky1', 'ground', 'bubble', 'fog', 'body', 'fed', 'plain', 'poison', 'faint', 'fine', 'refused', 'down', 'ripple', 'gold'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim()); }
+function resize() {
+  const dpr = window.devicePixelRatio || 1, narrow = innerWidth < 700;
+  W = innerWidth; Hh = narrow ? Math.max(4 * 330, innerHeight - 44) : innerHeight - 44;
+  stage.style.height = Hh + 'px'; stage.width = W * dpr; stage.height = Hh * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const g = 8, cols = narrow ? 1 : 2, rws = narrow ? 4 : 2, sw = (W - g * (cols + 1)) / cols, sh = (Hh - g * (rws + 1)) / rws;
+  scenes = [0, 1, 2, 3].map(v => ({ v, x: g + (v % cols) * (sw + g), y: g + Math.floor(v / cols) * (sh + g), w: sw, h: sh }));
+  tl.width = tl.clientWidth * dpr; tl.height = tl.clientHeight * dpr; tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const mix = (a, b, t) => a + (b - a) * t;
+const ease = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+function shape(x, y, s, f) { // the fruit's letter as a shape: a circle, b triangle, c diamond (it knows the letter, not what it does)
+  ctx.beginPath();
+  if (f === 1) ctx.arc(x, y, s, 0, 7);
+  else if (f === 2) { ctx.moveTo(x, y - s * 1.1); ctx.lineTo(x + s, y + s * 0.8); ctx.lineTo(x - s, y + s * 0.8); ctx.closePath(); }
+  else { ctx.moveTo(x, y - s * 1.15); ctx.lineTo(x + s * 1.05, y); ctx.lineTo(x, y + s * 1.15); ctx.lineTo(x - s * 1.05, y); ctx.closePath(); }
+}
+function hit(x, y, r, text, field) { hits.push({ x, y, r, text, field }); }
+
+// ------------------------------------------------------------------ one valley
+function drawScene(S) {
+  const { v, x, y, w, h } = S, r = rows[i], c = r.chars[v], pc = i ? rows[i - 1].chars[v] : c, wd = c.world;
+  const t = p, grow = ease(t / 0.3), reveal = t >= 0.45, after = ease((t - 0.45) / 0.55);
+  const guessing = G.on && G.v === v && G.waiting;
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, w, h, 14); ctx.clip();
+
+  // the world (only the viewer sees it): sky by season in force, ground
+  const turnK = turns.find(k => k === i), s = inForce[i];
+  const skyNow = s % 2 ? C.sky1 : C.sky0, skyPrev = s % 2 ? C.sky0 : C.sky1;
+  const sk = ctx.createLinearGradient(0, y, 0, y + h); sk.addColorStop(0, skyNow); sk.addColorStop(0.72, skyNow); sk.addColorStop(0.73, C.ground); sk.addColorStop(1, C.ground);
+  ctx.fillStyle = sk; ctx.fillRect(x, y, w, h);
+  if (turnK !== undefined && t < 1) { ctx.fillStyle = skyPrev; ctx.fillRect(x + w * ease(t * 1.6), y, w, h * 0.72); } // the season turns: a wipe across the sky
+  hit(x + w * 0.5, y + 16, 26, inForce[i] !== inForce[0] ? 'The world: a new season. The beings were not told.' : 'The world: the season. The being cannot sense it.', 'season (previous row)');
+
+  // intensity: suns in the sky, one dims for good at a loop-break (a world number that only goes down)
+  for (let k = 0; k < 2; k++) {
+    const sx = x + w - 18 - k * 18, sy = y + 18, lit = k < wd.ellAfter;
+    ctx.beginPath(); ctx.arc(sx, sy, 5.5, 0, 7); ctx.fillStyle = lit ? hexA(C.ink, 0.55) : 'transparent'; ctx.fill(); ctx.strokeStyle = hexA(C.ink, 0.55); ctx.lineWidth = 1.5; ctx.stroke();
+  }
+  hit(x + w - 27, y + 18, 16, `The world's intensity: ${wd.ellAfter}. It only goes down. Not felt.`, 'world.ellAfter, loopBreaksAfter');
+
+  // flight lanes in the sky: its guess for what each fruit really does, rising toward the top as it fits (B+W)
+  drawFlight(S);
+
+  // the bubble: what it senses. Fog where its senses end.
+  const cx = x + w * 0.42, cy = y + h * 0.5, R0 = Math.min(w * 0.36, h * 0.36);
+  const downNow = !!c.sees.down, downPrev = !!pc.sees.down;
+  const R = downNow ? R0 * 0.34 : R0; // going down and waking are a cut, not a fade: it senses only "down", then its bands again
+  for (let k = 0; k < 8; k++) { ctx.beginPath(); ctx.arc(cx, cy, R + 4 + k * 3.4, 0, 7); ctx.strokeStyle = hexA(C.fog, 0.55 - k * 0.06); ctx.lineWidth = 3.4; ctx.stroke(); }
+  ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R + 24, 0, 2 * Math.PI); ctx.moveTo(cx + R + 2, cy); ctx.arc(cx, cy, R + 2, 0, 2 * Math.PI, true); ctx.clip();
+  ctx.strokeStyle = hexA(C.ink, 0.35); ctx.lineWidth = 1.2;
+  for (let d = -R - 40; d < R + 40; d += 5) { ctx.beginPath(); ctx.moveTo(cx + d - 30, cy - R - 30); ctx.lineTo(cx + d + 30, cy + R + 30); ctx.stroke(); }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fillStyle = C.bubble; ctx.fill();
+  hit(cx + R + 12, cy - R * 0.6, 14, 'Fog: where its senses end. Outside it, the being senses nothing: not the season, not what a fruit does.', 'no field (not sensed)');
+
+  // the body: size = its sense of its energy, depth of colour = its sense of its health; flat and grey while down
+  const bx0 = cx - R0 * 0.38, by0 = cy + R0 * 0.08;
+  const eb = downNow ? 0 : pc.sees.down ? c.sees.eBand : mix(pc.sees.eBand, c.sees.eBand, grow), hb = downNow ? 0 : pc.sees.down ? c.sees.hBand : mix(pc.sees.hBand, c.sees.hBand, grow);
+  const breathe = 1 + 0.025 * Math.sin(performance.now() / 600 + v); // decoration: alive, no field
+  const ak = ACTS.indexOf(c.act), lean = downNow || guessing ? 0 : ease((t - 0.28) / 0.17) * (1 - ease((t - 0.62) / 0.38));
+  const bx = bx0 + (ak === 0 ? R0 * 0.1 * lean : 0), by = by0 + (ak === 1 ? -R0 * 0.07 * lean : ak === 2 ? R0 * 0.04 * lean : 0);
+  const br = (R0 * 0.13 + eb * R0 * 0.035) * (downNow ? 1 : breathe) * (ak === 2 ? 1 - 0.12 * lean : 1);
+  if (downNow) {
+    ctx.beginPath(); ctx.ellipse(cx, cy + R * 0.25, br * 1.5, br * 0.45, 0, 0, 7); ctx.fillStyle = C.down; ctx.fill();
+    hit(cx, cy + R * 0.25, br * 1.4, 'Down: all it senses is that it is down. The fog closes in. Why, only the world knows.', 'sees.down');
+  } else {
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.fillStyle = hexA(C.body, 0.22 + 0.19 * hb); ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.body; ctx.stroke();
+    hit(bx, by, br, `The being. Size: its sense of its energy (band ${c.sees.eBand} of 0–4). Depth of colour: its sense of its health (band ${c.sees.hBand} of 0–4).`, 'sees.eBand, sees.hBand');
+  }
+
+  // the fruit it sees: a shape for the letter, no colour (it does not know what the fruit does)
+  const fx = cx + R0 * 0.45, fy = by0, item = downNow ? 0 : c.sees.item;
+  if (item) {
+    shape(fx, fy, R0 * 0.1, item); ctx.fillStyle = C.bubble; ctx.fill(); ctx.lineWidth = 2.2; ctx.strokeStyle = C.ink; ctx.stroke();
+    hit(fx, fy, R0 * 0.13, `Fruit ${FRUIT[item]}: it senses which fruit this is, not what it does. It gave this sight ${pct(c.pSeen)}.`, 'sees.item, pSeen');
+    if (c.expected && !c.expected.down && c.expected.item && c.expected.item !== item) { // what it expected to see, faint
+      ctx.save(); ctx.globalAlpha = 0.25 + 0.4 * c.pExpected; ctx.setLineDash([3, 3]); shape(fx + R0 * 0.2, fy - R0 * 0.22, R0 * 0.06, c.expected.item); ctx.strokeStyle = C.muted; ctx.lineWidth = 1.2; ctx.stroke(); ctx.restore();
+      hit(fx + R0 * 0.2, fy - R0 * 0.22, R0 * 0.09, `It expected fruit ${FRUIT[c.expected.item]} (${pct(c.pExpected)}).`, 'expected, pExpected');
+    }
+  }
+
+  // the world's truth for that fruit: its shadow on the ground, coloured by what it really does (only the viewer sees it)
+  if (item && wd.kindClass) {
+    const gx = fx, gy = y + h * 0.86, k = CLASS[wd.kindClass];
+    pool(gx, gy, R0 * 0.2, R0 * 0.07, wd.kindClass, C[k]);
+    const f = fit(c); // fit ring: how much of its EAT guess is on what this fruit really does (hidden while you guess: it is part of its guess)
+    if (f !== null && !guessing) {
+      ctx.beginPath(); ctx.ellipse(gx, gy, R0 * 0.27, R0 * 0.11, 0, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * f); ctx.strokeStyle = C[k]; ctx.lineWidth = 3; ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(gx, gy, R0 * 0.27, R0 * 0.11, 0, 0, 7); ctx.strokeStyle = hexA(C[k], 0.25); ctx.lineWidth = 1; ctx.stroke();
+    }
+    hit(gx, gy, R0 * 0.25, `The world: fruit ${FRUIT[item]} ${CLASS_WORD[wd.kindClass]} this season. The ring: how much of its guess is on that (${f === null ? '–' : pct(f)}). It cannot see this.`, 'world.kindClass; guess[EAT].p at the world\'s answer');
+    const fl = flips.find(q => q.v === v && q.f === item && q.cross === i);
+    if (fl && reveal) celebrate(gx, gy, R0, after);
+  }
+  if (wd.cause === 'toxin' && reveal) { // a faint's cause is a world event: mist rises from the ground, not from the being, and stays outside its senses
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.arc(cx, cy, R + 22, 0, 7, true); ctx.clip();
+    for (let k = 0; k < 6; k++) { const a = after; ctx.beginPath(); ctx.arc(fx + Math.sin(k * 2.1) * R0 * 0.25, y + h * 0.84 - a * h * 0.25 - k * 6, 6 + k * 2 + a * 8, 0, 7); ctx.fillStyle = hexA(C.poison, (0.35 - k * 0.04) * (1 - a * 0.6)); ctx.fill(); }
+    ctx.restore();
+    hit(fx, y + h * 0.75, 30, 'The world: it put the being down (poison). The being senses only that it is down.', 'world.cause');
+  }
+
+  // its three guesses: tendrils to the fruit (eat), upward (pass), into the ground (rest)
+  if (!downNow) {
+    const tg = [[fx - R0 * 0.12, fy], [bx0 + R0 * 0.2, cy - R * 0.78], [bx0, cy + R * 0.82]];
+    if (guessing) {
+      tg.forEach(([tx, ty], k) => { const pul = 1 + 0.15 * Math.sin(performance.now() / 220); ctx.beginPath(); ctx.arc(tx, ty, 11 * pul, 0, 7); ctx.strokeStyle = C.body; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]); hit(tx, ty, 14, `Tap: you think it will ${['eat', 'pass', 'rest'][k]}.`, 'your guess'); S.targets = tg; });
+    } else {
+      c.guess.forEach((g, k) => {
+        if (k === 0 && !item) { /* nothing to eat: still drawn, it guesses "nothing there" */ }
+        const tp = topOf(g), [tx, ty] = tg[k], chosen = c.act === ACTS[k];
+        // reach = its pull toward this choice (the weight, from value), thickness = its push (how sure its guess is); the owner's framing: excitement pulls, logic pushes
+        const len = grow * reach(g.value), ex = mix(bx, tx, len), ey = mix(by, ty, len);
+        ctx.beginPath(); ctx.moveTo(bx, by);
+        const mx = (bx + ex) / 2 + (k === 0 ? 0 : (k === 1 ? -18 : 14)), my = (by + ey) / 2 + (k === 0 ? -16 : 0);
+        ctx.quadraticCurveTo(mx, my, ex, ey);
+        ctx.strokeStyle = hexA(C[tp.kind], chosen && t > 0.3 ? 0.95 : 0.32); ctx.lineWidth = 1 + 9 * tp.p; ctx.lineCap = 'round'; ctx.stroke();
+        if (chosen && t > 0.3 && t < 0.5) { ctx.beginPath(); ctx.arc(ex, ey, 5 + 10 * ease((t - 0.3) / 0.2), 0, 7); ctx.strokeStyle = hexA(C.ink, 0.5); ctx.lineWidth = 1.5; ctx.stroke(); }
+        if (chosen && c.explore && t > 0.3) for (let q = 0; q < 4; q++) { const u = (q + 1) / 5; star(mix(bx, ex, u), mix(by, ey, u) - 6, 3, C.muted); } // a random pick: grey, not the celebration's gold
+        hit(mix(bx, tx, 0.6), mix(by, ty, 0.6), 12, `Its guess for ${['eating', 'passing', 'resting'][k]}: most likely ${WORD[tp.name]} (${pct(tp.p)}). Thickness: how sure. Reach: how much its weight favours this choice (the owner's "pull"). ${chosen ? 'It chose this' + (c.explore ? ' (a random pick).' : '.') : ''} Weighs ${g.value.toFixed(2)} (gain minus pain from the preset at intensity 2, not felt; it does not follow the world's intensity).`, `guess[${k}].p, value; act; explore`);
+      });
+      if (G.on && G.v === v && G.taps[i] !== undefined) { const [tx, ty] = tg[G.taps[i]]; ctx.beginPath(); ctx.arc(tx, ty, 14, 0, 7); ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]); hit(tx, ty, 16, 'Your guess (dashed ring). Its real choice has a solid ring.', 'your tap'); }
+      // what came back: a burst at the end of the chosen tendril, in the answer's colour
+      if (reveal) {
+        const k = ACTS.indexOf(c.act), rc = reach(c.guess[k].value), tx = mix(bx, tg[k][0], rc), ty = mix(by, tg[k][1], rc), col = C[KIND[c.answer]];
+        for (let q = 0; q < 10; q++) { const a = q / 10 * 6.283, d = 6 + 22 * after; ctx.beginPath(); ctx.arc(tx + Math.cos(a) * d, ty + Math.sin(a) * d, 3.2 * (1 - after * 0.7), 0, 7); ctx.fillStyle = hexA(col, 1 - after * 0.8); ctx.fill(); }
+        glyph(tx, ty, c.answer, col);
+        if (G.on && G.v === v) { ctx.beginPath(); ctx.arc(tx, ty, 11, 0, 7); ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.stroke(); }
+        hit(tx, ty, 12, `It got: ${WORD[c.answer]}${c.starving ? ', starving' : ''}. It had been ${pct(c.pAnswer)} sure.`, 'answer, starving, pAnswer');
+        // surprise: ripples from the body, as big as the answer was unexpected (not good or bad)
+        const sv = c.sting[0];
+        if (sv > 0.15) for (let q = 0; q < 3; q++) { const u = ease(after - q * 0.12); if (u <= 0) continue; ctx.beginPath(); ctx.arc(bx, by, br + u * R0 * (0.15 + 0.75 * Math.min(sv, 4) / 4), 0, 7); ctx.strokeStyle = hexA(C.ripple, 0.55 * (1 - u)); ctx.lineWidth = 2; ctx.stroke(); }
+        if (sv < -0.3) { const u = ease(after); ctx.beginPath(); ctx.arc(bx, by, br + R0 * 0.18 * (1 - u), 0, 7); ctx.strokeStyle = hexA(C.ripple, 0.35 * (1 - u)); ctx.lineWidth = 1.5; ctx.stroke(); }
+        hit(bx + br + 8, by - br - 8, 12, `Surprise ${sv.toFixed(2)}: how unexpected the answer was, compared with its usual (0 = usual; below 0, less surprising). Rings spread out above 0.15 and draw in below -0.3. Not good or bad.`, 'sting[0]');
+      }
+    }
+  }
+  // valley number
+  ctx.fillStyle = hexA(C.ink, 0.55); ctx.font = '600 15px Georgia, serif'; ctx.fillText(String(v + 1), x + 10, y + h - 10);
+  if (G.on && G.v === v) { ctx.strokeStyle = C.body; ctx.lineWidth = 3; ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); }
+  if (words) wordLayer(S, cx, cy, R, bx, by, fx, fy);
+  ctx.restore();
+  S.bx = bx; S.by = by; S.fx = fx;
+}
+function drawFlight(S) {
+  const { v, x, y, w, h } = S, top = y + 8, bh = h * 0.13, lx = x + 34, rx = x + w - 52;
+  const X = k => lx + (rows[k].t - T0) / Math.max(1, T1 - T0) * (rx - lx);
+  ctx.save(); ctx.globalAlpha = 0.9;
+  turns.forEach(k => { ctx.strokeStyle = hexA(C.ink, 0.3); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(X(k), top); ctx.lineTo(X(k), top + bh); ctx.stroke(); });
+  for (let f = 1; f <= 3; f++) {
+    const lane = top + (f - 1) * bh / 3, Y = q => lane + bh / 3 - 2 - q * (bh / 3 - 4);
+    shape(lx - 14, lane + bh / 6, 3.4, f); ctx.strokeStyle = hexA(C.ink, 0.5); ctx.lineWidth = 1; ctx.stroke();
+    const upto = G.on && G.v === v && G.waiting ? i - 1 : i; // while you guess, its current guess stays hidden
+    for (let k = 0; k <= upto; k++) { const c = rows[k].chars[v], q = fit(c); if (q === null || c.sees.item !== f) continue; ctx.beginPath(); ctx.arc(X(k), Y(q), k === i ? 2.8 : 1.5, 0, 7); ctx.fillStyle = C[CLASS[c.world.kindClass]]; ctx.fill(); }
+    flips.filter(q => q.v === v && q.f === f && q.cross !== null && q.cross <= i).forEach(q => star(X(q.cross), Y(fit(rows[q.cross].chars[v])), 4.5, C.gold));
+  }
+  ctx.strokeStyle = hexA(C.ink, 0.5); ctx.beginPath(); ctx.moveTo(X(i), top); ctx.lineTo(X(i), top + bh); ctx.stroke();
+  ctx.restore();
+  hit((lx + rx) / 2, top + bh / 2, Math.min(60, (rx - lx) / 2), 'Its guesses over time, one lane per fruit: higher = closer to what that fruit really does (the world decides which guess counts). Gold star: it caught up after the season turned.', 'guess[EAT].p at the world\'s answer, over ticks');
+}
+function pool(x, y, rx, ry, cls, col) {
+  ctx.beginPath();
+  if (cls === 'TOXIC') { for (let k = 0; k <= 72; k++) { const a = k / 72 * 6.283, m = 1 + 0.12 * Math.sin(a * 9); ctx.lineTo(x + Math.cos(a) * rx * m, y + Math.sin(a) * ry * m); } ctx.closePath(); ctx.fillStyle = col; ctx.fill(); }
+  else if (cls === 'PLAIN') { ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fillStyle = hexA(col, 0.35); ctx.fill(); ctx.setLineDash([4, 3]); ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); }
+  else { ctx.ellipse(x, y, rx, ry, 0, 0, 7); ctx.fillStyle = col; ctx.fill(); }
+}
+function glyph(x, y, ans, col) {
+  ctx.beginPath(); ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 2;
+  if (ans === 'FED') { ctx.arc(x, y, 6, 0, 7); ctx.fill(); }
+  else if (ans === 'PLAIN') { ctx.roundRect(x - 7, y - 2.5, 14, 5, 2.5); ctx.fill(); }
+  else if (ans === 'TOXIC') { for (let k = 0; k <= 48; k++) { const a = k / 48 * 6.283, m = 6 * (1 + 0.16 * Math.sin(a * 7)); ctx.lineTo(x + Math.cos(a) * m, y + Math.sin(a) * m); } ctx.closePath(); ctx.fill(); }
+  else if (ans === 'COLLAPSE') { ctx.ellipse(x, y, 8, 3, 0, 0, 7); ctx.fill(); }
+  else if (KIND[ans] === 'refused') { ctx.moveTo(x - 4, y - 4); ctx.lineTo(x + 4, y + 4); ctx.moveTo(x + 4, y - 4); ctx.lineTo(x - 4, y + 4); ctx.stroke(); }
+  else { ctx.arc(x, y, 5, 0, 7); ctx.stroke(); }
+}
+function star(x, y, s, col) { ctx.beginPath(); for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, rr = k % 2 ? s * 0.4 : s; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); ctx.fillStyle = col; ctx.fill(); }
+function celebrate(gx, gy, R0, a) { // the owner's ask: celebrate when its guess catches up with a fruit that changed
+  for (let q = 0; q < 16; q++) { const ang = q / 16 * 6.283, d = 10 + a * R0 * 0.9; star(gx + Math.cos(ang) * d, gy - Math.abs(Math.sin(ang)) * d * 1.3, 4 * (1 - a * 0.5), hexA(C.gold, 1 - a * 0.7)); }
+}
+function wordLayer(S, cx, cy, R, bx, by, fx, fy) {
+  const { x, y, w, h } = S; ctx.font = '12px system-ui'; ctx.fillStyle = C.ink;
+  const lab = (t, lx, ly) => { const m = ctx.measureText(t).width; ctx.fillStyle = hexA(C.panel, 0.85); ctx.fillRect(lx - 3, ly - 11, m + 6, 15); ctx.fillStyle = C.ink; ctx.fillText(t, lx, ly); };
+  lab('its guesses over time', x + 34, y + h * 0.16 + 12);
+  lab('what it senses', cx - R * 0.5, cy - R - 2);
+  lab('fog: not sensed', cx + R + 6, cy - R * 0.7);
+  lab('the being', bx - 22, by + R * 0.42);
+  lab('fruit (letter only)', fx - 30, fy + R * 0.32);
+  lab('the world: what the fruit really does', fx - 60, y + h * 0.97);
+  lab('intensity', x + w - 70, y + 40);
+}
+const pct = q => { const z = q * 100; return z === 0 ? '0%' : z < 0.01 ? z.toFixed(3) + '%' : z < 1 ? z.toFixed(2) + '%' : z < 10 ? z.toFixed(1) + '%' : Math.round(z) + '%'; };
+
+// ------------------------------------------------------------------ timeline strip
+function drawTime() {
+  const w = tl.clientWidth, h = tl.clientHeight; tctx.clearRect(0, 0, w, h);
+  const X = k => 6 + k / Math.max(1, rows.length - 1) * (w - 12);
+  tctx.fillStyle = C.line; tctx.fillRect(6, h / 2 - 2, w - 12, 4);
+  turns.forEach(k => { tctx.fillStyle = C.body; tctx.fillRect(X(k) - 1, 3, 2, h - 6); });
+  flips.filter(f => f.cross !== null).forEach(f => { tctx.beginPath(); tctx.arc(X(f.cross), h / 2, 3, 0, 7); tctx.fillStyle = C.gold; tctx.fill(); });
+  tctx.beginPath(); tctx.arc(X(i + p), h / 2, 6, 0, 7); tctx.fillStyle = C.ink; tctx.fill();
+}
+
+// ------------------------------------------------------------------ the clock
+function frame(now) {
+  const dt = Math.min(0.1, (now - (last || now)) / 1000); last = now;
+  if (playing && !G.waiting) {
+    p += dt * (G.on && G.v >= 0 ? 1 / GUESS_TICK_S : speed / TICK_S); // after your tap, the reveal plays slowly
+    if (p >= 1) {
+      if (i >= rows.length - 1) { p = 1; playing = false; $('#play').textContent = '▶'; }
+      else { i++; p = 0; if (G.on && G.v >= 0 && !rows[i].chars[G.v].sees.down) G.waiting = true; }
+    }
+  }
+  ctx.clearRect(0, 0, W, Hh); hits = [];
+  scenes.forEach(drawScene); drawTime();
+  requestAnimationFrame(frame);
+}
+
+// ------------------------------------------------------------------ input
+$('#play').onclick = () => { if (i >= rows.length - 1 && p >= 1) { i = Math.max(0, (turns[0] ?? 0) - START_BEFORE); p = 0; } playing = !playing; $('#play').textContent = playing ? '❚❚' : '▶'; };
+$('#speed').onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; $('#speed').textContent = speed + '×'; };
+$('#words').onclick = () => { words = !words; $('#words').classList.toggle('on', words); };
+$('#guess').onclick = () => { G.on = !G.on; G.v = -1; G.waiting = false; G.taps = {}; $('#guess').classList.toggle('on', G.on); };
+tl.onclick = e => { const r = tl.getBoundingClientRect(); i = Math.round((e.clientX - r.left - 6) / (r.width - 12) * (rows.length - 1)); i = Math.max(0, Math.min(rows.length - 1, i)); p = 0.999; G.waiting = false; };
+stage.addEventListener('click', e => {
+  const r = stage.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  const S = scenes.find(s => mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h); if (!S) return;
+  if (!G.on) { playing = !playing; $('#play').textContent = playing ? '❚❚' : '▶'; return; }
+  if (G.v !== S.v) { G.v = S.v; G.taps = {}; G.waiting = !rows[i].chars[S.v].sees.down; p = 0; return; }
+  if (G.waiting && S.targets) {
+    const k = S.targets.findIndex(([tx, ty]) => Math.hypot(tx - mx, ty - my) < 22);
+    if (k >= 0) { G.taps[i] = k; G.waiting = false; p = 0; }
+  }
+});
+stage.addEventListener('mousemove', e => {
+  const r = stage.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = null, bd = 1e9; hits.forEach(h => { const d = Math.hypot(h.x - mx, h.y - my); if (d < h.r + 6 && d < bd) { bd = d; best = h; } });
+  const tip = $('#tip');
+  if (best) { tip.innerHTML = ''; tip.append(best.text); const f = document.createElement('span'); f.className = 'f'; f.textContent = best.field; tip.append(f); tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 14, innerWidth - 300) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+  else tip.style.display = 'none';
+});
+stage.addEventListener('mouseleave', () => { $('#tip').style.display = 'none'; });
+document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); $('#play').click(); } });
+window.addEventListener('resize', resize);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+load().catch(err => { document.body.append(String(err)); });
+</script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>World v2 picture</title>
+<style>
+:root{color-scheme:light;--bg:#f9f9f7;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--axis:#c3c2b7;
+--cS:#2a78d6;--cG:#eb6834;--cM:#1baf7a;--cT:#eda100;--cH:#e87ba4;--cB:#008300;--gain:#2a78d6;--pain:#e34948;--miss:#d03b3b;--dotline:rgba(11,11,11,.55);--tile:rgba(11,11,11,.045)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--axis:#383835;
+--cS:#3987e5;--cG:#d95926;--cM:#199e70;--cT:#c98500;--cH:#d55181;--cB:#008300;--gain:#3987e5;--pain:#e66767;--miss:#e66767;--dotline:rgba(240,239,236,.6);--tile:rgba(255,255,255,.05)}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--muted:#898781;--grid:#2c2c2a;--axis:#383835;
+--cS:#3987e5;--cG:#d95926;--cM:#199e70;--cT:#c98500;--cH:#d55181;--cB:#008300;--gain:#3987e5;--pain:#e66767;--miss:#e66767;--dotline:rgba(240,239,236,.6);--tile:rgba(255,255,255,.05)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.35 system-ui,-apple-system,"Segoe UI",sans-serif;padding:18px 16px 60px}
+main{max-width:1240px;margin:0 auto}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:0 0 14px}
+.top h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.01em}
+.key{display:flex;flex-wrap:wrap;gap:12px;align-items:center;color:var(--ink2);font-size:12px}
+.key span{display:inline-flex;align-items:center;gap:5px}
+.sec{background:transparent;margin:0 0 22px}
+.sh{display:flex;align-items:center;gap:10px;margin:0 0 10px;color:var(--ink2)}
+.sh .n{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--axis);display:grid;place-items:center;font-weight:650;color:var(--ink)}
+.ic{display:block}
+.panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(372px,1fr));gap:12px}
+.panel{background:var(--surface);border:1px solid var(--grid);border-radius:12px;padding:10px 10px 12px;--gc:var(--cS);overflow-x:auto}
+.ph{display:flex;align-items:center;gap:8px;margin:0 0 6px;color:var(--ink2)}
+.ph b{color:var(--ink);font-size:14px}
+.ph .sw{width:14px;height:14px;border-radius:50%;background:var(--gc);border:1.5px solid var(--dotline)}
+.mx{display:grid;grid-template-columns:24px repeat(8,minmax(40px,1fr));gap:2px}
+.mx>*{min-width:0}
+.rh,.chd{display:grid;place-items:center;color:var(--muted);min-height:22px}
+.c{min-height:26px;display:flex;flex-wrap:wrap;gap:3px;align-content:center;justify-content:center;padding:3px;border-radius:5px;background:var(--tile)}
+.c.gap{margin-top:5px}
+.rh.gap{margin-top:5px}
+.d{width:15px;height:15px;border-radius:50%;background:var(--gc);border:1.5px solid var(--dotline);cursor:default;padding:0}
+.d.nc{background:transparent;border:2px dashed var(--gc)}
+.d:hover,.d:focus-visible,[data-tip]:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.bar{display:block}
+.unitwrap{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.unit{max-width:100%;overflow-x:auto}
+.unit{display:grid;grid-template-columns:64px repeat(5,92px);gap:6px;align-items:center;background:var(--surface);border:1px solid var(--grid);border-radius:12px;padding:10px 12px}
+.uh{display:grid;place-items:center;color:var(--ink2);min-height:34px}
+.ul{display:grid;place-items:center;color:var(--ink2)}
+.u{display:grid;place-items:center;padding:8px 0;border-radius:12px}
+.u.edge{background:color-mix(in srgb,var(--miss) 8%,transparent)}
+.uc{width:54px;height:54px;border-radius:50%;display:grid;place-items:center}
+.uc.ok{background:var(--cS);color:#fff}
+.uc.part{border:2px solid var(--cS);background:linear-gradient(90deg,var(--cS) 50%,transparent 50%);color:transparent}
+.uc.miss{border:2px dashed var(--miss);color:var(--miss);animation:pulse 2.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--miss) 20%,transparent)}}
+@media (prefers-reduced-motion:reduce){.uc.miss{animation:none}}
+.loop{grid-column:1/-1;margin:0 0 -2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--grid);border-radius:12px;padding:12px 12px 14px}
+.card.wide{grid-column:1/-1}
+.cid{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;letter-spacing:.05em;color:var(--ink2);margin:0 0 10px}
+.opts{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+.opt{position:relative;width:74px;height:74px;border-radius:14px;border:1.5px solid var(--axis);display:grid;place-items:center;color:var(--ink2);opacity:.62}
+.opt.rec{opacity:1;border:3px solid var(--ink);color:var(--ink);background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.opt.also{opacity:1;border:2px dashed var(--ink);color:var(--ink)}
+.opt.sub{opacity:1;border:1.5px solid var(--axis);color:var(--ink)}
+.opt.rec::after{content:"\2605";position:absolute;top:-11px;right:-9px;background:var(--ink);color:var(--surface);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px;line-height:1}
+.opt .no{position:absolute;left:-7px;top:-8px;min-width:18px;height:18px;border-radius:9px;background:var(--surface);border:1.5px solid var(--ink2);color:var(--ink);font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.arr{color:var(--muted)}
+.pill{display:inline-flex;border:1.5px solid var(--axis);border-radius:999px;overflow:hidden}
+.pill .e{width:34px;height:28px;display:grid;place-items:center;color:var(--muted)}
+.pill .e.rec{background:var(--ink);color:var(--surface)}
+.pill.big .e{width:44px;height:34px}
+.sws{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px 16px}
+.swi{display:flex;align-items:center;gap:8px;color:var(--ink2)}
+.swi .ic{flex:none}
+.bars3{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.bx{border:1.5px solid var(--axis);border-radius:12px;padding:6px 8px 4px;position:relative;opacity:.65}
+.bx.rec{opacity:1;border:3px solid var(--ink)}
+.bx.rec::after{content:"\2605";position:absolute;top:-11px;right:-9px;background:var(--ink);color:var(--surface);width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:13px}
+.bx.also{opacity:1;border:2px dashed var(--ink)}
+.bx.sub{opacity:1}
+.hb{display:flex;align-items:center;gap:8px;margin:4px 0;color:var(--ink2);font-variant-numeric:tabular-nums}
+.hb .t{flex:1;height:12px;background:var(--tile);border-radius:6px;position:relative;min-width:120px}
+.hb .f{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--gain)}
+.hb.rec .f{outline:2px solid var(--ink);outline-offset:1px}
+.hb .v{width:34px;text-align:right}
+#tip{position:fixed;display:none;z-index:9;max-width:340px;background:var(--ink);color:var(--surface);border-radius:8px;padding:8px 10px;font-size:12.5px;line-height:1.4;pointer-events:none;box-shadow:0 4px 18px rgba(0,0,0,.28)}
+#tip .h{font-weight:650;margin-bottom:3px}
+#tip div+div{margin-top:2px}
+@media (max-width:620px){.panels{grid-template-columns:1fr}.mx{grid-template-columns:22px repeat(8,minmax(30px,1fr))}.unit{grid-template-columns:40px repeat(5,minmax(46px,1fr));width:100%}.uc{width:38px;height:38px}.loop svg{display:none}.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<div class="top">
+  <h1 data-tip="World v2 · a picture of WORLD_V2_DESIGN.md and MECHANICS_MAP.md (2026-11-02)&#10;Candidates for the owner. Nothing here is a ruling." tabindex="0">World v2</h1>
+  <div class="key" id="key"></div>
+</div>
+
+<section class="sec" id="s1">
+  <div class="sh" id="h1"></div>
+  <div class="panels" id="panels"></div>
+</section>
+
+<section class="sec" id="s2">
+  <div class="sh" id="h2"></div>
+  <div class="unitwrap"><div class="unit" id="unit"></div></div>
+</section>
+
+<section class="sec" id="s3">
+  <div class="sh" id="h3"></div>
+  <div class="cards" id="cards"></div>
+</section>
+</main>
+<div id="tip" role="tooltip"></div>
+
+<script>
+var D = {"rows":[{"id":"S1","g":"S","cc":"a+","land":"sense","ra":1,"tip":"S1 · Telepathy as a starting skill that varies by kind of entity\ncost: a+\nin the beings' world: A sense profile declared at birth lists which senses a being starts with open. The nearest world form of telepathy is the witness (S9). See section 3\nRa: silent, partly, follows\nrulings: F, J (profiles are described by fit, never ranked), L (the profile…"},{"id":"S2","g":"S","cc":"a","land":"sense","ra":0,"tip":"S2 · The veil\ncost: a\nin the beings' world: The view already drops things by declaration (other valleys, the season, exact E and H, intensity). A \"veil\" is that declared list; a sense opens when an entry leaves it\nRa: not checked\nrulings: L (every dropped or noisy value must be declared), P (a veil is not…"},{"id":"S3","g":"S","cc":"a+","land":"sense","ra":1,"tip":"S3 · Senses widen as the stage rises\ncost: a+\nin the beings' world: A sense opens only when a being's higher self asks and the engine part permits, not on a stage timer (a timer would reward no-collapse seasons by widening the view). See WORLD_V2_DESIGN.md §1 and question N-2\nRa: silent, follows\nrulings: J, A, P (candidate, not a ruling: a range that widens only by choice…"},{"id":"S4","g":"S","cc":"none","land":"none","ra":0,"tip":"S4 · Sensing charge, light (Lx) and water (Aq)\ncost: none\nin the beings' world: None. This world has energy and health, already sensed\nRa: not checked\nrulings: –"},{"id":"S5","g":"S","cc":"a+","land":"sense","ra":1,"tip":"S5 · Declared sight and vessel-bounded awareness\ncost: a+\nin the beings' world: The being's open senses are a declared list set before the life (like chose=), widened only by an ask\nRa: partly\nrulings: A, L, P (analogy)"},{"id":"S6","g":"S","cc":"lens","land":"action","ra":1,"tip":"S6 · Observer ladder and permission profile\ncost: lens now; rule for attention\nin the beings' world: For the seat and the lens: every look returns what was dropped and why. For a being: attention, choosing where to look. A look is an ask; the other's permit makes it seen\nRa: partly\nrulings: A, L"},{"id":"S7","g":"S","cc":"run","land":"running","ra":0,"tip":"S7 · Fear as information\ncost: run\nin the beings' world: Running: the warnings are exact functions of the bands, not a separate sense\nRa: not checked\nrulings: P"},{"id":"S8","g":"S","cc":"a+","land":"sense","ra":1,"tip":"S8 · Inner state visible\ncost: a+\nin the beings' world: A being sees a neighbour's guess, not only its outcome. Today's help channel already shares a donor's inner vector (the bus, 25% of 64-tick segments, gated by the receiver)\nRa: follows\nrulings: A, C, J"},{"id":"S9","g":"S","cc":"a+","land":"sense","ra":1,"tip":"S9 · The witness: what another valley's being just got from this fruit kind\ncost: a+ (the world records last outcome and tick per valley and kind)\nin the beings' world: A sense: for the kind in front of me, the class (FED, PLAIN, TOXIC) of the most recent eat of that kind by another valley in the last 4 or 16 ticks\nRa: partly\nrulings: A (C-5: default-open, or the other gives and I ask), C, J, L"},{"id":"S10","g":"S","cc":"a","land":"sense","ra":0,"tip":"S10 · A being told the season turned\ncost: a\nin the beings' world: A sense: a one-tick \"turned\" flag, or age in 3 bins\nRa: not checked\nrulings: J (announcing it changes what E1 and M3 measure)"},{"id":"S11","g":"S","cc":"rule","land":"action","ra":0,"tip":"S11 · Excitement compass and breadcrumb attractors\ncost: rule\nin the beings' world: The surprise number already exists in the being (the sting). A candidate choice-rule change: an exploration pull from surprise in place of the fixed 1-in-10 random explore\nRa: not checked\nrulings: J (curiosity is not worth), O (what counts as better is the owner's…"},{"id":"G1","g":"G","cc":"a+","land":"sense","ra":1,"tip":"G1 · Telepathy as the way into a social memory complex\ncost: a+\nin the beings' world: Members' traces pooled: each sees the last outcome any member got for a kind\nRa: partly\nrulings: A (membership needs each member's yes), C, J"},{"id":"G2","g":"G","cc":"none","land":"none","ra":0,"tip":"G2 · The VSA-4096 \"quantum entanglement\" bus\ncost: none\nin the beings' world: Nothing like it in this world. The nearest running part is the help bus (S8), which carries a 64-number vector, not a 4096-bit VSA, so the two are not the same thing. MarbleGp has a spec for entanglement only with the native's…\nRa: not checked\nrulings: A (consent)"},{"id":"G3","g":"G","cc":"none","land":"world","ra":1,"tip":"G3 · Social memory complex pooling at coherence ≥ 0.95; circle coherence with an STO/STS…\ncost: none until groups exist (then a+ plus rule)\nin the beings' world: A group state. This world has no groups larger than one donor and one receiver\nRa: partly\nrulings: A, J (a 0.95 pass mark reads as a grade; keep the mechanic as fit), C"},{"id":"G4","g":"G","cc":"a+","land":"sense","ra":1,"tip":"G4 · The group grows as density changes\ncost: a+\nin the beings' world: A ladder of what is shared (the depth reading is lookup 6's guide synthesis, not the owner's words; the owner decides whether \"grows\" means depth): my own outcome; a neighbour's outcome; a neighbour's guess; a pooled trace. The…\nRa: partly, follows, silent, departs in part\nrulings: F, A, J"},{"id":"G5","g":"G","cc":"rule","land":"world","ra":1,"tip":"G5 · Dyads, triads and nested 3/6/9\ncost: rule + a+; a new world version\nin the beings' world: Groups of 3 or 4 with an open seat flag, filled only on the group's call\nRa: follows\nrulings: A, C, J (no \"balanced partner\" worth gate)"},{"id":"G6","g":"G","cc":"none","land":"port","ra":1,"tip":"G6 · Harmonious doubling of a group's call, 2^(N−1)\ncost: none until an ask arm and groups exist\nin the beings' world: Used in the ask arm: how strongly the engine may answer a group's call\nRa: partly\nrulings: A, J (the answer is not a reward to maximise)"},{"id":"G7","g":"G","cc":"none","land":"none","ra":0,"tip":"G7 · Planets as presets: a very dense soul moving through the densities\ncost: none\nin the beings' world: None here (a later stage)\nRa: not checked\nrulings: –"},{"id":"M1","g":"M","cc":"none","land":"later","ra":1,"tip":"M1 · The distilled bias record and episodes\ncost: none (stage 2)\nin the beings' world: Across lives: the soul line at each life's end. Within a life: the kind trace (M2)\nRa: follows\nrulings: P, L"},{"id":"M2","g":"M","cc":"a+","land":"sense","ra":0,"tip":"M2 · The kind trace: what this fruit did to me last time\ncost: a+ (the trace must sit in the declared snapshot so the token checks can run)\nin the beings' world: A sense: for the fruit in front of me, the class of my own last eat of that kind, with an age band\nRa: not checked\nrulings: L, J (the classes are the world's own effect names)"},{"id":"M3","g":"M","cc":"a+","land":"sense","ra":1,"tip":"M3 · Social memory: all of each entity's experience open to the whole\ncost: a+\nin the beings' world: See G1 and G4\nRa: follows\nrulings: A, C"},{"id":"M4","g":"M","cc":"run","land":"running","ra":0,"tip":"M4 · KL-regularised predictive loss and the SQ-JEPA latent rollout\ncost: run\nin the beings' world: Running in spirit: the beings guess the answer for each choice and feel surprise\nRa: not checked\nrulings: L (guess and surprise are shown as the being's own)"},{"id":"M5","g":"M","cc":"none","land":"none","ra":0,"tip":"M5 · Simulated music: Kuramoto phase-locking, just-intonation ratios\ncost: none\nin the beings' world: None. The four valleys tick in lockstep, so there is nothing to be out of step with\nRa: not checked\nrulings: –"},{"id":"M6","g":"M","cc":"none","land":"later","ra":1,"tip":"M6 · Dream rebalancing: higherSelfCue, replay, rebalance, closeLinks\ncost: none (stage 2)\nin the beings' world: In stage 2: between lives (or on a rest), the last season's unresolved episodes are replayed as a cue, never a write\nRa: follows, departs\nrulings: P, A (a cue, never a write), C"},{"id":"M7","g":"M","cc":"none","land":"later","ra":1,"tip":"M7 · Between-life review and the rebirth blend\ncost: none (stage 2)\nin the beings' world: The soul record at a life's end\nRa: follows\nrulings: P, A"},{"id":"M8","g":"M","cc":"a","land":"sense","ra":0,"tip":"M8 · Veil learning and harvest choice\ncost: a\nin the beings' world: A declared observation filter (S2) and a test at cycle ends (H1)\nRa: not checked\nrulings: L"},{"id":"M9","g":"M","cc":"lens","land":"lens","ra":1,"tip":"M9 · Excitement pulls, logic pushes; pain is the result of distorted logic, and fear the…\ncost: lens now (the parts can be computed from the recorded guess and the wants)…\nin the beings' world: In today's mind the value of a guess, U(a) = the sum over answers of guess × wants, with wants = gain minus pain, mixes the owner's pull (the gain part) with a pain term that the owner's sentence has as an output, not an input.…\nRa: partly, follows, silent\nrulings: P (no felt pain: pain enters only through the wants table), J (a…"},{"id":"T1","g":"T","cc":"lens","land":"port","ra":1,"tip":"T1 · The higher-self seat: asked from below, cues dreams, never writes inside\ncost: lens now; rule for the ask\nin the beings' world: The owner in the seat, today read-only telemetry. An ask upward is T13\nRa: follows\nrulings: A, F"},{"id":"T2","g":"T","cc":"rule","land":"port","ra":1,"tip":"T2 · The engine as a teacher; higher-self players ask the parts of the game to change\ncost: rule\nin the beings' world: A protocol over named parts: ask, a part permits, declines or counter-offers within the safety rules, the change is applied and recorded, news of how it landed returns to the asker. See WORLD_V2_DESIGN.md §1. A small instance…\nRa: partly, follows in function\nrulings: P, A, C, J, L, F"},{"id":"T3","g":"T","cc":"run","land":"running","ra":0,"tip":"T3 · The body as the ego's teacher\ncost: run\nin the beings' world: Running in part: the body answers with typed refusals (ERR_EMPTY, ERR_FULL, ERR_SPENT), faints as a protective rest, and the fruit's answer. The being learns by surprise. No pain channel: the body's warnings are information\nRa: not checked\nrulings: P (felt pain is a higher-self choice), L, J"},{"id":"T4","g":"T","cc":"run","land":"running","ra":1,"tip":"T4 · Assimilation throttle, set from above\ncost: run\nin the beings' world: Running: intensity, 1 to 3, held at 2 in measurement runs, lowered only\nRa: follows, departs\nrulings: P"},{"id":"T5","g":"T","cc":"run","land":"running","ra":1,"tip":"T5 · Loop-break\ncost: run\nin the beings' world: Running: on the third collapse from one cause in a life, that being's intensity goes from 2 to 1 for the rest of the life. It acts per being and only lowers\nRa: follows, departs\nrulings: P, C (news of it is logged but returns to no one)"},{"id":"T6","g":"T","cc":"none","land":"later","ra":1,"tip":"T6 · Consent at entry: the catalysts a soul chose\ncost: none (stage 2)\nin the beings' world: The soul line's chose=; the higher self holds the chosen catalysts. Not live (stage 2)\nRa: departs, partly follows\nrulings: P, A"},{"id":"T7","g":"T","cc":"rule","land":"port","ra":0,"tip":"T7 · Separate dials: intensity and irrevocability\ncost: rule\nin the beings' world: Intensity is the one dial now. Irrevocability, whether a being may re-plan mid-life, becomes the ask\nRa: not checked\nrulings: P, A"},{"id":"T8","g":"T","cc":"lens","land":"lens","ra":1,"tip":"T8 · Bake it, taste it\ncost: lens\nin the beings' world: The seat: the owner plays a valley through the same validator (BUILD_STATUS)\nRa: follows in spirit\nrulings: P, F"},{"id":"T9","g":"T","cc":"none","land":"none","ra":1,"tip":"T9 · Welfare over speed, stated\ncost: none\nin the beings' world: A process rule for this project\nRa: departs\nrulings: P"},{"id":"T10","g":"T","cc":"none","land":"none","ra":0,"tip":"T10 · Entities without a soul record get the gentlest tier\ncost: none\nin the beings' world: None. All four beings are named\nRa: not checked\nrulings: P"},{"id":"T11","g":"T","cc":"rule","land":"port","ra":1,"tip":"T11 · The suggestion handshake: a higher rung may only suggest\ncost: rule\nin the beings' world: The counter-offer inside the engine's decision (WORLD_V2_DESIGN.md §1.3)\nRa: follows\nrulings: A, J"},{"id":"T12","g":"T","cc":"rule","land":"port","ra":0,"tip":"T12 · Cause links, gratitude, the peace telegram and forgiveness; karma as inertia braked by…\ncost: rule\nin the beings' world: Gratitude: the donor hears \"your help arrived\", as a count and as information. The help channel has no way back to the donor today (V7 #2)\nRa: not checked\nrulings: C (this is the way back), J (no ratings; counts, not grades), A"},{"id":"T13","g":"T","cc":"rule","land":"port","ra":1,"tip":"T13 · Prayer: the ask turned upward, the answer scaled to the call\ncost: rule\nin the beings' world: A port: an ASK output beside ACTION (masked like ACTION, with a second ledger byte). The answer is scaled to the call, never unasked, and asking costs something\nRa: departs, follows, silent\nrulings: A, C, P, J"},{"id":"T14","g":"T","cc":"rule","land":"world","ra":1,"tip":"T14 · Wanderers: a higher being in a lower role, veiled, joining on a call\ncost: rule + a+; a new world version\nin the beings' world: A being from a later level, born as a fresh character with its memory veiled, seated in an open seat on a group's call\nRa: follows\nrulings: A, C, J"},{"id":"T15","g":"T","cc":"rule","land":"port","ra":1,"tip":"T15 · Five support-crew tiers\ncost: rule\nin the beings' world: The parts of the engine that can be asked (WORLD_V2_DESIGN.md §1.2). Not built\nRa: partly\nrulings: A"},{"id":"T16","g":"T","cc":"rule","land":"world","ra":1,"tip":"T16 · Service-to-self beings as catalyst\ncost: rule; a new world\nin the beings' world: A sense profile or role that offers service-to-self catalyst only to a being whose chose= list names it; intensity only goes down. Not built\nRa: partly, follows, silent\nrulings: P (the door is the recipient's chose=), A, J"},{"id":"T17","g":"T","cc":"rule","land":"port","ra":1,"tip":"T17 · Non-coercion gate\ncost: rule\nin the beings' world: The part's decline reasons (WORLD_V2_DESIGN.md §1.3)\nRa: partly\nrulings: A"},{"id":"T18","g":"T","cc":"run","land":"running","ra":0,"tip":"T18 · The single write gate: only the engine's check writes; a refusal is typed and never…\ncost: run\nin the beings' world: Running at the body (canAct, act, WorldRefusal). It is the template for every part that can be asked: one gate, typed refusals, a ledger line\nRa: not checked\nrulings: A, L, J (a refusal is a typed fact, not a grade)"},{"id":"T19","g":"T","cc":"rule","land":"port","ra":0,"tip":"T19 · The staged change gate: a change to a shared part is kept only if a held-out check…\ncost: rule\nin the beings' world: The rule for an ask that touches something shared (the season table, a sense for everyone): staged, tried, kept only on a check the asker does not run\nRa: not checked\nrulings: A, L"},{"id":"T20","g":"T","cc":"rule","land":"port","ra":0,"tip":"T20 · The inception loop: telemetry flows up, priors flow down\ncost: rule\nin the beings' world: The shape of news and teaching between levels: what the being felt goes up to the seat, what the seat cues goes down\nRa: not checked\nrulings: A, C"},{"id":"T21","g":"T","cc":"rule","land":"port","ra":1,"tip":"T21 · Emergent quests, minted from open causes\ncost: rule\nin the beings' world: A lesson offered, not imposed: when a being's cause stays open, a part may offer the being a smaller or clearer catalyst, which the being may decline\nRa: partly\nrulings: A, J (no verdict on a being that declines), P"},{"id":"T22","g":"T","cc":"lens","land":"lens","ra":0,"tip":"T22 · Precision rises with surprise; antidotes anneal it back\ncost: lens\nin the beings' world: The being's sureness after a surprise. The being already shows surprise (the sting); a sureness number is the lens's to show\nRa: not checked\nrulings: L"},{"id":"T23","g":"T","cc":"rule","land":"port","ra":1,"tip":"T23 · One unit at every scale: ASK, WORK, CHECK, REPORT, ROUTE, LANDED\ncost: rule (U-1a: a donor-side input; U-1b: the ASK port and a second ledger byte)\nin the beings' world: Which steps each level of the beings' world runs, and which are missing: WORLD_V2_DESIGN.md §1.8, a reading of the design files. The rung closes the loop; the tick runs ASK to REPORT; ASK and LANDED are missing at every level…\nRa: partly, follows\nrulings: A, C (LANDED is the way back), J, F"},{"id":"H1","g":"H","cc":"none","land":"later","ra":1,"tip":"H1 · Polarity as two numbers (sto01, sts01) moved both ways, and the harvest test at cycle ends\ncost: none (stage 2)\nin the beings' world: Not modelled: the soul line's pol stays at its default because there is no update rule\nRa: follows\nrulings: J (the pass marks read as grades: keep them as fit), P"},{"id":"H2","g":"H","cc":"run","land":"running","ra":1,"tip":"H2 · Densities as levels: stages S0a to S6, and the levels-1-to-8 tests\ncost: run\nin the beings' world: A stage per valley that rises by one at a season end with no collapse; only the lens reads it. It reads as a grade, so the lens should call it a fit\nRa: partly\nrulings: J, L"},{"id":"H3","g":"H","cc":"none","land":"later","ra":1,"tip":"H3 · Kundalini rise, readiness, repeat and never perish\ncost: none (stage 2)\nin the beings' world: Readiness derived from memory, not a timer\nRa: follows\nrulings: J (\"mastered\" ranks beings; keep \"repeat\")"},{"id":"H4","g":"H","cc":"none","land":"none","ra":0,"tip":"H4 · 22 archetypes, The Choice, cross-wired polarity\ncost: none\nin the beings' world: None for the beings\nRa: not checked\nrulings: –"},{"id":"H5","g":"H","cc":"none","land":"none","ra":0,"tip":"H5 · Seven rays, indigo-ray magic, three spirals\ncost: none\nin the beings' world: None\nRa: not checked\nrulings: –"},{"id":"H6","g":"H","cc":"rule","land":"port","ra":0,"tip":"H6 · Ego-suppressing substances: a spore that thins the veil for a window, with a doubling…\ncost: rule\nin the beings' world: A model for a costly, temporary opening of a sense: open for a season, repay with a rest. A candidate shape for what asking costs\nRa: not checked\nrulings: P (no designer pain: the cost is a rest, not an ache), A"},{"id":"H7","g":"H","cc":"run","land":"running","ra":1,"tip":"H7 · The gateway and the fractal principle\ncost: run\nin the beings' world: Each level's gate takes in only through declared ports. Running at the body: every valley has an energy ledger that closes each tick, with eaten fruit posted on stellar. The ask is a port, and news is what flows up\nRa: follows\nrulings: L, D"},{"id":"H8","g":"H","cc":"none","land":"none","ra":0,"tip":"H8 · Cross-universe bridge: pretend and practice, weight-to-soul transduction, child-universe…\ncost: none\nin the beings' world: The owner or an AI in the seat as a bridge. Nothing for the beings\nRa: not checked\nrulings: A, F"},{"id":"H9","g":"H","cc":"none","land":"later","ra":1,"tip":"H9 · Octave closure and the harvest packet\ncost: none (stage 2)\nin the beings' world: The soul record at a life's end\nRa: follows\nrulings: –"},{"id":"B1","g":"B","cc":"none","land":"none","ra":0,"tip":"B1 · The Four Floats, S = (Pxd, Vtx, Lx, Aq)\ncost: none\nin the beings' world: None. A being's body is E and H\nRa: not checked\nrulings: –"},{"id":"B2","g":"B","cc":"run","land":"running","ra":0,"tip":"B2 · The energy ledger and port-Hamiltonian solver\ncost: run\nin the beings' world: Running, as the energy books (H7)\nRa: not checked\nrulings: L"},{"id":"B3","g":"B","cc":"run","land":"running","ra":0,"tip":"B3 · The 14-zone somatic body: holding and aching zones, dull ache, sharp pain, eureka…\ncost: run (faint)\nin the beings' world: The faint is the stand-in for syncope: H reaching 0 puts the being down for 8 ticks as a protective rest. No zones and no ache are added: felt pain is a higher-self choice\nRa: not checked\nrulings: P (the Plan's own Rule 4: play it from inside before any pain…"},{"id":"B4","g":"B","cc":"none","land":"none","ra":0,"tip":"B4 · Compensatory venting\ncost: none\nin the beings' world: None\nRa: not checked\nrulings: –"},{"id":"B5","g":"B","cc":"none","land":"none","ra":0,"tip":"B5 · enRAGE nemesis: grudge tiers, scars with resistance, mask anonymity, funerals\ncost: none\nin the beings' world: None now; the nearest is T16 (hostile catalyst on the being's own list)\nRa: not checked\nrulings: P, J (a tier is a rank; describe fit)"},{"id":"B6","g":"B","cc":"c","land":"world","ra":0,"tip":"B6 · Space: BigInt64 origin rebasing, multi-star fields\ncost: c\nin the beings' world: Reading (c) of C-1. A new world\nRa: not checked\nrulings: A, L"},{"id":"B7","g":"B","cc":"none","land":"none","ra":0,"tip":"B7 · Eon evolution, 2,606 breadcrumb attractors, cross-polarised reproduction, ruins…\ncost: none\nin the beings' world: None for the beings\nRa: not checked\nrulings: –"},{"id":"B8","g":"B","cc":"lens","land":"lens","ra":0,"tip":"B8 · Conlang, the three-tier voice, and the narrator\ncost: lens\nin the beings' world: The translation for humans. Every spoken slot must decode back to the thought record it came from. The owner: \"a goood translation can spar compassion\"\nRa: not checked\nrulings: L, C"},{"id":"B9","g":"B","cc":"lens","land":"lens","ra":0,"tip":"B9 · Taste gates and personality animation\ncost: lens\nin the beings' world: The look and feel of the lens\nRa: not checked\nrulings: L"},{"id":"B10","g":"B","cc":"none","land":"none","ra":0,"tip":"B10 · Crowd cohorts, 6,000 agents\ncost: none\nin the beings' world: None\nRa: not checked\nrulings: –"},{"id":"B11","g":"B","cc":"b","land":"world","ra":0,"tip":"B11 · The multi-scale time gear, eons to 60 Hz\ncost: b\nin the beings' world: The mind already has three rungs, each four times slower (every token, every tick, every 4 ticks). Reading (b): fruit with structure at 4, 16 and 64 ticks, so the slower rungs have something to read\nRa: not checked\nrulings: L"},{"id":"B12","g":"B","cc":"none","land":"none","ra":1,"tip":"B12 · The holon: four folds inside; a supplier below, a host above, a lateral dual\ncost: none (a check)\nin the beings' world: The test for \"is this part fractal\" (WORLD_V2_DESIGN.md §1.4)\nRa: partly\nrulings: –"},{"id":"B13","g":"B","cc":"none","land":"none","ra":0,"tip":"B13 · The zero-eval 4 KB cartridge gate\ncost: none\nin the beings' world: None\nRa: not checked\nrulings: A"},{"id":"B14","g":"B","cc":"run","land":"running","ra":0,"tip":"B14 · The World Ledger and replay\ncost: run\nin the beings' world: Running: one action byte per tick and a chain hash every tick. An ask needs a second byte\nRa: not checked\nrulings: L, D"}]};
+var ICON = {
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  action:'<path d="M4 12h14M13 6l6 6-6 6"/>',
+  port:'<path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/>',
+  grid:'<rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><rect x="13" y="13" width="7" height="7"/>',
+  play:'<path d="M8 5v14l11-7z"/>',
+  lens:'<circle cx="10" cy="10" r="6"/><path d="M15 15l6 6"/>',
+  hourglass:'<path d="M7 3h10M7 21h10M8 3v4l4 5-4 5v4M16 3v4l-4 5 4 5v4"/>',
+  dash:'<path d="M6 12h12"/>',
+  check:'<path d="M5 12l4 4 10-10"/>',
+  cross:'<path d="M6 6l12 12M18 6L6 18"/>',
+  gear:'<circle cx="12" cy="12" r="3.5"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>',
+  report:'<path d="M5 4h9v16H5zM14 9h5M17 6l3 3-3 3"/>',
+  landed:'<path d="M19 5v8H7M11 9l-4 4 4 4"/>',
+  ask:'<path d="M3 12h13M11 6l6 6-6 6"/><circle cx="21" cy="12" r="1.3"/>',
+  rung:'<path d="M4 18h4M4 12h10M4 6h16"/>',
+  clock:'<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/>',
+  life:'<path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/>',
+  memory:'<path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/><circle cx="12" cy="12" r="2"/>',
+  pair:'<circle cx="7" cy="12" r="3"/><circle cx="17" cy="12" r="3"/><path d="M10 12h4"/>',
+  tree:'<circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="19" r="2.2"/><circle cx="12" cy="19" r="2.2"/><circle cx="19" cy="19" r="2.2"/><path d="M12 7v5M12 12H5v5M12 12h7v5M12 12v5"/>',
+  scales:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="6.5" stroke-dasharray="2 2.5"/><circle cx="12" cy="12" r="10" stroke-dasharray="1 3"/>',
+  map:'<path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/>',
+  key:'<circle cx="8" cy="12" r="3.5"/><path d="M11.5 12H21M18 12v3M15 12v2"/>',
+  lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  witness:'<circle cx="6" cy="12" r="3"/><path d="M12 8c2 2 2 6 0 8M15 6c4 3 4 9 0 12M18.5 4c5 4 5 12 0 16"/>',
+  down:'<path d="M12 4v14M6 12l6 6 6-6"/>',
+  up:'<path d="M12 20V6M6 12l6-6 6 6"/>',
+  fruit:'<path d="M12 7c-5-2-8 2-7 7s4 7 7 5c3 2 6 0 7-5s-2-9-7-7z"/><path d="M12 7c0-2 1-3 3-4"/>',
+  book:'<path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM5 18a2 2 0 0 1 2-2h12"/>',
+  coin:'<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10.5h4a1.5 1.5 0 0 1 0 3h-3"/>',
+  speech:'<path d="M4 5h16v11H9l-5 4z"/>',
+  ladder:'<path d="M7 3v18M17 3v18M7 7h10M7 12h10M7 17h10"/>',
+  star:'<path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/>'
+};
+function ic(n, s, sw){ return '<svg class="ic" width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(sw||1.8)+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICON[n]+'</svg>'; }
+function el(tag, cls, html, tip){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!=null) e.innerHTML=html; if(tip){ e.setAttribute('data-tip',tip); e.tabIndex=0; e.setAttribute('role','img'); e.setAttribute('aria-label',tip.split('\n')[0]); } return e; }
+
+// ---------------- tooltip (words live here)
+var tip = document.getElementById('tip');
+function showTip(node,x,y){
+  var t=node.getAttribute('data-tip'); if(!t) return;
+  tip.textContent='';
+  t.split('\n').forEach(function(p,i){ var d=document.createElement('div'); if(i===0) d.className='h'; d.textContent=p; tip.appendChild(d); });
+  tip.style.display='block';
+  var r=tip.getBoundingClientRect(), nx=x+14, ny=y+16;
+  if(nx+r.width>innerWidth-8) nx=Math.max(8,innerWidth-r.width-8);
+  if(ny+r.height>innerHeight-8) ny=Math.max(8,y-r.height-12);
+  tip.style.left=nx+'px'; tip.style.top=ny+'px';
+}
+document.addEventListener('pointermove',function(e){ var n=e.target.closest&&e.target.closest('[data-tip]'); if(n) showTip(n,e.clientX,e.clientY); else tip.style.display='none'; });
+document.addEventListener('pointerdown',function(e){ var n=e.target.closest&&e.target.closest('[data-tip]'); if(n) showTip(n,e.clientX,e.clientY); });
+document.addEventListener('focusin',function(e){ var n=e.target.closest&&e.target.closest('[data-tip]'); if(n){ var r=n.getBoundingClientRect(); showTip(n,r.left+r.width/2,r.bottom); } });
+document.addEventListener('focusout',function(){ tip.style.display='none'; });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') tip.style.display='none'; });
+document.addEventListener('pointerleave',function(){ tip.style.display='none'; });
+
+// ---------------- vocabulary
+var GROUPS = [
+  {k:'S',c:'--cS',i:'eye',tip:'S · senses\nWhat a being can take in. From the map: rows S1 to S11.'},
+  {k:'G',c:'--cG',i:'pair',tip:'G · sharing, groups, entanglement\nRows G1 to G7.'},
+  {k:'M',c:'--cM',i:'memory',tip:'M · memory and learning\nRows M1 to M9.'},
+  {k:'T',c:'--cT',i:'port',tip:'T · teaching, the higher self, safety, asking and permitting\nRows T1 to T23.'},
+  {k:'H',c:'--cH',i:'ladder',tip:'H · polarity, harvest and levels\nRows H1 to H9.'},
+  {k:'B',c:'--cB',i:'grid',tip:'B · body, world and engine\nRows B1 to B14.'}
+];
+var COST = [
+  ['run','Cost: already running in the world today.'],
+  ['lens','Cost: a lens or translation change only. No change to the world or the minds.'],
+  ['a','Cost a: new senses only. The world\'s rules are untouched; the minds get a new input, are retrained, and the three tests (E1, E2, E3) are re-run.'],
+  ['a+','Cost a+: new senses plus world bookkeeping. The world must also record something (state bytes change, the dynamics do not); the frozen world tests and mutant checks are re-run.'],
+  ['rule','Cost rule: a new action or port beside EAT, PASS and REST, such as an ask. At least a+, plus a second ledger byte.'],
+  ['b','Cost b: patterned world. The fruit gets structure at several scales: new world code, retraining, every test re-run.'],
+  ['c','Cost c: space. A ring of cells around each being and a move action: a new world.'],
+  ['none','Cost none: no mapping into this world now (engine-side, or for a later stage).']
+];
+var LAND = [
+  ['sense','Lands as a sense: a new input the being can take in.'],
+  ['action','Lands as an action: a new thing a being does, or a change in how it chooses.'],
+  ['port','Lands as a port: a channel between a being and something above or beside it (an ask, a return, a gate).'],
+  ['world','Lands as a world change: the world\'s own rules or structure change.'],
+  ['running','Already running in the world today.'],
+  ['lens','Lens or translation only.'],
+  ['later','Later (stage 2): between lives, such as the soul record, the dream and the review.'],
+  ['none','No mapping in this world now.']
+];
+var LANDICON = {sense:'eye',action:'action',port:'port',world:'grid',running:'play',lens:'lens',later:'hourglass',none:'dash'};
+
+function costGlyph(rank){ // bar height rises with cost; the last (none) is a dash
+  var h = rank===7 ? 0 : rank*2+2;
+  return '<svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true">'+(rank===7?'<path d="M3 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>':'<rect x="3" y="'+(15-h)+'" width="8" height="'+h+'" rx="1.5" fill="currentColor"/>')+'</svg>';
+}
+
+// ---------------- key
+var key = document.getElementById('key');
+GROUPS.forEach(function(g){ var s=el('span','',null,g.tip); s.innerHTML='<i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:var('+g.c+');border:1.5px solid var(--dotline)"></i>'+g.k; key.appendChild(s); });
+key.appendChild(el('span','','<i style="display:inline-block;width:12px;height:12px;border-radius:50%;border:2px dashed var(--ink2)"></i>',"Dashed ring: not checked against a verified Ra lookup (Ra column 'not checked').\nFilled dot: at least one Ra label (follows, partly, departs or silent in the sessions checked) from a verified lookup."));
+key.appendChild(el('span','','<span style="display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--ink);color:var(--surface);font-size:11px">★</span>','Star: the recommended option, in my design. A candidate for the owner, not a ruling.'));
+key.appendChild(el('span','','<i style="display:inline-block;width:18px;height:14px;border:2px dashed var(--ink);border-radius:5px"></i>','Dashed outline: also, or if this is what you meant.'));
+key.appendChild(el('span','','<i style="display:inline-block;width:14px;height:14px;border-radius:50%;border:2px dashed var(--miss)"></i>','Dashed red ring: a step the unit is missing at that level.'));
+
+// ---------------- section 1: the map, one small panel per group
+function sechead(id,n,icon,tipText){ var h=document.getElementById(id); h.appendChild(el('span','n',String(n),tipText)); h.appendChild(el('span','',ic(icon,22),tipText)); }
+sechead('h1',1,'grid','1 · The mechanics map\n73 rows from the owner\'s universe (MECHANICS_MAP.md). Each dot is one row. Panels are the six groups; rows say where it lands in the beings\' world; columns say what it costs, rising to the right. Hover a dot for the row.');
+var panels = document.getElementById('panels');
+GROUPS.forEach(function(g){
+  var rs = D.rows.filter(function(r){ return r.g===g.k; });
+  var p = el('div','panel'); p.style.setProperty('--gc','var('+g.c+')');
+  var ph = el('div','ph',null); ph.innerHTML='<i class="sw"></i>'+ic(g.i,18)+'<b>'+g.k+'</b><span>'+rs.length+'</span>'; ph.setAttribute('data-tip',g.tip); ph.tabIndex=0; p.appendChild(ph);
+  var mx = el('div','mx'); mx.appendChild(el('div','chd',''));
+  COST.forEach(function(c,i){ mx.appendChild(el('div','chd',costGlyph(i),c[1])); });
+  LAND.forEach(function(l,li){
+    mx.appendChild(el('div','rh'+(li===4?' gap':''),ic(LANDICON[l[0]],15),l[1]));
+    COST.forEach(function(c){
+      var cell = el('div','c'+(li===4?' gap':''));
+      rs.filter(function(r){ return r.land===l[0] && r.cc===c[0]; }).forEach(function(r){
+        var d = el('button','d'+(r.ra?'':' nc'),null,r.tip); d.type='button'; d.setAttribute('aria-label',r.tip.split('\n')[0]); cell.appendChild(d);
+      });
+      mx.appendChild(cell);
+    });
+  });
+  p.appendChild(mx); panels.appendChild(p);
+});
+
+// ---------------- section 2: the unit at each level of the engine
+sechead('h2',2,'life','2 · The same unit at every level of the engine\nASK, WORK, CHECK, REPORT and ROUTE, LANDED (PIPELINE_FRACTAL.md, section 1) at seven levels of the beings\' world (WORLD_V2_DESIGN.md, section 1.8). Solid: runs today. Half: partly. Dashed red: missing. It is a reading of the design files, not a run.');
+var STEPS = [['ask','ASK','ASK (and the permit): a brief goes out; the doer permits it or declines with a fit-note.'],['gear','WORK','WORK: the doer does the work.'],['check','CHECK','CHECK: something other than the doer compares the result with what was expected.'],['report','REPORT and ROUTE','REPORT and ROUTE: the result is written in a fixed shape and goes to every level that acts on it.'],['landed','LANDED','LANDED: the asker sends back how it landed (used, changed, did not fit here). This is the way back the owner calls compassion.']];
+var LEVELS = [
+  ['rung','A rung inside a being (fires every token, every tick, every 4 ticks)',[
+    ['ok','The receiving rung\'s query against the sending rung\'s key; its gate permits.'],
+    ['ok','The sending rung\'s message; each rung\'s prediction.'],
+    ['ok','Each rung\'s own prediction error.'],
+    ['ok','The sting (surprise, relief, running relief) goes up to the top and to the gates.'],
+    ['ok','Relief, a proxy for "did the help help", reaches the receiver; the top feels the sting. MIND_STEP7: the triangle closes within one character.']]],
+  ['clock','A being\'s tick (being and world)',[
+    ['ok','The action (EAT, PASS or REST); the engine\'s double check permits; a decline is a typed refusal that names no nearest permitted action. The being can ask only the world, for three things.'],
+    ['ok','The being guesses and chooses; the world resolves.'],
+    ['ok','Surprise: the answer against the guess.'],
+    ['ok','The ANSWER token. The answer trains the being\'s own heads (live arms); repeated harm reaches the loop-break.'],
+    ['miss','MISSING: only the being\'s next action; the world does not read it as a landing note.']]],
+  ['life','A being\'s life (between lives, stage 2)',[
+    ['miss','MISSING: not built.'],
+    ['miss','MISSING: not wired. The vendored wave-0 reference has episode selection and the rebirth transfer; no bridge file calls them.'],
+    ['part','Partly: debt = open causes, written as data.'],
+    ['part','Partly: the ms line is written at a life\'s end; me and mc lines per event (data for stage 2).'],
+    ['miss','MISSING: not built.']]],
+  ['pair','Two beings (the help bus)',[
+    ['miss','MISSING (V7 #1): help arrives unasked, on a schedule (25% of 64-tick segments). The Skill\'s own test calls that a broken handshake. The receiver\'s gate decides how much of it to use.'],
+    ['ok','The donor\'s published vector.'],
+    ['ok','The receiver\'s relief.'],
+    ['part','Partly: to the receiver only.'],
+    ['miss','MISSING (V7 #2): the donor never hears how it landed.']]],
+  ['gear','A part of the engine (intensity; later the sense channels, the bus)',[
+    ['miss','MISSING: the loop-break fires by rule; nobody asks.'],
+    ['ok','Intensity is lowered.'],
+    ['ok','The third collapse from one cause.'],
+    ['part','Partly: logged (end-of-life counts; ellAfter in the thought record); intensity only goes down.'],
+    ['miss','MISSING: no landing report goes to anyone.']]],
+  ['grid','The world (four valleys, one ledger)',[
+    ['miss','MISSING: the harness gives the world a seed and a preset; nothing inside the world can ask.'],
+    ['ok','Lockstep ticks: the world waits for all four actions.'],
+    ['ok','The energy books close every tick; the hash chain; the planted mutants.'],
+    ['ok','The ledger (one action byte per tick, the chain every 256 ticks). Stage rises at a season end without a collapse, read by the lens only.'],
+    ['miss','MISSING: none to the beings. The mind never sees stage or season.']]],
+  ['eye','The higher-self seat (the owner, or an AI with the owner\'s yes)',[
+    ['miss','MISSING both ways: no ask from the seat to a part, no ASK from a being.'],
+    ['ok','Reads the thought record.'],
+    ['part','Partly: the guess-then-reveal test is planned by the lens track.'],
+    ['part','Partly: decisions go to the plan and to new arms.'],
+    ['miss','MISSING: none to the being. The seat is read-only telemetry in the world.']]]
+];
+var unit = document.getElementById('unit');
+// the way back: a curve from LANDED to ASK
+var loopSvg = el('div','loop','<svg width="100%" height="34" viewBox="0 0 554 34" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><defs><marker id="ah" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="currentColor"/></marker></defs><path d="M508 32C508 -8 116 -8 116 28" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#ah)"/></svg>','The way back. LANDED returns to the asker (the owner calls this compassion). It is missing at every level above the rung.');
+loopSvg.style.color='var(--miss)'; unit.appendChild(loopSvg);
+unit.appendChild(el('div','uh',''));
+STEPS.forEach(function(s,i){ unit.appendChild(el('div','uh'+(i===0||i===4?' edge':''),ic(s[0],24),s[2])); });
+LEVELS.forEach(function(L){
+  unit.appendChild(el('div','ul',ic(L[0],24),L[1]));
+  L[2].forEach(function(c,i){
+    var u = el('div','u'+(i===0||i===4?' edge':''));
+    var inner = el('div','uc '+c[0],c[0]==='ok'?ic('check',22,2.4):c[0]==='miss'?ic('cross',20,2.4):'',L[1]+' · '+STEPS[i][1]+'\n'+c[1]);
+    u.appendChild(inner); unit.appendChild(u);
+  });
+});
+
+// ---------------- section 3: decisions
+sechead('h3',3,'check','3 · The owner\'s decisions\nC-1 to C-6, V-1 and U-1 (WORLD_V2_DESIGN.md, section 3). Star and solid outline: the option I recommend. Dashed outline: also, or if this is what you meant. Faint: the others. Candidates for the owner; nothing here is a ruling.');
+var cards = document.getElementById('cards');
+function card(id, tipText, wide){ var c=el('div','card'+(wide?' wide':'')); c.appendChild(el('div','cid',id,tipText)); cards.appendChild(c); var o=el('div','opts'); c.appendChild(o); return o; }
+function opt(parent, icon, cls, tipText, no){ var o=el('div','opt '+(cls||''),ic(icon,38,1.7),tipText); if(no!=null) o.innerHTML+='<span class="no">'+no+'</span>'; parent.appendChild(o); return o; }
+function pill(parent, recSide, big, tipText, leftIcon, rightIcon){ var p=el('div','pill'+(big?' big':''),null,tipText); var l=el('div','e'+(recSide==='L'?' rec':''),typeof leftIcon==='string'&&ICON[leftIcon]?ic(leftIcon,17,2.4):leftIcon); var r=el('div','e'+(recSide==='R'?' rec':''),typeof rightIcon==='string'&&ICON[rightIcon]?ic(rightIcon,17,2.4):rightIcon); p.appendChild(l); p.appendChild(r); parent.appendChild(p); return p; }
+
+// C-1
+(function(){ var o=card('C-1','C-1 · What should "a fractal engine" mean?\nRecommendation: start with (a) new senses in the same world, built so the senses nest. Plan (b) next and leave (c) for later. If your sentence of 2026-11-02 means an engine of parts that can each be asked, that is (d) plus (a).');
+  opt(o,'eye','rec','(a) New senses, same world. The only reading with measured information, and the cheapest to retrain. Recommended.');
+  opt(o,'scales','','(b) Fruit that comes in clumps at 4, 16 and 64 ticks. A new world; nothing about it is measured. Plan it after (a) has a result.');
+  opt(o,'map','','(c) Space: a map of places and moving. A new world; leave for later.');
+  opt(o,'tree','also','(d) The engine is made of parts that can each be asked (my reading of the owner\'s 2026-11-02 sentence). Compatible with (a), (b) and (c). If this is what you meant, C-1 is (d) plus (a).'); })();
+
+// C-2 with the information bars
+(function(){ var o=card('C-2','C-2 · Which goal comes first?\nThe two do not conflict. The lens-only landing line needs no answer and can start now. For research: the kind trace as its own pre-registered question, then the witness, then the ask. Bars: the share of the uncertainty about the next answer that a count model removes (information in the world, not what a learner will use).',true);
+  opt(o,'eye','also','0 · A human viewer first (lens only, no retraining): the landing line and the guess-and-hit line. Can start now.','0');
+  o.appendChild(el('span','arr',ic('action',20)));
+  opt(o,'memory','rec','1 · The kind trace: what this fruit did to me last time. The largest information by far. Its own pre-registered uptake question.','1');
+  o.appendChild(el('span','arr',ic('action',20)));
+  opt(o,'witness','','2 · The witness: what another valley\'s being just got from this fruit kind. My candidate for the telepathy the owner named. Two-sided: it helps where the effect is shared and misleads where it is not.','2');
+  o.appendChild(el('span','arr',ic('action',20)));
+  opt(o,'ask','','3 · The ask (needs the ASK port, the cost rule and a perceivable answer).','3');
+  var b=el('div','',null); b.style.cssText='flex:1;min-width:260px;max-width:420px';
+  [[91,'Kind trace, unlimited: removes 91% of the uncertainty (CE 0.0272 against 0.3176).',1],[49,'Short trace plus the 16-tick witness: 49% (exploratory; flagged sparse and smoothing-limited).',0],[38,'Kind trace only inside the minds\' present reach: 38%.',0],[24,'Witness alone, 16 ticks: 24%.',0],[0,'Season-turn flag or age: no information alone.',0],[0,'Others down or warned (group field): nothing detectable.',0],[0,'Exact energy and health: nothing detectable.',0]].forEach(function(x){
+    var r=el('div','hb'+(x[2]?' rec':''),'<span class="t"><span class="f" style="width:'+x[0]+'%"></span></span><span class="v">'+x[0]+'%</span>',x[1]); b.appendChild(r); });
+  o.appendChild(b); })();
+
+// C-3, C-4 (yes/no)
+(function(){ var o=card('C-3','C-3 · Is "what this fruit did to me last time" a sense, or part of the mind?\nRecommendation: call it a sense. It sits in the declared slice, appears in the thought record, and lets a being say something true. It changes what E1 and E3 can show; the result must say which is which.');
+  opt(o,'memory','sub','The kind trace: the class of the being\'s own last eat of the fruit in front of it.');
+  pill(o,'L',true,'Yes, a sense (recommended). No, part of the mind.','check','cross'); })();
+(function(){ var o=card('C-4','C-4 · Should a being be told when the season turns?\nRecommendation: no, not in the first arms. The turn flag tells nothing about the next answer on its own, it would change what E1 and M3 measure, and it takes away the being\'s own discovery by surprise. Revisit it later as a sense opened by an ask.');
+  opt(o,'life','sub','The season turn: the fruit rules are redrawn every 384 to 640 ticks and are never announced today.');
+  pill(o,'R',true,'Yes, announce it. No, keep it unannounced (recommended).','check','cross'); })();
+// C-5
+(function(){ var o=card('C-5','C-5 · Can a being see what others eat by default, or only when the other gives and the being asks?\nRecommendation: give and ask (your rule: one side asks, the other permits). In the first witness arm the permit is a declaration by sense profile and the observer\'s open witness is the ask. Note: the witness misleads where the effect is not shared.');
+  opt(o,'eye','','Default-open: a being can always see what others eat.');
+  opt(o,'key','rec','Give and ask: the other gives, the being asks. Recommended.'); })();
+
+// C-6 switches
+(function(){ var c=el('div','card wide'); c.appendChild(el('div','cid','C-6','C-6 · The teacher engine: what may a higher-self player ask to change, what is safe, what does an answer contain, what does asking cost?\nNine switches. The filled end is my recommendation.')); var g=el('div','sws'); c.appendChild(g); cards.appendChild(c);
+  function sw(icon,rec,tipT,l,r){ var w=el('div','swi',ic(icon,24)); pill(w,rec,false,tipT,l||'check',r||'cross'); g.appendChild(w); }
+  sw('down','L','1 · May the player ask to lower a being\'s intensity? Yes (recommended). At intensity 1 a toxic eat costs 2 health, not 4.');
+  sw('up','R','2 · May the player ask to raise it? No (your ruling: intensity only goes down).');
+  sw('eye','L','3 · May the player ask to open a sense for a window, from the declared menu? Yes (recommended).');
+  sw('fruit','R','4 · May the player ask the engine to change a fruit\'s effect? No: offer a lower intensity or an opened sense instead.');
+  sw('port','L','5 · May the seat ask for a being without the being having asked? Yes for a lowering; for opening a sense only if the being\'s declared profile allows it.');
+  sw('book','R','6 · May an answer contain the table or a fruit\'s effect? Never (recommended): a sense opened, help on call, or a cue.');
+  sw('coin','L','7 · Should asking cost something? Yes: one open ask per being at a time, a fixed window, repaid in rest. The number, and whether those rest ticks score, are the owner\'s.');
+  sw('speech','L','8 · Does a refusal carry a reason and the nearest thing permitted? Yes (recommended): typed, never a grade.');
+  sw('ask','L','9 · Which direction first? A: the seat asks the part (the owner\'s direction), recommended first. B: the being asks and the seat relays (Ra\'s direction), when the ask port exists.','A','B'); })();
+
+// V-1 : the wants table as bars
+(function(){
+  var ans=['OK','OK/1','RESTED','RESTED/1','ERR_EMPTY','ERR_EMPTY/1','ERR_FULL','ERR_FULL/1','FED','PLAIN','TOXIC','ERR_SPENT/1','COLLAPSE','ERR_DOWN'];
+  var w0=[0,-2,1,-1,-1,-3,-1,-3,3,1,-4,-3,-8,0];
+  var wa=w0.map(function(x){return Math.max(0,x);}), wb=w0.slice(); wb[10]=-2;
+  function chart(w,ghost,mark){ var bw=14,gap=4,W=14*(bw+gap),Z=34,s=9,H=Z+8*s+4, out='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" aria-hidden="true"><line x1="0" x2="'+W+'" y1="'+Z+'" y2="'+Z+'" stroke="var(--axis)"/>';
+    for(var i=0;i<14;i++){ var x=i*(bw+gap), v=w[i], g=ghost?ghost[i]:v;
+      if(ghost && g!==v){ var gh=Math.abs(g)*s; out+='<rect x="'+x+'" y="'+(g<0?Z:Z-gh)+'" width="'+bw+'" height="'+gh+'" rx="2" fill="none" stroke="var(--muted)" stroke-dasharray="2 2"/>'; }
+      if(v!==0){ var h=Math.abs(v)*s; out+='<rect x="'+x+'" y="'+(v<0?Z:Z-h)+'" width="'+bw+'" height="'+h+'" rx="2" fill="'+(v<0?'var(--pain)':'var(--gain)')+'"'+((mark&&mark.indexOf(i)>=0)?' stroke="var(--ink)" stroke-width="2"':'')+'/>'; } }
+    return out+'</svg>'; }
+  var c=el('div','card wide'); c.appendChild(el('div','cid','V-1',null)); cards.appendChild(c);
+  c.firstChild.setAttribute('data-tip','V-1 · Should the beings\' wants hold only gains (the pull), so harm is learned through surprise alone?\nBars: how much each of the 14 possible answers is worth to the being when it chooses (blue: gain, red: harm; the recorded wants). Dashed outline: the harm entries a variant removes. Recommendation: yes to V-1a as a pre-registered test arm, and to V-1b if the table may follow an intensity the beings do not sense. Neither is a default or a ruling; the value table is still pending the owner.');
+  var row=el('div','bars3'); c.appendChild(row);
+  var b1=el('div','bx sub',chart(w0),null); row.appendChild(b1); b1.tabIndex=0;
+  b1.setAttribute('data-tip','Today: gain minus harm, set as if every being were at intensity 2 (toxic -4, a faint -8, passing while starving -2). After the loop-break the world\'s toxic harm is 2, not 4.');
+  var b2=el('div','bx rec',chart(wa,w0),'V-1a · Gains only: every negative entry set to 0. Recommended as a test arm. Holding the recorded guesses fixed (not a forecast): 410 of 6,551 decisions change, 401 of them towards eating.'); row.appendChild(b2);
+  var b3=el('div','bx also',chart(wb,w0,[10]),'V-1b · The toxic entry follows the being\'s current intensity (-2 at intensity 1), as the engine does. Recommended if the owner agrees the table may follow an intensity the beings do not sense.'); row.appendChild(b3);
+  var pr=el('div','',null); pr.style.cssText='flex:1;min-width:200px;max-width:320px';
+  pr.innerHTML='<div class="hb"><span class="t"><span class="f" style="width:49.4%;background:var(--pain)"></span></span><span class="v">289</span></div><div class="hb"><span class="t"><span class="f" style="width:100%;background:var(--pain)"></span></span><span class="v">585</span></div>';
+  pr.setAttribute('data-tip','What-if, guesses held fixed (not a forecast): toxic fruit eaten rises from 289 to 585 if the negative entries are set to 0, because passing then scores 0 and eating wins on any chance of a gain. One recorded life (L, seed 1, world 31000, ticks 0 to 2047). Computed by mind/pullpush_descriptives.mjs.'); pr.tabIndex=0; row.appendChild(pr);
+})();
+
+// U-1 : the unit's two missing steps (all in one SVG; icons nested)
+(function(){
+  var c=el('div','card wide'); c.appendChild(el('div','cid','U-1','U-1 · Should the world add the two missing steps of the unit, ASK and LANDED?\nRecommendation: yes to both as test arms, U-1a first. Neither is a default. Expect no change in NGE (not locked); the readout is the donor\'s next gift and the receiver\'s relief.')); cards.appendChild(c);
+  function icg(n,x,y,s,sw){ return '<g transform="translate('+x+' '+y+') scale('+(s/24)+')" fill="none" stroke="currentColor" stroke-width="'+(sw||2)+'" stroke-linecap="round" stroke-linejoin="round">'+ICON[n]+'</g>'; }
+  function tg(t,inner){ return '<g data-tip="'+t.replace(/"/g,'&quot;')+'" tabindex="0" role="img" aria-label="'+t.split('\n')[0].replace(/"/g,'&quot;')+'">'+inner+'</g>'; }
+  var s='<svg width="100%" viewBox="0 -16 470 226" style="max-width:560px;color:var(--ink)">'
+   +'<defs><marker id="ahk" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" fill="currentColor"/></marker></defs>'
+   // the help that runs today: donor -> being
+   +tg('The help that runs today: from the donor to the receiving being. It arrives unasked, on a schedule (25% of 64-tick segments). The receiver\'s gate decides how much of it to use.','<path d="M104 80H196" stroke="currentColor" stroke-width="3" fill="none" marker-end="url(#ahk)"/><rect x="104" y="64" width="92" height="32" fill="transparent"/>')
+   +tg('The donor: picked by hash; it publishes its vector every tick. It does not choose today.','<circle cx="76" cy="80" r="26" fill="var(--cS)" stroke="var(--dotline)" stroke-width="2"/>')
+   +tg('The receiving being. Its gate decides how much of the help to use.','<circle cx="226" cy="80" r="26" fill="var(--cS)" stroke="var(--dotline)" stroke-width="2"/>')
+   // U-1a: LANDED back to the donor (dashed, red)
+   +'<path d="M226 110C226 190 76 190 76 114" stroke="var(--miss)" stroke-width="3" stroke-dasharray="7 5" fill="none" marker-end="url(#ahk)" style="color:var(--miss)"/>'
+   +tg('U-1a · LANDED to the donor. The donor hears "your help arrived": information only, no gate, no gradient to the gift. Recommended first (a smaller change: no new action and no second ledger byte). Test: against a zero-weight control arm, the receiver\'s relief on helped segments and the donor\'s own choices.',
+       '<rect x="126" y="150" width="52" height="52" rx="12" fill="var(--surface)" stroke="var(--ink)" stroke-width="4"/>'+icg('landed',139,163,26,2.2)+'<circle cx="178" cy="150" r="12" fill="var(--ink)"/><path d="M178 142l2.3 5 5.4.6-4 3.7 1.1 5.3-4.8-2.7-4.8 2.7 1.1-5.3-4-3.7 5.4-.6z" fill="var(--surface)"/><circle cx="126" cy="150" r="11" fill="var(--surface)" stroke="var(--ink2)" stroke-width="1.5"/><text x="126" y="154.5" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">1</text>')
+   // U-1b: ASK on call (dashed, black), to a higher level
+   +'<path d="M244 56C270 14 330 14 352 42" stroke="currentColor" stroke-width="3" stroke-dasharray="7 5" fill="none" marker-end="url(#ahk)"/>'
+   +tg('U-1b · ASK on call. A being can ask for help; the bus answers scaled to the call, never unasked; the being hears a typed answer (permit, permit smaller, decline with the nearest thing permitted); asking costs something. Path B\'s first hop applied to the bus. Needs the ASK port and a second ledger byte, so it comes later.',
+       '<rect x="300" y="4" width="46" height="46" rx="11" fill="var(--surface)" stroke="var(--ink)" stroke-width="2.5" stroke-dasharray="5 4"/>'+icg('ask',311,15,24,2.2)+'<circle cx="300" cy="4" r="11" fill="var(--surface)" stroke="var(--ink2)" stroke-width="1.5"/><text x="300" y="8.5" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">2</text>')
+   +tg('A higher level that can answer a call: the seat, or the bus. Not built.','<rect x="352" y="30" width="60" height="44" rx="12" fill="none" stroke="var(--axis)" stroke-width="2.5" stroke-dasharray="4 4"/>')
+   +'</svg>';
+  var wrap=el('div','',s); c.appendChild(wrap);
+})();
+
+// the unit as a ring: five steps, the way back dashed red
+(function(){
+  var wrap=document.querySelector('.unitwrap'), W=300, cx=150, cy=150, R=100;
+  var names=['ask','gear','check','report','landed'], tips=[STEPS[0][2],STEPS[1][2],STEPS[2][2],STEPS[3][2],STEPS[4][2]];
+  function pos(i){ var a=(-90+i*72)*Math.PI/180; return [cx+R*Math.cos(a), cy+R*Math.sin(a)]; }
+  function arcPath(i,j){ var a1=(-90+i*72+17)*Math.PI/180, a2=(-90+j*72-17)*Math.PI/180; var x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1), x2=cx+R*Math.cos(a2), y2=cy+R*Math.sin(a2); return 'M'+x1.toFixed(1)+' '+y1.toFixed(1)+' A'+R+' '+R+' 0 0 1 '+x2.toFixed(1)+' '+y2.toFixed(1); }
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+W+'" style="max-width:300px;color:var(--ink)"><defs><marker id="ahr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L9 4.5L0 9z" fill="currentColor"/></marker></defs>';
+  for(var i=0;i<4;i++) s+='<path d="'+arcPath(i,i+1)+'" fill="none" stroke="currentColor" stroke-width="2.4" marker-end="url(#ahr)"/>';
+  s+='<g style="color:var(--miss)"><path d="'+arcPath(4,5)+'" fill="none" stroke="var(--miss)" stroke-width="2.8" stroke-dasharray="6 5" marker-end="url(#ahr)"/></g>';
+  names.forEach(function(n,i){ var p=pos(i), edge=(i===0||i===4);
+    s+='<g data-tip="'+tips[i].replace(/"/g,'&quot;')+'" tabindex="0" role="img" aria-label="'+tips[i].split(':')[0]+'"><circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="27" fill="var(--surface)" stroke="'+(edge?'var(--miss)':'var(--axis)')+'" stroke-width="'+(edge?3:2)+'"'+(edge?' stroke-dasharray="5 4"':'')+'/><g transform="translate('+(p[0]-13).toFixed(1)+' '+(p[1]-13).toFixed(1)+') scale(1.083)" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'+ICON[n]+'</g></g>'; });
+  s+='<g data-tip="The unit (PIPELINE_FRACTAL.md, section 1). ASK goes out; the doer works, a check compares the result with what was expected, a report is written and routed, and LANDED comes back to the asker. The dashed red arrow is the way back the owner calls compassion." tabindex="0" role="img" aria-label="The unit"><circle cx="'+cx+'" cy="'+cy+'" r="22" fill="none" stroke="var(--axis)" stroke-width="1.5"/>'+'<g transform="translate('+(cx-11)+' '+(cy-11)+') scale(.917)" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+ICON.life+'</g></g>';
+  s+='</svg>';
+  var d=document.createElement('div'); d.innerHTML=s; d.style.cssText='flex:1;min-width:240px;display:grid;place-items:center'; wrap.appendChild(d);
+})();
+</script>
+</body>
+</html>

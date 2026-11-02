@@ -9,4 +9,6 @@ This repository's reasoning framework is one plain markdown file at the reposito
 
 **The bridge** (living characters in game worlds, the current build): start at `bridge/HANDOFF.md`.
 
+**Taking a role** (manager or higher self, track, expert, bridge agent): start at `bridge/HIGHER_SELF_POV.md` (the view the role carries) and `bridge/FRACTAL_ROLES.md` (the roles, and how any agent on any tool picks one up).
+
 The Skill, the Plan (`FIDELITY_COMPLETE_BRS_V2.md`) and the Resume (`ARGON_OPUS_MASTER_RESUME_V2.md`) are the canonical triad. To pick up the work, follow the Resume's Wake-Up Protocol. Before trusting a claim in them, run the checks the Skill names (`node scripts/triad_semantic_audit.mjs` and the others listed in `README.md`).

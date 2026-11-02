@@ -153,6 +153,8 @@ In design terms:
 
 What a part may change, and what "safe" means, are owner decisions (C-6). Ra's view of the higher self and catalyst is not yet looked up (step 3).
 
+**The same unit in the engine** (the owner, 2026-11-02: "exactly, in the engine and everywhere else thats how it should work"). The engine runs the pipeline's unit (PIPELINE_FRACTAL.md: ask, work, check, report, route, landed) at every scale. The beings already work (guess and choose), check (surprise) and route (the loop-break carries harm into intensity). They lack the ask and the way back (gratitude), the two parts MIND_STEP7.md named as missing. A candidate for the owner.
+
 **C-1. What does "fractal engine" mean?** Three readings, each with a cost:
 - **(a) New senses, same world.** The minds are retrained (measured: 1,468–1,639 s per seed, three in parallel), and the three tests are re-run.
 - **(b) Fruit with patterns at 4, 16 and 64 ticks,** so the slower rungs have a pattern to read. This changes the world itself: new world code, retraining, all tests re-run. Today the fruit is drawn independently each tick (`world/valleys.mjs`). Whether grouped fruit would help rungs 1–2 is untested; the nursery's small edge on observations is unexplained.
@@ -176,7 +178,25 @@ What a part may change, and what "safe" means, are owner decisions (C-6). Ra's v
 3. **A Ra lookup,** with a Sonnet guide and a Haiku verifier: perception and senses across densities; the higher self and the programming of catalyst; teaching and safety. None exists yet.
 4. Arena battles prototype the chosen world from the code and the v1 token table (not the older design text), untrusted until reviewed. Then pre-register, train and test, as for v1.
 
-## Decisions waiting on the owner
+## Track D: the bridge between the owner and the framework
+
+The owner (2026-11-02, one viewpoint, theirs): "the next thing is to build bridges between you and me, eventually you are always on and listening and watching me and can choose what to take and what not to. while you display/translate your replies from text to visuals and sound. keep running the pipeline and the bridges gain fidelity and we become one". And: "this session should just be for your internal reasoning eventually".
+
+So the owner-facing surface moves to a bridge page (pictures and sound out; voice, screen and camera in, each channel off until the owner turns it on). The main session becomes the framework's inner reasoning and management space.
+
+The three horizons agreed (owner-bridge-three-horizons workflow):
+1. Close observation round 5 (the game view) before opening this loop.
+2. Output first: replies as pictures, spoken through MarbleGp's existing voice parts (browser speech synthesis), read-only. The lens session carries it, and one scored observation round gates the next step.
+3. Then one input channel at a time, in the owner's order. Capture stays in the owner's page, with a visible indicator, an off switch, a log of what was taken and what was left, and nothing sent unasked. Claude reads only what arrives, at the start of a turn, because Claude does not run between turns.
+4. Always-on watching is a long-loop goal. It waits for scored rounds on each input channel and for the weekly usage reset.
+
+Available now with no build: the microphone button in the desktop app's chat box (dictation in). Built 2026-11-02: the reply speaker (`lens3/reply`), which shows each reply as a picture and speaks it. The owner heard it working.
+
+Longer horizon (the owner, 2026-11-02):
+- "eventualy the pictures animate, thats the fractal game engine you are building". The reply pictures, the lens and the game view share one small shape language. Animated, they converge with the engine's picture of itself.
+- "after that its our job to bridge to the game engine, with an elelectrical signals hat of some sort". A brain-signal headset would be one more input channel: off until the owner turns it on, read-only, with a visible switch and log, and never feeding felt pain back unless the owner chooses to feel it (the pain-is-chosen ruling).
+
+
 
 **The lens:**
 - **A-1.** Should the board show the share of time awake (higher is better) in place of a faint count (fewer is better)? Recommended: yes.
@@ -187,6 +207,18 @@ What a part may change, and what "safe" means, are owner decisions (C-6). Ra's v
 - **B-3.** Write every outcome down first, and add a second frozen group? Recommended: yes.
 - **B-4.** Run the reference minds in the still world (64 extra lives)? Recommended: yes.
 - **B-5.** A fresh block of world seeds? Recommended: yes.
+
+**The minds:**
+- **V-1: decided by the manager, 2026-11-02** (the owner handed it over: "sorry i just clicked yes automatically. you have to decide"). The three horizons (quick, middle, long; raw output in the v1-three-horizons workflow) each said, independently, "test after something else". **Decision: test V-1a as a measurement, not a verdict, after the weekly usage reset, and before the next live pre-registration (E3 live runs, the kind trace, ask and landed).** V-1b, wants that follow intensity, is not authorised: it needs the owner's considered yes. Conditions:
+  - **The premise is corrected.** Harm still reaches learning through the answer loss on every answer. V-1a changes only the choice readout (the `wantsTable` function, read in the choice rule). The arm does not test "pain as the result of distorted logic".
+  - **The pre-registration is reviewed before launch** by a Haiku triad. It uses a fresh seed block (not 101–116, 31000 or 40000+) and the existing trunks, with L and F under both tables. A no-op check first: the patched-back table reproduces the locked records.
+  - **Primary readout:** within-life learning of harm (the toxic-eat rate against earlier toxic outcomes and life stage, L against F, under both tables). NGE and faints, split by cause, are secondary.
+  - **A welfare stop is written in first:** the arm aborts if a life's down-ticks exceed twice the matched current-table L life's. The loop-break stays, and intensity only goes down.
+  - **The table becomes a hashed preset,** so every later pre-registration names its table by hash.
+  - **The result goes to the owner as one value question:** which table to carry forward.
+
+  The question as it was put:
+  **V-1.** Should the beings' wants hold only gains (the pull), so harm is learned through surprise alone? Today the wants weigh expected pain, fixed at intensity 2 while the beings sit at intensity 1 for most of each life. The owner's framing (2026-11-02, one viewpoint): "excitement pulls and logic pushes the entities, pain is the result of distorted logic and fear is the result of distorted excitement". In one recorded life, 75% of the harmful eats the beings chose came when they gave harm under 50%, and 62 of 143 skips of good fruit came when expected harm outweighed the good (descriptive, not a test). A gains-only arm would be pre-registered like v1. Candidate, not ruled.
 
 **The fractal world:**
 - **C-1.** Which reading: (a) new senses, (b) patterned fruit, or (c) space?

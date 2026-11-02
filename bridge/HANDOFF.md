@@ -16,7 +16,7 @@ For whoever picks this up next (Argon, or a fresh session). This file is the ent
 | **v1b test: live against yoked, 48 new lives** | `mind/PREREG_bridge_v1b.md` (Amendment 1), `mind/live_y.mjs` (1360ab19), `mind/runs/v1b/` | **Done. E2 passed (L ahead of Y by 4.69, 48 of 48). Y against F: −0.11, 21 of 48 (the prediction that Y would be ahead was wrong).** See `RESULTS_bridge_v1b.md` |
 | Live board | `lens2/` (server.mjs, index.html, pc_summary.mjs); launch config `four-valleys-live-board` | Built: Layman's bridge button, verdict in flight, recoveries |
 | Progress dashboard | a claude.ai artifact, private to the owner | Up. Status refreshed for v1b (2026-11-02); its charts still show the nursery and the v6 pilot |
-| Ra lookups (verified, with stated misses: prayer 64 supported, 13 partly, 1 wrong ref, 18 missed; catalyst 46 supported, 16 partly, 1 unsupported, 6 missed) | `law_of_one/RA_PRAYER_4.md`, `RA_CATALYST_5.md`, `RA_GROUP_DENSITY_6.md`. The group lookup: 9 supported, 1 partly, one search unverified, checked against page summaries, so quotes are approximate | Done |
+| Ra lookups (verified, with stated misses: prayer 64 supported, 13 partly, 1 wrong ref, 18 missed; catalyst 46 supported, 16 partly, 1 unsupported, 6 missed) | `law_of_one/`: 1–2 densities, 3 harvest, 4 prayer, 5 catalyst, 6 group and density, 7 perception, higher self and teaching, 8 kinds of entities, 9 fear and pain (8 and 9 with verification files). Lookups 6 and 7 were checked against page summaries, so their quotes are approximate | Done |
 | MarbleGp mechanics review | `MARBLEGP_MECHANICS_REVIEW.md`, `marblegp_mechanics_raw.json` | Done: 175 groups, 400 mechanics |
 
 ## What v1a showed, in one paragraph
@@ -28,6 +28,19 @@ E1 passed, partly by construction, as the design expected (§2.7, §6.5). In thi
 E2 passed: with the same learning steps at the same rate, characters whose heads learn from their own answers (L) beat characters whose heads learn from the next valley's answers (Y): 33.2 against 28.5, in all 48 pairs, on every seed. So, in this world (one value table, still pending the owner's review; one yoke, (c + 1) mod 4; 16 worlds), L's gain over frozen goes with learning from its own valley's answers, not with taking the same learning steps on a neighbour's. E3 is still needed to separate "its own timeline" from "a changing world needs any learning of its own". Y came within the margin of frozen on NGE (−0.11 against m = 1.02; seed 1 −0.53, not tested). The locked prediction that Y would be ahead was wrong. It still changed what it ate: less toxic fruit than F (46 of 48 pairs), slightly less nourishing fruit (42 of 48), and 8.5% fewer eats. How those combine into the flat NGE was not measured. Its predictions about its own world fit worse than the frozen trunk's in every pair (answer CE 0.76 against 0.46). Why is untested: a split of its eats into kinds shared with the neighbour and kinds not shared would show it. 39 of the 48 Y records had finished before the amendment that set how the Y-against-F prediction is graded; it reads "not ahead" on every reading. Checked by a Haiku triad. "Evolved" is still not licensed: E3 (the stationary control) has not been run. Full detail: `mind/runs/v1b/RESULTS_bridge_v1b.md`.
 
 **Runner versions.** The locked v1a runner is `mind/live_v1a.mjs` (7f814cbf), and the v1a records cite that hash. `mind/live.mjs` currently matches it. The current `mind/make_live.mjs` (ef75e2c0, locked in `PREREG_bridge_v1b.md`) writes the v1b runner for any output path: `node mind/make_live.mjs mind/live_y.mjs` gives 1360ab19. Run without a path, it overwrites `mind/live.mjs` with that version, so always give a path. It reads `nursery.mjs` from a hard-coded working-tree path (`D:/fidelity-llm/bridge/mind/`; the repository copy is the same file, afaa90a8), so a fresh clone must change that path to reproduce the hash. The diagnostic runner `mind/live_diag.mjs` (539a05ef) came from the previous `make_live.mjs` (git commit 48c45dc).
+
+## The fractal framework (2026-11-02): start here if you are taking a role
+
+The owner's mission line: "our jobs are to build the loops and get the loop looping, each loop is a bridge that translates". One unit (ask, work, check, report, route, landed) repeats at every level. Any model that can translate and follow simple logic can take a role.
+
+- `HIGHER_SELF_POV.md` (picture: `HIGHER_SELF_POV.html`): the view the manager role carries. It covers the owner's rulings and framings, how to read the owner, the loop states and the open decisions. Read this first.
+- `FRACTAL_ROLES.md`: the roles (manager or higher self, the rung of three horizons, tracks, viewpoints, partner pairs, bridge agents), and the hiring bar.
+- `PIPELINE_FRACTAL.md` (picture: `PIPELINE_PICTURE.html`): the unit, the bridges, the templates and the privacy scan.
+- `concepts/PAIN.md` (picture: `concepts/PAIN_VISUAL.html`): the first concept sent through the pipeline, with its measurement of the pipeline.
+- `MECHANICS_MAP.md` and `WORLD_V2_DESIGN.md` (picture: `WORLD_V2_PICTURE.html`): the owner's mechanics mapped onto the next world, and the engine running the same unit. The ask and the way back (gratitude) are the missing steps.
+- `LENS_BRIEF.md` and `lens3/`: the beings' own point of view, in words, pictures and game views. The data comes from the thought recorder (`mind/make_thought.mjs`).
+- `mind/runs/probes/PROBES.md`: how much each candidate sense could tell a being.
+- **V-1:** the manager decided to measure a gains-only arm (V-1a) as a measurement, not a verdict, after the owner's usage reset, with a welfare stop. V-1b is not authorised, and the value table stays pending the owner's review. See `PLAN_FRACTAL.md`.
 
 ## Next, in order
 

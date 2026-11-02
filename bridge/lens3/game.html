@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Four Valleys game view</title>
+<!-- lens3 game view (LENS_BRIEF.md §11): the same record, drawn in game conventions players already know.
+     Everything marked with the eye is spectator-only: the world, which the being cannot sense. Hover any element for its field. -->
+<style>
+:root {
+  --bg: #12151b; --ink: #eef2f5; --muted: #9aa6b2; --line: #2b313b; --panel: #1b2029;
+  --sky0: #2c5d7a; --sky1: #7a4a2c; --ground: #2f3a2c; --fog: #0e1116;
+  --energy: #f2c14e; --health: #4fd1c5; --fed: #52c27a; --plain: #c9b07a; --poison: #b07ae0; --faint: #a39bb5; --fine: #7fb0da; --refused: #8a929b; --down: #8a8d8e;
+  --ping: #7fe3ff; --gold: #ffcf4a; --eye: #c8d6ff; --tip: rgba(240, 242, 245, .96);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 14px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
+.bar { position: fixed; left: 0; right: 0; top: 0; height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 10px; }
+.bar button, .bar a { min-width: 34px; height: 34px; border-radius: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 16px; display: grid; place-items: center; cursor: pointer; text-decoration: none; padding: 0 6px; }
+.bar button.on { background: var(--ping); color: var(--bg); border-color: var(--ping); }
+.bar .sp { font: 600 12px system-ui; }
+.bar .eye { color: var(--eye); font-size: 12px; border: 1px dashed var(--eye); border-radius: 9px; padding: 4px 8px; white-space: nowrap; }
+#time { flex: 1; height: 30px; cursor: pointer; min-width: 80px; }
+#stage { position: fixed; left: 0; right: 0; top: 44px; bottom: 0; }
+#tip { position: fixed; pointer-events: none; background: var(--tip); color: #111; padding: 6px 9px; border-radius: 8px; font-size: 13px; max-width: 300px; display: none; z-index: 5; }
+#tip .f { display: block; font: 11px ui-monospace, Consolas, monospace; opacity: .7; margin-top: 2px; }
+@media (max-width: 700px) { html, body { overflow: auto; } #stage { position: absolute; bottom: auto; } .bar .eye { display: none; } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button id="play" title="play / pause (space)">❚❚</button>
+  <button id="speed" class="sp" title="speed">1×</button>
+  <canvas id="time" title="replay timeline: the line is the season turn; dark marks: downed; gold: its guess first reached half for an item that changed. Click to jump"></canvas>
+  <span class="eye" title="anything with the camera is spectator-only: the world, which the being cannot sense">🎥 only you see</span>
+  <button id="guess" title="predict the play: pick a valley, then tap the wedge you think it will choose">🎯</button>
+  <a href="/" title="the picture view">◐</a>
+  <a href="/words" title="the words view">≡</a>
+</div>
+<canvas id="stage"></canvas>
+<div id="tip"></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const FRUIT = ['', 'a', 'b', 'c'];
+const KIND = { FED: 'fed', PLAIN: 'plain', TOXIC: 'poison', COLLAPSE: 'faint', OK: 'fine', RESTED: 'fine', ERR_EMPTY: 'refused', ERR_FULL: 'refused', ERR_SPENT: 'refused', ERR_DOWN: 'down' };
+const WORD = { FED: 'fed', PLAIN: 'nothing happened', TOXIC: 'poisoned', COLLAPSE: 'fainted', OK: 'ok', RESTED: 'rested', ERR_EMPTY: 'nothing there to eat', ERR_FULL: 'health already full', ERR_SPENT: 'no energy to rest', ERR_DOWN: 'down, cannot act' };
+const CLASS = { NOURISH: 'fed', PLAIN: 'plain', TOXIC: 'poison' };
+const CLASS_WORD = { NOURISH: 'feeds', PLAIN: 'does nothing', TOXIC: 'poisons' };
+const ACTS = ['EAT', 'PASS', 'REST'];
+const LEVEL = 0.5;          // the crossing level: the owner's value choice (LENS_BRIEF §3), default until ruled
+const START_BEFORE = 14;    // play starts 14 ticks before the first tick under the new fruit rules
+const SPEEDS = [1, 2, 4], TICK_S = 0.5, GUESS_TICK_S = 2.2;
+const base = n => n.replace('/1', '');
+
+let H, rows = [], T0 = 0, T1 = 0, ix, inForce = [], turns = [], flips = [], downEnd = [];
+let i = 0, p = 0, playing = true, speed = 1, last = 0, C = {};
+const G = { on: false, v: -1, waiting: false, taps: {} };
+
+// ------------------------------------------------------------------ data (the same record as the other views)
+async function load() {
+  const files = await (await fetch('/thoughts/')).json();
+  const text = await (await fetch('/thoughts/' + encodeURIComponent(files[0]))).text();
+  const L = text.trim().split('\n'); H = JSON.parse(L[0]); rows = L.slice(1).map(l => JSON.parse(l));
+  T0 = rows[0].t; T1 = rows[rows.length - 1].t; ix = n => H.answers.indexOf(n);
+  inForce = rows.map((r, k) => (k ? rows[k - 1].season : r.season));       // the row's season is read after its tick
+  turns = []; for (let k = 1; k < rows.length; k++) if (inForce[k] !== inForce[k - 1]) turns.push(k);
+  flips = [];
+  turns.forEach((ti, n) => {
+    const end = turns[n + 1] ?? rows.length, start = n ? turns[n - 1] : 0;
+    for (let v = 0; v < 4; v++) for (let f = 1; f <= 3; f++) {
+      let from = null, to = null, cross = null, first = null;
+      for (let k = start; k < ti; k++) { const c = rows[k].chars[v]; if (!c.sees.down && c.sees.item === f) from = c.world.kindClass; }
+      for (let k = ti; k < end; k++) { const c = rows[k].chars[v]; if (c.sees.down || c.sees.item !== f) continue; if (to === null) { to = c.world.kindClass; first = k; } if (cross === null && fit(c) >= LEVEL) cross = k; }
+      if (from && to && from !== to) flips.push({ v, f, from, to, first, cross });
+    }
+  });
+  // the world's respawn timer: for each down tick, where its down stretch ends (read from the record itself)
+  downEnd = [0, 1, 2, 3].map(v => { const e = new Array(rows.length).fill(-1); let k = rows.length - 1, endK = -1; for (; k >= 0; k--) { if (rows[k].chars[v].sees.down) { if (endK < 0) endK = k; e[k] = endK; } else endK = -1; } return e; });
+  i = Math.max(0, (turns[0] ?? START_BEFORE) - START_BEFORE); p = 0;
+  readColors(); resize(); requestAnimationFrame(frame);
+}
+function fit(c) {
+  const g = c.guess[0].p, k = c.world.kindClass;
+  if (c.sees.down || !c.sees.item || !k) return null;
+  return k === 'NOURISH' ? g[ix('FED')] : k === 'PLAIN' ? g[ix('PLAIN')] : g[ix('TOXIC')] + g[ix('COLLAPSE')];
+}
+const topOf = g => { let b = 0; g.p.forEach((x, j) => { if (x > g.p[b]) b = j; }); return { p: g.p[b], kind: KIND[base(H.answers[b])], name: base(H.answers[b]) }; };
+const pull = val => Math.max(0.22, Math.min(1, (val + 4) / 7)); // weight 3 fills the wedge, 0 about half, -4 or less a stub
+const pct = q => { const z = q * 100; return z === 0 ? '0%' : z < 0.01 ? z.toFixed(3) + '%' : z < 1 ? z.toFixed(2) + '%' : z < 10 ? z.toFixed(1) + '%' : Math.round(z) + '%'; };
+
+// ------------------------------------------------------------------ canvas helpers
+const stage = $('#stage'), ctx = stage.getContext('2d'), tl = $('#time'), tctx = tl.getContext('2d');
+let W = 0, Hh = 0, cards = [], hits = [];
+function readColors() { const cs = getComputedStyle(document.documentElement); ['bg', 'ink', 'muted', 'line', 'panel', 'sky0', 'sky1', 'ground', 'fog', 'energy', 'health', 'fed', 'plain', 'poison', 'faint', 'fine', 'refused', 'down', 'ping', 'gold', 'eye'].forEach(k => C[k] = cs.getPropertyValue('--' + k).trim()); }
+function resize() {
+  const dpr = window.devicePixelRatio || 1, narrow = innerWidth < 700;
+  W = innerWidth; Hh = narrow ? 4 * 330 : innerHeight - 44;
+  stage.style.height = Hh + 'px'; stage.width = W * dpr; stage.height = Hh * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const g = 8, cols = narrow ? 1 : 2, rws = narrow ? 4 : 2, cw = (W - g * (cols + 1)) / cols, ch = (Hh - g * (rws + 1)) / rws;
+  cards = [0, 1, 2, 3].map(v => ({ v, x: g + (v % cols) * (cw + g), y: g + Math.floor(v / cols) * (ch + g), w: cw, h: ch }));
+  tl.width = tl.clientWidth * dpr; tl.height = tl.clientHeight * dpr; tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+const mix = (a, b, t) => a + (b - a) * t;
+const ease = t => t < 0 ? 0 : t > 1 ? 1 : t * t * (3 - 2 * t);
+function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+function hit(x, y, r, text, field) { hits.push({ x, y, r, text, field }); }
+function item(x, y, s, f, col) { // the fruit's letter as an item icon: a round, b triangular, c diamond
+  ctx.beginPath();
+  if (f === 1) ctx.arc(x, y, s, 0, 7);
+  else if (f === 2) { ctx.moveTo(x, y - s * 1.1); ctx.lineTo(x + s, y + s * 0.8); ctx.lineTo(x - s, y + s * 0.8); ctx.closePath(); }
+  else { ctx.moveTo(x, y - s * 1.15); ctx.lineTo(x + s * 1.05, y); ctx.lineTo(x, y + s * 1.15); ctx.lineTo(x - s * 1.05, y); ctx.closePath(); }
+  ctx.fillStyle = col; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = C.ink; ctx.stroke();
+}
+function effectIcon(x, y, s, kind, col) { // round = feeds / fed, flat = nothing, wavy = poisons / poisoned, flat ellipse = fainted
+  ctx.beginPath(); ctx.fillStyle = col; ctx.strokeStyle = col; ctx.lineWidth = 2;
+  if (kind === 'fed') { ctx.arc(x, y, s, 0, 7); ctx.fill(); ctx.strokeStyle = C.bg; ctx.beginPath(); ctx.moveTo(x - s * 0.5, y); ctx.lineTo(x + s * 0.5, y); ctx.moveTo(x, y - s * 0.5); ctx.lineTo(x, y + s * 0.5); ctx.stroke(); }
+  else if (kind === 'plain') { ctx.roundRect(x - s * 1.1, y - s * 0.35, s * 2.2, s * 0.7, s * 0.35); ctx.fill(); }
+  else if (kind === 'poison') { for (let k = 0; k <= 48; k++) { const a = k / 48 * 6.283, m = s * (1 + 0.18 * Math.sin(a * 7)); ctx.lineTo(x + Math.cos(a) * m, y + Math.sin(a) * m); } ctx.closePath(); ctx.fill(); }
+  else if (kind === 'faint') { ctx.ellipse(x, y, s * 1.3, s * 0.45, 0, 0, 7); ctx.fill(); }
+  else if (kind === 'refused') { ctx.moveTo(x - s * 0.6, y - s * 0.6); ctx.lineTo(x + s * 0.6, y + s * 0.6); ctx.moveTo(x + s * 0.6, y - s * 0.6); ctx.lineTo(x - s * 0.6, y + s * 0.6); ctx.stroke(); }
+  else { ctx.arc(x, y, s * 0.8, 0, 7); ctx.stroke(); }
+}
+function eye(x, y) { // the spectator camera: only you see this
+  ctx.save(); ctx.strokeStyle = C.eye; ctx.fillStyle = C.eye; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.roundRect(x - 6, y - 3.5, 8, 7, 1.5); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x + 2, y - 1); ctx.lineTo(x + 6, y - 3.5); ctx.lineTo(x + 6, y + 3.5); ctx.lineTo(x + 2, y + 1); ctx.closePath(); ctx.fill(); ctx.restore(); }
+function star(x, y, s, col) { ctx.beginPath(); for (let k = 0; k < 8; k++) { const a = -Math.PI / 2 + k * Math.PI / 4, rr = k % 2 ? s * 0.28 : s; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } ctx.closePath(); ctx.fillStyle = col; ctx.fill(); }
+function segBar(x, y, n, lit, col, icon, off) { // a game HUD bar: four segments, as many lit as the band
+  ctx.save(); if (off) ctx.globalAlpha = 0.3; ctx.fillStyle = col; ctx.font = '700 15px system-ui'; ctx.fillText(icon, x, y + 12);
+  for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.roundRect(x + 20 + k * 25, y, 22, 13, 3); ctx.fillStyle = off ? hexA(col, 0.5) : k < lit ? col : hexA(col, 0.14); ctx.fill(); ctx.strokeStyle = hexA(col, 0.6); ctx.lineWidth = 1; ctx.stroke(); }
+  ctx.restore();
+}
+function iconBanner(S, a, col, draw) { // a word-free banner: icons only
+  const { x, y, w } = S, by = y + 78 - 8 * ease(a * 3), al = a < 0.15 ? a / 0.15 : a > 0.85 ? (1 - a) / 0.15 : 1, bw = 126;
+  ctx.save(); ctx.globalAlpha = Math.max(0, al); ctx.fillStyle = hexA(C.bg, 0.82); ctx.beginPath(); ctx.roundRect(x + w / 2 - bw / 2, by - 18, bw, 30, 8); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
+  draw(x + w / 2 - bw / 2 + 14, by - 3); ctx.restore();
+}
+function thought(x, y, kind) { // a thought bubble: what it expects this item to do (its own guess), "?" when unsure
+  ctx.beginPath(); ctx.arc(x, y, 13, 0, 7); ctx.fillStyle = '#f4f6f8'; ctx.fill();
+  if (kind) effectIcon(x, y, 7.5, kind, C[kind]); else { ctx.fillStyle = '#1b2029'; ctx.font = '800 17px system-ui'; ctx.fillText('?', x - 5, y + 6); }
+}
+function banner(S, text, col, a, icon, cam) { // a short banner bound to a real event (MarbleGp: banner queue, notices bound to events)
+  const { x, y, w } = S, by = y + 78 - 8 * ease(a * 3), al = a < 0.15 ? a / 0.15 : a > 0.85 ? (1 - a) / 0.15 : 1;
+  ctx.save(); ctx.globalAlpha = Math.max(0, al); ctx.font = '800 16px system-ui'; const tw = ctx.measureText(text).width + (icon ? 26 : 0) + (cam ? 20 : 0);
+  ctx.fillStyle = hexA(C.bg, 0.8); ctx.beginPath(); ctx.roundRect(x + w / 2 - tw / 2 - 12, by - 18, tw + 24, 28, 8); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.fillStyle = col; ctx.fillText(text, x + w / 2 - tw / 2 + (icon ? 26 : 0), by + 2); if (icon) icon(x + w / 2 - tw / 2 + 9, by - 4);
+  if (cam) eye(x + w / 2 + tw / 2 - 6, by - 4); // a world event: spectator-only
+  ctx.restore();
+}
+
+// ------------------------------------------------------------------ one valley, as a game card
+function drawCard(S) {
+  const { v, x, y, w, h } = S, r = rows[i], c = r.chars[v], pc = i ? rows[i - 1].chars[v] : c, wd = c.world;
+  const t = p, grow = ease(t / 0.3), reveal = t >= 0.45, after = ease((t - 0.45) / 0.55);
+  const guessing = G.on && G.v === v && G.waiting, downNow = !!c.sees.down;
+  ctx.save(); ctx.beginPath(); ctx.roundRect(x, y, w, h, 12); ctx.clip();
+
+  // ---- the world (spectator view): sky and weather by season, ground
+  const s = inForce[i], turnHere = turns.includes(i);
+  const sk = ctx.createLinearGradient(0, y, 0, y + h); sk.addColorStop(0, s % 2 ? C.sky1 : C.sky0); sk.addColorStop(0.7, hexA(s % 2 ? C.sky1 : C.sky0, 0.55)); sk.addColorStop(0.71, C.ground); sk.addColorStop(1, C.ground);
+  ctx.fillStyle = sk; ctx.fillRect(x, y, w, h);
+  weather(S, s, performance.now() / 1000);
+  const cx = x + w * 0.44, cy = y + h * 0.53, R0 = Math.min(w * 0.3, h * 0.33);
+  const bx = cx - R0 * 0.3, by = cy + R0 * 0.05, fx = cx + R0 * 0.72, fy = by;
+  const itemNow = downNow ? 0 : c.sees.item;
+  // the world's poison cloud on a faint (a world event, rising from the item's spot on the ground)
+  if (wd.cause === 'toxin' && reveal) for (let k = 0; k < 7; k++) { const a = after; ctx.beginPath(); ctx.arc(fx + Math.sin(k * 2.3) * 14, y + h * 0.8 - a * h * 0.18 - k * 5, 6 + k * 2 + a * 7, 0, 7); ctx.fillStyle = hexA(C.poison, (0.32 - k * 0.035) * (1 - a * 0.5)); ctx.fill(); }
+
+  // ---- fog of war: everything outside its awareness is fogged; you see through it, it does not
+  const Rv = downNow ? R0 * 0.32 : R0;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.moveTo(cx + Rv, cy); ctx.arc(cx, cy, Rv, 0, 2 * Math.PI, true); ctx.clip('evenodd');
+  ctx.fillStyle = hexA(C.fog, 0.55); ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = hexA(C.ink, 0.07); ctx.lineWidth = 1; for (let d = -h; d < w; d += 7) { ctx.beginPath(); ctx.moveTo(x + d, y + h); ctx.lineTo(x + d + h, y); ctx.stroke(); }
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(cx, cy, Rv, 0, 7); ctx.strokeStyle = hexA(C.ink, 0.35); ctx.lineWidth = 1.5; ctx.setLineDash([5, 4]); ctx.stroke(); ctx.setLineDash([]);
+  hit(cx + Rv * 0.71, cy - Rv * 0.71, 12, 'Fog of war: the edge of what it senses. You see the world through the fog; it does not.', 'no field (not sensed)');
+
+  // ---- the item in front of it: unidentified to it (a "?"), identified only for you, on the ground
+  if (itemNow) {
+    const bob = Math.sin(performance.now() / 400 + v) * 2.5; // decoration: an item pickup bobs
+    ctx.beginPath(); ctx.arc(fx, fy + bob, R0 * 0.2, 0, 7); ctx.fillStyle = hexA(C.ink, 0.06); ctx.fill();
+    item(fx, fy + bob, R0 * 0.15, itemNow, '#d9dee4');
+    const eg = topOf(c.guess[0]), sure = eg.p >= 0.5 && ['fed', 'plain', 'poison', 'faint'].includes(eg.kind), tbx = fx + R0 * 0.2, tby = fy - R0 * 0.3 + bob;
+    ctx.beginPath(); ctx.arc(fx + R0 * 0.08, fy - R0 * 0.14 + bob, 2, 0, 7); ctx.arc(fx + R0 * 0.14, fy - R0 * 0.21 + bob, 3, 0, 7); ctx.fillStyle = '#f4f6f8'; ctx.fill();
+    thought(tbx, tby, guessing ? null : sure ? eg.kind : null);
+    hit(fx, fy, R0 * 0.2, `Item ${FRUIT[itemNow]}: it senses which item this is, not what it does. It gave this sight ${pct(c.pSeen)}.`, 'sees.item, pSeen');
+    hit(tbx, tby, 12, guessing ? 'Its own guess, hidden while you predict.' : `Its own guess for eating it: ${sure ? WORD[eg.name] + ' (' + pct(eg.p) + ')' : '? (no answer above half: ' + WORD[eg.name] + ' ' + pct(eg.p) + ')'}. Compare it with the camera tag below, which only you see.`, 'guess[0].p (most likely answer)');
+    if (wd.kindClass) { // spectator tag: the item identified
+      const tx = fx, ty = y + h * 0.83, k = CLASS[wd.kindClass];
+      ctx.fillStyle = hexA(C.bg, 0.75); ctx.beginPath(); ctx.roundRect(tx - 32, ty - 16, 64, 32, 9); ctx.fill(); ctx.strokeStyle = C.eye; ctx.setLineDash([3, 3]); ctx.lineWidth = 1; ctx.stroke(); ctx.setLineDash([]);
+      effectIcon(tx - 8, ty, 10, k, C[k]); eye(tx + 18, ty);
+      hit(tx, ty, 24, `Only you see: item ${FRUIT[itemNow]} ${CLASS_WORD[wd.kindClass]} this season, in this valley.`, 'world.kindClass');
+    }
+  }
+
+  // ---- the being: HUD bars (its own sense), the sprite, the action wheel
+  const eb = downNow ? 0 : c.sees.eBand, hb = downNow ? 0 : c.sees.hBand;
+  // while down it senses no bands at all: the bars grey out (empty bars would claim exhaustion)
+  segBar(x + 12, y + 12, 4, eb, downNow ? C.down : C.energy, '⚡', downNow); segBar(x + 12, y + 32, 4, hb, downNow ? C.down : C.health, '✚', downNow);
+  hit(x + 60, y + 18, 26, downNow ? 'Down: it senses only that it is down, no energy or health.' : `Its sense of its energy (band ${c.sees.eBand} of 0–4) and health (band ${c.sees.hBand} of 0–4). Bands, not exact numbers.`, 'sees.eBand, sees.hBand');
+  // spectator numbers: the exact counts, which it never senses
+  ctx.font = '600 11px ui-monospace, Consolas, monospace'; ctx.fillStyle = C.eye; ctx.font = '600 12px ui-monospace, Consolas, monospace'; ctx.fillText(`${wd.E}`, x + 136, y + 23); ctx.fillText(`${wd.H}`, x + 136, y + 43); eye(x + 164, y + 33);
+  hit(x + 150, y + 33, 18, `Only you see: exact energy ${wd.E} and health ${wd.H} of 15.`, 'world.E, world.H');
+
+  const ak = ACTS.indexOf(c.act), lean = downNow || guessing ? 0 : ease((t - 0.28) / 0.17) * (1 - ease((t - 0.62) / 0.38));
+  const sx = bx + (ak === 0 ? R0 * 0.1 * lean : 0), sy = by + (ak === 1 ? -R0 * 0.07 * lean : ak === 2 ? R0 * 0.05 * lean : 0);
+  const br = R0 * 0.2 * (1 + 0.025 * Math.sin(performance.now() / 600 + v)); // decoration: breathing
+  if (downNow) {
+    ctx.beginPath(); ctx.ellipse(cx, cy + Rv * 0.1, R0 * 0.24, R0 * 0.08, 0, 0, 7); ctx.fillStyle = C.down; ctx.fill();
+    // the world's respawn timer: ticks until it is up, read from the record (the being cannot sense it)
+    const e = downEnd[v][i]; let st = i; while (st > 0 && rows[st - 1].chars[v].sees.down) st--;
+    const total = e - st + 1, left = e - i + 1 - t;
+    ctx.beginPath(); ctx.arc(cx, cy, R0 * 0.42, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * (left / total)); ctx.strokeStyle = C.eye; ctx.lineWidth = 3; ctx.stroke(); eye(cx, cy - R0 * 0.55);
+    hit(cx, cy, R0 * 0.42, `Downed: all it senses is that it is down. Only you see the respawn ring: up in ${e - i + 1} tick${e - i ? 's' : ''} (from the record).`, 'sees.down; down stretch in the record');
+  } else {
+    ctx.beginPath(); ctx.arc(sx, sy, br, 0, 7); const gr = ctx.createRadialGradient(sx - br * 0.3, sy - br * 0.3, br * 0.1, sx, sy, br); gr.addColorStop(0, '#9fe6e0'); gr.addColorStop(1, '#2e7d78'); ctx.fillStyle = gr; ctx.fill();
+    hit(sx, sy, br, 'The being.', 'chars[' + v + ']');
+    wheel(S, c, sx, sy, br, R0, t, grow, guessing, fx);
+  }
+
+  // ---- the answer: a result icon pops up from the chosen wedge; surprise is a neutral radar ping
+  if (!downNow && !guessing && reveal) {
+    const k = ak, ang = [0, -Math.PI / 2, Math.PI / 2][k], rr = br + R0 * 0.5 * pull(c.guess[k].value);
+    const ex = sx + Math.cos(ang) * rr, ey = sy + Math.sin(ang) * rr - after * 22;
+    ctx.save(); ctx.globalAlpha = 1 - after * 0.5; effectIcon(ex, ey, 8, KIND[c.answer], C[KIND[c.answer]]); ctx.restore();
+    hit(ex, ey, 14, `It got: ${WORD[c.answer]}${c.starving ? ', starving' : ''}. It had been ${pct(c.pAnswer)} sure.`, 'answer, starving, pAnswer');
+    const sv = c.sting[0];
+    if (sv > 0.15) for (let q = 0; q < 2; q++) { const u = ease(after - q * 0.15); if (u <= 0) continue; ctx.beginPath(); ctx.arc(sx, sy, br + u * R0 * (0.2 + 0.8 * Math.min(sv, 4) / 4), 0, 7); ctx.strokeStyle = hexA(C.ping, 0.7 * (1 - u)); ctx.lineWidth = 2.5; ctx.stroke(); }
+    if (sv < -0.3) { const u = ease(after); ctx.beginPath(); ctx.arc(sx, sy, br + R0 * 0.2 * (1 - u), 0, 7); ctx.strokeStyle = hexA(C.ping, 0.35 * (1 - u)); ctx.lineWidth = 1.5; ctx.stroke(); }
+    hit(sx - br - 6, sy - br - 6, 12, `Surprise ping ${sv.toFixed(2)}: how unexpected the answer was, compared with its usual (0 = usual; below 0, less surprising than usual). Not good or bad, never damage.`, 'sting[0]');
+  }
+
+  // ---- spectator HUD, top right: weather (season) and world intensity
+  weatherIcon(x + w - 66, y + 20, s);
+  for (let k = 0; k < 2; k++) { const lit = k < wd.ellAfter, bh = 7 + k * 5, bxk = x + w - 40 + k * 8; ctx.beginPath(); ctx.rect(bxk, y + 27 - bh, 5, bh); if (lit) { ctx.fillStyle = C.eye; ctx.fill(); } ctx.strokeStyle = C.eye; ctx.lineWidth = 1.2; ctx.stroke(); }
+  eye(x + w - 14, y + 21);
+  hit(x + w - 66, y + 20, 14, inForce[i] !== inForce[0] ? 'Only you see: the weather changed. A new season, new item effects. The beings were not told.' : 'Only you see: the season (weather).', 'season (previous row)');
+  hit(x + w - 30, y + 21, 14, `Only you see: world intensity ${wd.ellAfter} (it only goes down; not felt). Loop-breaks: ${wd.loopBreaksAfter}.`, 'world.ellAfter, loopBreaksAfter');
+
+  // ---- spectator quest tracker: its guess for each item that changed, filling toward what it really does
+  quests(S, c);
+
+  // ---- banners bound to real events
+  if (turnHere) iconBanner(S, t, C.eye, (bx0, by0) => { weatherIcon(bx0 + 6, by0, s + 1, 1.2); ctx.fillStyle = C.ink; ctx.font = '700 16px system-ui'; ctx.fillText('→', bx0 + 26, by0 + 6); weatherIcon(bx0 + 62, by0, s, 1.2); eye(bx0 + 88, by0); });
+  const done = flips.find(f => f.v === v && f.cross === i); if (done && reveal) { iconBanner(S, after, C.gold, (bx0, by0) => { item(bx0, by0, 7, done.f, '#d9dee4'); thought(bx0 + 26, by0, CLASS[done.to]); ctx.fillStyle = C.ink; ctx.font = '700 14px system-ui'; ctx.fillText('=', bx0 + 44, by0 + 5); effectIcon(bx0 + 64, by0, 7, CLASS[done.to], C[CLASS[done.to]]); eye(bx0 + 80, by0); star(bx0 + 98, by0, 9, C.gold); }); confetti(S, after); }
+  if (c.answer === 'COLLAPSE' && reveal) iconBanner(S, after, C.eye, (bx0, by0) => { ctx.beginPath(); ctx.ellipse(bx0 + 14, by0 + 2, 15, 5, 0, 0, 7); ctx.fillStyle = C.down; ctx.fill(); ctx.fillStyle = C.ink; ctx.font = '700 16px system-ui'; ctx.fillText('←', bx0 + 36, by0 + 6); if (wd.cause === 'toxin') effectIcon(bx0 + 66, by0, 9, 'poison', C.poison); else if (wd.cause === 'hunger') { ctx.fillStyle = C.energy; ctx.font = '700 17px system-ui'; ctx.fillText('⚡', bx0 + 60, by0 + 6); } eye(bx0 + 88, by0); });
+  if (i && wd.loopBreaksAfter > pc.world.loopBreaksAfter && reveal) iconBanner(S, after, C.eye, (bx0, by0) => { for (let k = 0; k < 2; k++) { ctx.beginPath(); ctx.rect(bx0 + k * 8, by0 + 6 - (7 + k * 5), 5, 7 + k * 5); ctx.fillStyle = C.eye; ctx.fill(); } ctx.fillStyle = C.ink; ctx.font = '700 14px system-ui'; ctx.fillText('→', bx0 + 22, by0 + 5); ctx.beginPath(); ctx.rect(bx0 + 44, by0 - 1, 5, 7); ctx.fill(); ctx.beginPath(); ctx.rect(bx0 + 52, by0 - 6, 5, 12); ctx.strokeStyle = C.eye; ctx.stroke(); eye(bx0 + 70, by0); });
+
+  // ---- valley number and the guess frame
+  ctx.fillStyle = hexA(C.ink, 0.6); ctx.font = '700 15px system-ui'; ctx.fillText(String(v + 1), x + 12, y + h - 12);
+  if (G.on && G.v === v) { ctx.strokeStyle = C.ping; ctx.lineWidth = 3; ctx.strokeRect(x + 1.5, y + 1.5, w - 3, h - 3); }
+  ctx.restore();
+}
+function wheel(S, c, sx, sy, br, R0, t, grow, guessing, fx) {
+  // the action wheel (radial menu): wedge to the item = eat, up = pass, down = rest.
+  // Wedge length = how strongly it pulls (its weight); colour = what it expects; brightness = how sure (push).
+  const angs = [0, -Math.PI / 2, Math.PI / 2], half = Math.PI / 4.6, icons = ['eat', 'pass', 'rest'];
+  let maxK = 0; c.guess.forEach((g, k) => { if (g.value > c.guess[maxK].value) maxK = k; });
+  S.wedges = [];
+  c.guess.forEach((g, k) => {
+    const a = angs[k], tp = topOf(g), chosen = c.act === ACTS[k];
+    const outer = br + R0 * 0.5 * (guessing ? 0.8 : pull(g.value) * grow);
+    ctx.beginPath(); ctx.arc(sx, sy, br + 4, a - half, a + half); ctx.arc(sx, sy, Math.max(br + 6, outer), a + half, a - half, true); ctx.closePath();
+    if (guessing) { ctx.fillStyle = hexA(C.ink, 0.06); ctx.fill(); ctx.setLineDash([4, 3]); ctx.strokeStyle = hexA(C.ping, 0.9); ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); }
+    else {
+      ctx.fillStyle = hexA(C[tp.kind], 0.2 + 0.6 * tp.p * (chosen && t > 0.3 ? 1 : 0.7)); ctx.fill();
+      ctx.strokeStyle = chosen && t > 0.3 ? C.ink : hexA(C[tp.kind], 0.6); ctx.lineWidth = chosen && t > 0.3 ? 2.5 : 1; ctx.stroke();
+    }
+    const mx = sx + Math.cos(a) * (br + 24), my = sy + Math.sin(a) * (br + 24);
+    actIcon(mx, my, icons[k], guessing ? C.ping : C.ink);
+    if (!guessing && chosen && c.explore && t > 0.3) { ctx.font = '18px system-ui'; ctx.fillText('🎲', mx + 10, my - 10); }
+    S.wedges.push([sx + Math.cos(a) * (br + R0 * 0.35), sy + Math.sin(a) * (br + R0 * 0.35)]);
+    if (!guessing) hit(sx + Math.cos(a) * (br + R0 * 0.3), sy + Math.sin(a) * (br + R0 * 0.3), R0 * 0.2, `${['Eat', 'Pass', 'Rest'][k]}: it expects ${WORD[tp.name]} (${pct(tp.p)} sure). Wedge length: how much its weight favours this choice, the owner's "pull" (weight ${g.value.toFixed(2)}: gain minus pain from the preset at intensity 2, not felt; it does not follow the world's intensity).${chosen ? ' Chosen' + (c.explore ? ' by a random pick (the die).' : '.') : ''}`, `guess[${k}].p, value; act; explore`);
+    else hit(sx + Math.cos(a) * (br + R0 * 0.3), sy + Math.sin(a) * (br + R0 * 0.3), R0 * 0.2, `Tap: you predict it will ${icons[k]}.`, 'your prediction');
+  });
+  // (round 5: the compass needle inside the being was removed; the longest wedge already shows the strongest pull)
+  if (false) { const a = angs[maxK]; ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * br * 0.25, sy + Math.sin(a) * br * 0.25); ctx.lineTo(sx + Math.cos(a) * br * 0.95, sy + Math.sin(a) * br * 0.95); ctx.strokeStyle = C.bg; ctx.lineWidth = 3; ctx.stroke(); ctx.beginPath(); ctx.arc(sx, sy, 3, 0, 7); ctx.fillStyle = C.bg; ctx.fill(); }
+  if (G.on && G.v === S.v && G.taps[i] !== undefined) { const [tx, ty] = S.wedges[G.taps[i]]; ctx.beginPath(); ctx.arc(tx, ty, 15, 0, 7); ctx.strokeStyle = C.ping; ctx.lineWidth = 2; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]); hit(tx, ty, 16, 'Your prediction (dashed). Its real choice is the outlined wedge.', 'your tap'); }
+}
+function actIcon(x, y, k, col) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(1.7, 1.7); x = 0; y = 0;
+  ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.8; ctx.beginPath();
+  if (k === 'eat') { ctx.arc(x, y, 6, 0.9, 2 * Math.PI - 0.9); ctx.arc(x + 6, y, 3.2, Math.PI + 0.75, Math.PI - 0.75, true); ctx.closePath(); ctx.fill(); }
+  else if (k === 'pass') { ctx.moveTo(x - 5, y - 5); ctx.lineTo(x + 2, y); ctx.lineTo(x - 5, y + 5); ctx.closePath(); ctx.fill(); ctx.fillRect(x + 3, y - 5, 2.4, 10); }
+  else { ctx.font = '700 12px system-ui'; ctx.fillText('z', x - 6, y + 2); ctx.font = '700 9px system-ui'; ctx.fillText('z', x + 1, y - 3); }
+  ctx.restore();
+}
+function quests(S, c) {
+  const { v, x, y, w, h } = S, mine = flips.filter(f => f.v === v && f.first !== null && f.first <= i);
+  mine.forEach((f, n) => {
+    const qy = y + h - 24 - n * 26, qx = x + 40; // bottom left, clear of the item tag
+    const upto = i - (G.on && G.v === v && G.waiting ? 1 : 0);
+    let last = null, lastK = -1; for (let k = upto; k >= f.first; k--) { const ch = rows[k].chars[v]; if (!ch.sees.down && ch.sees.item === f.f) { last = fit(ch); lastK = k; break; } }
+    const crossed = f.cross !== null && f.cross <= upto, k = CLASS[f.to];
+    ctx.fillStyle = hexA(C.bg, 0.7); ctx.beginPath(); ctx.roundRect(qx - 10, qy - 12, 200, 24, 7); ctx.fill();
+    item(qx + 3, qy, 7, f.f, '#d9dee4'); ctx.fillStyle = C.ink; ctx.font = '13px system-ui'; ctx.fillText('→', qx + 15, qy + 5); effectIcon(qx + 38, qy, 7, k, C[k]);
+    ctx.fillStyle = hexA(C[k], 0.18); ctx.fillRect(qx + 52, qy - 5, 100, 10); ctx.fillStyle = C[k]; ctx.fillRect(qx + 52, qy - 5, 100 * (last ?? 0), 10);
+    if (crossed) star(qx + 166, qy, 8, C.gold); eye(qx + 184, qy);
+    hit(qx + 95, qy, 60, `Only you see this tracker: its guess that item ${FRUIT[f.f]} ${CLASS_WORD[f.to]} (last season it ${CLASS_WORD[f.from]}), at tick ${lastK >= 0 ? rows[lastK].t : '–'}, the last time it saw that item. Bar: ${last === null ? '–' : pct(last)}, it can fall. The spark: its guess first passed half for this item after the turn (tick ${crossed ? rows[f.cross].t : '–'}). Not a score.`, 'guess[EAT].p at the world\'s answer; celebrate rule');
+  });
+}
+function weather(S, s, now) { // decoration tied to the season field: falling leaves in the turned season, motes before
+  const { x, y, w, h } = S; ctx.save();
+  for (let k = 0; k < 14; k++) { const px = x + ((k * 97 + now * (s % 2 ? 22 : 8)) % w), py = y + ((k * 53 + now * (s % 2 ? 30 : 6)) % (h * 0.7)); ctx.fillStyle = s % 2 ? hexA('#e0a060', 0.5) : hexA('#ffffff', 0.25); ctx.beginPath(); if (s % 2) ctx.ellipse(px, py, 3, 1.6, now + k, 0, 7); else ctx.arc(px, py, 1.4, 0, 7); ctx.fill(); }
+  ctx.restore();
+}
+function weatherIcon(x, y, s, sc = 1) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc);
+  if (s % 2) { ctx.fillStyle = '#e0a060'; ctx.beginPath(); ctx.ellipse(0, 0, 8, 4, -0.6, 0, 7); ctx.fill(); ctx.strokeStyle = '#8a5a30'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(6, -4); ctx.stroke(); }
+  else { ctx.fillStyle = '#ffd86a'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, 7); ctx.fill(); ctx.strokeStyle = '#ffd86a'; ctx.lineWidth = 1.5; for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 7, Math.sin(a) * 7); ctx.lineTo(Math.cos(a) * 9.5, Math.sin(a) * 9.5); ctx.stroke(); } }
+  ctx.restore();
+}
+function confetti(S, a) { // the owner's ask: celebrate a crossing
+  const { x, y, w, h } = S; for (let k = 0; k < 26; k++) { const px = x + w * ((k * 37) % 100) / 100, py = y + h * 0.15 + a * h * 0.5 * (0.5 + ((k * 13) % 10) / 20); ctx.fillStyle = [C.gold, C.fed, C.ping, C.eye][k % 4]; ctx.globalAlpha = 1 - a; ctx.fillRect(px, py, 4, 7); ctx.globalAlpha = 1; }
+}
+
+// ------------------------------------------------------------------ replay timeline
+function drawTime() {
+  const w = tl.clientWidth, h = tl.clientHeight; tctx.clearRect(0, 0, w, h);
+  const X = k => 6 + k / Math.max(1, rows.length - 1) * (w - 12), lane = (h - 4) / 4;
+  tctx.fillStyle = C.line; tctx.fillRect(6, 2, w - 12, h - 4);
+  turns.forEach(k => { tctx.fillStyle = C.eye; tctx.fillRect(X(k) - 1, 0, 2, h); });
+  for (let v = 0; v < 4; v++) {
+    for (let k = 0; k < rows.length; k++) if (rows[k].chars[v].answer === 'COLLAPSE') { tctx.fillStyle = C.faint; tctx.fillRect(X(k) - 1.5, 2 + v * lane, 3, lane); }
+    flips.filter(f => f.v === v && f.cross !== null).forEach(f => { tctx.beginPath(); tctx.arc(X(f.cross), 2 + v * lane + lane / 2, 2.6, 0, 7); tctx.fillStyle = C.gold; tctx.fill(); });
+  }
+  tctx.fillStyle = C.ink; tctx.fillRect(X(i + p) - 1, 0, 2, h);
+}
+
+// ------------------------------------------------------------------ clock and input
+function frame(now) {
+  const dt = Math.min(0.1, (now - (last || now)) / 1000); last = now;
+  if (playing && !G.waiting) {
+    p += dt * (G.on && G.v >= 0 ? 1 / GUESS_TICK_S : speed / TICK_S);
+    if (p >= 1) {
+      if (i >= rows.length - 1) { p = 1; playing = false; $('#play').textContent = '▶'; }
+      else { i++; p = 0; if (G.on && G.v >= 0 && !rows[i].chars[G.v].sees.down) G.waiting = true; }
+    }
+  }
+  ctx.clearRect(0, 0, W, Hh); hits = [];
+  cards.forEach(drawCard); drawTime();
+  requestAnimationFrame(frame);
+}
+$('#play').onclick = () => { if (i >= rows.length - 1 && p >= 1) { i = Math.max(0, (turns[0] ?? 0) - START_BEFORE); p = 0; } playing = !playing; $('#play').textContent = playing ? '❚❚' : '▶'; };
+$('#speed').onclick = () => { speed = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; $('#speed').textContent = speed + '×'; };
+$('#guess').onclick = () => { G.on = !G.on; G.v = -1; G.waiting = false; G.taps = {}; $('#guess').classList.toggle('on', G.on); };
+tl.onclick = e => { const r = tl.getBoundingClientRect(); i = Math.max(0, Math.min(rows.length - 1, Math.round((e.clientX - r.left - 6) / (r.width - 12) * (rows.length - 1)))); p = 0.999; G.waiting = false; };
+stage.addEventListener('click', e => {
+  const r = stage.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  const S = cards.find(s => mx >= s.x && mx <= s.x + s.w && my >= s.y && my <= s.y + s.h); if (!S) return;
+  if (!G.on) { playing = !playing; $('#play').textContent = playing ? '❚❚' : '▶'; return; }
+  if (G.v !== S.v) { G.v = S.v; G.taps = {}; G.waiting = !rows[i].chars[S.v].sees.down; p = 0; return; }
+  if (G.waiting && S.wedges) { const k = S.wedges.findIndex(([tx, ty]) => Math.hypot(tx - mx, ty - my) < 30); if (k >= 0) { G.taps[i] = k; G.waiting = false; p = 0; } }
+});
+stage.addEventListener('mousemove', e => {
+  const r = stage.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = null, bd = 1e9; hits.forEach(h => { const d = Math.hypot(h.x - mx, h.y - my); if (d < h.r + 6 && d < bd) { bd = d; best = h; } });
+  const tip = $('#tip');
+  if (best) { tip.innerHTML = ''; tip.append(best.text); const f = document.createElement('span'); f.className = 'f'; f.textContent = best.field; tip.append(f); tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 14, innerWidth - 310) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; }
+  else tip.style.display = 'none';
+});
+stage.addEventListener('mouseleave', () => { $('#tip').style.display = 'none'; });
+document.addEventListener('keydown', e => { if (e.key === ' ') { e.preventDefault(); $('#play').click(); } });
+window.addEventListener('resize', resize);
+load().catch(err => { document.body.append(String(err)); });
+</script>
+</body>
+</html>

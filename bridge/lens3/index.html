@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Four Valleys lens</title>
+<!-- lens3 (LENS_BRIEF.md): what a Four Valleys being senses and guesses, tick by tick, read from a thought file.
+     Every visual traces to a field of the record; the mapping is in LENS_BRIEF.md §3. No network beyond its own server. -->
+<style>
+:root {
+  --bg: #f5f3ee; --panel: #ffffff; --ink: #1c2220; --muted: #5b6460; --faint: #8b938f; --line: #dcd8cf;
+  --world: #e9eef5; --world-ink: #23344a; --world-line: #c5d0de;
+  --hatch: #b9b4a8; --cover: rgba(245, 243, 238, 0.94);
+  --fed: #2e8b57; --plain: #b39a64; --poison: #8b4db3; --faint-c: #6a2440; --fine: #6d9cc6; --refused: #aab0b3; --down: #7c7f80;
+  --hot: #3f6f86; --cool: #9bb6c4; --accent: #1f6f8b; --star: #d49a12;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141716; --panel: #1d2220; --ink: #e5e9e7; --muted: #a0a9a5; --faint: #707975; --line: #333a37;
+    --world: #18212c; --world-ink: #c9d7ea; --world-line: #2c3a4b;
+    --hatch: #4d4b45; --cover: rgba(20, 23, 22, 0.94);
+    --fed: #4cb57c; --plain: #c9b07a; --poison: #ad78d4; --faint-c: #c0607f; --fine: #7fb0da; --refused: #6f7679; --down: #8a8d8e;
+    --hot: #8cc3db; --cool: #4d6b7a; --accent: #5fb3cf; --star: #f0b93a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141716; --panel: #1d2220; --ink: #e5e9e7; --muted: #a0a9a5; --faint: #707975; --line: #333a37;
+  --world: #18212c; --world-ink: #c9d7ea; --world-line: #2c3a4b;
+  --hatch: #4d4b45; --cover: rgba(20, 23, 22, 0.94);
+  --fed: #4cb57c; --plain: #c9b07a; --poison: #ad78d4; --faint-c: #c0607f; --fine: #7fb0da; --refused: #6f7679; --down: #8a8d8e;
+  --hot: #8cc3db; --cool: #4d6b7a; --accent: #5fb3cf; --star: #f0b93a;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 16px; }
+.wrap { max-width: 1480px; margin: 0 auto; }
+h1 { font: 600 22px/1.2 Georgia, "Iowan Old Style", serif; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 10px; max-width: 980px; }
+.tech { font: 11px/1.3 ui-monospace, "Cascadia Mono", Consolas, monospace; color: var(--faint); }
+.howto { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+.howto span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; border: 1px solid var(--line); }
+.sw.own { background: var(--panel); } .sw.hat { background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 6px); } .sw.wld { background: var(--world); border-color: var(--world-line); }
+
+/* controls */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+button, select, input { font: inherit; color: inherit; }
+button { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 4px 10px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--accent); }
+button:disabled { opacity: .45; cursor: default; }
+button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+select, input[type=number] { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 3px 6px; }
+.seg { display: inline-flex; } .seg button { border-radius: 0; } .seg button:first-child { border-radius: 7px 0 0 7px; } .seg button:last-child { border-radius: 0 7px 7px 0; }
+.tickno { font: 600 15px ui-monospace, Consolas, monospace; min-width: 92px; }
+.scrub { flex: 1 1 260px; display: flex; flex-direction: column; gap: 2px; min-width: 200px; }
+.scrub input { width: 100%; margin: 0; }
+.moments { width: 100%; height: 26px; display: block; }
+.grow { flex: 1; }
+
+/* season strip (the world's) */
+.season { background: var(--world); color: var(--world-ink); border: 1px solid var(--world-line); border-radius: 10px; padding: 7px 12px; margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.season b { font-weight: 650; }
+.season .who { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; opacity: .75; }
+
+/* guess panel */
+.guess { background: var(--panel); border: 2px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: grid; gap: 8px; }
+.guess .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.guess .call button { min-width: 74px; font-weight: 600; }
+.guess .note { color: var(--muted); }
+.readout { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+
+/* cards */
+.cards { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1560px) { .cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.cards.solo { grid-template-columns: minmax(0, 680px); justify-content: center; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.card > header { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 12px 4px; }
+.card h2 { font: 600 17px Georgia, serif; margin: 0; }
+.sec { padding: 6px 12px; position: relative; }
+.lh { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; gap: 6px; }
+.senses { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.meter { display: flex; flex-direction: column; gap: 2px; }
+.meter .lab { font-size: 12px; color: var(--muted); }
+.pips { display: inline-flex; gap: 3px; }
+.pips i { width: 15px; height: 11px; border-radius: 2px; border: 1px solid var(--faint); background: transparent; }
+.pips i.lit { background: var(--ink); border-color: var(--ink); }
+.fruit { display: flex; align-items: center; gap: 8px; }
+.disc { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--ink); display: grid; place-items: center; font: 700 17px Georgia, serif; }
+.disc.none { border-style: dashed; border-color: var(--faint); color: var(--faint); font-size: 13px; }
+.downmsg { display: none; font-weight: 600; color: var(--muted); padding: 6px 0; }
+.card.isdown .senses { display: none; } .card.isdown .downmsg { display: block; }
+.card.isdown .guesses .g { opacity: .4; }
+.expect { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+.g { display: grid; grid-template-columns: 44px minmax(60px, 1fr) auto; grid-template-areas: "act bar top" "act w w"; gap: 0 8px; align-items: center; padding: 3px 6px; border-radius: 7px; border: 2px solid transparent; }
+.g.chosen { border-color: var(--ink); }
+.g .act { grid-area: act; font: 700 12px ui-monospace, Consolas, monospace; }
+.g .sbar { grid-area: bar; height: 12px; display: flex; border-radius: 3px; overflow: hidden; background: var(--line); }
+.g .sbar span { display: block; height: 100%; }
+.g .top { grid-area: top; font-size: 12.5px; white-space: nowrap; }
+.g .w { grid-area: w; font-size: 11.5px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.die { display: none; font-weight: 600; color: var(--accent); }
+.g.chosen.explore .die { display: inline; }
+
+.ans { font-size: 15px; } .ans b { font-size: 16px; }
+.sbar2 { position: relative; height: 14px; background: var(--bg); border: 1px solid var(--line); border-radius: 3px; margin: 5px 0 2px; }
+.sbar2 .zero { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--ink); }
+.sbar2 .fill { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.sbar2 .clip { position: absolute; top: -1px; font-size: 11px; line-height: 14px; font-weight: 700; color: var(--panel); }
+.slab { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+canvas.spark { width: 100%; height: 44px; display: block; margin-top: 4px; }
+
+.grid6 { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.blank { min-height: 42px; border-radius: 5px; border: 1px solid var(--line); background: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 7px); display: flex; flex-direction: column; justify-content: space-between; padding: 3px 4px; font-size: 10.5px; line-height: 1.15; color: var(--muted); }
+.blank em { font-style: normal; background: var(--panel); border-radius: 3px; padding: 0 2px; align-self: flex-start; }
+.blank .ns { font-weight: 650; color: var(--ink); background: var(--panel); border-radius: 3px; padding: 0 2px; align-self: flex-start; }
+
+.world { background: var(--world); color: var(--world-ink); border-top: 1px solid var(--world-line); margin-top: 6px; padding-bottom: 10px; flex: 1; }
+.world .lh { color: var(--world-ink); opacity: .85; }
+.wc { min-height: 42px; border-radius: 5px; border: 1px solid var(--world-line); background: color-mix(in srgb, var(--world) 70%, var(--panel)); padding: 3px 4px; font-size: 11px; line-height: 1.2; display: flex; flex-direction: column; justify-content: space-between; }
+.wc .v { font-weight: 650; font-size: 12.5px; }
+.wc .mini { height: 4px; background: var(--world-line); border-radius: 2px; overflow: hidden; }
+.wc .mini span { display: block; height: 100%; background: var(--world-ink); }
+.chip { display: inline-block; padding: 0 5px; border-radius: 4px; color: #fff; font-weight: 650; }
+.engine { font-size: 12px; margin-top: 5px; opacity: .9; }
+.fitwrap { margin-top: 8px; position: relative; background: var(--panel); color: var(--ink); border: 1px solid var(--world-line); border-radius: 8px; padding: 6px 8px; }
+.fitwrap .lh { color: var(--muted); opacity: 1; }
+canvas.trail { width: 100%; height: 108px; display: block; }
+.cap { font-size: 11.5px; opacity: .85; }
+.flips { font-size: 12px; margin-top: 4px; display: grid; gap: 2px; }
+.flips .star { color: var(--star); font-weight: 700; }
+.burst { position: absolute; width: 0; height: 0; pointer-events: none; }
+.burst i { position: absolute; left: -2px; top: -2px; width: 4px; height: 4px; border-radius: 2px; background: var(--star); animation: fly 1.3s ease-out forwards; }
+@keyframes fly { 0% { transform: rotate(var(--a)) translateX(0); opacity: 1; } 100% { transform: rotate(var(--a)) translateX(34px); opacity: 0; } }
+.cheer { font-size: 12.5px; font-weight: 650; color: var(--world-ink); }
+
+.covered { position: relative; }
+.covered > * { visibility: hidden; }
+.covered::after { content: "covered until you call"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--cover); color: var(--muted); font-size: 12.5px; border-radius: 6px; border: 1px dashed var(--line); }
+
+details.raw { border-top: 1px solid var(--line); padding: 6px 12px 8px; }
+details.raw summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+details.raw pre { font: 11px/1.35 ui-monospace, Consolas, monospace; white-space: pre-wrap; word-break: break-all; margin: 6px 0 0; max-height: 300px; overflow: auto; }
+
+.legend { margin-top: 14px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.legend section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.legend h3 { font: 600 14px Georgia, serif; margin: 0 0 6px; }
+.legend ul { margin: 0; padding-left: 16px; } .legend li { margin: 2px 0; }
+.keyrow { display: flex; align-items: center; gap: 6px; margin: 2px 0; font-size: 13px; }
+table.wants { border-collapse: collapse; font-size: 12.5px; } table.wants td { padding: 1px 8px 1px 0; }
+footer { margin-top: 14px; color: var(--muted); font-size: 12.5px; }
+footer p { margin: 4px 0; }
+@media (max-width: 520px) { body { padding: 10px 16px; } .grid6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } .g { grid-template-columns: 40px minmax(40px, 1fr); grid-template-areas: "act bar" "top top" "w w"; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Four Valleys: what each being senses and guesses</h1>
+  <p class="sub" id="sub">Loading the thought file…</p>
+  <div class="howto">
+    <span><i class="sw own"></i>its own: what it senses, guesses and gets back</span>
+    <span><i class="sw hat"></i>not sensed: where its senses end</span>
+    <span><i class="sw wld"></i>the world: what it does not sense</span>
+  </div>
+  <p class="sub" style="font-size:13px">One recorded life, replayed. No felt pain is drawn anywhere: "poisoned" and "fainted" are events it is told about, and why they happened is the world's. Nothing here grades or ranks the beings.</p>
+
+  <div class="bar" id="bar">
+    <select id="file" title="thought file"></select>
+    <a href="/" title="the picture view" style="text-decoration:none;border:1px solid var(--line);border-radius:7px;padding:4px 10px;color:inherit;background:var(--bg)">◐ picture</a>
+    <a href="/game" title="the game view" style="text-decoration:none;border:1px solid var(--line);border-radius:7px;padding:4px 10px;color:inherit;background:var(--bg)">🎮 game</a>
+    <span class="seg"><button id="mWatch" class="on">Watch</button><button id="mGuess">Guess</button></span>
+    <button id="play" title="space">Play</button>
+    <button id="back" title="left arrow">◀ tick</button>
+    <button id="fwd" title="right arrow">tick ▶</button>
+    <select id="speed" title="ticks per second"><option value="2">2 / s</option><option value="4" selected>4 / s</option><option value="8">8 / s</option><option value="16">16 / s</option></select>
+    <button id="toTurn">jump to the turn</button>
+    <span class="tickno" id="tickno">tick –</span>
+    <div class="scrub"><input type="range" id="scrub" min="0" max="0" value="0" aria-label="tick"><canvas class="moments" id="moments" title="the world's moments: the turn, faints (dark), crossings (gold)"></canvas></div>
+  </div>
+
+  <div class="season" id="season"></div>
+
+  <div class="guess" id="guess" hidden>
+    <div class="row">
+      <b>Guess mode.</b>
+      <label>Valley <select id="gv"><option value="0">1</option><option value="1">2</option><option value="2">3</option><option value="3" selected>4</option></select></label>
+      <button id="gStart">start from tick <span id="gStartT">–</span></button>
+      <span class="note" id="gProg"></span>
+    </div>
+    <div class="row" id="predRow">
+      <span>Before the turn: how many ticks after it until it again foresees what eating a fruit brings <span class="tech">(8 eats of a fruit in a row at ≥50% sure, counting eats only, LENS_BRIEF §6)</span>?</span>
+      <input type="number" id="predN" min="0" max="999" style="width:80px" aria-label="ticks">
+      <label><input type="checkbox" id="predNone"> not by the end of the window</label>
+      <button id="predLock">lock prediction</button>
+      <span class="note" id="predNote"></span>
+    </div>
+    <div class="row call" id="callRow">
+      <span>What will it do?</span>
+      <button data-call="EAT">EAT</button><button data-call="PASS">PASS</button><button data-call="REST">REST</button>
+      <button id="gNext" disabled>next tick ▶</button>
+      <span class="note" id="gNote">You see only what it senses now, and its past. Call, then the rest opens. This tests the page, not you.</span>
+    </div>
+    <div class="readout" id="gOut" hidden></div>
+  </div>
+
+  <main class="cards" id="cards"></main>
+
+  <div class="legend" id="legend">
+    <section>
+      <h3>Answers it can get back</h3>
+      <div id="ansKey"></div>
+      <p class="tech">Each choice row is split into the 14 answers (header <code>answers</code>), coloured by kind. The EAT row's share in the world chip's colour is close to the fit.</p>
+    </section>
+    <section>
+      <h3>What its choices weigh</h3>
+      <p style="margin:0 0 4px">Set at intensity 2 for the whole life. <b>Not felt</b>: these are weights for choosing, not feelings. <span class="tech">header wants · guess[k].value = the row's spread weighted by these</span></p>
+      <table class="wants" id="wantsKey"></table>
+    </section>
+    <section>
+      <h3>Reading the page</h3>
+      <ul>
+        <li><b>Surprise</b> is how unexpected the answer was, above its usual: 0 is usual, below 0 is less unexpected than usual. Not good or bad, so it has one plain colour. <span class="tech">field sting[0], the recorder's name: −ln(pAnswer) − its running mean (keep 15/16)</span></li>
+        <li><b>Fit</b> (not fitness) is how close its guess is to what a fruit really does now. The world's class picks which guess is drawn; the being cannot see that class. Up means it fits the world better, not that it is better. It also reads its own energy and health, so a trail can move while the world stays the same. No non-learning comparison is drawn, so a climb here is one life's, not proof that beings learn.</li>
+        <li><b>Gold burst</b>: its guess for a fruit that changed class passes half for the first time this season. Celebrating that crossing, and rooting for the beings, are the project owner's asks. The half line is the owner's value choice (default until ruled). It never grades anyone, and crossings in different valleys are not a race: each valley and fruit differs.</li>
+        <li><b>Not sensed</b> tiles hold no number. The value sits in the world band right under each one.</li>
+        <li><b>Pain</b>: no felt-pain channel exists and none is drawn. The answers it gets back (fed, poisoned, fainted, the starving flag) are words for events it is told about, not feelings. Why it went down, and the engine's numbers (gain, cost, V), are the world's. Felt pain is a higher-self choice, never a setting (the project owner's ruling).</li>
+        <li><b>Intensity</b> is a world number that only goes down (2, then 1 after a loop-break). The weights stay as set at intensity 2.</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+
+const ACTS = ['EAT', 'PASS', 'REST'];
+const FRUIT = ['', 'a', 'b', 'c'];
+const WORD = { FED: 'fed', PLAIN: 'plain, nothing happened', TOXIC: 'poisoned', COLLAPSE: 'fainted', OK: 'ok, passed', RESTED: 'rested', ERR_EMPTY: 'nothing there to eat', ERR_FULL: 'health already full', ERR_SPENT: 'no energy to rest', ERR_DOWN: 'down, cannot act' };
+const GROUP = { FED: 'fed', PLAIN: 'plain', TOXIC: 'poison', COLLAPSE: 'faint-c', OK: 'fine', RESTED: 'fine', ERR_EMPTY: 'refused', ERR_FULL: 'refused', ERR_SPENT: 'refused', ERR_DOWN: 'down' };
+const CLASS_WORD = { NOURISH: 'feeds', PLAIN: 'does nothing', TOXIC: 'poisons' };
+const CLASS_GROUP = { NOURISH: 'fed', PLAIN: 'plain', TOXIC: 'poison' };
+const LEVEL = 0.5;      // the crossing level: the owner's value choice (LENS_BRIEF §3), the default until ruled
+const PRACTICE = 14;    // Guess mode: practice ticks before the turn, not scored
+const SCORED = 80;      // Guess mode: scored ticks from the first tick under the new table
+const SETTLE_RUN = 8;   // watch rule: 8 eats of a fruit in a row at pAnswer >= 0.5 (LENS_BRIEF §6)
+const base = n => n.replace('/1', '');
+
+let H = null, rows = [], T0 = 0, T1 = 0, ix = null, inForce = [], turns = [], flips = [], settle = [], cards = [];
+let cur = 0, prev = -1, mode = 'watch', timer = null, colors = {};
+const G = { v: 3, phase: 'idle', calls: [], pred: null, done: false };
+
+// ------------------------------------------------------------------ data
+async function listFiles() {
+  const files = await (await fetch('/thoughts/')).json();
+  const sel = $('#file'); sel.innerHTML = '';
+  files.forEach(f => sel.append(new Option(f, f)));
+  if (files.length) await loadFile(files[0]);
+  else $('#sub').textContent = 'No thought files in mind/runs/thoughts/.';
+}
+async function loadFile(name) {
+  const text = await (await fetch('/thoughts/' + encodeURIComponent(name))).text();
+  const lines = text.trim().split('\n');
+  H = JSON.parse(lines[0]); rows = lines.slice(1).map(l => JSON.parse(l));
+  T0 = rows[0].t; T1 = rows[rows.length - 1].t;
+  ix = name => H.answers.indexOf(name);
+  // the row's season is read after the tick's step; the season in force during tick t is the previous row's
+  inForce = rows.map((r, i) => (i ? rows[i - 1].season : r.season));
+  turns = []; for (let i = 1; i < rows.length; i++) if (inForce[i] !== inForce[i - 1]) turns.push(i);
+  computeFlips(); computeSettle();
+  stopPlay(); G.phase = 'idle'; G.calls = []; G.pred = null; G.done = false;
+  buildCards(); buildKeys(); setMode('watch');
+  $('#scrub').max = rows.length - 1;
+  $('#sub').textContent = `One life (arm ${H.arm}, model seed ${H.seed}, world ${H.worldSeed}), ticks ${T0} to ${T1}: four beings, one per valley. Each tick it senses its energy and health in bands and the fruit in front of it, guesses what eating, passing or resting will bring, chooses, and gets an answer. The world changes the fruit's rules each season and does not tell them.`;
+  $('#foot').innerHTML = '';
+  [`<b>What this is:</b> a replay of one recorded life from the thought recorder (${H.thoughts}), ${H.sample || 'ticks ' + H.from + '–' + H.to}. World ${H.worldSeed} is a development world, not a scored one, and replaying a life to draw it tunes nothing.`,
+   `<b>What it is not:</b> one life shows what these beings did here; that beings relearn in general is untested. No frozen or non-learning arm is drawn beside it.`,
+   `<b>Not drawn</b> (raw drawer only): guess[k].off (mass outside the 14 answers), sting[1] and sting[2] (the recorder's "relief" terms: the rung-0 aux head's surprise minus the main head's). The mind has three rungs (every token, every tick, every 4 ticks); this record holds the tick rung only, so only that rung is drawn.`,
+   `<span class="tech">record ${H.trunk} · script ${H.script.slice(0, 12)}… · chain ${H.chain.slice(0, 12)}…</span>`].forEach(h => { const p = el('p'); p.innerHTML = h; $('#foot').append(p); });
+  go(Math.max(0, (turns[0] ?? 40) - 40));
+}
+function fit(c) {
+  const p = c.guess[0].p, k = c.world.kindClass;
+  if (c.sees.down || !c.sees.item || !k) return null;
+  return k === 'NOURISH' ? p[ix('FED')] : k === 'PLAIN' ? p[ix('PLAIN')] : p[ix('TOXIC')] + p[ix('COLLAPSE')];
+}
+function computeFlips() {
+  flips = [];
+  turns.forEach((ti, n) => {
+    const end = turns[n + 1] ?? rows.length, start = n ? turns[n - 1] : 0;
+    for (let v = 0; v < 4; v++) for (let f = 1; f <= 3; f++) {
+      let from = null, to = null, first = null, cross = null;
+      for (let i = start; i < ti; i++) { const c = rows[i].chars[v]; if (!c.sees.down && c.sees.item === f) from = c.world.kindClass; }
+      for (let i = ti; i < end; i++) {
+        const c = rows[i].chars[v]; if (c.sees.down || c.sees.item !== f) continue;
+        if (to === null) { to = c.world.kindClass; first = i; }
+        if (cross === null && fit(c) >= LEVEL) cross = i;
+      }
+      if (from && to && from !== to) flips.push({ v, f, ti, from, to, first, cross });
+    }
+  });
+}
+function computeSettle() {
+  settle = [0, 1, 2, 3].map(v => {
+    if (!turns.length) return null;
+    let run = 0;
+    for (let i = turns[0]; i < (turns[1] ?? rows.length); i++) {
+      const c = rows[i].chars[v];
+      if (c.sees.down || !c.sees.item || c.act !== 'EAT') continue;
+      if (c.pAnswer >= 0.5) { if (++run === SETTLE_RUN) return i; } else run = 0;
+    }
+    return -1; // not in the window
+  });
+}
+
+// ------------------------------------------------------------------ build
+function buildCards() {
+  const box = $('#cards'); box.innerHTML = ''; cards = [];
+  for (let v = 0; v < 4; v++) {
+    const k = el('article', 'card'); k.dataset.v = v;
+    k.innerHTML = `
+      <header><h2>Valley ${v + 1}</h2><span class="tech tk"></span></header>
+      <div class="sec">
+        <div class="lh"><span>It senses</span><span class="tech">sees · pSeen · expected</span></div>
+        <div class="senses">
+          <div class="meter"><span class="lab">its sense of its energy <span class="tech">band</span></span><span class="pips pe"></span></div>
+          <div class="meter"><span class="lab">its sense of its health <span class="tech">band</span></span><span class="pips ph"></span></div>
+          <div class="fruit"><span class="disc"></span><span class="lab flab"></span></div>
+        </div>
+        <div class="downmsg">Down: it senses it is down. It cannot act until it is up.</div>
+        <div class="expect"></div>
+        <div class="expect lasttime"></div>
+      </div>
+      <div class="sec guesses">
+        <div class="lh"><span>It guesses what each choice will bring</span><span class="tech">guess[k].p · value · act · explore</span></div>
+        ${ACTS.map(a => `<div class="g" data-a="${a}"><span class="act">${a}</span><span class="sbar"></span><span class="top"></span><span class="w"><span class="wv"></span><span class="die">⚄ random pick</span></span></div>`).join('')}
+      </div>
+      <div class="sec came">
+        <div class="lh"><span>What came back</span><span class="tech">answer · starving · pAnswer · surprise term</span></div>
+        <div class="now">
+          <div class="ans"></div>
+          <div class="sbar2"><span class="zero"></span><span class="fill"></span><span class="clip"></span></div>
+          <div class="slab"><span class="sv"></span><span>← less unexpected than usual · more unexpected →</span></div>
+        </div>
+        <canvas class="spark" title="its surprise over the window (clipped at ±4)"></canvas>
+      </div>
+      <div class="sec">
+        <div class="lh"><span>Not sensed</span><span class="tech">no field: where its senses end</span></div>
+        <div class="grid6">${['exact energy', 'exact health', 'what this fruit does', 'season', 'intensity', 'why it went down'].map(t => `<div class="blank"><em>${t}</em><span class="ns">not sensed</span></div>`).join('')}</div>
+      </div>
+      <div class="sec world">
+        <div class="lh"><span>The world: the being cannot see this band</span><span class="tech">world.*</span></div>
+        <div class="wnow">
+          <div class="grid6 wcells"></div>
+          <div class="engine"></div>
+        </div>
+        <div class="fitwrap">
+          <div class="lh" style="margin:0"><span>How close its guess is to what each fruit really does (fit)</span><span class="tech">its guess[EAT].p, at the world's answer</span></div>
+          <canvas class="trail" title="one lane per fruit; a dot on each tick it saw that fruit; height = its chance for what the fruit really does now; dashed line = half"></canvas>
+          <div class="cap">Its own guess, measured against the world. Up = closer to what the world does (fit, not fitness, not worth). Dots only on ticks it saw that fruit. The world's class picks which guess is drawn.</div>
+          <div class="flips"></div>
+          <div class="cheer"></div>
+        </div>
+      </div>
+      <details class="raw"><summary>Every field this tick</summary><pre></pre></details>`;
+    box.append(k);
+    const q = s => k.querySelector(s);
+    const pips = s => { const p = q(s); for (let j = 0; j < 4; j++) p.append(el('i')); return p; };
+    const c = { k, q, pe: pips('.pe'), ph: pips('.ph'), disc: q('.disc'), flab: q('.flab'), expect: q('.expect'), tk: q('.tk'),
+      g: [...k.querySelectorAll('.g')], guesses: q('.guesses'), now: q('.now'), ans: q('.ans'), fill: q('.fill'), clip: q('.clip'), sv: q('.sv'),
+      spark: q('.spark'), wnow: q('.wnow'), wcells: q('.wcells'), engine: q('.engine'), trail: q('.trail'), flips: q('.flips'), cheer: q('.cheer'),
+      fitwrap: q('.fitwrap'), raw: q('details.raw'), pre: q('pre'), lasttime: q('.lasttime') };
+    c.raw.addEventListener('toggle', () => render());
+    cards.push(c);
+  }
+}
+function buildKeys() {
+  const groups = [['fed', 'FED', 'fed'], ['plain', 'PLAIN', 'plain, nothing happened'], ['poison', 'TOXIC', 'poisoned'], ['faint-c', 'COLLAPSE', 'fainted'], ['fine', 'OK · RESTED', 'passed or rested'], ['refused', 'ERR_EMPTY · ERR_FULL · ERR_SPENT', 'refused: nothing to eat, health full, no energy'], ['down', 'ERR_DOWN', 'down, cannot act']];
+  $('#ansKey').innerHTML = groups.map(([g, n, w]) => `<div class="keyrow"><i class="sw" style="background:var(--${g})"></i><span>${w} <span class="tech">${n}</span></span></div>`).join('') +
+    `<div class="keyrow"><span class="tech">"/1": the answer came with the starving flag (part of the answer it receives)</span></div>`;
+  $('#wantsKey').innerHTML = H.answers.map((a, i) => `<tr><td class="tech">${a}</td><td>${WORD[base(a)]}${a.endsWith('/1') ? ', starving' : ''}</td><td><b>${H.wants[i] > 0 ? '+' : ''}${H.wants[i]}</b></td></tr>`).join('');
+}
+
+// ------------------------------------------------------------------ format
+const pct = p => { const x = p * 100; if (x === 0) return '0%'; if (x >= 99.5 && x < 100) return '>99%'; if (x < 0.01) return x.toFixed(3) + '%'; if (x < 1) return x.toFixed(2) + '%'; if (x < 10) return x.toFixed(1) + '%'; return Math.round(x) + '%'; };
+const sgn = (x, d = 2) => (x > 0 ? '+' : x < 0 ? '−' : '') + Math.abs(x).toFixed(d);
+const obsWords = o => (o.down ? 'down' : `fruit ${FRUIT[o.item] || 'none'} · energy ${o.eBand} · health ${o.hBand}`);
+const ansName = c => c.answer + (c.starving ? '/1' : '');
+const DID = { EAT: 'it ate', PASS: 'it passed', REST: 'it rested' };
+const GOT = { FED: 'fed', PLAIN: 'nothing happened', TOXIC: 'poisoned', COLLAPSE: 'fainted', OK: 'ok', RESTED: 'rested', ERR_EMPTY: 'nothing there to eat', ERR_FULL: 'health already full', ERR_SPENT: 'no energy to rest', ERR_DOWN: 'down' };
+function lastTime(v, i, item) {
+  // its own history: the last earlier tick in this file with the same sight of fruit, the act and the answer it got
+  for (let j = i - 1; j >= 0; j--) { const c = rows[j].chars[v]; if (!c.sees.down && c.sees.item === item) return `Last time ${item ? 'it saw fruit ' + FRUIT[item] : 'with no fruit in view'} (tick ${rows[j].t}): ${DID[c.act]} → ${GOT[c.answer]}${c.starving ? ', starving' : ''}.`; }
+  return `No earlier tick in this file with ${item ? 'fruit ' + FRUIT[item] : 'no fruit'} in view.`;
+}
+
+// ------------------------------------------------------------------ render
+function covered(v) { return mode === 'guess' && v === G.v && G.phase === 'call'; }
+function render() {
+  if (!rows.length) return;
+  const r = rows[cur];
+  $('#tickno').textContent = `tick ${r.t}`;
+  $('#scrub').value = cur;
+  renderSeason(mode === 'guess' && G.phase === 'call' ? Math.max(0, cur - 1) : cur, mode === 'guess' && G.phase === 'call');
+  cards.forEach((c, v) => renderCard(c, v));
+  drawMoments();
+  prev = cur;
+}
+function renderSeason(i, stale) {
+  const s = inForce[i], t = rows[i].t, last = turns.filter(ti => ti <= i).pop();
+  const since = last !== undefined ? t - rows[last].t : null;
+  $('#season').innerHTML = `<span class="who">The world${stale ? ' · as of the last revealed tick' : ''}</span>` +
+    `<span><b>Season ${s}</b> in force</span>` +
+    (since === null ? `<span>no turn yet in this window${turns.length ? ` (new fruit rules apply from tick ${rows[turns[0]].t})` : ''}</span>`
+      : `<span>the season turned <b>${since}</b> tick${since === 1 ? '' : 's'} ago (new fruit rules from tick ${rows[last].t})</span><span><b>The beings were not told.</b> Their surprise shows where answers stopped matching their guesses.</span>`) +
+    `<span class="tech">season of the previous row · the row's own season is read after its tick</span>`;
+}
+function renderCard(c, v) {
+  const r = rows[cur], ch = r.chars[v], cov = covered(v);
+  const upto = cov ? cur - 1 : cur;
+  c.k.style.display = mode === 'guess' && v !== G.v ? 'none' : '';
+  c.tk.textContent = `tick ${r.t}`;
+  c.k.classList.toggle('isdown', !!ch.sees.down);
+  // it senses
+  if (!ch.sees.down) {
+    [...c.pe.children].forEach((p, j) => p.classList.toggle('lit', j < ch.sees.eBand));
+    [...c.ph.children].forEach((p, j) => p.classList.toggle('lit', j < ch.sees.hBand));
+    c.pe.title = `energy band ${ch.sees.eBand} of 0–4 (sees.eBand)`; c.ph.title = `health band ${ch.sees.hBand} of 0–4 (sees.hBand)`;
+    c.disc.textContent = FRUIT[ch.sees.item] || '–'; c.disc.classList.toggle('none', !ch.sees.item);
+    c.flab.textContent = ch.sees.item ? 'fruit in front of it (it knows the letter, not what it does)' : 'no fruit in view';
+  }
+  c.expect.textContent = `It gave this sight ${pct(ch.pSeen)}. It expected: ${obsWords(ch.expected)} (${pct(ch.pExpected)}).`;
+  c.lasttime.textContent = ch.sees.down ? '' : lastTime(v, cur, ch.sees.item);
+  // it guesses
+  c.guesses.classList.toggle('covered', cov);
+  ch.guess.forEach((g, k) => {
+    const row = c.g[k], bar = row.querySelector('.sbar');
+    bar.innerHTML = '';
+    let best = 0; g.p.forEach((p, j) => { if (p > g.p[best]) best = j; });
+    g.p.forEach((p, j) => { if (p < 0.002) return; const s = el('span'); s.style.width = (p * 100) + '%'; s.style.background = `var(--${GROUP[base(H.answers[j])]})`; s.title = `${H.answers[j]}: ${pct(p)}`; bar.append(s); });
+    row.querySelector('.top').textContent = ch.sees.down ? 'no choice while down' : `most likely: ${WORD[base(H.answers[best])]} ${pct(g.p[best])}`;
+    row.querySelector('.wv').textContent = `weighs ${sgn(g.value)} (set at intensity 2, not felt)`;
+    // while down the act is a refused placeholder, so no row is outlined
+    row.classList.toggle('chosen', !ch.sees.down && ch.act === ACTS[k]);
+    row.classList.toggle('explore', !!ch.explore);
+  });
+  // what came back
+  c.now.classList.toggle('covered', cov);
+  const an = ansName(ch);
+  c.ans.innerHTML = `<b style="color:var(--${GROUP[ch.answer]})">${WORD[ch.answer]}</b>${ch.starving ? ' · <b>starving</b>' : ''} <span class="tech">${an}</span> · it had been <b>${pct(ch.pAnswer)}</b> sure of that`;
+  const s = ch.sting[0], cl = Math.max(-4, Math.min(4, s)), half = 50 * Math.abs(cl) / 4;
+  c.fill.style.left = (cl >= 0 ? 50 : 50 - half) + '%'; c.fill.style.width = half + '%';
+  c.fill.style.background = s >= 0 ? 'var(--hot)' : 'var(--cool)';
+  c.clip.textContent = Math.abs(s) > 4 ? '▶' : ''; c.clip.style.right = s > 4 ? '1px' : ''; c.clip.style.left = s < -4 ? '1px' : '';
+  if (s < -4) c.clip.textContent = '◀';
+  c.sv.textContent = `surprise ${sgn(s)}${Math.abs(s) > 4 ? ' (bar clipped at ±4)' : ''} · 0 = its usual`;
+  drawSpark(c.spark, v, upto);
+  // the world
+  c.wnow.classList.toggle('covered', cov);
+  const w = ch.world;
+  const cell = (label, value, extra = '') => `<div class="wc"><span>${label}</span><span class="v">${value}</span>${extra}</div>`;
+  const mini = (x, m) => `<span class="mini"><span style="width:${100 * x / m}%"></span></span>`;
+  const turnI = turns.filter(ti => ti <= cur).pop();
+  c.wcells.innerHTML =
+    cell('energy', `${w.E}<span class="tech"> /15</span>`, mini(w.E, 15)) +
+    cell('health', `${w.H}<span class="tech"> /15</span>`, mini(w.H, 15)) +
+    cell('this fruit', w.kindClass ? `<span class="chip" style="background:var(--${CLASS_GROUP[w.kindClass]})">${CLASS_WORD[w.kindClass]}</span>` : (ch.sees.down ? '—' : 'no fruit'), w.kindClass ? `<span class="tech">${w.kindClass}</span>` : '') +
+    cell('season', `${inForce[cur]}`, turnI !== undefined ? `<span class="tech">turned ${r.t - rows[turnI].t} ago</span>` : '') +
+    cell('intensity', `${w.ellAfter}`, `<span class="tech">only goes down · loop-breaks ${w.loopBreaksAfter}</span>`) +
+    cell('why down', w.cause ? (w.cause === 'toxin' ? 'poison' : w.cause) : '—', w.cause ? `<span class="tech">cause ${w.cause}</span>` : '');
+  c.engine.innerHTML = `Engine, the world's own numbers, not felt: gain ${w.gain} · cost ${w.pain} <span class="tech">world.pain</span> · V ${w.V}`;
+  drawTrail(c.trail, v, upto);
+  renderFlips(c, v, upto);
+  // raw drawer
+  c.raw.style.display = cov ? 'none' : '';
+  if (c.raw.open && !cov) {
+    const { world, ...own } = ch;
+    c.pre.textContent = JSON.stringify({ tick: r.t, season_row: r.season, sinceTurn_row: r.sinceTurn, its_own: own, the_worlds: world }, null, 1);
+  }
+}
+function renderFlips(c, v, upto) {
+  // a changed fruit is listed once the world's class for it has been shown on a revealed tick
+  const mine = flips.filter(f => f.v === v && f.first !== null && f.first <= upto);
+  c.flips.innerHTML = mine.map(f => {
+    const last = [...Array(upto + 1).keys()].reverse().find(i => { const ch = rows[i].chars[v]; return i >= f.ti && !ch.sees.down && ch.sees.item === f.f; });
+    const now = fit(rows[last].chars[v]);
+    const crossed = f.cross !== null && f.cross <= upto;
+    return `<div>fruit <b>${FRUIT[f.f]}</b>: ${CLASS_WORD[f.from]} → <b>${CLASS_WORD[f.to]}</b> · fit ${pct(now)} ` +
+      (crossed ? `<span class="star">★ crossed half at tick ${rows[f.cross].t}</span>` : `· in flight`) + `</div>`;
+  }).join('');
+  // the burst plays once when the replay steps onto a crossing; the line under it stays for 24 ticks
+  if (upto < lastBurst[v]) lastBurst[v] = -1;
+  const just = flips.find(f => f.v === v && f.cross !== null && f.cross <= upto && upto - f.cross <= 2 && f.cross > lastBurst[v]);
+  if (just) { lastBurst[v] = just.cross; burst(c, v, just); }
+  const recent = flips.filter(f => f.v === v && f.cross !== null && f.cross <= upto && upto - f.cross <= 24).pop();
+  c.cheer.textContent = recent ? `★ Valley ${v + 1}: its guess for fruit ${FRUIT[recent.f]} now matches what the fruit does.` : '';
+}
+const lastBurst = [-1, -1, -1, -1];
+function burst(c, v, f) {
+  const cv = c.trail, geo = trailGeo(cv);
+  const x = geo.x(rows[f.cross].t), y = geo.y(f.f, fit(rows[f.cross].chars[v]));
+  const b = el('div', 'burst'); b.style.left = x + 'px'; b.style.top = (cv.offsetTop + y) + 'px';
+  for (let j = 0; j < 12; j++) { const i = el('i'); i.style.setProperty('--a', (j * 30) + 'deg'); b.append(i); }
+  c.fitwrap.append(b); setTimeout(() => b.remove(), 1400);
+}
+
+// ------------------------------------------------------------------ canvases
+function readColors() { const cs = getComputedStyle(document.documentElement); ['ink', 'muted', 'faint', 'line', 'world-ink', 'world-line', 'fed', 'plain', 'poison', 'hot', 'cool', 'star', 'faint-c', 'accent'].forEach(k => colors[k] = cs.getPropertyValue('--' + k).trim()); }
+function sized(cv) {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h); return { ctx, w, h };
+}
+function trailGeo(cv) {
+  const w = cv.clientWidth, h = cv.clientHeight, L = 16, R = 6, top = 4, laneH = (h - top - 14) / 3;
+  return { w, h, L, R, laneH, top, x: t => L + (t - T0) / Math.max(1, T1 - T0) * (w - L - R), y: (f, p) => top + (f - 1) * laneH + 3 + (1 - p) * (laneH - 6) };
+}
+function drawTrail(cv, v, upto) {
+  const { ctx } = sized(cv), g = trailGeo(cv);
+  ctx.font = '10px ui-monospace, Consolas, monospace';
+  for (let f = 1; f <= 3; f++) {
+    const y0 = g.top + (f - 1) * g.laneH;
+    ctx.strokeStyle = colors['world-line']; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.strokeRect(g.L, y0 + 1, g.w - g.L - g.R, g.laneH - 2);
+    ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(g.L, g.y(f, LEVEL)); ctx.lineTo(g.w - g.R, g.y(f, LEVEL)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = colors['world-ink']; ctx.fillText(FRUIT[f], 3, y0 + g.laneH / 2 + 3);
+    if (f === 1) { ctx.fillStyle = colors.faint; ctx.fillText('half', g.w - g.R - 26, g.y(f, LEVEL) - 2); }
+  }
+  turns.forEach(ti => { const x = g.x(rows[ti].t) - 0.5; ctx.strokeStyle = colors['world-ink']; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, g.top); ctx.lineTo(x, g.h - 12); ctx.stroke(); ctx.lineWidth = 1; });
+  ctx.fillStyle = colors['world-ink']; ctx.fillText(String(T0), g.L, g.h - 2);
+  turns.forEach(ti => { const t = rows[ti].t; ctx.fillText(`turn ${t}`, g.x(t) - 18, g.h - 2); });
+  ctx.fillText(String(T1), g.w - g.R - 20, g.h - 2);
+  for (let i = 0; i <= upto && i < rows.length; i++) {
+    const ch = rows[i].chars[v], p = fit(ch); if (p === null) continue;
+    ctx.fillStyle = colors[CLASS_GROUP[ch.world.kindClass]];
+    ctx.beginPath(); ctx.arc(g.x(rows[i].t), g.y(ch.sees.item, p), 2.1, 0, 7); ctx.fill();
+  }
+  if (upto >= 0) {
+    const ch = rows[upto].chars[v], p = fit(ch);
+    if (p !== null) {
+      const x = g.x(rows[upto].t), y = g.y(ch.sees.item, p), yTop = g.y(ch.sees.item, 1);
+      ctx.strokeStyle = colors['world-ink']; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, yTop); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 4.2, 0, 7); ctx.stroke();
+    }
+    ctx.strokeStyle = colors.accent; ctx.globalAlpha = .5; const xc = g.x(rows[upto].t); ctx.beginPath(); ctx.moveTo(xc, g.top); ctx.lineTo(xc, g.h - 12); ctx.stroke(); ctx.globalAlpha = 1;
+  }
+  flips.filter(f => f.v === v && f.cross !== null && f.cross <= upto).forEach(f => {
+    const x = g.x(rows[f.cross].t), y = g.y(f.f, fit(rows[f.cross].chars[v]));
+    ctx.fillStyle = colors.star; ctx.font = '13px system-ui'; ctx.fillText('★', x - 5, y - 4); ctx.font = '10px ui-monospace, Consolas, monospace';
+  });
+}
+function drawSpark(cv, v, upto) {
+  const { ctx, w, h } = sized(cv), L = 16, R = 6, lo = -3, hi = 4;
+  const x = t => L + (t - T0) / Math.max(1, T1 - T0) * (w - L - R), y = s => 2 + (hi - Math.max(lo, Math.min(hi, s))) / (hi - lo) * (h - 4);
+  ctx.strokeStyle = colors.line; ctx.beginPath(); ctx.moveTo(L, y(0)); ctx.lineTo(w - R, y(0)); ctx.stroke();
+  ctx.fillStyle = colors.faint; ctx.font = '9px ui-monospace, Consolas, monospace'; ctx.fillText('0', 4, y(0) + 3); ctx.fillText('+4', 0, 9);
+  turns.forEach(ti => { const xx = x(rows[ti].t) - 0.5; ctx.strokeStyle = colors.muted; ctx.beginPath(); ctx.moveTo(xx, 0); ctx.lineTo(xx, h); ctx.stroke(); });
+  ctx.strokeStyle = colors.hot; ctx.lineWidth = 1.2; ctx.beginPath();
+  for (let i = 0; i <= upto && i < rows.length; i++) { const s = rows[i].chars[v].sting[0]; const xx = x(rows[i].t), yy = y(s); i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); }
+  ctx.stroke(); ctx.lineWidth = 1;
+  ctx.fillStyle = colors.hot;
+  for (let i = 0; i <= upto && i < rows.length; i++) { const s = rows[i].chars[v].sting[0]; if (s > hi) { const xx = x(rows[i].t); ctx.beginPath(); ctx.moveTo(xx - 3, 6); ctx.lineTo(xx + 3, 6); ctx.lineTo(xx, 1); ctx.fill(); } }
+}
+function drawMoments() {
+  const cv = $('#moments'); if (mode === 'guess') return;
+  const { ctx, w, h } = sized(cv), x = i => 8 + i / Math.max(1, rows.length - 1) * (w - 16), laneH = h / 4;
+  ctx.fillStyle = colors.line; ctx.fillRect(0, 0, w, h);
+  turns.forEach(ti => { ctx.fillStyle = colors.accent; ctx.fillRect(x(ti) - 1, 0, 2, h); });
+  for (let v = 0; v < 4; v++) {
+    for (let i = 0; i < rows.length; i++) { const c = rows[i].chars[v]; if (c.answer === 'COLLAPSE') { ctx.fillStyle = colors['faint-c']; ctx.fillRect(x(i) - 1.5, v * laneH + 1, 3, laneH - 2); } }
+    flips.filter(f => f.v === v && f.cross !== null).forEach(f => { ctx.fillStyle = colors.star; ctx.beginPath(); ctx.arc(x(f.cross), v * laneH + laneH / 2, 2.6, 0, 7); ctx.fill(); });
+  }
+  ctx.fillStyle = colors.ink; ctx.fillRect(x(cur) - 1, 0, 2, h);
+}
+
+// ------------------------------------------------------------------ playback
+function go(i) { cur = Math.max(0, Math.min(rows.length - 1, i)); render(); }
+function stopPlay() { if (timer) clearInterval(timer); timer = null; $('#play').textContent = 'Play'; }
+function startPlay() { stopPlay(); if (cur >= rows.length - 1) go(0); timer = setInterval(() => { if (cur >= rows.length - 1) return stopPlay(); go(cur + 1); }, 1000 / +$('#speed').value); $('#play').textContent = 'Pause'; }
+function setMode(m) {
+  mode = m; stopPlay();
+  $('#mWatch').classList.toggle('on', m === 'watch'); $('#mGuess').classList.toggle('on', m === 'guess');
+  $('#guess').hidden = m !== 'guess';
+  $('#cards').classList.toggle('solo', m === 'guess');
+  ['#play', '#back', '#fwd', '#speed', '#toTurn', '#scrub'].forEach(s => { $(s).disabled = m === 'guess'; });
+  $('#moments').style.visibility = m === 'guess' ? 'hidden' : 'visible';
+  if (m === 'guess') { G.phase = 'idle'; guessUI(); }
+  render();
+}
+
+// ------------------------------------------------------------------ guess mode (LENS_BRIEF §6)
+const firstTurn = () => turns[0] ?? 0;
+const isScored = i => turns.length && i >= firstTurn() && i < firstTurn() + SCORED && !rows[i].chars[G.v].sees.down;
+function guessStart() {
+  G.v = +$('#gv').value; G.calls = []; G.done = false; G.pred = null; lastBurst.fill(-1);
+  $('#predN').value = ''; $('#predNone').checked = false; $('#gOut').hidden = true; $('#gOut').innerHTML = '';
+  prev = -1; cur = Math.max(0, firstTurn() - PRACTICE); G.phase = 'call'; enterTick(); guessUI();
+}
+function enterTick() {
+  const ch = rows[cur].chars[G.v];
+  if (ch.sees.down) { G.phase = 'shown'; $('#gNote').textContent = 'Down: it has no choice to make this tick, so nothing to call (not counted).'; }
+  else { G.phase = 'call'; $('#gNote').textContent = cur < firstTurn() ? 'Practice tick (not counted). Call what it will do.' : 'You see only what it senses now, and its past. Call, then the rest opens.'; }
+  render(); guessUI();
+}
+function call(a) {
+  if (G.phase !== 'call') return;
+  const ch = rows[cur].chars[G.v];
+  G.calls.push({ i: cur, call: a, act: ch.act, scored: isScored(cur) });
+  G.phase = 'shown';
+  $('#gNote').textContent = `It did ${ch.act}${ch.explore ? ' (a random pick)' : ''}. Your call: ${a}${a === ch.act ? ', the same.' : '. It did otherwise.'}${isScored(cur) ? '' : ' (practice, not counted)'}`;
+  render(); guessUI(); afterReveal();
+}
+function afterReveal() {
+  const endScored = Math.min(rows.length, firstTurn() + SCORED) - 1;
+  if (!G.done && cur >= endScored) { G.done = true; testReadout(); }
+  settleReadout();
+}
+function next() { if (G.phase !== 'shown' || cur >= rows.length - 1) return; go(cur + 1); enterTick(); if (G.phase === 'shown') afterReveal(); }
+function testReadout() {
+  const sc = G.calls.filter(c => c.scored), v = G.v;
+  const hits = sc.filter(c => c.call === c.act).length;
+  const counts = { EAT: 0, PASS: 0, REST: 0 }; sc.forEach(c => counts[c.act]++);
+  const common = Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0];
+  const kCommon = counts[common];
+  let kLast = 0; sc.forEach(c => { const item = rows[c.i].chars[v].sees.item; for (let i = c.i - 1; i >= 0; i--) { const ch = rows[i].chars[v]; if (!ch.sees.down && ch.sees.item === item) { if (ch.act === c.act) kLast++; break; } } });
+  const pass = hits > kCommon;
+  $('#gOut').hidden = false;
+  $('#gOut').innerHTML = `<b>Does this page show its point of view? Valley ${v + 1}.</b> The rule was written before any viewer test, after the designer read this life's sample (LENS_BRIEF §6): your matching calls must outnumber always calling its most common choice. It tests the page; it grades neither you nor the being.<br>` +
+    `Counted ticks: ${sc.length}. Your calls matched what it did on <b>${hits}</b>. Always calling its most common choice (${common}) matches <b>${kCommon}</b>. ` +
+    `The rule for the page was <b>${pass ? 'met' : 'not met'}</b> (it needs more than ${kCommon}; a tie does not meet it).<br>` +
+    `Stronger reading, reported beside the rule: "the same act as the last time the same thing was in view" (that fruit, or no fruit) matches <b>${kLast}</b>; your matches were ${hits > kLast ? 'more' : 'not more'} than that. With this few calls (${sc.length}), one or two hits either way is within noise.` +
+    `<div id="settleOut"></div>`;
+  settleReadout();
+}
+function settleReadout() {
+  const box = $('#settleOut') || (() => { const d = el('div'); d.id = 'settleOut'; $('#gOut').append(d); return d; })();
+  if (!G.pred) { box.innerHTML = ''; return; }
+  const s = settle[G.v], end = cur >= rows.length - 1;
+  if (s === null) return;
+  if (s >= 0 && cur >= s) {
+    const n = rows[s].t - rows[firstTurn()].t, tol = Math.max(10, 0.25 * n);
+    const hit = G.pred.none ? false : Math.abs(G.pred.n - n) <= tol;
+    $('#gOut').hidden = false;
+    box.innerHTML = `<br><b>Surprise prediction</b>: it again foresaw what eating a fruit brings ${n} ticks after the turn (the ${SETTLE_RUN}th eat of a fruit in a row at ≥50% sure, counting eats only, tick ${rows[s].t}). You said ${G.pred.none ? 'not by the end' : G.pred.n}. ${hit ? 'Within' : 'Outside'} the rule (±${+tol.toFixed(1)} ticks: 10 or 25%, whichever is wider).`;
+  } else if (s < 0 && end) {
+    $('#gOut').hidden = false;
+    box.innerHTML = `<br><b>Surprise prediction</b>: the rule did not fire by tick ${T1}. You said ${G.pred.none ? 'not by the end: within the rule' : G.pred.n + ': outside the rule'}.`;
+  }
+}
+function guessUI() {
+  const started = G.phase !== 'idle';
+  $('#gStartT').textContent = rows.length ? rows[Math.max(0, firstTurn() - PRACTICE)].t : '–';
+  document.querySelectorAll('#callRow button[data-call]').forEach(b => { b.disabled = G.phase !== 'call'; });
+  $('#gNext').disabled = !(started && G.phase === 'shown' && cur < rows.length - 1);
+  $('#callRow').style.display = started ? '' : 'none';
+  const beforeTurn = started && cur < firstTurn();
+  $('#predRow').style.display = started ? '' : 'none';
+  ['#predN', '#predNone', '#predLock'].forEach(s => { $(s).disabled = !beforeTurn || !!G.pred; });
+  $('#predNote').textContent = G.pred ? `locked: ${G.pred.none ? 'not by the end' : G.pred.n + ' ticks'}` : beforeTurn ? 'optional; lock it before tick ' + rows[firstTurn()].t : 'not locked before the turn';
+  const sc = G.calls.filter(c => c.scored).length, total = [...Array(rows.length).keys()].filter(isScored).length;
+  $('#gProg').textContent = started ? (cur < firstTurn() ? `practice · tick ${rows[cur].t}` : `counted calls ${sc} of ${total}`) : 'Pick a valley and start. The world band and its guesses stay covered until you call.';
+}
+
+// ------------------------------------------------------------------ wiring
+$('#file').addEventListener('change', e => loadFile(e.target.value));
+$('#mWatch').onclick = () => setMode('watch');
+$('#mGuess').onclick = () => setMode('guess');
+$('#play').onclick = () => (timer ? stopPlay() : startPlay());
+$('#back').onclick = () => { stopPlay(); go(cur - 1); };
+$('#fwd').onclick = () => { stopPlay(); go(cur + 1); };
+$('#speed').onchange = () => { if (timer) startPlay(); };
+$('#toTurn').onclick = () => { stopPlay(); go((turns[0] ?? 0) - 1); };
+$('#scrub').oninput = e => { stopPlay(); go(+e.target.value); };
+$('#gStart').onclick = guessStart;
+$('#gNext').onclick = next;
+document.querySelectorAll('#callRow button[data-call]').forEach(b => b.onclick = () => call(b.dataset.call));
+$('#predLock').onclick = () => { const none = $('#predNone').checked, n = parseInt($('#predN').value, 10); if (!none && !(n >= 0)) { $('#predNote').textContent = 'enter a number of ticks, or tick "not by the end"'; return; } G.pred = { none, n: none ? null : n }; guessUI(); };
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if (mode === 'watch') { if (e.key === ' ') { e.preventDefault(); timer ? stopPlay() : startPlay(); } if (e.key === 'ArrowRight') go(cur + 1); if (e.key === 'ArrowLeft') go(cur - 1); }
+  else { const k = e.key.toUpperCase(); if (k === 'E') call('EAT'); if (k === 'P') call('PASS'); if (k === 'R') call('REST'); if (e.key === 'Enter' || e.key === 'ArrowRight') next(); }
+});
+window.addEventListener('resize', () => render());
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); render(); });
+readColors();
+listFiles().catch(err => { $('#sub').textContent = 'Could not load the thought files: ' + err.message; });
+</script>
+</body>
+</html>
