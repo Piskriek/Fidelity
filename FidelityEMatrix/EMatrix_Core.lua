@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.3.0"
+local VERSION = "1.4.0"
 
 -- Configuration & Constants
 local COLS = 15
@@ -806,7 +806,7 @@ function CheckIdleCondition()
     local target = waveTargetState and 1.0 or 0.0
     local settlingEye = (pStr <= 0.0) and (smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0)
     -- the world overlay reads the eye and facing from here, so keep the driver alive while it runs
-    local worldOn = ns.World and ns.World.IsEnabled()
+    local worldOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
 
     if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn then
         if not masterFrame:GetScript("OnUpdate") then
@@ -983,6 +983,14 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 Say("EMatrix_World.lua did not load.")
             end
 
+        elseif cmd == "terrain" then
+            if ns.Terrain then
+                ns.Terrain.Command(args, Say)
+                CheckIdleCondition()
+            else
+                Say("EMatrix_Terrain.lua did not load.")
+            end
+
         elseif cmd == "calibrate" then
             -- Moving the cursor right should slide the character right and turn it so you see
             -- more of its side facing you on the right. If either goes the wrong way, flip it.
@@ -1032,6 +1040,10 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             if ns.World then
                 print(string.format("  World overlay: %s, %d actor(s)", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount()))
             end
+            if ns.Terrain then
+                local info = ns.Terrain.Info()
+                print(string.format("  Terrain overlay: %s, %d prop(s), tile %s", ns.Terrain.IsEnabled() and "|cff00ff00ON|r" or "off", info.props or 0, tostring(info.tile)))
+            end
 
         else
             print("|cff00ffcc[Fidelity EMatrix Commands]|r v" .. VERSION)
@@ -1044,6 +1056,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide backdrop <nebula|world|black>|r - Deep background")
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
             print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
+            print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
             print("  |cffffcc00/fide diag|r                        - Client engine probe")
             print("  |cffffcc00/fide scale <0.5..2.5>|r            - Uniform UI scale")
@@ -1067,6 +1080,7 @@ loader:SetScript("OnEvent", function(self, event, addon)
             CreateMatrixGrid()
             Say("v%s initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide help|r.", VERSION)
             if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true); CheckIdleCondition() end
+            if ns.Terrain and FidelityEMatrix_Config.terrainOverlay then ns.Terrain.SetEnabled(true); CheckIdleCondition() end
             self:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then

@@ -109,6 +109,16 @@ local function addPlate(unit, x, y)
 end
 _G.UnitExists = function(unit) if unit == "player" then return true end for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return true end end return false end
 _G.UnitIsUnit = function(a, b) return a == b end
+
+-- Player world state for the terrain overlay (UnitPosition returns y first, then x)
+local playerPos = { x = -8897.0, y = -178.3, instance = 0 } -- at the Northshire Abbey door
+local playerFacing, cameraZoom = 0.0, 10.0
+_G.UnitPosition = function(unit) if unit == "player" then return playerPos.y, playerPos.x, 0, playerPos.instance end return nil end
+_G.GetPlayerFacing = function() return playerFacing end
+_G.GetCameraZoom = function() return cameraZoom end
+function Region:SetModel(asset) if asset == nil then error("Usage: SetModel(asset)") end self.model = asset end
+function Region:SetModelScale(s) self.modelScale = s end
+function Region:SetCamera(i) self.camera = i end
 if PROFILE == "table" then
     _G.CreateVector3D = function(x, y, z) return { x = x, y = y, z = z } end
     _G.CreateColor = function(r, g, b) return { r = r, g = g, b = b } end
@@ -134,9 +144,30 @@ local ns = {}
 local mathChunk = assert(load(MATH_SRC, "@EMatrix_Math.lua"))
 local coreChunk = assert(load(CORE_SRC, "@EMatrix_Core.lua"))
 local worldChunk = assert(load(WORLD_SRC, "@EMatrix_World.lua"))
+local terrainChunk = assert(load(TERRAIN_SRC, "@EMatrix_Terrain.lua"))
 mathChunk("FidelityEMatrix", ns)
+-- A small synthetic tile stands in for the generated EMatrix_Data: flat ground at z = 80 over
+-- Northshire's tile (azeroth:32:48), one tree 20 yd north of the abbey door, one bush 5 yd
+-- east, one tree 150 yd away (outside the draw radius), and the abbey as a WMO 28 yd to the
+-- west (inside the radius, but beside the player, so off-screen when facing north).
+do
+    local heights = {}
+    for i = 1, 129 * 129 do heights[i] = 800 end
+    EMatrix_Data = {
+        ["azeroth:32:48"] = {
+            map = "azeroth", col = 32, row = 48, originX = -8533.333, originY = 0.0, unit = 4.16667, heights = heights,
+            doodads = {
+                { 189929, "world/azeroth/elwynn/passivedoodads/trees/elwynntreecanopy03.m2", -8877.0, -178.3, 80.0, 0.0, 1.0 },
+                { 0, "world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2", -8897.0, -183.3, 80.0, 90.0, 1.0 },
+                { 189929, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2", -8747.0, -178.3, 80.0, 0.0, 1.0 },
+            },
+            wmos = { { 0, "world/wmo/azeroth/buildings/nsabbey/nsabbey.wmo", -8897.0, -150.0, 80.1, 0.0, 1.0 } },
+        },
+    }
+end
 coreChunk("FidelityEMatrix", ns)
 worldChunk("FidelityEMatrix", ns)
+terrainChunk("FidelityEMatrix", ns)
 local M = ns.Math
 
 -- The anonymous loader frame is the one holding an OnEvent script
@@ -403,13 +434,94 @@ test("world overlay: a plate that leaves releases its slot; off hides everything
     for i = #plates, 1, -1 do plates[i] = nil end
 end)
 
+test("terrain: tile lookup, ground height and the player state from UnitPosition", function()
+    local T = ns.Terrain
+    check(T, "EMatrix_Terrain did not export ns.Terrain")
+    local col, row, tile = T.TileFor("azeroth", -8897.0, -178.3)
+    check(col == 32 and row == 48 and tile, string.format("abbey must be on tile 32,48, got %d,%d", col, row))
+    check(near(T.GroundHeight(tile, -8897.0, -178.3), 80.0, 1e-6), "flat synthetic ground must read 80")
+    check(T.GroundHeight(tile, -7000, 0) == nil, "a point outside the tile must give nil")
+    -- a sloped corner: raise one grid node and check the bilinear blend between it and its neighbour
+    tile.heights[1] = 1200 -- node (0,0) at originX, originY: 120 m
+    local mid = T.GroundHeight(tile, tile.originX - tile.unit * 0.5, tile.originY)
+    check(near(mid, 100.0, 1e-6), "halfway between 120 and 80 must be 100, got " .. tostring(mid))
+    tile.heights[1] = 800
+    local ps = T.PlayerState()
+    check(ps and near(ps.x, -8897.0) and near(ps.y, -178.3) and ps.mapName == "azeroth", "PlayerState must map UnitPosition (y, x) to x north / y west")
+end)
+
+test("terrain overlay: nearby placements become props at projected positions; far ones are not drawn", function()
+    local T = ns.Terrain
+    slash("parallax 0.5")
+    slash("terrain on")
+    step(0.6)
+    check(T.IsEnabled(), "terrain overlay did not enable")
+    local info = T.Info()
+    check(info.tile == "azeroth:32:48", "tile " .. tostring(info.tile))
+    check(info.props == 2, "expected 2 props drawn (tree, bush; the abbey beside the player is off-screen), got " .. tostring(info.props))
+    local pool = T._pool
+    local byPath = {}
+    for i = 1, #pool do if pool[i].used then byPath[pool[i].entry[2]] = pool[i] end end
+    local tree = byPath["world/azeroth/elwynn/passivedoodads/trees/elwynntreecanopy03.m2"]
+    local bush = byPath["world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"]
+    check(tree and bush, "tree and bush must be in the pool")
+    check(not byPath["world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2"], "the 150 yd tree must be outside the radius")
+    check(tree.mono.model == "World\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy03.m2" or tree.mono.model == 189929, "model must be loaded by id or path, got " .. tostring(tree.mono.model))
+    -- facing 0 = looking north: the tree 20 yd ahead sits on the centre line, above the bush
+    check(near(tree.mono.points.BOTTOM.x, 960, 1.0), "tree ahead must be on the centre line, x=" .. tostring(tree.mono.points.BOTTOM.x))
+    check(tree.mono.points.BOTTOM.y > bush.mono.points.BOTTOM.y, "the far tree's foot must be higher on screen than the near bush's")
+    check(tree.mono.h < bush.mono.h * 16 / 2.5, "the tree must not be drawn absurdly large relative to the bush")
+    -- the bush is 5 yd to the east (smaller y, since y grows westward): facing north, east is screen right
+    check(bush.mono.points.BOTTOM.x > 960, "a bush to the east must sit right of centre, x=" .. tostring(bush.mono.points.BOTTOM.x))
+    local abbey = byPath["world/wmo/azeroth/buildings/nsabbey/nsabbey.wmo"]
+    check(abbey and not abbey.mono.shown, "the abbey beside the player must be loaded but not drawn")
+    local cam = T._lastCam()
+    check(cam and near(cam.yaw, 0), "camera yaw must follow the facing")
+end)
+
+test("terrain overlay: anaglyph pairs, facing follows the player, off releases everything", function()
+    local T = ns.Terrain
+    slash("stereo anaglyph")
+    step(0.6)
+    local pool = T._pool
+    local any = false
+    for i = 1, #pool do
+        local s = pool[i]
+        if s.used and (s.left.shown or s.mono.shown) then
+            any = true
+            check(not s.mono.shown and s.left.shown and s.right.shown, "anaglyph must show the pair, not the mono model")
+            check(s.right.points.BOTTOM.x > s.left.points.BOTTOM.x, "uncrossed pair: red left of cyan")
+        end
+    end
+    check(any, "no props drawn in anaglyph")
+    slash("stereo off")
+    -- turn the player east: the tree that was ahead is now to the left of the view
+    playerFacing = -math.pi / 2
+    step(0.6)
+    local cam = T._lastCam()
+    check(cam and near(cam.yaw, -math.pi / 2), "camera yaw must follow a changed facing")
+    playerFacing = 0
+    slash("terrain off")
+    slash("spin 0"); slash("parallax 0")
+    step(1.0)
+    check(not T.IsEnabled() and T.Info().props == 0 or not T.IsEnabled(), "terrain still enabled")
+    for i = 1, #pool do
+        local s = pool[i]
+        check(not s.mono.shown and not s.left.shown and not s.right.shown, "a prop is still shown with the overlay off")
+    end
+    check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") == nil, "OnUpdate must detach once the terrain overlay is off")
+    slash("spin 0.5"); slash("parallax 0.5")
+end)
+
 test("every slash command runs without an addon error", function()
     printed = {}
     for _, cmd in ipairs({ "help", "diag", "status", "scene target", "scene player", "spin 1", "parallax 0.5",
         "lens 0.4", "backdrop black", "backdrop nebula", "stereo", "stereo", "stereo", "stereo",
         "stereo delta 0.08", "stereo pixels 6", "stereo mix 0.6", "stereo off", "calibrate", "calibrate side",
         "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
-        "world", "world status", "world off", "world bogus", "bogus" }) do
+        "world", "world status", "world off", "world bogus",
+        "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
+        "terrain backdrop dim", "terrain backdrop none", "terrain off", "terrain bogus", "bogus" }) do
         slash(cmd)
         step(0.05)
     end

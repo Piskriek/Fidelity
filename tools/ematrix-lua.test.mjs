@@ -25,6 +25,7 @@ function runProfile(profile) {
   setGlobal('MATH_SRC', read('FidelityEMatrix/EMatrix_Math.lua'));
   setGlobal('CORE_SRC', read('FidelityEMatrix/EMatrix_Core.lua'));
   setGlobal('WORLD_SRC', read('FidelityEMatrix/EMatrix_World.lua'));
+  setGlobal('TERRAIN_SRC', read('FidelityEMatrix/EMatrix_Terrain.lua'));
   const driver = read('tools/ematrix_headless.lua');
   if (lauxlib.luaL_loadbuffer(L, to_luastring(driver), null, to_luastring('@ematrix_headless.lua')) !== lua.LUA_OK) {
     throw new Error(`driver did not compile: ${lua.lua_tojsstring(L, -1)}`);

@@ -26,7 +26,8 @@
     "wow:audit": "node packages/triad-369/src/wow_adapter.mjs",
     "anticheat:audit": "node packages/triad-369/src/universal_anticheat.mjs",
     "ematrix:test": "node --test tools/ematrix-lua.test.mjs && node tools/test_ematrix_math.mjs",
-    "ematrix:atlas": "node tools/gen_e_atlas.mjs"
+    "ematrix:atlas": "node tools/gen_e_atlas.mjs",
+    "ematrix:mapdata": "node tools/ematrix_mapdata.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"
