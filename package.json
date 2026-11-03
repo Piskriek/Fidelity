@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "triad": "node packages/triad-369/src/cli.mjs",
+    "triad:legacy": "node packages/triad-369/src/triad_cli.mjs",
     "triad:status": "node packages/triad-369/src/cli.mjs status",
     "triad:test": "node --test packages/triad-369/test/cli-bridge.test.mjs packages/triad-369/test/api.test.mjs packages/triad-369/test/serve.test.mjs",
     "triad:api": "node packages/triad-369/src/api.mjs",
