@@ -37,6 +37,12 @@
 | T4 | laptop | first live WoW audit (blocked on the client download) |
 | T5 | owner | decide on skill v9.5 vs the installed v7 |
 
+### Landed after Checkpoint 10 (03 Nov, from Node 2): measured holon status
+- **Every flow now rests on timestamped evidence** (`packages/triad-369/src/evidence.mjs`, new): file age for `density.json` / `status.json` / `tv_loop.json`, a timed SSH read of Sol's `friend.json`, the Apex's own state write, and the awaited SSH push. F31 and F32 were hard-coded `true`; `latency_ms: 42`, `lyapunov_ftle: 0.012` and `zero_synthetic_fillers: true` are gone; four floats and coherence are labelled symbolic / derived. The Apex state and its push to Sol carry `bridge_root`, `flows`, `degraded_flows` and an `evidence` block; the ping reply carries it as `holon`.
+- **`triad -- status`** prints flows n/6, the degraded list and one evidence line per flow (`--json` for the full object). Density bridge: records `last_push` in `density.json`, coherence floor 0.85 → 0, FTLE `null` / `not_measured`.
+- **T1 diagnosed from the code**: under the old rules 4/6 is reachable only when the Apex judges Node 1 down while Sol is up, i.e. its `density.json` was absent or stale at the Apex's bridge root. The density bridge always writes `status: "synchronized"`, so the laptop's Apex is most likely reading a different bridge root than the bridge writes to. The new state names the root and each file's path and age, so `triad -- status` on the laptop now says which. **Deploy**: pull main on the laptop and restart the Apex, and the density bridge too (without it F12 reads "not measured").
+- Tests on Node 2: 74 total, 72 pass, 1 fail (the known Windows serve shutdown, T3), 1 skipped.
+
 ---
 
 ## 03 Nov Checkpoint 9 — SIV Anti-Cheat Remediation (FIX-P1-01..FIX-P2-09) & World of Warcraft Holon Integration
