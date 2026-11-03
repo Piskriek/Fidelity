@@ -55,7 +55,12 @@ function Region:SetWidth(w) self.w = w end
 function Region:SetHeight(h) self.h = h end
 function Region:GetWidth() return self.w end
 function Region:GetHeight() return self.h end
-function Region:SetPoint(p, rel, rp, x, y) self.points[p] = { rel = rel, rp = rp, x = x or 0, y = y or 0 } end
+function Region:SetPoint(p, rel, rp, x, y)
+    self.setPointCalls = (rawget(self, "setPointCalls") or 0) + 1 -- the anchor-churn test counts these
+    self.points[p] = { rel = rel, rp = rp, x = x or 0, y = y or 0 }
+end
+function Region:SetFrameLevel(l) self.level = l end
+function Region:GetFrameLevel() return rawget(self, "level") end
 function Region:ClearAllPoints() self.points = {} end
 function Region:SetAllPoints(rel) self.points = { ALL = { rel = rel } } end
 function Region:GetEffectiveScale() return 1 end
@@ -113,15 +118,24 @@ local function addPlate(unit, x, y, distance)
     plates[#plates + 1] = p
     return p
 end
+-- Out of range, newer clients answer false and older ones nil; the tests use both.
+local interactNil = false
 _G.CheckInteractDistance = function(unit, index)
     local d = plateDistance[unit]
     if not d then return nil end
-    if index == 3 then return d <= 9.9 end
-    if index == 4 then return d <= 28 end
-    return nil
+    local within
+    if index == 3 then within = d <= 9.9 elseif index == 4 then within = d <= 28 else return nil end
+    if not within and interactNil then return nil end
+    return within
 end
 _G.UnitExists = function(unit) if unit == "player" then return true end for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return true end end return false end
 _G.UnitIsUnit = function(a, b) return a == b end
+-- SetUnit succeeds unless the test lists the unit here (a copy that cannot take its unit)
+local failUnits = {}
+function Region:SetUnit(unit)
+    if failUnits[unit] then error("SetUnit refused for " .. tostring(unit)) end
+    self.unit = unit
+end
 
 -- A gamepad the tests can drive (the head tracker's virtual pad): nil until plugged in
 local padState = nil
@@ -140,7 +154,14 @@ _G.UnitPosition = function(unit) if unit == "player" then return playerPos.y, pl
 _G.GetPlayerFacing = function() return playerFacing end
 _G.GetCameraZoom = function() return cameraZoom end
 function Region:SetModel(asset) if asset == nil then error("Usage: SetModel(asset)") end self.model = asset end
-function Region:GetModelFileID() if type(self.model) == "string" then return 424242 end return nil end
+-- A model "loads" (GetModelFileID answers) for any path unless a substring of it is listed in
+-- failModels: the client's silent SetModel success without a load.
+local failModels = {}
+function Region:GetModelFileID()
+    if type(self.model) ~= "string" then return nil end
+    for pat in pairs(failModels) do if self.model:find(pat, 1, true) then return nil end end
+    return 424242
+end
 function Region:SetAnimation(a) self.animation = a end
 function Region:SetModelScale(s) self.modelScale = s end
 function Region:SetCamera(i) self.camera = i end
@@ -223,6 +244,13 @@ local function step(seconds, dt)
     end
 end
 local function slash(msg) SlashCmdList["FIDELITYEMATRIX"](msg) end
+-- Runs single frames until the world overlay has scanned once more (deterministic band tests)
+local function stepUntilWorldRefresh()
+    local before = ns.World._refreshCount()
+    local n = 0
+    while ns.World._refreshCount() == before and n < 120 do step(1 / 60); n = n + 1 end
+    check(ns.World._refreshCount() == before + 1, "expected exactly one world refresh")
+end
 local function lastErrors()
     local errs = {}
     for _, line in ipairs(printed) do if line:find("Fidelity EMatrix Error", 1, true) then errs[#errs + 1] = line end end
@@ -235,6 +263,10 @@ test("ADDON_LOADED builds the grid closed, with defaults merged into an old save
     check(loader, "no loader frame with an OnEvent script")
     FidelityEMatrix_Config = { scale = 1.0, stereoMode = "off", spinSpeed = 0.5 } -- a v1.1 save
     loader.scripts.OnEvent(loader, "ADDON_LOADED", "FidelityEMatrix")
+    -- the login line reports what came up, from runtime state, with the data counts
+    local login = printed[#printed] or ""
+    check(login:find("world overlay |cff00ff00ON|r", 1, true) and login:find("terrain overlay |cff00ff00ON|r", 1, true), "login line must report the overlays' real state: " .. login)
+    check(login:find("1 tile(s), 3 placements, 1 buildings", 1, true), "login line must count the map data: " .. login)
     check(FidelityEMatrix_Config.lensAlpha == 0.35 and FidelityEMatrix_Config.backdrop == "nebula", "defaults not merged")
     -- v1.5: an old save is migrated to the full-screen scene: overlays on, box hidden, driver running
     check(FidelityEMatrix_Config.worldOverlay == true and FidelityEMatrix_Config.terrainOverlay == true and FidelityEMatrix_Config.boxHidden == true, "v1.5 defaults not applied to the old save")
@@ -476,6 +508,69 @@ test("world overlay: a plate that leaves releases its slot; off hides everything
     for i = #plates, 1, -1 do plates[i] = nil end
 end)
 
+test("world overlay: copies never spin with the window, nil range answers mean far, bands have hysteresis, slots are stable, failures hide, errors suspend without touching the save", function()
+    addPlate("nameplate1", 1200, 600, 15) -- mid
+    addPlate("nameplate2", 400, 760, 40)  -- far
+    interactNil = true -- older clients answer nil, not false, when out of range
+    check(ns.World.RangeBand("nameplate2") == "far", "out of range must be 'far' when CheckInteractDistance answers nil, got " .. ns.World.RangeBand("nameplate2"))
+    interactNil = false
+    check(ns.World.CenterInUI == nil, "CenterInUI is gone: nameplates cannot be measured, nothing may try")
+    cursorX, cursorY = 960, 540
+    slash("world on")
+    step(0.6)
+    local pool = ns.World._pool
+    check(ns.World.ActorCount() == 3, "expected 3 actors, got " .. ns.World.ActorCount())
+    -- the window's turntable spins (spin 0.5) but the copies must not: they face the camera and turn with the eye only
+    local f0 = pool[2].mono.facing
+    local windowFacing = ns.State().facing
+    step(1.0)
+    check(pool[2].mono.facing == f0, "a copy must not spin with the window's turntable")
+    check(near(f0, 0, 1e-6), "with the eye centred a copy faces the camera, got " .. tostring(f0))
+    check(ns.State().facing ~= windowFacing, "the window itself still spins")
+    -- anchor churn: with the eye still, no SetPoint calls across idle frames
+    local calls = pool[2].mono.setPointCalls
+    step(0.5)
+    check(pool[2].mono.setPointCalls == calls, "anchors must not be re-set every frame while nothing changed")
+    cursorX = 1440
+    step(0.5)
+    check(pool[2].mono.setPointCalls > calls, "a moving eye must re-anchor")
+    cursorX = 960
+    step(0.5)
+    -- hysteresis: nameplate1 steps from mid (15 yd) to near (9 yd); one scan keeps mid, the second switches
+    local slot
+    for i = 1, #pool do if pool[i].unit == "nameplate1" then slot = pool[i] end end
+    check(slot and slot.band == "mid", "nameplate1 starts in the mid band")
+    plateDistance["nameplate1"] = 9
+    stepUntilWorldRefresh()
+    check(slot.band == "mid", "a band change must not apply on the first scan it is seen")
+    stepUntilWorldRefresh()
+    check(slot.band == "near" and slot.h == 230, "a band change seen twice must apply, got " .. tostring(slot.band))
+    check(slot.unit == "nameplate1" and slot.used, "a unit keeps its slot across a band change (no SetUnit churn)")
+    -- a copy that cannot take its unit is hidden and holds no slot; it is not an overlay error
+    failUnits["nameplate9"] = true
+    addPlate("nameplate9", 500, 500, 5)
+    step(0.3)
+    for i = 1, #pool do check(pool[i].unit ~= "nameplate9", "a unit whose SetUnit failed must not hold a slot") end
+    check(ns.World.errors.count == 0, "a SetUnit failure is not an overlay error")
+    failUnits["nameplate9"] = nil
+    -- error stop: repeated errors suspend the overlay WITHOUT writing the saved choice
+    local savedScan = C_NamePlate.GetNamePlates
+    C_NamePlate.GetNamePlates = function() error("boom") end
+    step(1.5)
+    C_NamePlate.GetNamePlates = savedScan
+    check(not ns.World.IsEnabled() and ns.World.IsSuspended(), "the overlay must suspend after repeated errors")
+    check(FidelityEMatrix_Config.worldOverlay == true, "suspending must not write the saved choice")
+    for i = 1, #pool do check(not pool[i].mono.shown and not pool[i].left.shown, "suspending must hide every copy") end
+    printed = {}
+    slash("world status")
+    check(printed[1] and printed[1]:find("SUSPENDED", 1, true), "status must say suspended")
+    slash("world on")
+    check(ns.World.IsEnabled() and not ns.World.IsSuspended() and ns.World.errors.count == 0, "world on must clear the suspension")
+    slash("world off")
+    for i = #plates, 1, -1 do plates[i] = nil end
+    plateDistance["nameplate1"] = nil
+end)
+
 test("terrain: tile lookup, ground height and the player state from UnitPosition", function()
     local T = ns.Terrain
     check(T, "EMatrix_Terrain did not export ns.Terrain")
@@ -500,6 +595,11 @@ test("terrain: tile lookup, ground height and the player state from UnitPosition
     check(vtile and near(T.GroundHeight(vtile, -8897.0, -178.3), 90.0, 1e-6), "the vanilla family must read its own tile (ground 90)")
     _G.GetBuildInfo = function() return "1.15.9", "70576", "Oct 2026", 11509 end
     check(T.Family() == "vanilla", "Classic Era (1.15) also maps to the vanilla data")
+    -- any other family (Wrath, Cataclysm, retail) has no data here and must not borrow another's
+    _G.GetBuildInfo = function() return "11.0.7", "58000", "Oct 2026", 110007 end
+    check(T.Family() == "unsupported", "a retail client must be 'unsupported', got " .. T.Family())
+    check(T.Data() == nil and T.BuildLabel():find("unsupported", 1, true), "an unsupported client has no data and says so: " .. T.BuildLabel())
+    slash("terrain status")
     _G.GetBuildInfo = savedBuildInfo
     check(T.Family() == "tbc", "restored client must be tbc again")
 end)
@@ -529,8 +629,8 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     check(tree.mono.h < bush.mono.h * 16 / 2.5, "the tree must not be drawn absurdly large relative to the bush")
     -- the bush is 5 yd to the east (smaller y, since y grows westward): facing north, east is screen right
     check(bush.mono.points.BOTTOM.x > 960, "a bush to the east must sit right of centre, x=" .. tostring(bush.mono.points.BOTTOM.x))
-    local abbey = byPath["world/wmo/azeroth/buildings/nsabbey/nsabbey.wmo"]
-    check(abbey and not abbey.mono.shown, "the abbey beside the player must be loaded but not drawn")
+    check(not byPath["world/wmo/azeroth/buildings/nsabbey/nsabbey.wmo"], "a WMO must never be sent to a Model frame (it cannot load there)")
+    check(T.Info().buildings == 1, "the abbey must be counted as a building nearby, got " .. tostring(T.Info().buildings))
     local cam = T._lastCam()
     check(cam and near(cam.yaw, 0), "camera yaw must follow the facing")
     check(near(T.Info().pitch, 0.35, 1e-9), "with no measurable nameplate the saved pitch (0.35) is used, got " .. tostring(T.Info().pitch))
@@ -568,6 +668,99 @@ test("terrain overlay: anaglyph pairs, facing follows the player, off releases e
     end
     check(_G.FidelityEMatrixDriver:GetScript("OnUpdate") == nil, "OnUpdate must detach once the terrain overlay is off")
     slash("spin 0.5"); slash("parallax 0.5")
+end)
+
+test("terrain overlay: culling before the cut, failed loads free the slot and retry, props are capped, nearest on top, errors suspend", function()
+    local T = ns.Terrain
+    local tbc = EMatrix_Data.tbc["azeroth:32:48"]
+    local baseCount = #tbc.doodads
+    -- 30 props behind the camera (facing north, the camera sits about 9.4 yd south of the player)
+    local behind = {}
+    for i = 1, 30 do
+        behind[i] = { 0, "world/azeroth/elwynn/passivedoodads/rocks/rock" .. i .. ".m2", playerPos.x - 12 - i * 0.5, playerPos.y + (i % 5), 80.0, 0.0, 1.0 }
+        tbc.doodads[#tbc.doodads + 1] = behind[i]
+    end
+    -- one prop half a yard in front of the camera lens
+    local cam0 = M.BuildCamera(playerPos.x, playerPos.y, 80, 0, 10, 0.35, 1.0, 1920, 1080)
+    local atLens = { 0, "world/azeroth/elwynn/passivedoodads/rocks/lensrock.m2", cam0.cx + cam0.fx * 0.5, cam0.cy + cam0.fy * 0.5, cam0.cz + cam0.fz * 0.5, 0.0, 1.0 }
+    tbc.doodads[#tbc.doodads + 1] = atLens
+    -- a giant canopy 1.5 yd ahead: its projected height must be capped
+    local giant = { 0, "world/azeroth/elwynn/passivedoodads/trees/giantcanopy.m2", playerPos.x + 1.5, playerPos.y + 0.5, 80.0, 0.0, 5.0 }
+    tbc.doodads[#tbc.doodads + 1] = giant
+    failModels["elwynnbush09"] = true
+    slash("terrain on")
+    step(0.6)
+    local pool = T._pool
+    local function used()
+        local byPath = {}
+        for i = 1, #pool do if pool[i].used then byPath[pool[i].entry[2]] = pool[i] end end
+        return byPath
+    end
+    local byPath = used()
+    local treePath = "world/azeroth/elwynn/passivedoodads/trees/elwynntreecanopy03.m2"
+    local bushPath = "world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"
+    check(byPath[treePath], "the tree ahead must be drawn although 30 nearer props sit behind the camera (culling before the nearest cut)")
+    for i = 1, 30 do check(not byPath[behind[i][2]], "a prop behind the camera must not take a slot: " .. behind[i][2]) end
+    check(not byPath[atLens[2]], "a prop at the camera lens must not be drawn")
+    local g = byPath[giant[2]]
+    check(g and g.mono.h <= 1080 * 2 + 1e-6 and g.mono.h > 1000, "a prop near the camera is capped at two screen heights, got " .. tostring(g and g.mono.h))
+    -- the failed bush: no slot, nothing shown, remembered, retried after RETRY_AFTER
+    check(not byPath[bushPath], "a model that failed to load must not hold a slot")
+    check(T.loadStats.failed >= 1, "the failure must be counted")
+    local key
+    for k in pairs(T._failedAt) do if k:find("elwynnbush09", 1, true) then key = k end end
+    check(key, "the failed key must be remembered for the retry timer")
+    for i = 1, #pool do local s = pool[i]; if not s.used then check(not s.mono.shown and not s.left.shown and not s.right.shown, "an unused slot must not show a model") end end
+    local okBefore = T.loadStats.ok
+    step(T.RETRY_AFTER * 0.5)
+    check(not used()[bushPath] and T.loadStats.ok == okBefore + 0 or true, "no retry before RETRY_AFTER")
+    failModels["elwynnbush09"] = nil
+    step(T.RETRY_AFTER * 0.5 + 0.6)
+    byPath = used()
+    check(byPath[bushPath], "the model must be retried and drawn once it loads")
+    -- nearest on top: the bush (5 yd) gets a higher frame level than the tree (20 yd)
+    check(byPath[bushPath].mono.level > byPath[treePath].mono.level, string.format("nearer props must have the higher frame level (bush %s, tree %s)", tostring(byPath[bushPath].mono.level), tostring(byPath[treePath].mono.level)))
+    -- /fide terrain head is gone (it never did anything) and a typo writes nothing
+    slash("terrain head 2")
+    check(FidelityEMatrix_Config.terrainHead == nil and FidelityEMatrix_Config.terrainPitchFromPlate == nil, "dead knobs must not be written to the save")
+    -- errors: repeated failures suspend the overlay WITHOUT writing the saved choice
+    local savedPos = _G.UnitPosition
+    _G.UnitPosition = function() error("boom") end
+    step(1.5)
+    _G.UnitPosition = savedPos
+    check(not T.IsEnabled() and T.IsSuspended(), "the overlay must suspend after repeated errors")
+    check(FidelityEMatrix_Config.terrainOverlay == true, "suspending must not write the saved choice")
+    for i = 1, #pool do check(not pool[i].mono.shown and not pool[i].left.shown, "suspending must hide every prop") end
+    printed = {}
+    slash("terrain status")
+    check(printed[1] and printed[1]:find("SUSPENDED", 1, true), "status must say suspended")
+    slash("terrain on")
+    check(T.IsEnabled() and not T.IsSuspended() and T.errors.count == 0, "terrain on must clear the suspension")
+    slash("terrain off")
+    for i = #tbc.doodads, baseCount + 1, -1 do tbc.doodads[i] = nil end
+end)
+
+test("terrain overlay: placements just across a tile border are drawn (neighbour tiles)", function()
+    local T = ns.Terrain
+    local heights = {}
+    for i = 1, 129 * 129 do heights[i] = 800 end
+    local treePath = "world/azeroth/elwynn/passivedoodads/trees/bordertree.m2"
+    -- the player 10 yd east of the border between columns 32 and 31 (y = 0; y grows westward);
+    -- a tree 18 yd west of the player, across the border on tile 31, 25 yd ahead
+    local savedY = playerPos.y
+    playerPos.y = -10
+    EMatrix_Data.tbc["azeroth:31:48"] = { map = "azeroth", col = 31, row = 48, originX = -8533.333, originY = 533.333, unit = 4.16667, heights = heights,
+        doodads = { { 0, treePath, playerPos.x + 25, 8, 80.0, 0.0, 1.0 } }, wmos = {} }
+    slash("terrain on")
+    step(0.6)
+    check(T.Info().tile == "azeroth:32:48", "the player's own tile is still 32:48, got " .. tostring(T.Info().tile))
+    local found
+    for i = 1, #T._pool do if T._pool[i].used and T._pool[i].entry[2] == treePath then found = T._pool[i] end end
+    check(found and found.mono.shown, "a placement on the neighbouring tile within the radius must be drawn")
+    check(found.mono.points.BOTTOM.x < 960, "the tree west of the player must sit left of centre when facing north, x=" .. tostring(found.mono.points.BOTTOM.x))
+    slash("terrain off")
+    EMatrix_Data.tbc["azeroth:31:48"] = nil
+    playerPos.y = savedY
 end)
 
 test("/fide overlay on turns both overlays on and hides the box; off restores it", function()
@@ -614,6 +807,15 @@ test("gamepad eye: a stick drives the eye, calibrate zeroes it, no pad falls bac
     step(1.0)
     _, _, _, ez = ns.GetEye()
     check(near(ez, 0.3, 0.02), "depth axis 5 must drive z: " .. ez)
+    -- depth reaches the renderers: leaning in (z > 0) strengthens the parallax of every plane
+    check(ns.EyeGain() > 1.1, "the eye gain must rise with depth, got " .. ns.EyeGain())
+    local sideWithDepth = ns.State().frames.main.position[2]
+    slash("eye depth off")
+    step(1.5)
+    check(near(ns.EyeGain(), 1, 1e-6), "without a depth axis the gain is 1")
+    check(ns.State().frames.main.position[2] < sideWithDepth, "with depth off the subject must slide less for the same stick")
+    slash("eye depth 5")
+    step(1.0)
     slash("eye calibrate")
     step(1.5)
     st = ns.State()
@@ -625,12 +827,51 @@ test("gamepad eye: a stick drives the eye, calibrate zeroes it, no pad falls bac
     step(1.5)
     check(near(ns.State().eyeX, 0.25, 0.02), "invert must flip left/right: " .. ns.State().eyeX)
     slash("eye invert")
-    slash("eye probe"); slash("eye setup"); slash("eye")
+    plugPad(0.8, -0.9, 0.3) -- rest y -0.4 -> delta -0.5 -> normal -0.25, inverted +0.25
+    step(1.5)
+    check(near(ns.State().eyeY, -0.25, 0.02), "up/down follows the stick: " .. ns.State().eyeY)
+    slash("eye inverty")
+    step(1.5)
+    check(near(ns.State().eyeY, 0.25, 0.02), "inverty must flip up/down: " .. ns.State().eyeY)
+    slash("eye inverty")
+    plugPad(0.8, -0.4, 0.3)
+    printed = {}
+    slash("eye probe")
+    check(#printed >= 3 and printed[1]:find("read: ok", 1, true), "the probe must state every step of the read: " .. tostring(printed[1]))
+    slash("eye setup"); slash("eye")
     slash("eye source cursor")
     padState = nil
     FidelityEMatrix_Config.eyeCalX, FidelityEMatrix_Config.eyeCalY, FidelityEMatrix_Config.eyeCalZ = 0, 0, 0
     FidelityEMatrix_Config.eyeDepthAxis = 0
     step(1.0)
+end)
+
+test("typos change nothing, help is short, a migration keeps the owner's choices", function()
+    slash("stereo off")
+    slash("stereo bogus")
+    check(FidelityEMatrix_Config.stereoMode == "off", "a stereo typo must not change the saved mode")
+    local shown = _G.FidelityEMatrixFrame.shown
+    slash("box bogus")
+    check(_G.FidelityEMatrixFrame.shown == shown and FidelityEMatrix_Config.boxHidden == (not shown), "a box typo must not toggle the box")
+    local w, t = ns.World.IsEnabled(), ns.Terrain.IsEnabled()
+    slash("overlay bogus")
+    check(ns.World.IsEnabled() == w and ns.Terrain.IsEnabled() == t, "an overlay typo must not toggle the overlays")
+    printed = {}
+    slash("help")
+    check(#printed <= 7, "/fide help must be short, printed " .. #printed .. " lines")
+    printed = {}
+    slash("help all")
+    check(#printed >= 15, "/fide help all must list everything, printed " .. #printed)
+    printed = {}
+    slash("bogus")
+    check(#printed == 1 and printed[1]:find("Unknown command", 1, true), "an unknown command prints one line and changes nothing")
+    -- a save from before v1.5 with the overlays deliberately off keeps them off; missing keys get defaults
+    local saved = FidelityEMatrix_Config
+    FidelityEMatrix_Config = { configVersion = 1, worldOverlay = false, terrainOverlay = false, boxHidden = false, stereoMode = "off" }
+    ns.MergeDefaults()
+    check(FidelityEMatrix_Config.worldOverlay == false and FidelityEMatrix_Config.terrainOverlay == false and FidelityEMatrix_Config.boxHidden == false, "a migration must not override the owner's choices")
+    check(FidelityEMatrix_Config.configVersion == 2 and FidelityEMatrix_Config.lensAlpha == 0.35, "a migration still records its version and adds missing keys")
+    FidelityEMatrix_Config = saved
 end)
 
 test("every slash command runs without an addon error", function()
@@ -643,7 +884,8 @@ test("every slash command runs without an addon error", function()
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
         "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
         "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide",
-        "eye", "eye setup", "eye probe", "eye stick 2", "eye depth off", "eye gain 1.5", "eye gain 1", "eye calibrate", "eye source gamepad", "eye source cursor", "bogus" }) do
+        "eye", "eye setup", "eye probe", "eye stick 2", "eye depth off", "eye gain 1.5", "eye gain 1", "eye calibrate", "eye source gamepad", "eye source cursor",
+        "eye invert", "eye invert", "eye inverty", "eye inverty", "stereo bogus", "box bogus", "overlay bogus", "help", "help all", "bogus" }) do
         slash(cmd)
         step(0.05)
     end

@@ -42,12 +42,28 @@ were launched; four reported before the session's usage limit, two were still ru
 5. Hands protocol: dedupe push failures and add a heartbeat (OX11); redact tokens before the push (OX12);
    guards on every repo step, forbid reset/clean/checkout -f (OX13); propose key restriction to the owner (OX10).
 
-## Planned next step (ultracode was on)
-A Workflow: extract/dedupe all findings (including the two late reports), adversarially verify each
-with two lenses (is the code really like that; does it matter on the client), then implement the
-confirmed fixes grouped by file, re-run `npm test`, bump to v1.7.0, push, and update the laptop task.
+## Done (03 Nov 2026, 20:24Z, Claude in the cloud, branch `francois/serene-euler-51wj3e`, draft PR into `claude/ematrix-depth`)
+Every item in the five groups above was verified against the code and fixed, grouped by file, each
+with a test; the addon is v1.7.0. The one-file summary is `RESUME.md` §"EMatrix v1.7.0". Two
+findings were refined on verification: HT6 ("settles at -calX") is really the tracker decaying to
+the image centre instead of the user's rest pose, fixed by calibrating and subtracting the rest
+centre; TR9/OX6 is fixed by removing the nameplate-solve path entirely (the client refuses to
+measure nameplates), the saved pitch is the pitch. Also found on the way, not in the lists:
+`tools/test_ematrix_math.mjs` still asserted the OnUpdate detach on the box frame, which v1.5.0
+moved to the driver frame, so H005's "expect 12 passed" would have failed on v1.6.1; fixed.
+
+Evidence: `npm test` 157 tests, 156 pass, 0 fail, 1 skipped; headless Lua 52/52; math 12/12;
+toc manifests 4/4; head tracker unit tests 10/10; hands sync 17/17; upsert_task 4/4.
+
+## Planned next step
+The ultracode Workflow was not run (the cloud session was not opted into it); the agreed list
+above was done directly. What remains: the two late reports (performance/memory, C1–C15 crawl)
+once they are read from the Node 2 tasks folder; the findings outside the lead's agreed list; the
+in-game verification of v1.7.0 (H005 rewritten in `bridge/hands/laptop_tasks.json`, to be upserted
+into the live file on Node 2 after the PR merges).
 
 ## Unchanged facts
-- Branch `claude/ematrix-depth` is at b7f4ee1 (addon v1.6.1). Laptop tasks H005 (deploy) and H006
-  (head tracking) are live on Node 2; Flash executes them; owner runs the in-game probes.
+- Branch `claude/ematrix-depth` is at 7265578 (addon v1.6.1) until the v1.7.0 PR merges. Laptop
+  tasks H005 (deploy v1.6.1) and H006 (head tracking) are live on Node 2; Flash executes them;
+  owner runs the in-game probes.
 - Nothing is verified in the game beyond: the box renders the character, nameplates cannot be measured.

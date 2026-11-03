@@ -317,10 +317,15 @@ runTest('EMatrix_Core.lua contains SetScript("OnUpdate", nil) for zero idle CPU'
   assert.ok(fs.existsSync(coreLuaPath), `Missing ${coreLuaPath}`);
   const coreSrc = fs.readFileSync(coreLuaPath, 'utf8');
 
-  // Verify explicit script detachment when idle
+  // Verify explicit script detachment when idle. Since v1.5.0 the OnUpdate lives on the
+  // always-shown driver frame (host = driverFrame or masterFrame), not on the box itself.
   assert.ok(
-    coreSrc.includes('masterFrame:SetScript("OnUpdate", nil)'),
-    'Core must explicitly detach OnUpdate via SetScript("OnUpdate", nil) when idle'
+    coreSrc.includes('host:SetScript("OnUpdate", nil)'),
+    'Core must explicitly detach OnUpdate via host:SetScript("OnUpdate", nil) when idle'
+  );
+  assert.ok(
+    /local host = driverFrame or masterFrame/.test(coreSrc),
+    'The idle check must detach from the driver frame (falling back to the box)'
   );
 
   // Verify no per-frame table instantiations inside OnUpdateDriver

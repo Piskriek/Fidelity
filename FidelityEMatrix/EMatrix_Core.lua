@@ -20,8 +20,8 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.6.1"
-local CONFIG_VERSION = 2 -- bumped when saved defaults must change for existing installs
+local VERSION = "1.7.0"
+local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
 local COLS = 15
@@ -48,6 +48,8 @@ local BACKPLATE_ZOOM = 0.86   -- visible fraction of the backplate (room to slid
 local WALL_BASE, WALL_GAIN, WALL_MIN, WALL_MAX = 30, 0.9, 8, 58
 local RETICLE_SIZE = 150
 local OPEN_RATE = 2.5         -- openAmount per second (walls, glass, reticle fade)
+local DEPTH_GAIN = 0.6        -- parallax gain change per unit of eye depth (leaning in = stronger parallax)
+local EYE_GAIN_MIN, EYE_GAIN_MAX = 0.4, 1.8
 
 -- SavedVariables defaults (merged into the saved table at ADDON_LOADED)
 local DEFAULTS = {
@@ -75,9 +77,10 @@ local DEFAULTS = {
     -- the addon reads one stick for left/right + up/down and one axis for distance.
     eyeSource = "cursor",     -- "cursor" | "gamepad" (falls back to the cursor when no pad answers)
     eyeStick = 2,             -- index into GetDeviceMappedState().sticks (1 = left, 2 = right on an Xbox pad)
-    eyeDepthAxis = 0,         -- index into .axes for head distance, 0 = off (/fide eye probe shows the axes)
+    eyeDepthAxis = 0,         -- index into .axes for head distance (the tracker's left trigger: leaning in presses it, rest and sitting back read 0), 0 = off
     eyeGain = 1.0,            -- stick units -> eye units
     eyeInvertX = false,       -- flip left/right if the head goes the wrong way
+    eyeInvertY = false,       -- flip up/down if the head goes the wrong way
     eyeCalX = 0, eyeCalY = 0, eyeCalZ = 0, -- rest position, set by /fide eye calibrate
 }
 FidelityEMatrix_Config = FidelityEMatrix_Config or {}
@@ -93,11 +96,10 @@ local function MergeDefaults()
     for k, v in pairs(DEFAULTS) do
         if FidelityEMatrix_Config[k] == nil then FidelityEMatrix_Config[k] = v end
     end
+    -- A migration only records the version. Keys missing from an older save got the current
+    -- defaults above (the full-screen scene, box hidden); a key the owner set stays as set, so an
+    -- update never overrides a choice (v1.5 did, and lost "/fide overlay off" on upgrade).
     if (tonumber(FidelityEMatrix_Config.configVersion) or 0) < CONFIG_VERSION then
-        -- v1.5: the full-screen scene becomes the default for everyone, box hidden
-        FidelityEMatrix_Config.worldOverlay = true
-        FidelityEMatrix_Config.terrainOverlay = true
-        FidelityEMatrix_Config.boxHidden = true
         FidelityEMatrix_Config.configVersion = CONFIG_VERSION
     end
     if FidelityEMatrix_Config.stereoMode == "anaglyph" or FidelityEMatrix_Config.stereoMode == "sbs"
@@ -130,8 +132,16 @@ local animTime = 0.0
 local currentFacing = 0.0
 local smoothEyeX, smoothEyeY, smoothEyeZ = 0.0, 0.0, 0.0
 local lastPad, padSeen = nil, false -- the last mapped gamepad state, for /fide eye probe
-local appliedEyeX, appliedEyeY, appliedOpen = nil, nil, nil
+local appliedEyeX, appliedEyeY, appliedEyeZ, appliedOpen = nil, nil, nil, nil
 local lastClickTime = 0.0
+
+local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
+
+--- Parallax gain from the eye's depth: leaning toward the screen (z > 0) strengthens every
+--- plane's shift, sitting back weakens it. 1.0 at rest. Shared with the overlays.
+local function EyeGain()
+    return Clamp(1.0 + DEPTH_GAIN * smoothEyeZ, EYE_GAIN_MIN, EYE_GAIN_MAX)
+end
 
 -- Client Diagnostics Store
 local DiagTable = {
@@ -241,6 +251,7 @@ ns.Cfg = Cfg
 ns.ApplyLight = ApplyLight
 ns.PlaceModel = PlaceModel
 ns.FaceModel = FaceModel
+ns.EyeGain = EyeGain
 ns.LIGHTS = { mono = LIGHT_MONO, red = LIGHT_RED, cyan = LIGHT_CYAN }
 
 -- ============================================================================
@@ -634,11 +645,14 @@ function ApplyDepthPlanes(eyeX, eyeY)
     if not masterFrame or not Math then return end
     local mode = StereoMode()
     local split = (mode == "sbs" or mode == "cross")
+    -- the eye's depth (head tracker) scales every plane's parallax; 1.0 without depth input
+    local gain = EyeGain()
+    local pxGain, modelGain = PX_GAIN * gain, MODEL_GAIN * gain
 
     -- Backplate (z = 1): slide the texcoord window with the eye
     if backplateTex and backplateTex:IsShown() and Cfg("backdrop") == "nebula" and not IsStereo() then
-        local px = Math.ParallaxShift(eyeX, Z_BACK) * PX_GAIN
-        local py = Math.ParallaxShift(eyeY, Z_BACK) * PX_GAIN
+        local px = Math.ParallaxShift(eyeX, Z_BACK) * pxGain
+        local py = Math.ParallaxShift(eyeY, Z_BACK) * pxGain
         -- texcoord v grows downward; a shift up on screen is a smaller v
         backplateTex:SetTexCoord(Math.BackplateTexCoords(-px * BACKPLATE_ZOOM / MATRIX_WIDTH, py * BACKPLATE_ZOOM / MATRIX_HEIGHT, BACKPLATE_ZOOM))
     end
@@ -646,8 +660,8 @@ function ApplyDepthPlanes(eyeX, eyeY)
     -- Subject (z = 0.5): sideways/up shift in model units (mono only; stereo pairs stay centred)
     if sceneMain and sceneMain:IsShown() then
         PlaceModel(sceneMain,
-            Cfg("sideSign") * Math.ParallaxShift(eyeX, Z_SUBJECT) * MODEL_GAIN,
-            Math.ParallaxShift(eyeY, Z_SUBJECT) * MODEL_GAIN)
+            Cfg("sideSign") * Math.ParallaxShift(eyeX, Z_SUBJECT) * modelGain,
+            Math.ParallaxShift(eyeY, Z_SUBJECT) * modelGain)
     end
 
     -- Inner walls: see more of the far wall's opposite side as the eye moves
@@ -668,7 +682,7 @@ function ApplyDepthPlanes(eyeX, eyeY)
     if sheenTex then
         if frontOn and mode ~= "anaglyph" then
             sheenTex:SetPoint("CENTER", frameFront, "CENTER",
-                Math.ParallaxShift(eyeX, Z_GLASS) * PX_GAIN, Math.ParallaxShift(eyeY, Z_GLASS) * PX_GAIN)
+                Math.ParallaxShift(eyeX, Z_GLASS) * pxGain, Math.ParallaxShift(eyeY, Z_GLASS) * pxGain)
             sheenTex:SetAlpha(0.9 * openAmount)
             sheenTex:Show()
         else
@@ -676,8 +690,8 @@ function ApplyDepthPlanes(eyeX, eyeY)
         end
     end
     if reticleMono then
-        local rx = Math.ParallaxShift(eyeX, Z_POP) * PX_GAIN
-        local ry = Math.ParallaxShift(eyeY, Z_POP) * PX_GAIN
+        local rx = Math.ParallaxShift(eyeX, Z_POP) * pxGain
+        local ry = Math.ParallaxShift(eyeY, Z_POP) * pxGain
         if frontOn and mode == "anaglyph" then
             -- Crossed disparity: the left (red) image sits right of the right (cyan) one -> in front
             local d = Cfg("stereoPixels") + 1
@@ -696,26 +710,28 @@ function ApplyDepthPlanes(eyeX, eyeY)
         end
     end
 
-    appliedEyeX, appliedEyeY, appliedOpen = eyeX, eyeY, openAmount
+    appliedEyeX, appliedEyeY, appliedEyeZ, appliedOpen = eyeX, eyeY, smoothEyeZ, openAmount
 end
 
 -- ============================================================================
 -- 3b. Eye from a gamepad (the head tracker's virtual pad)
 -- ============================================================================
-local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
-
---- Returns stickX, stickY, depthAxis from the active gamepad, or nil when there is none.
+--- Returns stickX, stickY, depthAxis from the active gamepad, or nil and the reason when there
+--- is none (the reason is what /fide eye probe prints).
+local padWhy = "not read yet"
 local function ReadGamepadEye()
-    if not (C_GamePad and C_GamePad.GetDeviceMappedState) then return nil end
+    if not (C_GamePad and C_GamePad.GetDeviceMappedState) then padWhy = "C_GamePad.GetDeviceMappedState is not in this client"; return nil end
     local id = C_GamePad.GetActiveDeviceID and C_GamePad.GetActiveDeviceID() or nil
     local ok, st = pcall(C_GamePad.GetDeviceMappedState, id)
-    if not ok or type(st) ~= "table" or type(st.sticks) ~= "table" then return nil end
+    if not ok then padWhy = "GetDeviceMappedState errored: " .. tostring(st); return nil end
+    if type(st) ~= "table" or type(st.sticks) ~= "table" then padWhy = "no mapped state (no active device: is GamePadEnable 1 and the tracker running?)"; return nil end
+    lastPad, padSeen = st, true
     local s = st.sticks[Cfg("eyeStick")]
-    if not s or type(s.x) ~= "number" or type(s.y) ~= "number" then return nil end
+    if not s or type(s.x) ~= "number" or type(s.y) ~= "number" then padWhy = string.format("the pad reports %d stick(s); eyeStick %d is missing (/fide eye stick <n>)", #st.sticks, Cfg("eyeStick")); return nil end
     local z = 0
     local da = Cfg("eyeDepthAxis")
     if da and da > 0 and type(st.axes) == "table" and type(st.axes[da]) == "number" then z = st.axes[da] end
-    lastPad, padSeen = st, true
+    padWhy = "ok"
     return s.x, s.y, z
 end
 
@@ -807,7 +823,7 @@ local function OnUpdateDriver(self, dt)
     if padX then
         local gain = Cfg("eyeGain")
         local tx = Clamp((padX - Cfg("eyeCalX")) * gain * (Cfg("eyeInvertX") and -1 or 1), -1, 1) * pStr
-        local ty = Clamp((padY - Cfg("eyeCalY")) * gain, -1, 1) * pStr
+        local ty = Clamp((padY - Cfg("eyeCalY")) * gain * (Cfg("eyeInvertY") and -1 or 1), -1, 1) * pStr
         local tz = Clamp((padZ - Cfg("eyeCalZ")) * gain, -1, 1)
         local k = math.min(dt * 10.0, 1.0)
         smoothEyeX = smoothEyeX + (tx - smoothEyeX) * k
@@ -840,6 +856,7 @@ local function OnUpdateDriver(self, dt)
 
     if appliedEyeX == nil
         or math.abs(smoothEyeX - appliedEyeX) > 0.0005 or math.abs(smoothEyeY - appliedEyeY) > 0.0005
+        or math.abs(smoothEyeZ - (appliedEyeZ or 0)) > 0.0005
         or appliedOpen ~= openAmount then
         ApplyDepthPlanes(smoothEyeX, smoothEyeY)
     end
@@ -1033,9 +1050,13 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 FidelityEMatrix_Config.stereoPixels = math.min(math.max(math.floor(tonumber(args[3])), 0), 16)
             elseif sub == "mix" and tonumber(args[3]) then
                 FidelityEMatrix_Config.anaglyphMix = math.min(math.max(tonumber(args[3]), 0.1), 1.0)
-            else
+            elseif sub == "toggle" then
                 local order = { off = "sbs", sbs = "cross", cross = "anaglyph", anaglyph = "off" }
                 FidelityEMatrix_Config.stereoMode = order[StereoMode()] or "off"
+            else
+                -- a typo must not change the saved mode
+                Say("Usage: /fide stereo <off|sbs|cross|anaglyph|delta <0..0.3>|pixels <0..16>|mix <0.1..1>>  (now %s)", StereoMode())
+                return
             end
             UpdateStereoDisplay()
             CheckIdleCondition()
@@ -1064,6 +1085,8 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 FidelityEMatrix_Config.eyeGain = v; Say("Eye gain: %.2f", v)
             elseif sub == "invert" then
                 FidelityEMatrix_Config.eyeInvertX = not Cfg("eyeInvertX"); Say("Eye left/right %s", Cfg("eyeInvertX") and "inverted" or "normal")
+            elseif sub == "inverty" then
+                FidelityEMatrix_Config.eyeInvertY = not Cfg("eyeInvertY"); Say("Eye up/down %s", Cfg("eyeInvertY") and "inverted" or "normal")
             elseif sub == "calibrate" then
                 local x, y, z = ReadGamepadEye()
                 if x then
@@ -1073,25 +1096,33 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                     Say("No gamepad state to calibrate from. Is the tracker running and GamePadEnable 1 set? (/fide eye setup)")
                 end
             elseif sub == "probe" then
+                -- every step of the read, so a silent nil has a stated reason
                 local x, y, z = ReadGamepadEye()
-                if not lastPad then Say("No gamepad state: C_GamePad %s, GamePadEnable must be 1 (/fide eye setup).", C_GamePad and "present" or "MISSING"); return end
+                local id = (C_GamePad and C_GamePad.GetActiveDeviceID) and C_GamePad.GetActiveDeviceID() or nil
+                Say("Eye probe: source %s (the scene uses the %s now) | C_GamePad %s | active device %s | pad seen this session %s | read: %s",
+                    Cfg("eyeSource"), (Cfg("eyeSource") == "gamepad" and x) and "pad" or "cursor", C_GamePad and "present" or "MISSING", tostring(id), padSeen and "yes" or "no", padWhy)
+                Say("Eye probe: stick %d | depth axis %s | gain %.2f | invert x %s y %s | rest %.2f, %.2f, %.2f | parallax strength %.2f%s",
+                    Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")), tostring(Cfg("eyeInvertY")),
+                    Cfg("eyeCalX"), Cfg("eyeCalY"), Cfg("eyeCalZ"), Cfg("parallaxStrength"), Cfg("parallaxStrength") <= 0 and " (0: the pad is never read; /fide parallax 0.5)" or "")
+                if not lastPad then Say("No mapped state yet: GamePadEnable must be 1 and the tracker running (/fide eye setup)."); return end
                 local parts = {}
                 for i, s in ipairs(lastPad.sticks or {}) do parts[#parts + 1] = string.format("stick%d=(%.2f, %.2f)", i, s.x or 0, s.y or 0) end
                 for i, a in ipairs(lastPad.axes or {}) do parts[#parts + 1] = string.format("axis%d=%.2f", i, a) end
-                Say("Pad %s: %s | eye from stick %d = %s", tostring(lastPad.name), table.concat(parts, " "), Cfg("eyeStick"), x and string.format("%.2f, %.2f, z %.2f", x, y, z) or "nil")
+                Say("Pad %s: %s | eye from stick %d = %s | eye now %.2f, %.2f, z %.2f (parallax gain %.2f)", tostring(lastPad.name), table.concat(parts, " "), Cfg("eyeStick"),
+                    x and string.format("%.2f, %.2f, z %.2f", x, y, z) or ("nil: " .. padWhy), smoothEyeX, smoothEyeY, smoothEyeZ, EyeGain())
             elseif sub == "setup" then
-                Say("Head tracking setup: 1) run tools/headtrack/headtrack.py on the laptop (it creates a virtual Xbox pad). 2) /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0 (so the right stick does not swing the camera). 3) /fide eye probe, move your head, note which stick/axis moves; /fide eye stick <n>, /fide eye depth <axis>. 4) /fide eye calibrate while sitting normally, then /fide eye source gamepad.")
+                Say("Head tracking setup: 1) run tools/headtrack/headtrack.py on the laptop (it creates a virtual Xbox pad). 2) /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0 (so the right stick does not swing the camera). 3) /fide eye probe, move your head, note which stick/axis moves; /fide eye stick <n>, /fide eye depth <axis> (the left trigger: leaning in presses it). 4) /fide eye calibrate while sitting normally, then /fide eye source gamepad. /fide eye invert or inverty if a direction is wrong.")
             else
-                Say("Eye: source %s | stick %d | depth axis %s | gain %.2f | invert %s | rest %.2f, %.2f, %.2f | now %.2f, %.2f, z %.2f | pad seen %s",
-                    Cfg("eyeSource"), Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")),
+                Say("Eye: source %s | stick %d | depth axis %s | gain %.2f | invert x %s y %s | rest %.2f, %.2f, %.2f | now %.2f, %.2f, z %.2f | pad seen %s",
+                    Cfg("eyeSource"), Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")), tostring(Cfg("eyeInvertY")),
                     Cfg("eyeCalX"), Cfg("eyeCalY"), Cfg("eyeCalZ"), smoothEyeX, smoothEyeY, smoothEyeZ, padSeen and "yes" or "no")
-                Say("Usage: /fide eye <source cursor|gamepad | stick <1-4> | depth <axis|off> | gain <0.1-10> | invert | calibrate | probe | setup>")
+                Say("Usage: /fide eye <source cursor|gamepad | stick <1-4> | depth <axis|off> | gain <0.1-10> | invert | inverty | calibrate | probe | setup>")
             end
 
         elseif cmd == "box" then
             local sub = args[2] or "toggle"
+            if sub ~= "show" and sub ~= "hide" and sub ~= "toggle" then Say("Usage: /fide box <show|hide|toggle>  (now %s)", masterFrame:IsShown() and "shown" or "hidden"); return end
             local show = (sub == "show") or (sub == "toggle" and not masterFrame:IsShown())
-            if sub == "hide" then show = false end
             if show then masterFrame:Show() else masterFrame:Hide() end
             FidelityEMatrix_Config.boxHidden = not show
             Say("Scoreboard box %s (the full-screen scene is separate: /fide overlay).", show and "shown; click it to ripple it open" or "hidden")
@@ -1099,8 +1130,8 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
         elseif cmd == "overlay" or cmd == "full" then
             local sub = args[2] or "toggle"
             local anyOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
+            if sub ~= "on" and sub ~= "off" and sub ~= "toggle" then Say("Usage: /fide overlay <on|off|toggle>  (now %s)", anyOn and "on" or "off"); return end
             local on = (sub == "on") or (sub == "toggle" and not anyOn)
-            if sub == "off" then on = false end
             if ns.World then ns.World.SetEnabled(on) end
             if ns.Terrain then ns.Terrain.SetEnabled(on) end
             FidelityEMatrix_Config.boxHidden = on
@@ -1177,12 +1208,28 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             local host = driverFrame or masterFrame
             print(string.format("  OnUpdate Hook: %s | Box: %s", (host and host:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r", (masterFrame and masterFrame:IsShown()) and "shown" or "hidden"))
             if ns.World then
-                print(string.format("  World overlay: %s, %d actor(s)", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount()))
+                local ws = ns.World.IsSuspended and ns.World.IsSuspended()
+                print(string.format("  World overlay: %s, %d actor(s)%s", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount(), ws and (" (|cffff3333suspended after errors|r: " .. ws .. ")") or ""))
             end
             if ns.Terrain then
                 local info = ns.Terrain.Info()
-                print(string.format("  Terrain overlay: %s, %d prop(s), tile %s", ns.Terrain.IsEnabled() and "|cff00ff00ON|r" or "off", info.props or 0, tostring(info.tile)))
+                local ts = ns.Terrain.IsSuspended and ns.Terrain.IsSuspended()
+                print(string.format("  Terrain overlay: %s, %d prop(s), %d building(s) nearby, tile %s%s", ns.Terrain.IsEnabled() and "|cff00ff00ON|r" or "off", info.props or 0, info.buildings or 0, tostring(info.tile), ts and (" (|cffff3333suspended after errors|r: " .. ts .. ")") or ""))
             end
+            print(string.format("  Eye: %.2f, %.2f, z %.2f (parallax gain %.2f) from %s", smoothEyeX, smoothEyeY, smoothEyeZ, EyeGain(), Cfg("eyeSource")))
+
+        elseif cmd == "help" and args[2] ~= "all" then
+            -- the short list: what the owner needs at the keyboard (/fide help all prints everything)
+            print("|cff00ffcc[Fidelity EMatrix]|r v" .. VERSION .. "  (|cffffcc00/fide help all|r for every command)")
+            print("  |cffffcc00/fide overlay on|off|r   the full-screen depth scene (world + terrain)")
+            print("  |cffffcc00/fide stereo anaglyph|r  red/cyan glasses; |cffffcc00/fide stereo off|r")
+            print("  |cffffcc00/fide eye setup|r        webcam head tracking; without it the mouse is the eye")
+            print("  |cffffcc00/fide terrain probe|r    why nothing is drawn (paste it for the director)")
+            print("  |cffffcc00/fide status|r           the numbers; |cffffcc00/fide box|r shows the old window")
+
+        elseif cmd ~= "help" then
+            -- an unknown word changes nothing and says so in one line
+            Say("Unknown command '%s'. /fide help for the short list, /fide help all for everything.", tostring(args[1]))
 
         else
             print("|cff00ffcc[Fidelity EMatrix Commands]|r v" .. VERSION)
@@ -1196,7 +1243,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
             print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene (default): world + terrain overlays")
             print("  |cffffcc00/fide box <show|hide>|r              - The old scoreboard window (click it to ripple it open)")
-            print("  |cffffcc00/fide eye <setup|probe|calibrate|source ...>|r - Head tracking through the virtual gamepad (webcam tracker)")
+            print("  |cffffcc00/fide eye <setup|probe|calibrate|source|invert|inverty ...>|r - Head tracking through the virtual gamepad (webcam tracker)")
             print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
@@ -1213,29 +1260,47 @@ end
 -- ============================================================================
 -- 6. AddOn Loaded Event & Cross-Client Lifecycle
 -- ============================================================================
+--- Brings the addon up and reports what actually came up (not what the save asked for). The
+--- whole path runs under pcall: a Lua error in any step prints one addon line instead of
+--- leaving half a scene with a raw client error.
+local function Bringup(reason)
+    local ok, err = pcall(function()
+        CreateMatrixGrid()
+        if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
+        if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
+        if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
+        CheckIdleCondition()
+    end)
+    if not ok then
+        print("|cffff3333[Fidelity EMatrix Error]|r v" .. VERSION .. " failed to start (" .. reason .. "): " .. tostring(err) .. ". /fide status, /fide diag.")
+        return
+    end
+    local worldOn = ns.World and ns.World.IsEnabled() or false
+    local terrainOn = ns.Terrain and ns.Terrain.IsEnabled() or false
+    local data = "no terrain module"
+    if ns.Terrain then
+        local tiles, placements, buildings = ns.Terrain.DataStats()
+        data = string.format("%s, %d tile(s), %d placements, %d buildings", ns.Terrain.BuildLabel(), tiles, placements, buildings)
+    end
+    Say("v%s: world overlay %s (%d actor(s) now), terrain overlay %s, map data %s, box %s, eye from the %s. |cffffcc00/fide help|r for the short list.",
+        VERSION, worldOn and "|cff00ff00ON|r" or "off", ns.World and ns.World.ActorCount() or 0, terrainOn and "|cff00ff00ON|r" or "off", data,
+        (masterFrame and masterFrame:IsShown()) and "shown" or "hidden", Cfg("eyeSource"))
+    if not worldOn and not terrainOn then
+        Say("Both overlays are off in your saved settings: |cffffcc00/fide overlay on|r for the full-screen depth scene.")
+    end
+end
+
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
 loader:SetScript("OnEvent", function(self, event, addon)
     if event == "ADDON_LOADED" then
         if addon == "FidelityEMatrix" or addon == ADDON_NAME then
-            CreateMatrixGrid()
-            if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
-            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
-            if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
-            CheckIdleCondition()
-            Say("v%s: full-screen depth scene %s. Move the mouse to lean. |cffffcc00/fide stereo anaglyph|r with glasses, |cffffcc00/fide overlay off|r to stop, |cffffcc00/fide box|r for the old window, |cffffcc00/fide status|r for numbers.", VERSION, (Cfg("worldOverlay") or Cfg("terrainOverlay")) and "|cff00ff00ON|r" or "off")
+            Bringup("ADDON_LOADED")
             self:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
-        if not masterFrame then
-            CreateMatrixGrid()
-            if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
-            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
-            if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
-            CheckIdleCondition()
-            Say("v%s: full-screen depth scene on. /fide overlay off to stop, /fide box for the old window.", VERSION)
-        end
+        if not masterFrame then Bringup("PLAYER_ENTERING_WORLD") end
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 end)
@@ -1247,6 +1312,8 @@ ns.UpdateStereoDisplay = UpdateStereoDisplay
 ns.ApplyDepthPlanes = ApplyDepthPlanes
 ns.cells = cells
 ns.DiagTable = DiagTable
+ns.MergeDefaults = MergeDefaults
+ns.VERSION = VERSION
 ns.GetEye = function() return smoothEyeX, smoothEyeY, currentFacing, smoothEyeZ end
 ns.State = function()
     return {

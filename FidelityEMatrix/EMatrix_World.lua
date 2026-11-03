@@ -13,8 +13,12 @@
 --          map's placements from the game's own tiles instead).
 --
 -- Depth bands -> z (the same scale as the window): near 0.15, mid 0.5, far 1.2, unknown 0.5.
+-- A band change must be seen on BAND_CONFIRM consecutive scans before the copy switches, so a
+-- unit hovering at a band edge does not jump in size every scan.
 -- Parallax and the anaglyph pair spread use ParallaxShift(eye, z) like everything else.
 -- Stereo here is anaglyph only: a side-by-side pair cannot be laid over a single mono world.
+-- The copies face the camera and turn only with the eye; they never spin with the window's
+-- turntable.
 
 local ADDON_NAME, ns = ...
 local Math = ns.Math or _G.EMatrix_Math
@@ -26,6 +30,8 @@ local REFRESH_INTERVAL = 0.25 -- seconds between nameplate scans (parallax track
 local PX_GAIN = 60            -- screen pixels per unit of ParallaxShift (same as the window)
 local STEREO_REF_Z = 0.5      -- depth at which the pair offset equals stereoPixels
 local HEAD_OFFSET = 6         -- pixels from the nameplate's bottom down to the model's top
+local FACING_TILT = 0.55      -- radians the copy turns per unit of eye offset (as the window)
+local BAND_CONFIRM = 2        -- scans a new band must be seen before the actor switches (hysteresis)
 local BAND = {                -- { z, model height in pixels }
     near = { 0.15, 230 },
     mid = { 0.50, 150 },
@@ -35,25 +41,14 @@ local BAND = {                -- { z, model height in pixels }
 local PLAYER_Z, PLAYER_HEIGHT = 0.15, 300
 
 local overlay                 -- full-screen frame under the UI
-local pool = {}               -- actor slots: { unit, plate, mono, left, right, z, h, used }
+local pool = {}               -- actor slots: { unit, plate, band, mono, left, right, z, h, used }
 local refreshAge = 0
 local enabled = false
+local suspended = nil         -- reason text while the overlay stopped itself after errors (saved choice untouched)
 local errors = { count = 0, last = nil }
 World.errors = errors
 
 local function Cfg(k) return ns.Cfg(k) end
-
---- A frame's centre in UIParent coordinates. Only for frames an addon may measure (NOT nameplates).
-local function CenterInUI(frame)
-    if not frame or not frame.GetCenter then return nil end
-    local ok, x, y = pcall(frame.GetCenter, frame)
-    if not ok or not x or not y then return nil end
-    local fs = frame.GetEffectiveScale and frame:GetEffectiveScale() or 1
-    local us = UIParent and UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
-    if not fs or fs == 0 or not us or us == 0 then return x, y end
-    return x * fs / us, y * fs / us
-end
-World.CenterInUI = CenterInUI
 
 -- ---------------------------------------------------------------------------
 -- Actor pool
@@ -92,6 +87,7 @@ local function SetUnitOn(model, unit)
     end)
     -- idle animation (0) so the copy breathes like the original
     pcall(function() if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end end)
+    model.__anchorPlate = nil -- a new unit is anchored afresh
     return ok
 end
 
@@ -106,7 +102,8 @@ local function RangeBand(unit)
     if ok3 and near then return "near" end
     local ok4, mid = pcall(CheckInteractDistance, unit, 4)
     if ok4 and mid then return "mid" end
-    if ok3 and ok4 and near == false and mid == false then return "far" end
+    -- out of range the client answers nil (older clients) or false: both mean "not within"
+    if ok3 and ok4 then return "far" end
     return "unknown"
 end
 World.RangeBand = RangeBand
@@ -138,7 +135,12 @@ end
 -- ---------------------------------------------------------------------------
 -- Layout: anchor each actor to its nameplate (or the screen for the player), shifted by parallax
 -- ---------------------------------------------------------------------------
+--- Re-anchors only when something changed: ClearAllPoints + SetPoint every frame for every
+--- actor is needless layout work while the eye is still.
 local function Anchor(model, s, dx, dy)
+    local plate = s.plate or UIParent
+    if model.__anchorPlate == plate and model.__anchorX == dx and model.__anchorY == dy and model.__anchorH == s.h then return end
+    model.__anchorPlate, model.__anchorX, model.__anchorY, model.__anchorH = plate, dx, dy, s.h
     model:ClearAllPoints()
     model:SetSize(s.h * 0.75, s.h)
     if s.plate then
@@ -149,17 +151,19 @@ local function Anchor(model, s, dx, dy)
     end
 end
 
-function World.Layout(eyeX, eyeY, facing)
+function World.Layout(eyeX, eyeY)
     if not overlay then return end
     local anaglyph = Cfg("stereoMode") == "anaglyph"
     local px, delta = Cfg("stereoPixels"), Cfg("stereoDelta")
     local turnSign = Cfg("turnSign")
+    local gain = PX_GAIN * (ns.EyeGain and ns.EyeGain() or 1)
+    -- the copy faces the camera and turns with the eye only (the window's turntable is not ours)
+    local turn = -turnSign * eyeX * FACING_TILT
     for i = 1, MAX_ACTORS do
         local s = pool[i]
         if s and s.used then
-            local shiftX = Math.ParallaxShift(eyeX, s.z) * PX_GAIN
-            local shiftY = Math.ParallaxShift(eyeY, s.z) * PX_GAIN
-            local turn = facing - turnSign * eyeX * 0.55
+            local shiftX = Math.ParallaxShift(eyeX, s.z) * gain
+            local shiftY = Math.ParallaxShift(eyeY, s.z) * gain
             local pair = px * Math.ParallaxShift(1, s.z) / Math.ParallaxShift(1, STEREO_REF_Z)
             if anaglyph then
                 if s.mono then s.mono:Hide() end
@@ -189,36 +193,79 @@ local function HideSlot(s)
     s.used = false
     s.unit = nil
     s.plate = nil
-    if s.mono then s.mono:Hide() end
-    if s.left then s.left:Hide() end
-    if s.right then s.right:Hide() end
+    s.band = nil
+    s.nextBand, s.nextBandSeen = nil, nil
+    if s.mono then s.mono:Hide(); s.mono.__anchorPlate = nil end
+    if s.left then s.left:Hide(); s.left.__anchorPlate = nil end
+    if s.right then s.right:Hide(); s.right.__anchorPlate = nil end
 end
 
+--- The band to use for a slot this scan: a change must be seen BAND_CONFIRM scans in a row.
+local function ConfirmBand(s, band)
+    if not s.band or s.band == band then
+        s.nextBand, s.nextBandSeen = nil, nil
+        return band
+    end
+    if s.nextBand == band then s.nextBandSeen = s.nextBandSeen + 1 else s.nextBand, s.nextBandSeen = band, 1 end
+    if s.nextBandSeen >= BAND_CONFIRM then
+        s.nextBand, s.nextBandSeen = nil, nil
+        return band
+    end
+    return s.band
+end
+
+local refreshCount = 0
+
 local function Refresh()
+    refreshCount = refreshCount + 1
     local found = World.Scan()
     local n = math.min(#found, MAX_ACTORS)
+    -- Stable slots: a unit keeps its slot while it stays among the nearest, so no SetUnit churn
+    -- when the sort order shifts. Slots whose unit left are released (and hidden) first, then the
+    -- newcomers take the free slots.
     for i = 1, MAX_ACTORS do
         local s = GetSlot(i)
-        local f = found[i]
-        if i <= n and f then
-            if f.band == "player" then
-                s.z, s.h = PLAYER_Z, PLAYER_HEIGHT
-            else
-                local b = BAND[f.band] or BAND.unknown
-                s.z, s.h = b[1], b[2]
+        if s.used then
+            local keep = nil
+            for j = 1, n do
+                local f = found[j]
+                if not f.slot and f.unit == s.unit and f.plate == s.plate then keep = f; break end
             end
-            s.band = f.band
-            if s.unit ~= f.unit or s.plate ~= f.plate or not s.used then
+            if keep then keep.slot = s else HideSlot(s) end
+        end
+    end
+    for j = 1, n do
+        local f = found[j]
+        if not f.slot then
+            for i = 1, MAX_ACTORS do
+                local s = GetSlot(i)
+                if not s.used then f.slot = s; break end
+            end
+        end
+        local s = f.slot
+        if s then
+            if f.band == "player" then
+                s.z, s.h, s.band = PLAYER_Z, PLAYER_HEIGHT, "player"
+            else
+                local band = ConfirmBand(s, f.band)
+                local b = BAND[band] or BAND.unknown
+                s.z, s.h, s.band = b[1], b[2], band
+            end
+            if not s.used then
                 s.unit, s.plate = f.unit, f.plate
                 local ok = SetUnitOn(s.mono, f.unit)
-                SetUnitOn(s.left, f.unit); SetUnitOn(s.right, f.unit)
-                s.used = ok
-                ns.ApplyLight(s.mono, ns.LIGHTS.mono)
-                ns.ApplyLight(s.left, ns.LIGHTS.red)
-                ns.ApplyLight(s.right, ns.LIGHTS.cyan)
+                if ok and s.left then ok = SetUnitOn(s.left, f.unit) end
+                if ok and s.right then ok = SetUnitOn(s.right, f.unit) end
+                if ok then
+                    s.used = true
+                    ns.ApplyLight(s.mono, ns.LIGHTS.mono)
+                    ns.ApplyLight(s.left, ns.LIGHTS.red)
+                    ns.ApplyLight(s.right, ns.LIGHTS.cyan)
+                else
+                    -- a copy that could not take the unit must not keep showing the last one
+                    HideSlot(s)
+                end
             end
-        elseif s.used then
-            HideSlot(s)
         end
     end
 end
@@ -230,15 +277,15 @@ local function OnUpdate(self, dt)
             refreshAge = 0
             Refresh()
         end
-        local eyeX, eyeY, facing = ns.GetEye()
-        World.Layout(eyeX, eyeY, facing)
+        local eyeX, eyeY = ns.GetEye()
+        World.Layout(eyeX, eyeY)
     end)
     if not ok then
         errors.count = errors.count + 1
         errors.last = tostring(err)
         if errors.count >= 3 then
-            World.SetEnabled(false)
-            print("|cffff3333[Fidelity EMatrix]|r World overlay stopped after repeated errors: " .. errors.last)
+            World.Suspend(errors.last)
+            print("|cffff3333[Fidelity EMatrix]|r World overlay stopped after repeated errors (your saved setting is unchanged; /fide world on retries): " .. errors.last)
         end
     end
 end
@@ -246,8 +293,24 @@ end
 -- ---------------------------------------------------------------------------
 -- Enable / disable / status
 -- ---------------------------------------------------------------------------
+local function Stop()
+    if not overlay then return end
+    overlay:SetScript("OnUpdate", nil)
+    for i = 1, #pool do HideSlot(pool[i]) end
+    overlay:Hide()
+end
+
+--- Stops the overlay after errors WITHOUT touching the saved choice, so the next login still
+--- starts it and /fide world on retries now.
+function World.Suspend(reason)
+    enabled = false
+    suspended = reason or "unknown error"
+    Stop()
+end
+
 function World.SetEnabled(on)
     enabled = on and true or false
+    suspended = nil
     FidelityEMatrix_Config.worldOverlay = enabled
     if enabled then
         errors.count = 0
@@ -262,14 +325,13 @@ function World.SetEnabled(on)
         overlay:SetScript("OnUpdate", OnUpdate)
         refreshAge = REFRESH_INTERVAL
         OnUpdate(overlay, 0)
-    elseif overlay then
-        overlay:SetScript("OnUpdate", nil)
-        for i = 1, #pool do HideSlot(pool[i]) end
-        overlay:Hide()
+    else
+        Stop()
     end
 end
 
 function World.IsEnabled() return enabled end
+function World.IsSuspended() return suspended end
 
 function World.ActorCount()
     local n = 0
@@ -285,7 +347,8 @@ function World.Command(args, say)
     elseif sub == "status" then
         local bands = {}
         for i = 1, #pool do local s = pool[i]; if s.used then bands[#bands + 1] = tostring(s.unit) .. ":" .. tostring(s.band) end end
-        say("World overlay: %s, %d actor(s) [%s], stereo %s, errors %d%s", enabled and "ON" or "off", World.ActorCount(), table.concat(bands, " "),
+        say("World overlay: %s, %d actor(s) [%s], stereo %s, errors %d%s",
+            enabled and "ON" or (suspended and ("SUSPENDED after errors: " .. suspended) or "off"), World.ActorCount(), table.concat(bands, " "),
             Cfg("stereoMode"), errors.count, errors.last and (" (last: " .. errors.last .. ")") or "")
         return
     else
@@ -300,3 +363,5 @@ end
 World._pool = pool
 World._scratch = scratch
 World._overlay = function() return overlay end
+World._refreshCount = function() return refreshCount end
+World.BAND_CONFIRM = BAND_CONFIRM

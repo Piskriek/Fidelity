@@ -2,12 +2,16 @@
 
 Conventions: the camera image is mirrored like a mirror, so leaning to YOUR left moves the face
 to the image's right; `normalize_face` undoes that so x = -1 is your left. y = +1 is up. Depth
-z = +1 means you came close (face wider than at rest), -1 means you sat back.
+z = +1 means you came close (face wider than at rest), -1 means you sat back. x and y are
+relative to the calibrated rest pose (`face_to_axes` subtracts rest_x/rest_y), so (0, 0, 0) is
+"sitting normally", which is also where `Smoother` drifts back to when the face is lost.
 """
 from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+
+TRIGGER_CENTRE = 0.5  # trigger value that stands for a bipolar axis at rest (--map triggers only)
 
 
 def clamp(v: float, lo: float = -1.0, hi: float = 1.0) -> float:
@@ -41,8 +45,25 @@ def apply_gain_deadzone(v: float, gain: float = 1.0, deadzone: float = 0.02) -> 
 
 
 def to_trigger(v: float) -> float:
-    """[-1, 1] -> [0, 1] for a trigger axis (centre = 0.5)."""
-    return clamp((v + 1.0) * 0.5, 0.0, 1.0)
+    """Bipolar [-1, 1] -> trigger [0, 1] with 0 at TRIGGER_CENTRE (--map triggers puts x and y there).
+
+    The trigger rests half-pressed by design; the addon's /fide eye calibrate subtracts that centre.
+    """
+    v = clamp(v)
+    return TRIGGER_CENTRE + v * (TRIGGER_CENTRE if v < 0 else 1.0 - TRIGGER_CENTRE)
+
+
+def to_depth_trigger(z: float) -> float:
+    """Depth z -> left trigger [0, 1]: only coming closer presses it; rest (0) and sitting back give 0."""
+    return clamp(z, 0.0, 1.0)
+
+
+def average_rest(samples) -> tuple[float, float, float]:
+    """Mean of (x, y, width) calibration samples -> (rest_x, rest_y, rest_width); zeros when empty."""
+    n = len(samples)
+    if n == 0:
+        return 0.0, 0.0, 0.0
+    return (sum(s[0] for s in samples) / n, sum(s[1] for s in samples) / n, sum(s[2] for s in samples) / n)
 
 
 @dataclass
@@ -50,7 +71,7 @@ class Smoother:
     """Exponential smoothing with a time constant, hold-then-decay when the face is lost."""
     tau: float = 0.08          # seconds to reach 63% of a step
     hold: float = 0.5          # seconds to keep the last position after the face is lost
-    decay_tau: float = 0.6     # seconds to drift back to centre after the hold
+    decay_tau: float = 0.6     # seconds to drift back to rest after the hold
     x: float = 0.0
     y: float = 0.0
     z: float = 0.0
@@ -88,12 +109,35 @@ def pick_largest(faces) -> tuple[float, float, float, float] | None:
     return best
 
 
+def pick_tracked(faces, last_face, max_jump: float) -> tuple[float, float, float, float] | None:
+    """The face to follow: with a `last_face`, the box whose centre is nearest to it when that
+    distance is within `max_jump` pixels (continuity beats size, so a second person or a false
+    positive nearer the camera cannot hijack the eye); otherwise, or without a last face, the largest."""
+    if last_face is None:
+        return pick_largest(faces)
+    lcx, lcy = last_face[0] + last_face[2] * 0.5, last_face[1] + last_face[3] * 0.5
+    best, best_d = None, 0.0
+    for f in faces or []:
+        x, y, w, h = f[0], f[1], f[2], f[3]
+        if w <= 0 or h <= 0:
+            continue
+        d = math.hypot(x + w * 0.5 - lcx, y + h * 0.5 - lcy)
+        if d <= max_jump and (best is None or d < best_d):
+            best, best_d = (float(x), float(y), float(w), float(h)), d
+    return best if best is not None else pick_largest(faces)
+
+
 def face_to_axes(face, frame_w: int, frame_h: int, rest_width: float, gain: float = 1.0,
-                 deadzone: float = 0.02, mirror: bool = True) -> tuple[float, float, float] | None:
-    """One detected face box -> (x, y, z) stick values, or None when no face."""
+                 deadzone: float = 0.02, mirror: bool = True,
+                 rest_x: float = 0.0, rest_y: float = 0.0) -> tuple[float, float, float] | None:
+    """One detected face box -> (x, y, z) stick values, or None when no face.
+
+    rest_x/rest_y are the calibrated normalized centre of the face at rest (same convention as
+    `normalize_face`); they are subtracted before gain and deadzone so the rest pose gives (0, 0, 0).
+    """
     if face is None:
         return None
     x, y, w, h = face
     nx, ny = normalize_face(x + w * 0.5, y + h * 0.5, frame_w, frame_h, mirror)
     z = depth_from_width(w, rest_width)
-    return apply_gain_deadzone(nx, gain, deadzone), apply_gain_deadzone(ny, gain, deadzone), z
+    return apply_gain_deadzone(nx - rest_x, gain, deadzone), apply_gain_deadzone(ny - rest_y, gain, deadzone), z

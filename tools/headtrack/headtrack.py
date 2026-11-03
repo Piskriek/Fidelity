@@ -2,17 +2,20 @@
 """Webcam head tracker -> virtual gamepad (+ head.json) for FidelityEMatrix's head-coupled parallax.
 
 The game addon cannot read a camera, but it can read a gamepad (C_GamePad). This script finds your
-face in the webcam, turns its position and size into left/right, up/down and distance, and feeds
-them to a virtual Xbox 360 pad through the ViGEm driver (right stick = x/y, left trigger = depth).
-It also writes head.json next to itself for the other Fidelity daemons.
+face in the webcam, turns its position and size into left/right, up/down and distance relative to
+your calibrated rest pose, and feeds them to a virtual Xbox 360 pad through the ViGEm driver
+(right stick = x/y, left trigger = "closer" depth: it rests at 0, leaning in presses it, sitting
+back does nothing). It also writes head.json next to itself for the other Fidelity daemons.
+The left stick is never used: with GamePadEnable 1 it walks the character.
 
     python headtrack.py                      # default camera 0, right stick + left trigger
     python headtrack.py --source 1           # another camera index
     python headtrack.py --source frames:D:\\path\\to\\dir   # newest .jpg/.png written by another daemon
     python headtrack.py --source http://127.0.0.1:8080/stream.mjpg   # an MJPEG stream
     python headtrack.py --source synthetic --duration 5    # no camera: a moving fake face (for tests)
-    python headtrack.py --show               # preview window; press c to calibrate rest, q to quit
+    python headtrack.py --show               # preview window; press c to recalibrate the rest pose, q to quit
     python headtrack.py --no-gamepad         # head.json only
+    python headtrack.py --map triggers       # x/y on the two triggers around TRIGGER_CENTRE, no depth
 
 In the game: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console
 GamePadCameraPitchSpeed 0, then /fide eye setup. Requirements: requirements.txt (OpenCV with its
@@ -29,9 +32,17 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from headmath import Smoother, face_to_axes, pick_largest, to_trigger  # noqa: E402
+from headmath import (Smoother, average_rest, face_to_axes, normalize_face, pick_tracked,  # noqa: E402
+                      to_depth_trigger, to_trigger)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# A source returns this when it has nothing new yet (as opposed to None: a frame could not be read).
+# The main loop then keeps its last axes: no smoother update, no "lost face", the pad is still fed.
+NO_FRAME = object()
+
+# Follow the face nearest to the last one when it moved less than this fraction of the frame width.
+TRACK_MAX_JUMP = 0.25
 
 
 # ---------------------------------------------------------------------------------------------
@@ -58,26 +69,39 @@ class CameraSource:
 
 
 class FramesDirSource:
-    """Newest image file in a directory (what a vision daemon that owns the camera can write)."""
+    """Newest image file in a directory (what a vision daemon that owns the camera can write).
+
+    `read` returns NO_FRAME when there is nothing new: no file, the newest one already read (by
+    name and mtime, so a daemon overwriting one file is still followed and an older file is not
+    re-read when the newest is deleted), one younger than MIN_FILE_AGE (it may still be being
+    written) or one OpenCV cannot decode yet (retried next tick). None of those is a lost face.
+    """
+    MIN_FILE_AGE = 0.05  # seconds
 
     def __init__(self, directory: str):
         import cv2
         self.cv2 = cv2
         self.directory = directory
-        self.last = None
+        self.last = ("", 0.0)  # (path, mtime) of the frame read last
         if not os.path.isdir(directory):
             raise RuntimeError(f"frames directory not found: {directory}")
 
     def read(self):
         files = glob.glob(os.path.join(self.directory, "*.jpg")) + glob.glob(os.path.join(self.directory, "*.png"))
         if not files:
-            return None
-        newest = max(files, key=os.path.getmtime)
-        if newest == self.last:
-            time.sleep(0.01)
-            return None
-        self.last = newest
-        return self.cv2.imread(newest)
+            return NO_FRAME
+        try:
+            newest = max(files, key=os.path.getmtime)
+            mtime = os.path.getmtime(newest)
+        except OSError:  # a file vanished between the glob and the stat
+            return NO_FRAME
+        if (newest, mtime) == self.last or mtime < self.last[1] or time.time() - mtime < self.MIN_FILE_AGE:
+            return NO_FRAME
+        frame = self.cv2.imread(newest)
+        if frame is None:
+            return NO_FRAME
+        self.last = (newest, mtime)
+        return frame
 
     def close(self):
         pass
@@ -141,6 +165,14 @@ class HaarDetector:
 # Outputs
 # ---------------------------------------------------------------------------------------------
 class PadOutput:
+    """ViGEm virtual Xbox 360 pad.
+
+    rightstick (default): x/y on the right stick, depth on the left trigger as `to_depth_trigger`
+    (rest 0, only leaning in presses it). triggers: x on the left and y on the right trigger
+    around TRIGGER_CENTRE (both rest half-pressed; the addon's /fide eye calibrate subtracts that),
+    no depth. The left stick is never driven: it walks the character.
+    """
+
     def __init__(self, mapping: str):
         import vgamepad as vg  # lazy: needs the ViGEmBus driver
         self.vg = vg
@@ -148,14 +180,12 @@ class PadOutput:
         self.mapping = mapping
 
     def write(self, x: float, y: float, z: float):
-        if self.mapping == "leftstick":
-            self.pad.left_joystick_float(x_value_float=x, y_value_float=y)
-        elif self.mapping == "triggers":
+        if self.mapping == "triggers":
             self.pad.left_trigger_float(value_float=to_trigger(x))
             self.pad.right_trigger_float(value_float=to_trigger(y))
-        else:  # rightstick (default): x/y on the right stick, depth on the left trigger
+        else:  # rightstick
             self.pad.right_joystick_float(x_value_float=x, y_value_float=y)
-            self.pad.left_trigger_float(value_float=to_trigger(z))
+            self.pad.left_trigger_float(value_float=to_depth_trigger(z))
         self.pad.update()
 
     def close(self):
@@ -182,12 +212,15 @@ def main(argv=None) -> int:
     ap.add_argument("--fps", type=float, default=30.0)
     ap.add_argument("--gain", type=float, default=1.0)
     ap.add_argument("--deadzone", type=float, default=0.02)
-    ap.add_argument("--map", default="rightstick", choices=["rightstick", "leftstick", "triggers"])
+    ap.add_argument("--map", default="rightstick", choices=["rightstick", "triggers"])
     ap.add_argument("--no-mirror", action="store_true", help="do not mirror left/right")
     ap.add_argument("--no-gamepad", action="store_true", help="write head.json only")
     ap.add_argument("--out", default=os.path.join(HERE, "head.json"))
-    ap.add_argument("--show", action="store_true", help="preview window (c = calibrate rest width, q = quit)")
-    ap.add_argument("--calibrate-seconds", type=float, default=2.0, help="average the face width over this long at start")
+    ap.add_argument("--show", action="store_true", help="preview window (c = recalibrate the rest pose, q = quit)")
+    ap.add_argument("--calibrate-seconds", type=float, default=2.0,
+                    help="average the face centre and width (the rest pose) over this long at start")
+    ap.add_argument("--stale-seconds", type=float, default=2.0,
+                    help="frames:<dir> only: drift back to rest when no new frame has arrived for this long")
     ap.add_argument("--duration", type=float, default=0.0, help="stop after this many seconds (0 = run until quit)")
     args = ap.parse_args(argv)
 
@@ -195,10 +228,14 @@ def main(argv=None) -> int:
     synthetic = isinstance(source, SyntheticSource)
     detector = None if synthetic else HaarDetector()
     pad = None if args.no_gamepad else PadOutput(args.map)
+    mirror = not args.no_mirror
     smoother = Smoother()
-    rest_width, cal_samples, cal_until = 0.0, [], time.time() + args.calibrate_seconds
+    rest_x, rest_y, rest_width = 0.0, 0.0, 0.0           # calibrated rest pose (normalized centre, px width)
+    cal_samples, cal_until = [], time.time() + args.calibrate_seconds
     frame_interval = 1.0 / max(1.0, args.fps)
-    started, last, frames, lost = time.time(), time.time(), 0, 0
+    started = last = last_frame_at = time.time()
+    frames, lost, stale, json_errors = 0, 0, 0, 0
+    last_face, axes = None, (0.0, 0.0, 0.0)
     cv2 = None
     if args.show:
         import cv2 as _cv2
@@ -209,19 +246,31 @@ def main(argv=None) -> int:
             now = time.time()
             dt, last = now - last, now
             frame = source.read()
-            if frame is None:
+            key = -1
+            if frame is NO_FRAME:
+                if now - last_frame_at > args.stale_seconds:  # the source went quiet: drift back to rest
+                    axes = smoother.update(dt, None)
+                    stale += 1
+                if cv2 is not None:  # keep the preview window answering q / c between frames
+                    key = cv2.waitKey(1) & 0xFF
+            elif frame is None:
                 axes = smoother.update(dt, None)
                 lost += 1
             else:
+                last_frame_at = now
                 h, w = frame.shape[:2]
-                face = source.synthetic_face() if synthetic else pick_largest(detector.detect(frame))
-                if face is not None and (now < cal_until or rest_width <= 0):
-                    cal_samples.append(face[2])
-                    if now >= cal_until or len(cal_samples) >= 60:
-                        rest_width = sum(cal_samples) / len(cal_samples)
-                        print(f"headtrack: rest face width {rest_width:.1f}px", flush=True)
-                target = face_to_axes(face, w, h, rest_width if rest_width > 0 else (face[2] if face else 1.0),
-                                      args.gain, args.deadzone, mirror=not args.no_mirror)
+                face = source.synthetic_face() if synthetic else pick_tracked(detector.detect(frame), last_face, TRACK_MAX_JUMP * w)
+                if face is not None:
+                    last_face = face
+                if rest_width <= 0:  # calibrating: average the rest pose, output rest meanwhile
+                    if face is not None:
+                        cal_samples.append(normalize_face(face[0] + face[2] * 0.5, face[1] + face[3] * 0.5, w, h, mirror) + (face[2],))
+                        if now >= cal_until or len(cal_samples) >= 60:
+                            rest_x, rest_y, rest_width = average_rest(cal_samples)
+                            print(f"headtrack: rest pose x {rest_x:+.2f} y {rest_y:+.2f}, face width {rest_width:.1f}px", flush=True)
+                    target = None if face is None else (0.0, 0.0, 0.0)
+                else:
+                    target = face_to_axes(face, w, h, rest_width, args.gain, args.deadzone, mirror=mirror, rest_x=rest_x, rest_y=rest_y)
                 axes = smoother.update(dt, target)
                 if target is None:
                     lost += 1
@@ -229,20 +278,33 @@ def main(argv=None) -> int:
                     if face is not None:
                         x, y, fw, fh = (int(v) for v in face)
                         cv2.rectangle(frame, (x, y), (x + fw, y + fh), (0, 255, 200), 2)
-                    cv2.putText(frame, f"x {axes[0]:+.2f} y {axes[1]:+.2f} z {axes[2]:+.2f}", (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 200), 2)
+                    status = "calibrating" if rest_width <= 0 else f"rest {rest_x:+.2f} {rest_y:+.2f} {rest_width:.0f}px"
+                    cv2.putText(frame, f"x {axes[0]:+.2f} y {axes[1]:+.2f} z {axes[2]:+.2f}  {status}", (10, 24),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 200), 2)
                     cv2.imshow("Fidelity head tracker (c = calibrate, q = quit)", frame)
                     key = cv2.waitKey(1) & 0xFF
-                    if key == ord("q"):
-                        break
-                    if key == ord("c"):
-                        rest_width, cal_samples, cal_until = 0.0, [], time.time() + args.calibrate_seconds
+            if smoother.lost_for > smoother.hold:
+                last_face = None  # lost beyond the hold: the next face is picked by size again
+            if key == ord("q"):
+                break
+            if key == ord("c"):
+                rest_x, rest_y, rest_width = 0.0, 0.0, 0.0
+                cal_samples, cal_until = [], time.time() + args.calibrate_seconds
             frames += 1
             if pad is not None:
                 pad.write(*axes)
             if frames % 3 == 0:
-                write_json_atomic(args.out, {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4),
-                                             "z": round(axes[2], 4), "restWidth": round(rest_width, 1), "frames": frames, "lost": lost,
-                                             "fps": round(frames / max(1e-6, time.time() - started), 1), "source": args.source, "map": args.map})
+                payload = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4), "z": round(axes[2], 4),
+                           "restX": round(rest_x, 4), "restY": round(rest_y, 4), "restWidth": round(rest_width, 1),
+                           "frames": frames, "lost": lost, "stale": stale, "jsonErrors": json_errors,
+                           "fps": round(frames / max(1e-6, time.time() - started), 1), "source": args.source, "map": args.map}
+                try:
+                    write_json_atomic(args.out, payload)
+                except OSError as e:  # a reader holding the file (Windows), disk full, folder gone: the pad feed goes on
+                    json_errors += 1
+                    if json_errors == 1:
+                        print(f"headtrack: WARNING cannot write {args.out} ({e}); the pad feed continues, further failures are only counted",
+                              file=sys.stderr, flush=True)
             if args.duration and time.time() - started >= args.duration:
                 break
             sleep = frame_interval - (time.time() - now)
@@ -256,7 +318,8 @@ def main(argv=None) -> int:
             pad.close()
         if cv2 is not None:
             cv2.destroyAllWindows()
-    print(f"headtrack: {frames} frames, {lost} without a face, {frames / max(1e-6, time.time() - started):.1f} fps", flush=True)
+    print(f"headtrack: {frames} frames, {lost} without a face, {stale} stale, {json_errors} head.json write errors, "
+          f"{frames / max(1e-6, time.time() - started):.1f} fps", flush=True)
     return 0
 
 

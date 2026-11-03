@@ -1,0 +1,14 @@
+## Interface: 20504, 20506
+## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
+## Notes: Scoreboard wave window, world overlay (nameplate units) and terrain overlay (map placements) with depth parallax and anaglyph stereo
+## Author: Antigravity Overwatch & Flash
+## Version: 1.7.0
+## SavedVariables: FidelityEMatrix_Config
+
+# 2.x clients (Burning Crusade Classic / Anniversary): only the tbc map data is loaded (1.2 MB
+# less Lua than the fallback FidelityEMatrix.toc, which carries both families).
+EMatrix_Math.lua
+Data\EMatrix_Data_Azeroth_tbc.lua
+EMatrix_Core.lua
+EMatrix_World.lua
+EMatrix_Terrain.lua

@@ -2,9 +2,13 @@
 ## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
 ## Notes: Scoreboard wave window, world overlay (nameplate units) and terrain overlay (map placements) with depth parallax and anaglyph stereo
 ## Author: Antigravity Overwatch & Flash
-## Version: 1.6.1
+## Version: 1.7.0
 ## SavedVariables: FidelityEMatrix_Config
 
+# Fallback manifest. Clients that support per-family manifests pick FidelityEMatrix_Vanilla.toc
+# (1.x: WoW Forever, Classic Era) or FidelityEMatrix_TBC.toc (2.x) instead, and load only that
+# family's map data. A client without that support loads both data sets from here; the addon
+# still picks the right one at load (EMatrix_Terrain.Family).
 EMatrix_Math.lua
 Data\EMatrix_Data_Azeroth_tbc.lua
 Data\EMatrix_Data_Azeroth_vanilla.lua
