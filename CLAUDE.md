@@ -89,3 +89,4 @@ npm run wow:audit
    - Run/mount around, cast spells, trigger combat, type `/reload` to flush SavedVariables to disk.
    - Run `npm run wow:audit` to verify live trajectory and GCD processing through the SIV engine.
 3. **Keep Holon Synced**: Ensure all reflections continue streaming cleanly across the 4 nodes.
+
