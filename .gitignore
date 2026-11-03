@@ -1,6 +1,7 @@
 node_modules
 dist
 *.log
+*.pid
 .env*
 .claude/
 .gemini/
