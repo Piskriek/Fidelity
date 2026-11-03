@@ -1,14 +1,14 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T18:22:25Z",
+  "updated_at": "2026-11-03T18:33:35Z",
   "note": "Live copy: F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2. This repo file is a snapshot. Protocol: bridge/hands/LAPTOP-HANDS.md.",
   "tasks": [
     {
       "id": "H005",
-      "requested_at": "2026-11-03T18:22:25Z",
+      "requested_at": "2026-11-03T18:33:35Z",
       "priority": 0,
-      "title": "Deploy FidelityEMatrix v1.4.2 to the TBC Anniversary client (and WoW Forever when present); hand the owner the overlay check",
+      "title": "Deploy FidelityEMatrix v1.5.0 (full-screen depth scene on by default) to the TBC Anniversary client and WoW Forever when present",
       "steps": [
         "git -C D:\fidelity-repo fetch origin",
         "If D:\fidelity-repo is on flash/wow-ematrix-polish with no new local commits: git -C D:\fidelity-repo merge --ff-only origin/claude/ematrix-depth (it is a fast-forward of 87ec1ff). If it is not a fast-forward, stop and report blocked with git status.",
@@ -17,7 +17,7 @@
         "List the AddOnsFidelityEMatrix folder with sizes: it must hold EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, DataEMatrix_Data_Azeroth.lua (1.2 MB) and Media with 6 .tga files (Wall_Gradient, Glass_Sheen, Reticle are new)",
         "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\ exists, robocopy the same addon folder there too (no /MIR): the addon picks the vanilla data set on a 1.x client by itself. Report whether that client exists and its version.",
         "Then hand over to the owner for the in-game part: /reload, then the eight checks in RESUME.md section \"EMatrix v1.2.0: Claude's depth pass\" (diag light form, lens lattice faint, cursor-right slide and turn, backdrop world, anaglyph, errors). Set status blocked with blocked_on: \"owner: /reload and run the RESUME.md EMatrix check list\" until the owner reports; then write what the owner saw into output and set done.",
-        "Owner, after /reload: 1) /fide status and /fide diag, paste every line (the box showed no character on v1.4.1; the Scene lines say why). 2) /fide overlay on = the full-screen depth scene (box hidden); with nameplates on and a few NPCs near, /fide world status and /fide terrain status; then /fide stereo anaglyph with glasses. 3) /fide overlay off brings the box back."
+        "Owner, after /reload: the full-screen scene is ON by itself now (no command): with nameplates on and NPCs near, their copies and the trees should appear over the world and shift as the mouse moves. Paste /fide status, /fide world status and /fide terrain status. /fide stereo anaglyph with glasses. /fide overlay off stops it; /fide box shows the old window."
       ],
       "report": [
         "The merge result (new HEAD) and the test summary line",

@@ -64,7 +64,7 @@ local pool = {}                -- { frameMono, frameL, frameR, key, used }
 local enabled = false
 local scanAge = 0
 local candidates = {}          -- reused scratch of { entry, dist, isWmo }
-local DEFAULTS = { terrainOverlay = false, terrainFovY = 1.0, terrainHead = 2.0, terrainPitch = 0.35, terrainBackdrop = "none", terrainPitchFromPlate = true }
+local DEFAULTS = { terrainOverlay = true, terrainFovY = 1.0, terrainHead = 2.0, terrainPitch = 0.35, terrainBackdrop = "none", terrainPitchFromPlate = true }
 
 local function Cfg(k)
     local v = FidelityEMatrix_Config and FidelityEMatrix_Config[k]

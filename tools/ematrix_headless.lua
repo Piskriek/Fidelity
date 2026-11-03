@@ -184,12 +184,12 @@ for _, r in ipairs(created) do if r.scripts.OnEvent then loader = r end end
 
 local function step(seconds, dt)
     dt = dt or (1 / 60)
-    local master = _G.FidelityEMatrixFrame
+    local master = _G.FidelityEMatrixDriver or _G.FidelityEMatrixFrame
     local t = 0
     while t < seconds do
         now = now + dt
-        -- the client ticks every shown frame with an OnUpdate: the window first, then the overlay
-        local f = master and master:GetScript("OnUpdate")
+        -- the client ticks every shown frame with an OnUpdate: the driver first, then the overlays
+        local f = master and master.shown and master:GetScript("OnUpdate")
         if f then f(master, dt) end
         for _, r in ipairs(created) do
             if r ~= master and r.shown and r.scripts.OnUpdate then r.scripts.OnUpdate(r, dt) end
@@ -211,6 +211,13 @@ test("ADDON_LOADED builds the grid closed, with defaults merged into an old save
     FidelityEMatrix_Config = { scale = 1.0, stereoMode = "off", spinSpeed = 0.5 } -- a v1.1 save
     loader.scripts.OnEvent(loader, "ADDON_LOADED", "FidelityEMatrix")
     check(FidelityEMatrix_Config.lensAlpha == 0.35 and FidelityEMatrix_Config.backdrop == "nebula", "defaults not merged")
+    -- v1.5: an old save is migrated to the full-screen scene: overlays on, box hidden, driver running
+    check(FidelityEMatrix_Config.worldOverlay == true and FidelityEMatrix_Config.terrainOverlay == true and FidelityEMatrix_Config.boxHidden == true, "v1.5 defaults not applied to the old save")
+    check(ns.World.IsEnabled() and ns.Terrain.IsEnabled(), "overlays must be on at load")
+    check(not _G.FidelityEMatrixFrame.shown, "the box must start hidden")
+    check(_G.FidelityEMatrixDriver and _G.FidelityEMatrixDriver.shown and _G.FidelityEMatrixDriver:GetScript("OnUpdate"), "the driver frame must be shown with OnUpdate attached while overlays run")
+    slash("overlay off") -- the window tests below need the box
+    check(_G.FidelityEMatrixFrame.shown, "overlay off must show the box")
     check(_G.FidelityEMatrixFrame, "master frame was not created")
     check(#ns.cells == 135, "expected 135 cells, got " .. #ns.cells)
     for i = 1, 135 do
@@ -376,9 +383,9 @@ test("idle detaches OnUpdate (0 CPU)", function()
     slash("spin 0")
     slash("parallax 0")
     step(1.0)
-    check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") == nil, "OnUpdate still attached when idle")
+    check(_G.FidelityEMatrixDriver:GetScript("OnUpdate") == nil, "OnUpdate still attached when idle")
     slash("spin 0.5")
-    check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") ~= nil, "spin did not re-attach OnUpdate")
+    check(_G.FidelityEMatrixDriver:GetScript("OnUpdate") ~= nil, "spin did not re-attach OnUpdate")
 end)
 
 test("world overlay: nameplate units become depth-sorted actors, nearest biggest", function()
@@ -436,7 +443,7 @@ test("world overlay: a plate that leaves releases its slot; off hides everything
         local s = ns.World._pool[i]
         check(not s.mono.shown and not s.left.shown and not s.right.shown, "a model is still shown with the overlay off")
     end
-    check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") == nil, "OnUpdate must detach once the overlay is off and nothing moves")
+    check(_G.FidelityEMatrixDriver:GetScript("OnUpdate") == nil, "OnUpdate must detach once the overlay is off and nothing moves")
     slash("spin 0.5")
     slash("parallax 0.5")
     for i = #plates, 1, -1 do plates[i] = nil end
@@ -529,7 +536,7 @@ test("terrain overlay: anaglyph pairs, facing follows the player, off releases e
         local s = pool[i]
         check(not s.mono.shown and not s.left.shown and not s.right.shown, "a prop is still shown with the overlay off")
     end
-    check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") == nil, "OnUpdate must detach once the terrain overlay is off")
+    check(_G.FidelityEMatrixDriver:GetScript("OnUpdate") == nil, "OnUpdate must detach once the terrain overlay is off")
     slash("spin 0.5"); slash("parallax 0.5")
 end)
 
@@ -541,6 +548,12 @@ test("/fide overlay on turns both overlays on and hides the box; off restores it
     check(not _G.FidelityEMatrixFrame.shown, "the box must be hidden")
     check(FidelityEMatrix_Config.boxHidden == true, "box state must be saved")
     check(ns.World.ActorCount() >= 1 and ns.Terrain.Info().props >= 1, "overlays must draw something")
+    cursorX, cursorY = 1440, 540
+    step(1.5)
+    local st = ns.State()
+    check(st.eyeX > 0.2, "the eye must keep following the cursor while the box is hidden, got " .. st.eyeX)
+    cursorX, cursorY = 960, 540
+    step(1.5)
     slash("overlay off")
     step(0.3)
     check(not ns.World.IsEnabled() and not ns.Terrain.IsEnabled() and _G.FidelityEMatrixFrame.shown, "off must restore the box")
@@ -557,7 +570,7 @@ test("every slash command runs without an addon error", function()
         "world", "world status", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
         "terrain backdrop dim", "terrain backdrop none", "terrain off", "terrain bogus",
-        "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "bogus" }) do
+        "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide", "bogus" }) do
         slash(cmd)
         step(0.05)
     end

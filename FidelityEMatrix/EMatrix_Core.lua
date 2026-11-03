@@ -20,7 +20,8 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.4.2"
+local VERSION = "1.5.0"
+local CONFIG_VERSION = 2 -- bumped when saved defaults must change for existing installs
 
 -- Configuration & Constants
 local COLS = 15
@@ -66,8 +67,10 @@ local DEFAULTS = {
     -- turnSign +1 assumes positive facing is counter-clockwise seen from above.
     sideSign = 1,
     turnSign = 1,
-    worldOverlay = false,     -- EMatrix_World: live actors re-rendered over the game (restored at load)
-    boxHidden = false,        -- the scoreboard window stays hidden (set by /fide overlay on)
+    worldOverlay = true,      -- EMatrix_World: live actors re-rendered over the game (the default experience)
+    terrainOverlay = true,    -- EMatrix_Terrain: map placements re-rendered with depth (the default experience)
+    boxHidden = true,         -- the scoreboard window is a side show: /fide box shows it
+    configVersion = 0,
 }
 FidelityEMatrix_Config = FidelityEMatrix_Config or {}
 
@@ -82,6 +85,13 @@ local function MergeDefaults()
     for k, v in pairs(DEFAULTS) do
         if FidelityEMatrix_Config[k] == nil then FidelityEMatrix_Config[k] = v end
     end
+    if (tonumber(FidelityEMatrix_Config.configVersion) or 0) < CONFIG_VERSION then
+        -- v1.5: the full-screen scene becomes the default for everyone, box hidden
+        FidelityEMatrix_Config.worldOverlay = true
+        FidelityEMatrix_Config.terrainOverlay = true
+        FidelityEMatrix_Config.boxHidden = true
+        FidelityEMatrix_Config.configVersion = CONFIG_VERSION
+    end
     if FidelityEMatrix_Config.stereoMode == "anaglyph" or FidelityEMatrix_Config.stereoMode == "sbs"
         or FidelityEMatrix_Config.stereoMode == "cross" or FidelityEMatrix_Config.stereoMode == "off" then
         return
@@ -90,6 +100,7 @@ local function MergeDefaults()
 end
 
 -- Master Containers & Layer References
+local driverFrame -- always shown; owns the OnUpdate so the eye runs even when the box is hidden
 local masterFrame, housingFill
 local frameBackplate, backplateTex
 local frameScene, sceneMain, sceneLeft, sceneRight
@@ -235,6 +246,12 @@ function CreateMatrixGrid()
 
     -- Run client probe
     RunDiagnostics()
+
+    driverFrame = CreateFrame("Frame", "FidelityEMatrixDriver", UIParent)
+    driverFrame:SetSize(1, 1)
+    driverFrame:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", -10, -10)
+    driverFrame:EnableMouse(false)
+    driverFrame:Show()
 
     -- Master Container Frame (Draggable parent for all layers)
     masterFrame = CreateFrame("Frame", "FidelityEMatrixFrame", UIParent)
@@ -760,6 +777,11 @@ local function OnUpdateDriver(self, dt)
         local mx, my = GetCursorPosition()
         local es = masterFrame:GetEffectiveScale() or 1.0
         local cx, cy = masterFrame:GetCenter()
+        if not masterFrame:IsShown() or not cx or not cy then
+            -- box hidden: the eye is measured from the screen centre
+            es = UIParent:GetEffectiveScale() or 1.0
+            cx, cy = (GetScreenWidth() or 1920) * 0.5, (GetScreenHeight() or 1080) * 0.5
+        end
         if cx and cy then
             local uis = UIParent:GetEffectiveScale() or 1.0
             local halfW = (GetScreenWidth() or 1920) * uis * 0.5
@@ -811,13 +833,14 @@ function CheckIdleCondition()
     -- the world overlay reads the eye and facing from here, so keep the driver alive while it runs
     local worldOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
 
+    local host = driverFrame or masterFrame
     if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn then
-        if not masterFrame:GetScript("OnUpdate") then
-            masterFrame:SetScript("OnUpdate", OnUpdateDriver)
+        if not host:GetScript("OnUpdate") then
+            host:SetScript("OnUpdate", OnUpdateDriver)
         end
     else
-        if masterFrame:GetScript("OnUpdate") then
-            masterFrame:SetScript("OnUpdate", nil) -- ZERO IDLE CPU
+        if host:GetScript("OnUpdate") then
+            host:SetScript("OnUpdate", nil) -- ZERO IDLE CPU
         end
     end
 end
@@ -849,8 +872,9 @@ function TriggerScoreboardWave(ox, oy)
     end
 
     waveActive = true
-    if not masterFrame:GetScript("OnUpdate") then
-        masterFrame:SetScript("OnUpdate", OnUpdateDriver)
+    local host = driverFrame or masterFrame
+    if not host:GetScript("OnUpdate") then
+        host:SetScript("OnUpdate", OnUpdateDriver)
     end
 end
 
@@ -986,6 +1010,14 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 Say("EMatrix_World.lua did not load.")
             end
 
+        elseif cmd == "box" then
+            local sub = args[2] or "toggle"
+            local show = (sub == "show") or (sub == "toggle" and not masterFrame:IsShown())
+            if sub == "hide" then show = false end
+            if show then masterFrame:Show() else masterFrame:Hide() end
+            FidelityEMatrix_Config.boxHidden = not show
+            Say("Scoreboard box %s (the full-screen scene is separate: /fide overlay).", show and "shown; click it to ripple it open" or "hidden")
+
         elseif cmd == "overlay" or cmd == "full" then
             local sub = args[2] or "toggle"
             local anyOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
@@ -1064,7 +1096,8 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 end
             end
             print(string.format("  Spin: %.2f | Parallax: %.2f | Eye: %.2f, %.2f", Cfg("spinSpeed"), Cfg("parallaxStrength"), smoothEyeX, smoothEyeY))
-            print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
+            local host = driverFrame or masterFrame
+            print(string.format("  OnUpdate Hook: %s | Box: %s", (host and host:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r", (masterFrame and masterFrame:IsShown()) and "shown" or "hidden"))
             if ns.World then
                 print(string.format("  World overlay: %s, %d actor(s)", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount()))
             end
@@ -1083,7 +1116,8 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide lens <0..1>|r                 - Open microlens bezel alpha (0 = seamless)")
             print("  |cffffcc00/fide backdrop <nebula|world|black>|r - Deep background")
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
-            print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene: world + terrain overlays on, box hidden")
+            print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene (default): world + terrain overlays")
+            print("  |cffffcc00/fide box <show|hide>|r              - The old scoreboard window (click it to ripple it open)")
             print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
@@ -1107,16 +1141,21 @@ loader:SetScript("OnEvent", function(self, event, addon)
     if event == "ADDON_LOADED" then
         if addon == "FidelityEMatrix" or addon == ADDON_NAME then
             CreateMatrixGrid()
-            Say("v%s ready. |cffffcc00/fide overlay on|r = full-screen depth scene (then /fide stereo anaglyph with glasses). Click the box to ripple it open. |cffffcc00/fide status|r if something is missing.", VERSION)
             if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
-            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true); CheckIdleCondition() end
-            if ns.Terrain and FidelityEMatrix_Config.terrainOverlay then ns.Terrain.SetEnabled(true); CheckIdleCondition() end
+            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
+            if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
+            CheckIdleCondition()
+            Say("v%s: full-screen depth scene %s. Move the mouse to lean. |cffffcc00/fide stereo anaglyph|r with glasses, |cffffcc00/fide overlay off|r to stop, |cffffcc00/fide box|r for the old window, |cffffcc00/fide status|r for numbers.", VERSION, (Cfg("worldOverlay") or Cfg("terrainOverlay")) and "|cff00ff00ON|r" or "off")
             self:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not masterFrame then
             CreateMatrixGrid()
-            Say("v%s ready. |cffffcc00/fide overlay on|r = full-screen depth scene. Click the box to ripple it open.", VERSION)
+            if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
+            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
+            if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
+            CheckIdleCondition()
+            Say("v%s: full-screen depth scene on. /fide overlay off to stop, /fide box for the old window.", VERSION)
         end
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
@@ -1134,7 +1173,7 @@ ns.State = function()
     return {
         open = waveTargetState, openAmount = openAmount, waveActive = waveActive,
         eyeX = smoothEyeX, eyeY = smoothEyeY, facing = currentFacing,
-        frames = { main = sceneMain, left = sceneLeft, right = sceneRight, master = masterFrame },
+        frames = { main = sceneMain, left = sceneLeft, right = sceneRight, master = masterFrame, driver = driverFrame },
         walls = { wallL, wallR, wallT, wallB }, sheen = sheenTex,
         reticle = { mono = reticleMono, left = reticleL, right = reticleR }, backplate = backplateTex,
     }
