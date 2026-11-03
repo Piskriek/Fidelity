@@ -1,14 +1,14 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T18:45:36Z",
+  "updated_at": "2026-11-03T18:51:38Z",
   "note": "Live copy: F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2. This repo file is a snapshot. Protocol: bridge/hands/LAPTOP-HANDS.md.",
   "tasks": [
     {
       "id": "H005",
-      "requested_at": "2026-11-03T18:37:26Z",
+      "requested_at": "2026-11-03T18:46:49Z",
       "priority": 0,
-      "title": "Deploy FidelityEMatrix v1.5.1 to the TBC Anniversary client (and WoW Forever when present); owner runs /fide terrain probe",
+      "title": "Deploy FidelityEMatrix v1.6.0 (branch tip) to the TBC Anniversary client and WoW Forever when present; owner runs /fide terrain probe",
       "steps": [
         "git -C D:\fidelity-repo fetch origin",
         "If D:\fidelity-repo is on flash/wow-ematrix-polish with no new local commits: git -C D:\fidelity-repo merge --ff-only origin/claude/ematrix-depth (it is a fast-forward of 87ec1ff). If it is not a fast-forward, stop and report blocked with git status.",
@@ -29,13 +29,13 @@
     },
     {
       "id": "H006",
-      "requested_at": "2026-11-03T18:45:36Z",
+      "requested_at": "2026-11-03T18:51:38Z",
       "priority": 0,
       "title": "Laptop: set up webcam head tracking for FidelityEMatrix v1.6.0 (virtual gamepad)",
       "steps": [
         "git -C D:\\fidelity-repo fetch origin && git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth (then redeploy the addon folder as in H005; the addon is v1.6.0)",
         "Read D:\\fidelity-repo\\tools\\headtrack\\README.md",
-        "BLOCKED ON OWNER until done: install the ViGEmBus driver (administrator) from https://github.com/nefarius/ViGEmBus/releases (the latest ViGEmBus_*_x64.exe). Do not install it yourself; set status blocked with blocked_on \"owner: install ViGEmBus\" and continue only after the owner says it is installed.",
+        "OWNER-AUTHORISED (Piskriek, 2026-11-03): install the ViGEmBus driver yourself. Download only from the official release page https://github.com/nefarius/ViGEmBus/releases (latest ViGEmBus_*_x64.exe, publisher Nefarius Software Solutions e.U.). Before running it: Get-AuthenticodeSignature on the file must be Valid and name Nefarius; report the version and the signature line. Run the installer from an elevated prompt (if UAC asks on the laptop screen, the owner clicks it). Reboot only if the installer says so, and say so in the report. Then continue with the venv steps.",
         "python -m venv D:\\fidelity-repo\\.venv-headtrack ; D:\\fidelity-repo\\.venv-headtrack\\Scripts\\pip install -r D:\\fidelity-repo\\tools\\headtrack\\requirements.txt",
         "D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\check_pad.py (must print PASS; if XInput sees no device, the driver is missing or needs a reboot)",
         "Find out which process holds the webcam (the fractal daemons): if the camera is free, run the tracker with --source 0; if a daemon owns it, find what it exposes (a folder of frames or an MJPEG stream) and use --source frames:<dir> or --source <url>. Report which.",
@@ -43,6 +43,7 @@
         "Hand to the owner for the in-game part: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0, /fide eye probe while moving the head, /fide eye calibrate sitting normally, /fide eye source gamepad; then lean left/right and report whether the scene follows the head (and /fide eye output)."
       ],
       "report": [
+        "ViGEmBus installer version, its Authenticode signature line, and whether a reboot was needed",
         "check_pad.py output",
         "which source the tracker uses and why",
         "head.json after 10 s",
