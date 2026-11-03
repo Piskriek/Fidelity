@@ -115,6 +115,8 @@ function EMatrix_Math.GetFlipVisuals(u)
     return scaleY, specAlpha, isFlipped
 end
 
+EMatrix_Math.EvaluateFlipVisuals = EMatrix_Math.GetFlipVisuals
+
 -- ============================================================================
 -- Export to Namespace & Global Environment
 -- ============================================================================

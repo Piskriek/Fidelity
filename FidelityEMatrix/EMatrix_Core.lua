@@ -41,6 +41,7 @@ local waveTargetState = false -- false = Closed, true = Window
 
 -- Parallax State
 local parallaxTime = 0.0
+local lastClickTime = 0.0
 
 -- Forward declarations
 local TriggerScoreboardWave
@@ -61,6 +62,8 @@ local function CreateMatrixGrid()
     masterFrame:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
     masterFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
     masterFrame:SetScale(FidelityEMatrix_Config.scale or 1.0)
+    masterFrame:SetFrameStrata("MEDIUM")
+    masterFrame:SetFrameLevel(50) -- Keep well above background containers
     masterFrame:SetMovable(true)
     masterFrame:EnableMouse(true)
     masterFrame:SetClampedToScreen(true)
@@ -124,9 +127,13 @@ local function CreateMatrixGrid()
         end
     end
 
-    -- Single Click-Picking Handler on Master Frame (Guarded against exceptions)
-    masterFrame:SetScript("OnMouseDown", function(self, button)
+    -- Click-Picking Handler (Debounced, supports both OnMouseDown and OnMouseUp)
+    local function HandleMatrixClick(self, button)
         if button == "LeftButton" and not IsShiftKeyDown() then
+            local now = GetTime()
+            if (now - lastClickTime) < 0.15 then return end
+            lastClickTime = now
+
             pcall(function()
                 local mx, my = GetCursorPosition()
                 local s = self:GetEffectiveScale()
@@ -142,17 +149,22 @@ local function CreateMatrixGrid()
 
                 if col >= 1 and col <= COLS and row >= 1 and row <= ROWS then
                     TriggerScoreboardWave(col, row)
+                else
+                    TriggerScoreboardWave(8, 5)
                 end
             end)
         end
-    end)
+    end
+
+    masterFrame:SetScript("OnMouseDown", HandleMatrixClick)
+    masterFrame:SetScript("OnMouseUp", HandleMatrixClick)
 
     -- 3D ModelScene / PlayerModel Container (Behind cells, non-blocking)
     pcall(function()
         sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", masterFrame)
         sceneContainer:SetAllPoints(masterFrame)
         sceneContainer:EnableMouse(false)
-        sceneContainer:SetFrameLevel(math.max(masterFrame:GetFrameLevel() - 1, 1))
+        sceneContainer:SetFrameLevel(1)
         CreateStereoModelScenes()
     end)
 end
@@ -307,13 +319,17 @@ local function OnUpdateWaveDriver(self, dt)
     for i = 1, TOTAL_CELLS do
         local cell = cells[i]
         if cell then
-            local u = Math.CalculateFlipProgress(waveAge, cell.ringDist, speed, dur)
+            -- Exact parameter signature: (waveAge, waveSpeed, ringDist, flipDuration)
+            local u = Math.CalculateFlipProgress(waveAge, speed, cell.ringDist, dur)
+
+            if u < 1.0 then
+                allDone = false
+            end
 
             if u > 0.0 and u < 1.0 then
-                allDone = false
                 cell.settled = false
 
-                local scaleY, specAlpha, isFlipped = Math.EvaluateFlipVisuals(u)
+                local scaleY, specAlpha, isFlipped = Math.GetFlipVisuals(u)
 
                 -- Vertical squash anchored at cell center
                 cell.flapTex:SetHeight(CELL_SIZE * scaleY)
