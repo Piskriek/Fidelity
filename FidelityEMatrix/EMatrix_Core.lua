@@ -63,6 +63,7 @@ local function CreateMatrixGrid()
     masterFrame:SetScale(FidelityEMatrix_Config.scale or 1.0)
     masterFrame:SetMovable(true)
     masterFrame:EnableMouse(true)
+    masterFrame:SetClampedToScreen(true)
     masterFrame:RegisterForDrag("LeftButton")
     masterFrame:SetScript("OnDragStart", function(self)
         if IsShiftKeyDown() then self:StartMoving() end
@@ -123,30 +124,34 @@ local function CreateMatrixGrid()
         end
     end
 
-    -- Single Click-Picking Handler on Master Frame
+    -- Single Click-Picking Handler on Master Frame (Guarded against exceptions)
     masterFrame:SetScript("OnMouseDown", function(self, button)
         if button == "LeftButton" and not IsShiftKeyDown() then
-            local mx, my = GetCursorPosition()
-            local s = self:GetEffectiveScale()
-            mx, my = mx / s, my / s
-            local left = self:GetLeft() or 0
-            local top = self:GetTop() or 0
-            local relX = mx - left
-            local relY = top - my
+            pcall(function()
+                local mx, my = GetCursorPosition()
+                local s = self:GetEffectiveScale()
+                if not s or s == 0 then s = 1.0 end
+                mx, my = mx / s, my / s
+                local left = self:GetLeft() or 0
+                local top = self:GetTop() or 0
+                local relX = mx - left
+                local relY = top - my
 
-            local col = math.floor(relX / CELL_SIZE) + 1
-            local row = math.floor(relY / CELL_SIZE) + 1
+                local col = math.floor(relX / CELL_SIZE) + 1
+                local row = math.floor(relY / CELL_SIZE) + 1
 
-            if col >= 1 and col <= COLS and row >= 1 and row <= ROWS then
-                TriggerScoreboardWave(col, row)
-            end
+                if col >= 1 and col <= COLS and row >= 1 and row <= ROWS then
+                    TriggerScoreboardWave(col, row)
+                end
+            end)
         end
     end)
 
-    -- 3D ModelScene / PlayerModel Container (Behind cells)
+    -- 3D ModelScene / PlayerModel Container (Behind cells, non-blocking)
     pcall(function()
         sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", masterFrame)
         sceneContainer:SetAllPoints(masterFrame)
+        sceneContainer:EnableMouse(false)
         sceneContainer:SetFrameLevel(math.max(masterFrame:GetFrameLevel() - 1, 1))
         CreateStereoModelScenes()
     end)
@@ -167,6 +172,7 @@ function CreateStereoModelScenes()
             scene = ms
             scene:SetSize(w, h)
             scene:SetPoint(point, sceneContainer, relPoint, x, y)
+            scene:EnableMouse(false)
 
             pcall(function()
                 actor = scene:CreateActor()
@@ -197,6 +203,7 @@ function CreateStereoModelScenes()
             scene = pm
             scene:SetSize(w, h)
             scene:SetPoint(point, sceneContainer, relPoint, x, y)
+            scene:EnableMouse(false)
             pcall(function()
                 pm:SetUnit("player")
                 if pm.SetRotation then pm:SetRotation(0) end
@@ -299,40 +306,42 @@ local function OnUpdateWaveDriver(self, dt)
 
     for i = 1, TOTAL_CELLS do
         local cell = cells[i]
-        local u = Math.CalculateFlipProgress(waveAge, cell.ringDist, speed, dur)
+        if cell then
+            local u = Math.CalculateFlipProgress(waveAge, cell.ringDist, speed, dur)
 
-        if u > 0.0 and u < 1.0 then
-            allDone = false
-            cell.settled = false
+            if u > 0.0 and u < 1.0 then
+                allDone = false
+                cell.settled = false
 
-            local scaleY, specAlpha, isFlipped = Math.EvaluateFlipVisuals(u)
+                local scaleY, specAlpha, isFlipped = Math.EvaluateFlipVisuals(u)
 
-            -- Vertical squash anchored at cell center
-            cell.flapTex:SetHeight(CELL_SIZE * scaleY)
+                -- Vertical squash anchored at cell center
+                cell.flapTex:SetHeight(CELL_SIZE * scaleY)
 
-            -- Golden specular bar flash peak at u=0.5
-            cell.specBar:SetAlpha(specAlpha)
+                -- Golden specular bar flash peak at u=0.5
+                cell.specBar:SetAlpha(specAlpha)
 
-            -- Swap texture at midpoint
-            if isFlipped then
-                if cell.isWindow ~= waveTargetState then
-                    cell.flapTex:SetTexture(targetTex)
-                    cell.isWindow = waveTargetState
+                -- Swap texture at midpoint
+                if isFlipped then
+                    if cell.isWindow ~= waveTargetState then
+                        cell.flapTex:SetTexture(targetTex)
+                        cell.isWindow = waveTargetState
+                    end
+                else
+                    local oldTex = waveTargetState and TEX_CLOSED or TEX_WINDOW
+                    if cell.flapTex:GetTexture() ~= oldTex then
+                        cell.flapTex:SetTexture(oldTex)
+                    end
                 end
-            else
-                local oldTex = waveTargetState and TEX_CLOSED or TEX_WINDOW
-                if cell.flapTex:GetTexture() ~= oldTex then
-                    cell.flapTex:SetTexture(oldTex)
-                end
+
+            elseif u >= 1.0 and not cell.settled then
+                -- Settle cell into target state
+                cell.flapTex:SetHeight(CELL_SIZE)
+                cell.flapTex:SetTexture(targetTex)
+                cell.specBar:SetAlpha(0.0)
+                cell.isWindow = waveTargetState
+                cell.settled = true
             end
-
-        elseif u >= 1.0 and not cell.settled then
-            -- Settle cell into target state
-            cell.flapTex:SetHeight(CELL_SIZE)
-            cell.flapTex:SetTexture(targetTex)
-            cell.specBar:SetAlpha(0.0)
-            cell.isWindow = waveTargetState
-            cell.settled = true
         end
     end
 
@@ -368,6 +377,10 @@ function TriggerScoreboardWave(ox, oy)
     Math = Math or (ns and ns.Math) or _G.EMatrix_Math
     if not Math then return end
 
+    if not cells or #cells < TOTAL_CELLS then
+        return
+    end
+
     ox = ox or 8
     oy = oy or 5
     ox = math.min(math.max(math.floor(ox), 1), COLS)
@@ -383,8 +396,10 @@ function TriggerScoreboardWave(ox, oy)
     -- Precompute wave distance for all 135 cells once at trigger time (0-GC during wave)
     for i = 1, TOTAL_CELLS do
         local cell = cells[i]
-        cell.ringDist = Math.CalculateRingDistance(cell.col, cell.row, ox, oy)
-        cell.settled = false
+        if cell then
+            cell.ringDist = Math.CalculateRingDistance(cell.col, cell.row, ox, oy)
+            cell.settled = false
+        end
     end
 
     waveActive = true
@@ -392,80 +407,85 @@ function TriggerScoreboardWave(ox, oy)
 end
 
 -- ============================================================================
--- 4. Slash Commands & AddOn Lifecycle
+-- 4. Slash Commands & AddOn Lifecycle (Taint-Safe pcall Sandbox)
 -- ============================================================================
 SLASH_FIDELITYEMATRIX1 = "/fide"
 SLASH_FIDELITYEMATRIX2 = "/ematrix"
 
 SlashCmdList["FIDELITYEMATRIX"] = function(msg)
-    local args = {}
-    for word in string.gmatch(msg or "", "%S+") do
-        table.insert(args, string.lower(word))
-    end
-
-    local cmd = args[1] or "toggle"
-
-    if cmd == "toggle" or cmd == "show" or cmd == "hide" then
-        if not masterFrame then CreateMatrixGrid() end
-        if not masterFrame then return end
-        if cmd == "show" then
-            masterFrame:Show()
-        elseif cmd == "hide" then
-            masterFrame:Hide()
-        else
-            if masterFrame:IsShown() then masterFrame:Hide() else masterFrame:Show() end
+    local ok, err = pcall(function()
+        local args = {}
+        for word in string.gmatch(msg or "", "%S+") do
+            table.insert(args, string.lower(word))
         end
 
-    elseif cmd == "ripple" or cmd == "wave" or cmd == "flip" then
-        local ox = tonumber(args[2]) or 8
-        local oy = tonumber(args[3]) or 5
-        TriggerScoreboardWave(ox, oy)
-        print(string.format("|cff00ffcc[Fidelity EMatrix]|r Ripple triggered from (%d, %d). Target: %s",
-            ox, oy, waveTargetState and "|cff00ff00WINDOW|r" or "|cffffcc00CLOSED|r"))
+        local cmd = args[1] or "toggle"
 
-    elseif cmd == "stereo" then
-        local sub = args[2] or "toggle"
-        if sub == "sbs" then
-            FidelityEMatrix_Config.stereoMode = "sbs"
-        elseif sub == "anaglyph" then
-            FidelityEMatrix_Config.stereoMode = "anaglyph"
-        elseif sub == "off" or sub == "mono" then
-            FidelityEMatrix_Config.stereoMode = "off"
+        if cmd == "toggle" or cmd == "show" or cmd == "hide" then
+            if not masterFrame then CreateMatrixGrid() end
+            if not masterFrame then return end
+            if cmd == "show" then
+                masterFrame:Show()
+            elseif cmd == "hide" then
+                masterFrame:Hide()
+            else
+                if masterFrame:IsShown() then masterFrame:Hide() else masterFrame:Show() end
+            end
+
+        elseif cmd == "ripple" or cmd == "wave" or cmd == "flip" then
+            local ox = tonumber(args[2]) or 8
+            local oy = tonumber(args[3]) or 5
+            TriggerScoreboardWave(ox, oy)
+            print(string.format("|cff00ffcc[Fidelity EMatrix]|r Ripple triggered from (%d, %d). Target: %s",
+                ox, oy, waveTargetState and "|cff00ff00WINDOW|r" or "|cffffcc00CLOSED|r"))
+
+        elseif cmd == "stereo" then
+            local sub = args[2] or "toggle"
+            if sub == "sbs" then
+                FidelityEMatrix_Config.stereoMode = "sbs"
+            elseif sub == "anaglyph" then
+                FidelityEMatrix_Config.stereoMode = "anaglyph"
+            elseif sub == "off" or sub == "mono" then
+                FidelityEMatrix_Config.stereoMode = "off"
+            else
+                -- Cycle modes: off -> sbs -> anaglyph -> off
+                local cur = FidelityEMatrix_Config.stereoMode or "off"
+                if cur == "off" then FidelityEMatrix_Config.stereoMode = "sbs"
+                elseif cur == "sbs" then FidelityEMatrix_Config.stereoMode = "anaglyph"
+                else FidelityEMatrix_Config.stereoMode = "off" end
+            end
+            UpdateStereoDisplay()
+            print(string.format("|cff00ffcc[Fidelity EMatrix]|r Stereo Mode: |cffffffff%s|r", FidelityEMatrix_Config.stereoMode:upper()))
+
+        elseif cmd == "scale" then
+            local sc = tonumber(args[2])
+            if sc and sc >= 0.5 and sc <= 2.5 then
+                FidelityEMatrix_Config.scale = sc
+                if masterFrame then masterFrame:SetScale(sc) end
+                print(string.format("|cff00ffcc[Fidelity EMatrix]|r Scale set to: %.2f", sc))
+            else
+                print("|cff00ffcc[Fidelity EMatrix]|r Usage: /fide scale <0.5..2.5>")
+            end
+
+        elseif cmd == "status" then
+            print("|cff00ffcc[Fidelity EMatrix Status]|r")
+            print(string.format("  Matrix Grid: %d x %d (%d cells)", COLS, ROWS, TOTAL_CELLS))
+            print(string.format("  Wave Active: %s (Target: %s)", waveActive and "|cff00ff00YES|r" or "NO", waveTargetState and "Window" or "Closed"))
+            print(string.format("  Stereo Mode: %s", (FidelityEMatrix_Config.stereoMode or "off"):upper()))
+            print(string.format("  UI Scale: %.2f", FidelityEMatrix_Config.scale or 1.0))
+            print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
+
         else
-            -- Cycle modes: off -> sbs -> anaglyph -> off
-            local cur = FidelityEMatrix_Config.stereoMode or "off"
-            if cur == "off" then FidelityEMatrix_Config.stereoMode = "sbs"
-            elseif cur == "sbs" then FidelityEMatrix_Config.stereoMode = "anaglyph"
-            else FidelityEMatrix_Config.stereoMode = "off" end
+            print("|cff00ffcc[Fidelity EMatrix Commands]|r")
+            print("  |cffffcc00/fide|r (or /fide toggle) - Show/Hide Matrix Frame (Shift-drag to move)")
+            print("  |cffffcc00/fide ripple [x y]|r       - Trigger scoreboard wave from (x, y) (default: 8 5)")
+            print("  |cffffcc00/fide stereo [off|sbs|anaglyph]|r - Switch stereoscopic 3D mode")
+            print("  |cffffcc00/fide scale <0.5..2.5>|r   - Uniform UI scale")
+            print("  |cffffcc00/fide status|r             - Display current runtime & idle CPU status")
         end
-        UpdateStereoDisplay()
-        print(string.format("|cff00ffcc[Fidelity EMatrix]|r Stereo Mode: |cffffffff%s|r", FidelityEMatrix_Config.stereoMode:upper()))
-
-    elseif cmd == "scale" then
-        local sc = tonumber(args[2])
-        if sc and sc >= 0.5 and sc <= 2.5 then
-            FidelityEMatrix_Config.scale = sc
-            if masterFrame then masterFrame:SetScale(sc) end
-            print(string.format("|cff00ffcc[Fidelity EMatrix]|r Scale set to: %.2f", sc))
-        else
-            print("|cff00ffcc[Fidelity EMatrix]|r Usage: /fide scale <0.5..2.5>")
-        end
-
-    elseif cmd == "status" then
-        print("|cff00ffcc[Fidelity EMatrix Status]|r")
-        print(string.format("  Matrix Grid: %d x %d (%d cells)", COLS, ROWS, TOTAL_CELLS))
-        print(string.format("  Wave Active: %s (Target: %s)", waveActive and "|cff00ff00YES|r" or "NO", waveTargetState and "Window" or "Closed"))
-        print(string.format("  Stereo Mode: %s", (FidelityEMatrix_Config.stereoMode or "off"):upper()))
-        print(string.format("  UI Scale: %.2f", FidelityEMatrix_Config.scale or 1.0))
-        print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
-
-    else
-        print("|cff00ffcc[Fidelity EMatrix Commands]|r")
-        print("  |cffffcc00/fide|r (or /fide toggle) - Show/Hide Matrix Frame (Shift-drag to move)")
-        print("  |cffffcc00/fide ripple [x y]|r       - Trigger scoreboard wave from (x, y) (default: 8 5)")
-        print("  |cffffcc00/fide stereo [off|sbs|anaglyph]|r - Switch stereoscopic 3D mode")
-        print("  |cffffcc00/fide scale <0.5..2.5>|r   - Uniform UI scale")
-        print("  |cffffcc00/fide status|r             - Display current runtime & idle CPU status")
+    end)
+    if not ok and err then
+        print("|cffff3333[Fidelity EMatrix Error]|r " .. tostring(err))
     end
 end
 

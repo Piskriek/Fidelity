@@ -122,7 +122,6 @@ if ns then
     ns.Math = EMatrix_Math
 end
 
-_G = _G or (function() return this end)() or {}
 if _G then
     _G.EMatrix_Math = EMatrix_Math
 end
