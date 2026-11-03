@@ -136,6 +136,30 @@ FidelityWoW_Export = {
   assert.equal(normalized.movementEvents.length, 2);
   assert.equal(normalized.movementEvents[0].state, 'START');
   assert.equal(normalized.movementEvents[1].state, 'STOP');
+
+  // Normalized [0..1] map coordinates without scale metadata return insufficient_scale_metadata
+  const unscaledLua = `
+FidelityWoW_Config = { ["optIn"] = true }
+FidelityWoW_Export = {
+    ["trajectory"] = {
+        { ["t"] = 100, ["x"] = 0.451, ["y"] = 0.523 },
+        { ["t"] = 200, ["x"] = 0.452, ["y"] = 0.523 },
+        { ["t"] = 300, ["x"] = 0.453, ["y"] = 0.523 }
+    }
+}
+`;
+  const unscaledParsed = parseLuaSource(unscaledLua);
+  const unscaledNorm = normalizeSavedVariables(unscaledParsed);
+  assert.equal(unscaledNorm.sessionData.trajectory[0].scaleStatus, 'insufficient_scale_metadata');
+  const ftleUnscaled = evaluateKinematicFTLE(unscaledNorm.sessionData.trajectory);
+  assert.equal(ftleUnscaled.status, 'insufficient_scale_metadata');
+
+  // When map scale is supplied (e.g. 1000 yards zone size), converts to yards
+  const scaledNorm = normalizeSavedVariables(unscaledParsed, { mapScaleYards: 1000 });
+  assert.equal(scaledNorm.sessionData.trajectory[0].scaleStatus, 'converted_to_yards');
+  assert.equal(scaledNorm.sessionData.trajectory[0].x, 451);
+  const ftleScaled = evaluateKinematicFTLE(scaledNorm.sessionData.trajectory);
+  assert.equal(ftleScaled.status, 'conforming_physical_spline');
 });
 
 // GATE 8: FIX-P2-08
@@ -177,4 +201,15 @@ test('FIX-P2-09: Empirical invariant labels report kinematic spline conformance 
   const gtaRes = evaluateGtaVehicleHamiltonian(vehicle);
   assert.equal(gtaRes.status, 'power_within_engine_limits');
   assert.equal(gtaRes.verdict, 'CONFORMING_PHYSICS');
+
+  // GTA unpowered energy gain: +93,000 J gain with throttle = 0 fails conservation of energy
+  const unpoweredSpike = [
+    { t: 0, speedMps: 0.0, z: 0.0, throttle: 0 },
+    { t: 1000, speedMps: 11.135, z: 0.0, throttle: 0 } // 0.5 * 1500 * (11.135^2) ≈ 93,000 J
+  ];
+  const unpoweredRes = evaluateGtaVehicleHamiltonian(unpoweredSpike, 1500, 600000);
+  assert.equal(unpoweredRes.verdict, 'ANOMALY_DETECTED');
+  assert.equal(unpoweredRes.status, 'vehicle_handling_or_speed_injection');
+  assert.ok(unpoweredRes.energyAnomalies > 0);
 });
+
