@@ -1,15 +1,26 @@
 -- FidelityEMatrix/EMatrix_Core.lua
--- Single Master Frame with 3-Layer Sibling Architecture, Zero-GC Scoreboard Wave & 3D Optical Depth Chamber
--- Architecture:
---   L1 (Backplate): Full-grid (480x288) cosmic nebula starfield, no per-cell dark background.
---   L2 (Scene): Multi-plane 3D models (full-grid framing, orbital motion, head/cursor parallax).
---   L3 (Grid): 135 cell textures (flapTex, specBar, temporary creviceTex active only mid-flip).
--- Visual Behavior:
---   - Default state at load: 100% CLOSED (all 135 cells show opaque golden puffy "E" cubes).
---   - Open state: 100% SEAMLESS viewport (flapTex and creviceTex reach alpha = 0, zero cage lines).
+-- Single master frame, zero-GC scoreboard wave, and a window into a 3D box.
+--
+-- Depth planes, back to front (z: 0 = screen, > 0 behind it, < 0 in front of it).
+-- Each plane moves by EMatrix_Math.ParallaxShift(eye, z), so the bezel never moves, everything
+-- behind it moves with the eye and everything in front moves against it:
+--   z =  1.0   Backplate     nebula (or the live game world, or black), slid by texcoords
+--   z =  0.5   Subject       3D model: sideways shift (SetPosition y/z) + view-dependent turn
+--   z = 0..1   Inner walls   four gradient walls whose visible widths follow the eye
+--   z =  0.0   Lens grid     135 microlens cells (1 px sun-lit bevel, scanlines) and housing
+--   z = -0.15  Cover glass   ADD-blended sheen
+--   z = -0.4   Pop-out       reticle floating in front of the monitor
+-- Stereo: "sbs" (parallel free-view), "cross" (cross-eyed), "anaglyph" (red left / cyan right).
+-- Each eye's subject is turned by +/- stereoDelta (true view disparity) and offset by
+-- stereoPixels; in anaglyph the reticle pair carries crossed disparity so it pops out.
+--
+-- Classic notes from /fide diag: no SetDefaultModelPosition, no ModelScene camera. Model
+-- SetPosition(x, y, z) takes x = toward the camera, y = sideways, z = up.
 
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
+
+local VERSION = "1.2.0"
 
 -- Configuration & Constants
 local COLS = 15
@@ -20,24 +31,68 @@ local MATRIX_WIDTH = COLS * CELL_SIZE  -- 480 px
 local MATRIX_HEIGHT = ROWS * CELL_SIZE -- 288 px
 
 local MEDIA_PATH = "Interface\\AddOns\\FidelityEMatrix\\Media\\"
-local TEX_CLOSED   = MEDIA_PATH .. "Marshmallow_E_Closed.tga"
-local TEX_WINDOW   = MEDIA_PATH .. "Marshmallow_E_Window.tga"
+local TEX_CLOSED    = MEDIA_PATH .. "Marshmallow_E_Closed.tga"
+local TEX_WINDOW    = MEDIA_PATH .. "Marshmallow_E_Window.tga"
 local TEX_BACKPLATE = MEDIA_PATH .. "Backplate_Nebula.tga"
+local TEX_WALL      = MEDIA_PATH .. "Wall_Gradient.tga"
+local TEX_SHEEN     = MEDIA_PATH .. "Glass_Sheen.tga"
+local TEX_RETICLE   = MEDIA_PATH .. "Reticle.tga"
 
--- SavedVariables defaults
-FidelityEMatrix_Config = FidelityEMatrix_Config or {
+-- Depth of each plane (see the header)
+local Z_BACK, Z_SUBJECT, Z_GLASS, Z_POP = 1.0, 0.5, -0.15, -0.4
+local PX_GAIN = 60            -- screen pixels per unit of ParallaxShift
+local MODEL_GAIN = 0.45       -- model units per unit of ParallaxShift (sideways and up)
+local FACING_TILT = 0.55      -- radians the subject turns per unit of eye offset
+local BACKPLATE_ZOOM = 0.86   -- visible fraction of the backplate (room to slide)
+local WALL_BASE, WALL_GAIN, WALL_MIN, WALL_MAX = 30, 0.9, 8, 58
+local RETICLE_SIZE = 150
+local OPEN_RATE = 2.5         -- openAmount per second (walls, glass, reticle fade)
+
+-- SavedVariables defaults (merged into the saved table at ADDON_LOADED)
+local DEFAULTS = {
     scale = 1.0,
-    stereoMode = "off",     -- "off" (mono), "sbs" (side-by-side), "anaglyph" (red/cyan)
-    waveSpeed = 16.0,       -- cells per second
-    flipDuration = 0.26,    -- flip duration per cell in seconds
-    spinSpeed = 0.50,       -- continuous model rotation speed (0 to disable for 0-CPU idle)
-    parallaxStrength = 0.50 -- head/cursor parallax strength (0 to disable for 0-CPU idle)
+    stereoMode = "off",       -- "off", "sbs", "cross", "anaglyph"
+    waveSpeed = 16.0,         -- cells per second
+    flipDuration = 0.26,      -- flip duration per cell in seconds
+    spinSpeed = 0.50,         -- continuous model rotation (0 = 0-CPU idle)
+    parallaxStrength = 0.50,  -- cursor-as-eye parallax strength (0 = 0-CPU idle)
+    lensAlpha = 0.35,         -- open-state microlens bezel alpha (0 = seamless, no lens cue)
+    backdrop = "nebula",      -- "nebula", "world" (see the live game through), "black"
+    stereoDelta = 0.06,       -- radians each eye's subject is turned (about 3.4 degrees)
+    stereoPixels = 4,         -- horizontal eye offset in pixels
+    anaglyphMix = 0.50,       -- alpha of the cyan (right-eye) layer over the red one
+    -- Sign calibration, settable with /fide calibrate side|turn (cannot be checked headless):
+    -- sideSign +1 assumes model space +y is screen right (right-handed, x toward the camera);
+    -- turnSign +1 assumes positive facing is counter-clockwise seen from above.
+    sideSign = 1,
+    turnSign = 1,
 }
+FidelityEMatrix_Config = FidelityEMatrix_Config or {}
+
+local function Cfg(key)
+    local v = FidelityEMatrix_Config and FidelityEMatrix_Config[key]
+    if v == nil then return DEFAULTS[key] end
+    return v
+end
+
+local function MergeDefaults()
+    if type(FidelityEMatrix_Config) ~= "table" then FidelityEMatrix_Config = {} end
+    for k, v in pairs(DEFAULTS) do
+        if FidelityEMatrix_Config[k] == nil then FidelityEMatrix_Config[k] = v end
+    end
+    if FidelityEMatrix_Config.stereoMode == "anaglyph" or FidelityEMatrix_Config.stereoMode == "sbs"
+        or FidelityEMatrix_Config.stereoMode == "cross" or FidelityEMatrix_Config.stereoMode == "off" then
+        return
+    end
+    FidelityEMatrix_Config.stereoMode = "off"
+end
 
 -- Master Containers & Layer References
-local masterFrame
+local masterFrame, housingFill
 local frameBackplate, backplateTex
-local frameScene, sceneMain, sceneLeft, sceneRight, sceneSecondary
+local frameScene, sceneMain, sceneLeft, sceneRight
+local frameDepth, wallL, wallR, wallT, wallB
+local frameFront, sheenTex, reticleMono, reticleL, reticleR
 local frameGrid
 local cells = {} -- Flat pre-allocated 1..135 array
 
@@ -46,13 +101,14 @@ local waveActive = false
 local waveAge = 0.0
 local waveOriginCol = 8
 local waveOriginRow = 5
-local waveTargetState = false -- false = Closed (E-cubes), true = Open (3D Viewport)
+local waveTargetState = false -- false = Closed (E-cubes), true = Open (3D window)
+local openAmount = 0.0        -- 0 closed .. 1 open, drives walls / glass / reticle
 
 -- Parallax & Animation State
 local animTime = 0.0
 local currentFacing = 0.0
-local smoothParallaxX = 0.0
-local smoothParallaxY = 0.0
+local smoothEyeX, smoothEyeY = 0.0, 0.0
+local appliedEyeX, appliedEyeY, appliedOpen = nil, nil, nil
 local lastClickTime = 0.0
 
 -- Client Diagnostics Store
@@ -63,7 +119,8 @@ local DiagTable = {
     buildDate = "Unknown",
     tocVersion = 0,
     frames = {},
-    methods = {}
+    methods = {},
+    lightForm = "untested", -- "table", "positional", "none"
 }
 
 -- Forward declarations
@@ -72,6 +129,8 @@ local CreateMatrixGrid
 local UpdateStereoDisplay
 local CheckIdleCondition
 local RunDiagnostics
+local ApplyDepthPlanes
+local ApplyBackdrop
 
 -- ============================================================================
 -- 0. Client Capability Probe (/fide diag)
@@ -109,22 +168,69 @@ function RunDiagnostics()
 end
 
 -- ============================================================================
--- 1. Master Frame & 3-Layer Sibling Architecture
+-- 0b. Lighting: one call that works on both SetLight signatures
+-- Newer engines take SetLight(enabled, { omnidirectional, point, ambientIntensity, ambientColor,
+-- diffuseIntensity, diffuseColor }); older ones take 13 positional values. Try the table form,
+-- then the positional one, and remember which worked for /fide diag.
+-- ============================================================================
+--                dirX,  dirY,  dirZ, ambI, ambR, ambG, ambB, difI, difR, difG, difB
+local LIGHT_MONO = { -0.45, -0.55, 0.70, 0.55, 0.55, 0.58, 0.75, 0.95, 1.00, 0.90, 0.72 } -- warm key, cool fill
+local LIGHT_RED  = { -0.45, -0.55, 0.70, 0.60, 1.00, 0.00, 0.00, 0.90, 1.00, 0.00, 0.00 } -- left eye
+local LIGHT_CYAN = { -0.45, -0.55, 0.70, 0.60, 0.00, 1.00, 1.00, 0.90, 0.00, 1.00, 1.00 } -- right eye
+
+local function ApplyLight(model, L)
+    if not model or type(model.SetLight) ~= "function" or not L then return false end
+    if DiagTable.lightForm ~= "positional" and CreateVector3D and CreateColor then
+        local ok = pcall(model.SetLight, model, true, {
+            omnidirectional = false,
+            point = CreateVector3D(L[1], L[2], L[3]),
+            ambientIntensity = L[4],
+            ambientColor = CreateColor(L[5], L[6], L[7]),
+            diffuseIntensity = L[8],
+            diffuseColor = CreateColor(L[9], L[10], L[11]),
+        })
+        if ok then DiagTable.lightForm = "table"; return true end
+    end
+    local ok = pcall(model.SetLight, model, true, false, L[1], L[2], L[3], L[4], L[5], L[6], L[7], L[8], L[9], L[10], L[11])
+    if ok then DiagTable.lightForm = "positional"; return true end
+    DiagTable.lightForm = "none"
+    return false
+end
+
+-- Model SetPosition: x = depth toward the camera, y = sideways, z = up.
+local function PlaceModel(model, side, up)
+    if model and type(model.SetPosition) == "function" then
+        model:SetPosition(0, side, up)
+    end
+end
+
+local function FaceModel(model, facing)
+    if not model then return end
+    if type(model.SetFacing) == "function" then
+        model:SetFacing(facing)
+    elseif type(model.SetRotation) == "function" then
+        model:SetRotation(facing)
+    end
+end
+
+-- ============================================================================
+-- 1. Master Frame & Layer Architecture
 -- ============================================================================
 function CreateMatrixGrid()
     if masterFrame then return end
 
     Math = Math or (ns and ns.Math) or _G.EMatrix_Math
     if not Math then return end
+    MergeDefaults()
 
     -- Run client probe
     RunDiagnostics()
 
-    -- Master Container Frame (Draggable parent for all 3 layers)
+    -- Master Container Frame (Draggable parent for all layers)
     masterFrame = CreateFrame("Frame", "FidelityEMatrixFrame", UIParent)
     masterFrame:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
     masterFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
-    masterFrame:SetScale(FidelityEMatrix_Config.scale or 1.0)
+    masterFrame:SetScale(Cfg("scale"))
     masterFrame:SetFrameStrata("MEDIUM")
     masterFrame:SetFrameLevel(20)
     masterFrame:SetMovable(true)
@@ -138,20 +244,29 @@ function CreateMatrixGrid()
         self:StopMovingOrSizing()
     end)
 
-    -- Sleek Outer Housing Bezel (4px golden frame border enclosing the entire matrix)
-    local outerBorder = masterFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
-    outerBorder:SetPoint("TOPLEFT", masterFrame, "TOPLEFT", -4, 4)
-    outerBorder:SetPoint("BOTTOMRIGHT", masterFrame, "BOTTOMRIGHT", 4, -4)
-    outerBorder:SetColorTexture(0.78, 0.65, 0.32, 0.95)
+    -- Outer housing (focal plane z = 0): four 4 px strips OUTSIDE the window, lit gold on the
+    -- top and right (sun at the upper right), bronze on the bottom and left. Strips, not a filled
+    -- rectangle, so "/fide backdrop world" really shows the game through the window.
+    local function Strip(r, g, b, p1, rel1, x1, y1, p2, rel2, x2, y2)
+        local t = masterFrame:CreateTexture(nil, "BACKGROUND", nil, -7)
+        t:SetPoint(p1, masterFrame, rel1, x1, y1)
+        t:SetPoint(p2, masterFrame, rel2, x2, y2)
+        t:SetColorTexture(r, g, b, 0.95)
+        return t
+    end
+    Strip(1.00, 0.86, 0.50, "TOPLEFT", "TOPLEFT", -4, 4, "BOTTOMRIGHT", "TOPRIGHT", 4, 0)          -- top (lit)
+    Strip(1.00, 0.86, 0.50, "TOPLEFT", "TOPRIGHT", 0, 4, "BOTTOMRIGHT", "BOTTOMRIGHT", 4, -4)      -- right (lit)
+    Strip(0.55, 0.41, 0.20, "TOPLEFT", "BOTTOMLEFT", -4, 0, "BOTTOMRIGHT", "BOTTOMRIGHT", 0, -4)   -- bottom
+    Strip(0.55, 0.41, 0.20, "TOPLEFT", "TOPLEFT", -4, 4, "BOTTOMRIGHT", "BOTTOMLEFT", 0, -4)       -- left
 
-    local outerInner = masterFrame:CreateTexture(nil, "BACKGROUND", nil, -6)
-    outerInner:SetPoint("TOPLEFT", masterFrame, "TOPLEFT", -1, 1)
-    outerInner:SetPoint("BOTTOMRIGHT", masterFrame, "BOTTOMRIGHT", 1, -1)
-    outerInner:SetColorTexture(0.04, 0.04, 0.06, 1.0)
+    -- Dark interior fill behind the backplate (hidden in world mode)
+    housingFill = masterFrame:CreateTexture(nil, "BACKGROUND", nil, -5)
+    housingFill:SetAllPoints(masterFrame)
+    housingFill:SetColorTexture(0.04, 0.04, 0.06, 1.0)
 
     -- ------------------------------------------------------------------------
-    -- LAYER 1: Backplate Frame (FrameLevel 22)
-    -- Full-grid-size cosmic nebula starfield. No per-cell dark slotBg!
+    -- LAYER 1: Backplate (FrameLevel 22), z = 1.0. Slides by texcoords only, so it never
+    -- leaves the frame and never needs clipping.
     -- ------------------------------------------------------------------------
     frameBackplate = CreateFrame("Frame", "FidelityEMatrix_Backplate", masterFrame)
     frameBackplate:SetAllPoints(masterFrame)
@@ -161,58 +276,49 @@ function CreateMatrixGrid()
     backplateTex = frameBackplate:CreateTexture(nil, "BACKGROUND", nil, -4)
     backplateTex:SetAllPoints(frameBackplate)
     backplateTex:SetTexture(TEX_BACKPLATE)
+    backplateTex:SetTexCoord(Math.BackplateTexCoords(0, 0, BACKPLATE_ZOOM))
     backplateTex:SetAlpha(0.92)
 
     -- ------------------------------------------------------------------------
-    -- LAYER 2: 3D Scene Frame (FrameLevel 25)
-    -- Multi-plane 3D models framed across the full grid rectangle (480x288)
+    -- LAYER 2: 3D Scene (FrameLevel 25), subject at z = 0.5
     -- ------------------------------------------------------------------------
     frameScene = CreateFrame("Frame", "FidelityEMatrix_Scene", masterFrame)
     frameScene:SetAllPoints(masterFrame)
     frameScene:SetFrameLevel(25)
     frameScene:EnableMouse(false)
 
-    -- Main 3D Subject Setup
     local function Create3DModel(name, w, h, point, relPoint, x, y)
-        local model
-
-        -- 1. Try Classic DressUpModel (Most robust in Classic / TBC with full armor/clothing framing)
+        -- 1. DressUpModel (most robust in Classic / TBC, full armour framing)
         local okDM, dm = pcall(CreateFrame, "DressUpModel", name, frameScene)
         if okDM and dm then
-            model = dm
-            model:SetSize(w, h)
-            model:SetPoint(point, frameScene, relPoint, x, y)
-            model:SetFrameLevel(26)
-            model:EnableMouse(false)
+            dm:SetSize(w, h)
+            dm:SetPoint(point, frameScene, relPoint, x, y)
+            dm:SetFrameLevel(26)
+            dm:EnableMouse(false)
             pcall(function()
                 dm:SetUnit("player")
-                if dm.SetDefaultModelPosition then
-                    dm:SetDefaultModelPosition()
-                end
-                if dm.SetFacing then dm:SetFacing(0) end
-                -- Warm key light, cool violet fill
-                if dm.SetLight then
-                    dm:SetLight(true, false, -0.45, -0.55, 0.70, 1.0, 0.95, 0.75, 0.7, 0.20, 0.15, 0.35)
-                end
+                if dm.SetDefaultModelPosition then dm:SetDefaultModelPosition() end
+                PlaceModel(dm, 0, 0)
+                FaceModel(dm, 0)
             end)
-            return model
+            ApplyLight(dm, LIGHT_MONO)
+            return dm
         end
 
-        -- 2. Try Retail ModelScene
+        -- 2. Retail ModelScene
         local okMS, ms = pcall(CreateFrame, "ModelScene", name, frameScene)
         if okMS and ms and ms.CreateActor then
-            model = ms
-            model:SetSize(w, h)
-            model:SetPoint(point, frameScene, relPoint, x, y)
-            model:SetFrameLevel(26)
-            model:EnableMouse(false)
+            ms:SetSize(w, h)
+            ms:SetPoint(point, frameScene, relPoint, x, y)
+            ms:SetFrameLevel(26)
+            ms:EnableMouse(false)
             pcall(function()
                 local actor = ms:CreateActor()
                 if actor and actor.SetModelByUnit then
                     actor:SetModelByUnit("player")
                     actor:SetPosition(0, 0, 0)
                 end
-                local camera = ms:GetActiveCamera()
+                local camera = ms.GetActiveCamera and ms:GetActiveCamera()
                 if not camera and CreateModelSceneCamera then
                     camera = CreateModelSceneCamera("OrbitCamera")
                     if camera and ms.AddCamera then
@@ -226,47 +332,70 @@ function CreateMatrixGrid()
                     if camera.SetYaw then camera:SetYaw(0) end
                 end
             end)
-            return model
+            return ms
         end
 
         -- 3. Fallback PlayerModel
         local okPM, pm = pcall(CreateFrame, "PlayerModel", name, frameScene)
         if okPM and pm then
-            model = pm
-            model:SetSize(w, h)
-            model:SetPoint(point, frameScene, relPoint, x, y)
-            model:SetFrameLevel(26)
-            model:EnableMouse(false)
+            pm:SetSize(w, h)
+            pm:SetPoint(point, frameScene, relPoint, x, y)
+            pm:SetFrameLevel(26)
+            pm:EnableMouse(false)
             pcall(function()
                 pm:SetUnit("player")
-                if pm.SetPosition then pm:SetPosition(0, 0, -0.15) end
-                if pm.SetFacing then pm:SetFacing(0) end
+                PlaceModel(pm, 0, 0)
+                FaceModel(pm, 0)
             end)
-            return model
+            ApplyLight(pm, LIGHT_MONO)
+            return pm
         end
 
         return nil
     end
 
-    -- Create Main Subject (Mono Parallax - Default)
     sceneMain = Create3DModel("FidelityEMatrix_SceneMain", MATRIX_WIDTH, MATRIX_HEIGHT, "CENTER", "CENTER", 0, 0)
-
-    -- Create Stereo Dual-Eye Pairs (Left and Right halves)
     sceneLeft = Create3DModel("FidelityEMatrix_SceneLeft", MATRIX_WIDTH * 0.5, MATRIX_HEIGHT, "LEFT", "LEFT", 0, 0)
     sceneRight = Create3DModel("FidelityEMatrix_SceneRight", MATRIX_WIDTH * 0.5, MATRIX_HEIGHT, "RIGHT", "RIGHT", 0, 0)
 
-    UpdateStereoDisplay()
+    -- ------------------------------------------------------------------------
+    -- LAYER 2b: Inner walls of the box (FrameLevel 27, above the subject so the window edge
+    -- occludes it, below the lens grid). Visible widths follow the eye.
+    -- ------------------------------------------------------------------------
+    frameDepth = CreateFrame("Frame", "FidelityEMatrix_Depth", masterFrame)
+    frameDepth:SetAllPoints(masterFrame)
+    frameDepth:SetFrameLevel(27)
+    frameDepth:EnableMouse(false)
+
+    local function Wall(...)
+        local t = frameDepth:CreateTexture(nil, "ARTWORK")
+        t:SetTexture(TEX_WALL)
+        t:SetTexCoord(...)
+        return t
+    end
+    -- Sun at the upper right: the left wall and the floor face it (lit), the right wall and the
+    -- ceiling face away (shade). The texture is mid-tone so these tints read as lit surfaces.
+    wallL = Wall(0, 1, 0, 1)                       -- opaque at the left edge
+    wallL:SetPoint("TOPLEFT"); wallL:SetPoint("BOTTOMLEFT")
+    wallL:SetVertexColor(1.00, 0.92, 0.80)
+    wallR = Wall(1, 0, 0, 1)                       -- mirrored: opaque at the right edge
+    wallR:SetPoint("TOPRIGHT"); wallR:SetPoint("BOTTOMRIGHT")
+    wallR:SetVertexColor(0.30, 0.33, 0.46)
+    wallT = Wall(0, 0, 1, 0, 0, 1, 1, 1)           -- rotated: opaque at the top edge
+    wallT:SetPoint("TOPLEFT"); wallT:SetPoint("TOPRIGHT")
+    wallT:SetVertexColor(0.24, 0.26, 0.38)
+    wallB = Wall(1, 0, 0, 0, 1, 1, 0, 1)           -- rotated: opaque at the bottom edge
+    wallB:SetPoint("BOTTOMLEFT"); wallB:SetPoint("BOTTOMRIGHT")
+    wallB:SetVertexColor(0.85, 0.78, 0.66)
 
     -- ------------------------------------------------------------------------
-    -- LAYER 3: Cell Grid Frame (FrameLevel 30 - Forefront)
-    -- 135 pre-allocated cell textures (flapTex, specBar, temporary creviceTex)
+    -- LAYER 3: Cell Grid (FrameLevel 30), the lens array at z = 0
     -- ------------------------------------------------------------------------
     frameGrid = CreateFrame("Frame", "FidelityEMatrix_Grid", masterFrame)
     frameGrid:SetAllPoints(masterFrame)
     frameGrid:SetFrameLevel(30)
     frameGrid:EnableMouse(false)
 
-    -- Flat 135 Cell Array
     for r = 1, ROWS do
         for c = 1, COLS do
             local idx = (r - 1) * COLS + c
@@ -275,7 +404,6 @@ function CreateMatrixGrid()
 
             local rotIdx, uv8 = Math.GetCellRotation(c, r)
 
-            -- Cell struct (pre-allocated once at startup)
             local cell = {
                 col = c,
                 row = r,
@@ -284,31 +412,28 @@ function CreateMatrixGrid()
                 rotIdx = rotIdx,
                 uv8 = uv8,
                 ringDist = 0.0,
-                isWindow = false, -- Default state is CLOSED!
+                isWindow = false, -- Default state is CLOSED
                 settled = true
             }
 
-            -- Texture 1: creviceTex (BACKGROUND, sublevel 1)
-            -- Temporary dark crevice visible ONLY mid-flip (alpha=0 at u=0 and u=1)
+            -- creviceTex: dark backing visible ONLY mid-flip
             local creviceTex = frameGrid:CreateTexture(nil, "BACKGROUND", nil, 1)
             creviceTex:SetSize(CELL_SIZE, CELL_SIZE)
             creviceTex:SetPoint("CENTER", frameGrid, "TOPLEFT", cx, cy)
             creviceTex:SetColorTexture(0.02, 0.02, 0.03, 1.0)
-            creviceTex:SetAlpha(0.0) -- Zero at load!
+            creviceTex:SetAlpha(0.0)
             cell.creviceTex = creviceTex
 
-            -- Texture 2: flapTex (ARTWORK, sublevel 2)
-            -- Holds the puffy Marshmallow E (Closed) or Window Bezel (Open)
+            -- flapTex: puffy E (closed) or microlens bezel (open)
             local flapTex = frameGrid:CreateTexture(nil, "ARTWORK", nil, 2)
             flapTex:SetSize(CELL_SIZE, CELL_SIZE)
             flapTex:SetPoint("CENTER", frameGrid, "TOPLEFT", cx, cy)
-            flapTex:SetTexture(TEX_CLOSED) -- Default state: CLOSED!
+            flapTex:SetTexture(TEX_CLOSED)
             flapTex:SetTexCoord(unpack(uv8))
-            flapTex:SetAlpha(1.0) -- Fully opaque at load!
+            flapTex:SetAlpha(1.0)
             cell.flapTex = flapTex
 
-            -- Texture 3: specBar (OVERLAY, sublevel 3)
-            -- Thin 32x2 golden-white specular flash bar at cell CENTER
+            -- specBar: thin golden-white flash at the flip midpoint
             local specBar = frameGrid:CreateTexture(nil, "OVERLAY", nil, 3)
             specBar:SetSize(CELL_SIZE, 2)
             specBar:SetPoint("CENTER", frameGrid, "TOPLEFT", cx, cy)
@@ -320,7 +445,34 @@ function CreateMatrixGrid()
         end
     end
 
-    -- Click-Picking Handler on Master Frame
+    -- ------------------------------------------------------------------------
+    -- LAYER 4: Cover glass (z = -0.15) and pop-out reticle (z = -0.4), FrameLevel 32
+    -- ------------------------------------------------------------------------
+    frameFront = CreateFrame("Frame", "FidelityEMatrix_Front", masterFrame)
+    frameFront:SetAllPoints(masterFrame)
+    frameFront:SetFrameLevel(32)
+    frameFront:EnableMouse(false)
+
+    sheenTex = frameFront:CreateTexture(nil, "ARTWORK", nil, 1)
+    sheenTex:SetTexture(TEX_SHEEN)
+    sheenTex:SetBlendMode("ADD")
+    sheenTex:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
+    sheenTex:SetPoint("CENTER", frameFront, "CENTER", 0, 0)
+
+    local function Reticle(r, g, b)
+        local t = frameFront:CreateTexture(nil, "OVERLAY", nil, 2)
+        t:SetTexture(TEX_RETICLE)
+        t:SetSize(RETICLE_SIZE, RETICLE_SIZE)
+        t:SetPoint("CENTER", frameFront, "CENTER", 0, 0)
+        t:SetVertexColor(r, g, b)
+        return t
+    end
+    reticleMono = Reticle(0.0, 1.0, 0.8)
+    reticleL = Reticle(1.0, 0.0, 0.0)   -- red, left eye
+    reticleR = Reticle(0.0, 1.0, 1.0)   -- cyan, right eye
+    reticleR:SetBlendMode("ADD")
+
+    -- Click-picking on the master frame
     local function HandleMatrixClick(self, button)
         if button == "LeftButton" and not IsShiftKeyDown() then
             local now = GetTime()
@@ -334,11 +486,8 @@ function CreateMatrixGrid()
                 mx, my = mx / s, my / s
                 local left = self:GetLeft() or 0
                 local top = self:GetTop() or 0
-                local relX = mx - left
-                local relY = top - my
-
-                local col = math.floor(relX / CELL_SIZE) + 1
-                local row = math.floor(relY / CELL_SIZE) + 1
+                local col = math.floor((mx - left) / CELL_SIZE) + 1
+                local row = math.floor((top - my) / CELL_SIZE) + 1
 
                 if col >= 1 and col <= COLS and row >= 1 and row <= ROWS then
                     TriggerScoreboardWave(col, row)
@@ -352,156 +501,231 @@ function CreateMatrixGrid()
     masterFrame:SetScript("OnMouseDown", HandleMatrixClick)
     masterFrame:SetScript("OnMouseUp", HandleMatrixClick)
 
-    -- Attach OnUpdate if animation (spin/parallax) is enabled
+    UpdateStereoDisplay()
     CheckIdleCondition()
 end
 
 -- ============================================================================
--- 2. Stereo Display Rig
+-- 2. Backdrop & Stereo Rig
 -- ============================================================================
-function UpdateStereoDisplay()
-    local mode = FidelityEMatrix_Config.stereoMode or "off"
+local function StereoMode() return Cfg("stereoMode") end
+local function IsStereo() return StereoMode() ~= "off" end
 
-    if mode == "sbs" then
+function ApplyBackdrop()
+    if not backplateTex then return end
+    -- Any stereo mode needs a black field: a shared flat backdrop has no disparity and fights fusion
+    local mode = IsStereo() and "black" or Cfg("backdrop")
+    if housingFill then
+        if mode == "world" then housingFill:Hide() else housingFill:Show() end
+    end
+    if mode == "world" then
+        backplateTex:Hide()
+    elseif mode == "black" then
+        backplateTex:Show()
+        backplateTex:SetColorTexture(0, 0, 0, 1)
+        backplateTex:SetTexCoord(0, 1, 0, 1)
+        backplateTex:SetAlpha(1.0)
+    else
+        backplateTex:Show()
+        backplateTex:SetTexture(TEX_BACKPLATE)
+        backplateTex:SetTexCoord(Math.BackplateTexCoords(0, 0, BACKPLATE_ZOOM))
+        backplateTex:SetAlpha(0.92)
+    end
+    appliedEyeX = nil -- force the planes to re-apply
+end
+
+function UpdateStereoDisplay()
+    local mode = StereoMode()
+
+    if (mode == "sbs" or mode == "cross") and sceneLeft and sceneRight then
+        -- Halves: parallel viewing puts the left eye's view on the left; cross-eyed swaps them
         if sceneMain then sceneMain:Hide() end
-        if sceneLeft then
-            sceneLeft:Show()
-            sceneLeft:ClearAllPoints()
-            sceneLeft:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
-            sceneLeft:SetPoint("LEFT", frameScene, "LEFT", 0, 0)
-            sceneLeft:SetAlpha(1.0)
+        for _, m in ipairs({ sceneLeft, sceneRight }) do
+            m:Show()
+            m:ClearAllPoints()
+            m:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
+            m:SetAlpha(1.0)
+            ApplyLight(m, LIGHT_MONO)
         end
-        if sceneRight then
-            sceneRight:Show()
-            sceneRight:ClearAllPoints()
-            sceneRight:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
-            sceneRight:SetPoint("RIGHT", frameScene, "RIGHT", 0, 0)
-            sceneRight:SetAlpha(1.0)
-        end
+        local leftHalf, rightHalf = sceneLeft, sceneRight
+        if mode == "cross" then leftHalf, rightHalf = sceneRight, sceneLeft end
+        leftHalf:SetPoint("LEFT", frameScene, "LEFT", 0, 0)
+        rightHalf:SetPoint("RIGHT", frameScene, "RIGHT", 0, 0)
 
     elseif mode == "anaglyph" then
-        -- Anaglyph: Both scenes full area, blended with complementary lighting/alpha
+        -- Red left eye under a cyan right eye; uncrossed offset puts the subject behind the screen
         if sceneMain then sceneMain:Hide() end
+        local px = Cfg("stereoPixels")
         if sceneLeft then
             sceneLeft:Show()
             sceneLeft:ClearAllPoints()
             sceneLeft:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
-            sceneLeft:SetPoint("CENTER", frameScene, "CENTER", -3, 0)
-            sceneLeft:SetAlpha(0.60)
-            if sceneLeft.SetLight then
-                sceneLeft:SetLight(true, false, -0.5, -0.5, 0.7, 1.0, 0.2, 0.2, 0.8, 0.2, 0.05, 0.05) -- Red Key
-            end
+            sceneLeft:SetPoint("CENTER", frameScene, "CENTER", -px, 0)
+            sceneLeft:SetAlpha(1.0)
+            ApplyLight(sceneLeft, LIGHT_RED)
         end
         if sceneRight then
             sceneRight:Show()
             sceneRight:ClearAllPoints()
             sceneRight:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
-            sceneRight:SetPoint("CENTER", frameScene, "CENTER", 3, 0)
-            sceneRight:SetAlpha(0.60)
-            if sceneRight.SetLight then
-                sceneRight:SetLight(true, false, 0.5, -0.5, 0.7, 0.2, 0.9, 1.0, 0.8, 0.05, 0.2, 0.25) -- Cyan Key
-            end
+            sceneRight:SetPoint("CENTER", frameScene, "CENTER", px, 0)
+            sceneRight:SetAlpha(Cfg("anaglyphMix"))
+            ApplyLight(sceneRight, LIGHT_CYAN)
         end
 
     else
-        -- Mono Parallax (Default): Single ModelScene spanning full matrix
         if sceneMain then
             sceneMain:Show()
             sceneMain:ClearAllPoints()
             sceneMain:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
             sceneMain:SetPoint("CENTER", frameScene, "CENTER", 0, 0)
             sceneMain:SetAlpha(1.0)
-            if sceneMain.SetLight then
-                sceneMain:SetLight(true, false, -0.45, -0.55, 0.70, 1.0, 0.95, 0.75, 0.7, 0.20, 0.15, 0.35)
-            end
+            ApplyLight(sceneMain, LIGHT_MONO)
         end
-        if sceneLeft then
-            sceneLeft:Hide()
-            sceneLeft:SetAlpha(0.0)
-        end
-        if sceneRight then
-            sceneRight:Hide()
-            sceneRight:SetAlpha(0.0)
-        end
+        if sceneLeft then sceneLeft:Hide() end
+        if sceneRight then sceneRight:Hide() end
     end
+
+    ApplyBackdrop()
+    ApplyDepthPlanes(smoothEyeX, smoothEyeY)
 end
 
 -- ============================================================================
--- 3. Zero-GC Scoreboard Wave & Motion Driver
+-- 3. Depth Planes (called when the eye or openAmount changes)
+-- ============================================================================
+function ApplyDepthPlanes(eyeX, eyeY)
+    if not masterFrame or not Math then return end
+    local mode = StereoMode()
+    local split = (mode == "sbs" or mode == "cross")
+
+    -- Backplate (z = 1): slide the texcoord window with the eye
+    if backplateTex and backplateTex:IsShown() and Cfg("backdrop") == "nebula" and not IsStereo() then
+        local px = Math.ParallaxShift(eyeX, Z_BACK) * PX_GAIN
+        local py = Math.ParallaxShift(eyeY, Z_BACK) * PX_GAIN
+        -- texcoord v grows downward; a shift up on screen is a smaller v
+        backplateTex:SetTexCoord(Math.BackplateTexCoords(-px * BACKPLATE_ZOOM / MATRIX_WIDTH, py * BACKPLATE_ZOOM / MATRIX_HEIGHT, BACKPLATE_ZOOM))
+    end
+
+    -- Subject (z = 0.5): sideways/up shift in model units (mono only; stereo pairs stay centred)
+    if sceneMain and sceneMain:IsShown() then
+        PlaceModel(sceneMain,
+            Cfg("sideSign") * Math.ParallaxShift(eyeX, Z_SUBJECT) * MODEL_GAIN,
+            Math.ParallaxShift(eyeY, Z_SUBJECT) * MODEL_GAIN)
+    end
+
+    -- Inner walls: see more of the far wall's opposite side as the eye moves
+    local wallsOn = (not split) and openAmount > 0.001
+    if wallL then
+        if wallsOn then
+            local l, r, t, b = Math.WallWidths(eyeX, eyeY, WALL_BASE, WALL_GAIN, WALL_MIN, WALL_MAX)
+            wallL:SetWidth(l); wallR:SetWidth(r); wallT:SetHeight(t); wallB:SetHeight(b)
+            wallL:SetAlpha(openAmount); wallR:SetAlpha(openAmount); wallT:SetAlpha(openAmount); wallB:SetAlpha(openAmount)
+            wallL:Show(); wallR:Show(); wallT:Show(); wallB:Show()
+        else
+            wallL:Hide(); wallR:Hide(); wallT:Hide(); wallB:Hide()
+        end
+    end
+
+    -- Cover glass (z = -0.15) and pop-out reticle (z = -0.4): move against the eye
+    local frontOn = (not split) and openAmount > 0.001
+    if sheenTex then
+        if frontOn and mode ~= "anaglyph" then
+            sheenTex:SetPoint("CENTER", frameFront, "CENTER",
+                Math.ParallaxShift(eyeX, Z_GLASS) * PX_GAIN, Math.ParallaxShift(eyeY, Z_GLASS) * PX_GAIN)
+            sheenTex:SetAlpha(0.9 * openAmount)
+            sheenTex:Show()
+        else
+            sheenTex:Hide()
+        end
+    end
+    if reticleMono then
+        local rx = Math.ParallaxShift(eyeX, Z_POP) * PX_GAIN
+        local ry = Math.ParallaxShift(eyeY, Z_POP) * PX_GAIN
+        if frontOn and mode == "anaglyph" then
+            -- Crossed disparity: the left (red) image sits right of the right (cyan) one -> in front
+            local d = Cfg("stereoPixels") + 1
+            reticleMono:Hide()
+            reticleL:SetPoint("CENTER", frameFront, "CENTER", rx + d, ry)
+            reticleR:SetPoint("CENTER", frameFront, "CENTER", rx - d, ry)
+            reticleL:SetAlpha(0.85 * openAmount); reticleR:SetAlpha(0.85 * openAmount)
+            reticleL:Show(); reticleR:Show()
+        elseif frontOn then
+            reticleL:Hide(); reticleR:Hide()
+            reticleMono:SetPoint("CENTER", frameFront, "CENTER", rx, ry)
+            reticleMono:SetAlpha(0.85 * openAmount)
+            reticleMono:Show()
+        else
+            reticleMono:Hide(); reticleL:Hide(); reticleR:Hide()
+        end
+    end
+
+    appliedEyeX, appliedEyeY, appliedOpen = eyeX, eyeY, openAmount
+end
+
+-- ============================================================================
+-- 4. Zero-GC Scoreboard Wave & Motion Driver
 -- ============================================================================
 local function OnUpdateDriver(self, dt)
     animTime = animTime + dt
+    local lens = Cfg("lensAlpha")
 
-    -- 1. Scoreboard Wave Cascade
+    -- 1. Scoreboard wave cascade
     if waveActive then
-        local speed = FidelityEMatrix_Config.waveSpeed or 16.0
-        local dur = FidelityEMatrix_Config.flipDuration or 0.26
+        local speed = Cfg("waveSpeed")
+        local dur = Cfg("flipDuration")
         waveAge = waveAge + dt
 
         local allDone = true
-        local opening = waveTargetState -- true if flipping to Open (Window)
+        local opening = waveTargetState
 
         for i = 1, TOTAL_CELLS do
             local cell = cells[i]
             if cell then
                 local u = Math.CalculateFlipProgress(waveAge, speed, cell.ringDist, dur)
 
-                if u < 1.0 then
-                    allDone = false
-                end
+                if u < 1.0 then allDone = false end
 
                 if u > 0.0 and u < 1.0 then
                     cell.settled = false
                     local scaleY, specAlpha, isFlipped, creviceAlpha = Math.GetFlipVisuals(u)
 
-                    -- Vertical squash anchored at cell center
                     cell.flapTex:SetHeight(CELL_SIZE * scaleY)
-
-                    -- Golden specular bar flash at midpoint u=0.5
                     cell.specBar:SetAlpha(specAlpha)
-
-                    -- Dark crevice backing: visible ONLY mid-flip
                     cell.creviceTex:SetAlpha(creviceAlpha)
 
-                    -- Texture swap and aperture merge:
                     if opening then
-                        -- Closing -> Opening:
                         if isFlipped then
+                            -- E -> lens: fade from the full bezel down to the lens alpha
                             cell.flapTex:SetTexture(TEX_WINDOW)
-                            -- Smoothly fade window bezel to 0.0 at u=1 so open viewport has ZERO cage seams!
-                            local fade = math.max(0.0, 1.0 - (u - 0.5) * 2.0)
-                            cell.flapTex:SetAlpha(fade)
+                            local k = math.min(1.0, (u - 0.5) * 2.0)
+                            cell.flapTex:SetAlpha(1.0 + (lens - 1.0) * k)
                             cell.isWindow = true
                         else
                             cell.flapTex:SetTexture(TEX_CLOSED)
                             cell.flapTex:SetAlpha(1.0)
                         end
                     else
-                        -- Opening -> Closing:
                         if isFlipped then
                             cell.flapTex:SetTexture(TEX_CLOSED)
-                            local fadeIn = math.min(1.0, (u - 0.5) * 2.0)
-                            cell.flapTex:SetAlpha(fadeIn)
+                            cell.flapTex:SetAlpha(math.min(1.0, (u - 0.5) * 2.0))
                             cell.isWindow = false
                         else
                             cell.flapTex:SetTexture(TEX_WINDOW)
-                            cell.flapTex:SetAlpha(0.0)
+                            cell.flapTex:SetAlpha(lens)
                         end
                     end
 
                 elseif u >= 1.0 and not cell.settled then
-                    -- Settle into final state
                     cell.flapTex:SetHeight(CELL_SIZE)
                     cell.specBar:SetAlpha(0.0)
-                    cell.creviceTex:SetAlpha(0.0) -- ALWAYS zero in settled state!
+                    cell.creviceTex:SetAlpha(0.0)
                     cell.isWindow = opening
 
                     if opening then
-                        -- FULLY OPEN: Alpha = 0.0 for seamless unobstructed 3D view!
+                        -- OPEN: the microlens array stays visible at lensAlpha (0 = seamless)
                         cell.flapTex:SetTexture(TEX_WINDOW)
-                        cell.flapTex:SetAlpha(0.0)
+                        cell.flapTex:SetAlpha(lens)
                     else
-                        -- FULLY CLOSED: Alpha = 1.0 for solid golden puffy E-wall!
                         cell.flapTex:SetTexture(TEX_CLOSED)
                         cell.flapTex:SetAlpha(1.0)
                     end
@@ -510,82 +734,77 @@ local function OnUpdateDriver(self, dt)
             end
         end
 
-        if allDone then
-            waveActive = false
-        end
+        if allDone then waveActive = false end
     end
 
-    -- 2. 3D Model Continuous Rotation (Spin)
-    local spin = FidelityEMatrix_Config.spinSpeed or 0.50
+    -- 2. Open amount (walls, glass, reticle) follows the wave target
+    local target = waveTargetState and 1.0 or 0.0
+    if openAmount ~= target then
+        openAmount = Math.Approach(openAmount, target, OPEN_RATE, dt)
+    end
+
+    -- 3. Eye from the cursor (raw pixels on both sides of the comparison)
+    local pStr = Cfg("parallaxStrength")
+    if pStr > 0.0 and GetCursorPosition then
+        local mx, my = GetCursorPosition()
+        local es = masterFrame:GetEffectiveScale() or 1.0
+        local cx, cy = masterFrame:GetCenter()
+        if cx and cy then
+            local uis = UIParent:GetEffectiveScale() or 1.0
+            local halfW = (GetScreenWidth() or 1920) * uis * 0.5
+            local halfH = (GetScreenHeight() or 1080) * uis * 0.5
+            local tx, ty = Math.EyeFromCursor(mx, my, cx * es, cy * es, halfW, halfH, pStr)
+            local k = math.min(dt * 8.0, 1.0)
+            smoothEyeX = smoothEyeX + (tx - smoothEyeX) * k
+            smoothEyeY = smoothEyeY + (ty - smoothEyeY) * k
+        end
+    elseif smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0 or appliedEyeY ~= 0 then
+        -- Parallax off: snap the eye home and force one re-apply at exactly 0, so a residue
+        -- below the change threshold cannot keep the idle check from detaching OnUpdate
+        smoothEyeX, smoothEyeY = 0.0, 0.0
+        appliedEyeX = nil
+    end
+
+    if appliedEyeX == nil
+        or math.abs(smoothEyeX - appliedEyeX) > 0.0005 or math.abs(smoothEyeY - appliedEyeY) > 0.0005
+        or appliedOpen ~= openAmount then
+        ApplyDepthPlanes(smoothEyeX, smoothEyeY)
+    end
+
+    -- 4. Subject rotation: continuous spin + view-dependent turn + per-eye disparity
+    local spin = Cfg("spinSpeed")
     if spin > 0.0 then
         currentFacing = currentFacing + dt * spin
         if currentFacing > 6.28318 then currentFacing = currentFacing - 6.28318 end
-
-        if sceneMain and sceneMain:IsShown() then
-            if sceneMain.SetFacing then
-                sceneMain:SetFacing(currentFacing)
-            elseif sceneMain.SetRotation then
-                sceneMain:SetRotation(currentFacing)
-            end
-        end
-        if sceneLeft and sceneLeft:IsShown() and sceneLeft.SetFacing then
-            sceneLeft:SetFacing(currentFacing)
-        end
-        if sceneRight and sceneRight:IsShown() and sceneRight.SetFacing then
-            sceneRight:SetFacing(currentFacing)
-        end
+    end
+    -- Eye to the right orbits the viewer counter-clockwise: the subject turns clockwise (negative)
+    local facing = currentFacing - Cfg("turnSign") * smoothEyeX * FACING_TILT
+    if sceneMain and sceneMain:IsShown() then FaceModel(sceneMain, facing) end
+    if IsStereo() then
+        local fl, fr = Math.StereoFacings(facing, Cfg("turnSign") * Cfg("stereoDelta"))
+        if sceneLeft and sceneLeft:IsShown() then FaceModel(sceneLeft, fl) end
+        if sceneRight and sceneRight:IsShown() then FaceModel(sceneRight, fr) end
     end
 
-    -- 3. Head / Cursor Parallax Depth Offset
-    local pStr = FidelityEMatrix_Config.parallaxStrength or 0.50
-    if pStr > 0.0 then
-        local mx, my = GetCursorPosition()
-        local sw, sh = GetScreenWidth() or 1920, GetScreenHeight() or 1080
-        local uis = UIParent:GetEffectiveScale() or 1.0
-        mx, my = mx / uis, my / uis
-
-        local fx = masterFrame:GetLeft() or (sw * 0.5)
-        local fy = masterFrame:GetBottom() or (sh * 0.5)
-        local frameCenterX = fx + MATRIX_WIDTH * 0.5
-        local frameCenterY = fy + MATRIX_HEIGHT * 0.5
-
-        local targetX = math.min(math.max((mx - frameCenterX) / (sw * 0.5), -1.0), 1.0) * pStr
-        local targetY = math.min(math.max((my - frameCenterY) / (sh * 0.5), -1.0), 1.0) * pStr
-
-        -- Smooth lerp
-        smoothParallaxX = smoothParallaxX + (targetX - smoothParallaxX) * math.min(dt * 8.0, 1.0)
-        smoothParallaxY = smoothParallaxY + (targetY - smoothParallaxY) * math.min(dt * 8.0, 1.0)
-
-        -- Layer 1: Backplate shifts slowly (deep background: z = 0.20)
-        if frameBackplate then
-            backplateTex:ClearAllPoints()
-            backplateTex:SetPoint("CENTER", frameBackplate, "CENTER", -smoothParallaxX * 10, -smoothParallaxY * 6)
-        end
-
-        -- Layer 2: Main Subject shifts at focal plane (z = 0.80)
-        if sceneMain and sceneMain:IsShown() and sceneMain.SetPosition then
-            sceneMain:SetPosition(smoothParallaxX * 0.12, 0, smoothParallaxY * 0.08)
-        end
-    end
-
-    -- Check if animation is completely idle to detach OnUpdate
     CheckIdleCondition()
 end
 
---- Detaches OnUpdate when no wave, spin, or parallax is active (0.00 ms idle CPU).
+--- Detaches OnUpdate when nothing moves (0.00 ms idle CPU).
 function CheckIdleCondition()
     if not masterFrame then return end
 
-    local spin = FidelityEMatrix_Config.spinSpeed or 0.50
-    local pStr = FidelityEMatrix_Config.parallaxStrength or 0.50
+    local spin = Cfg("spinSpeed")
+    local pStr = Cfg("parallaxStrength")
+    local target = waveTargetState and 1.0 or 0.0
+    local settlingEye = (pStr <= 0.0) and (smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0)
 
-    if waveActive or spin > 0.0 or pStr > 0.0 then
+    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye then
         if not masterFrame:GetScript("OnUpdate") then
             masterFrame:SetScript("OnUpdate", OnUpdateDriver)
         end
     else
         if masterFrame:GetScript("OnUpdate") then
-            masterFrame:SetScript("OnUpdate", nil) -- ZERO IDLE CPU!
+            masterFrame:SetScript("OnUpdate", nil) -- ZERO IDLE CPU
         end
     end
 end
@@ -606,11 +825,8 @@ function TriggerScoreboardWave(ox, oy)
     waveOriginCol = ox
     waveOriginRow = oy
     waveAge = 0.0
-
-    -- Toggle target state: Closed -> Open or Open -> Closed
     waveTargetState = not waveTargetState
 
-    -- Precompute wave distances once at trigger time (0-GC during wave)
     for i = 1, TOTAL_CELLS do
         local cell = cells[i]
         if cell then
@@ -625,9 +841,21 @@ function TriggerScoreboardWave(ox, oy)
     end
 end
 
+--- Re-applies the lens alpha to settled open cells (after /fide lens).
+local function RefreshOpenCells()
+    if waveActive then return end
+    local lens = Cfg("lensAlpha")
+    for i = 1, TOTAL_CELLS do
+        local cell = cells[i]
+        if cell and cell.settled and cell.isWindow then cell.flapTex:SetAlpha(lens) end
+    end
+end
+
 -- ============================================================================
--- 4. Slash Commands & AddOn Lifecycle
+-- 5. Slash Commands & AddOn Lifecycle
 -- ============================================================================
+local function Say(fmt, ...) print("|cff00ffcc[Fidelity EMatrix]|r " .. string.format(fmt, ...)) end
+
 SLASH_FIDELITYEMATRIX1 = "/fide"
 SLASH_FIDELITYEMATRIX2 = "/ematrix"
 
@@ -639,9 +867,9 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
         end
 
         local cmd = args[1] or "toggle"
+        if not masterFrame and cmd ~= "help" then CreateMatrixGrid() end
 
         if cmd == "toggle" or cmd == "show" or cmd == "hide" then
-            if not masterFrame then CreateMatrixGrid() end
             if not masterFrame then return end
             if cmd == "show" then
                 masterFrame:Show()
@@ -655,29 +883,34 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             local ox = tonumber(args[2]) or 8
             local oy = tonumber(args[3]) or 5
             TriggerScoreboardWave(ox, oy)
-            print(string.format("|cff00ffcc[Fidelity EMatrix]|r Ripple triggered from (%d, %d). Target: %s",
-                ox, oy, waveTargetState and "|cff00ff00OPEN VIEWPORT|r" or "|cffffcc00CLOSED E-CUBES|r"))
+            Say("Ripple triggered from (%d, %d). Target: %s", ox, oy,
+                waveTargetState and "|cff00ff00OPEN WINDOW|r" or "|cffffcc00CLOSED E-CUBES|r")
 
         elseif cmd == "scene" then
             local unit = args[2] or "player"
-            if sceneMain and sceneMain.SetUnit then
-                pcall(function()
-                    sceneMain:SetUnit(unit)
-                    if sceneMain.SetDefaultModelPosition then sceneMain:SetDefaultModelPosition() end
-                end)
-                print(string.format("|cff00ffcc[Fidelity EMatrix]|r Scene model set to unit: |cffffffff%s|r", unit))
-            else
-                print("|cffff3333[Fidelity EMatrix]|r Model unit swap not supported on this client frame.")
+            local any = false
+            for _, m in ipairs({ sceneMain, sceneLeft, sceneRight }) do
+                if m and m.SetUnit then
+                    local okU = pcall(function()
+                        m:SetUnit(unit)
+                        if m.SetDefaultModelPosition then m:SetDefaultModelPosition() end
+                    end)
+                    any = any or okU
+                end
             end
+            appliedEyeX = nil
+            UpdateStereoDisplay() -- SetUnit resets lighting on some clients
+            if any then Say("Scene model set to unit: |cffffffff%s|r", unit)
+            else print("|cffff3333[Fidelity EMatrix]|r Model unit swap not supported on this client frame.") end
 
         elseif cmd == "spin" then
             local sp = tonumber(args[2])
             if sp and sp >= 0 and sp <= 2.0 then
                 FidelityEMatrix_Config.spinSpeed = sp
                 CheckIdleCondition()
-                print(string.format("|cff00ffcc[Fidelity EMatrix]|r Spin speed set to: %.2f (0 = 0-CPU idle)", sp))
+                Say("Spin speed set to: %.2f (0 = 0-CPU idle)", sp)
             else
-                print("|cff00ffcc[Fidelity EMatrix]|r Usage: /fide spin <0..2>")
+                Say("Usage: /fide spin <0..2>")
             end
 
         elseif cmd == "parallax" then
@@ -685,31 +918,69 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             if pr and pr >= 0 and pr <= 1.0 then
                 FidelityEMatrix_Config.parallaxStrength = pr
                 CheckIdleCondition()
-                print(string.format("|cff00ffcc[Fidelity EMatrix]|r Parallax strength set to: %.2f (0 = 0-CPU idle)", pr))
+                Say("Parallax strength set to: %.2f (0 = 0-CPU idle)", pr)
             else
-                print("|cff00ffcc[Fidelity EMatrix]|r Usage: /fide parallax <0..1>")
+                Say("Usage: /fide parallax <0..1>")
+            end
+
+        elseif cmd == "lens" then
+            local la = tonumber(args[2])
+            if la and la >= 0 and la <= 1.0 then
+                FidelityEMatrix_Config.lensAlpha = la
+                RefreshOpenCells()
+                Say("Open microlens bezel alpha: %.2f (0 = seamless, no lens cue)", la)
+            else
+                Say("Usage: /fide lens <0..1>")
+            end
+
+        elseif cmd == "backdrop" then
+            local b = args[2]
+            if b == "nebula" or b == "world" or b == "black" then
+                FidelityEMatrix_Config.backdrop = b
+                ApplyBackdrop()
+                ApplyDepthPlanes(smoothEyeX, smoothEyeY)
+                Say("Backdrop: |cffffffff%s|r%s", b, IsStereo() and " (stereo modes use black until /fide stereo off)" or "")
+            else
+                Say("Usage: /fide backdrop <nebula|world|black>")
             end
 
         elseif cmd == "stereo" then
             local sub = args[2] or "toggle"
-            if sub == "sbs" then
-                FidelityEMatrix_Config.stereoMode = "sbs"
-            elseif sub == "anaglyph" then
-                FidelityEMatrix_Config.stereoMode = "anaglyph"
+            if sub == "sbs" or sub == "cross" or sub == "anaglyph" then
+                FidelityEMatrix_Config.stereoMode = sub
             elseif sub == "off" or sub == "mono" then
                 FidelityEMatrix_Config.stereoMode = "off"
+            elseif sub == "delta" and tonumber(args[3]) then
+                FidelityEMatrix_Config.stereoDelta = math.min(math.max(tonumber(args[3]), 0), 0.3)
+            elseif sub == "pixels" and tonumber(args[3]) then
+                FidelityEMatrix_Config.stereoPixels = math.min(math.max(math.floor(tonumber(args[3])), 0), 16)
+            elseif sub == "mix" and tonumber(args[3]) then
+                FidelityEMatrix_Config.anaglyphMix = math.min(math.max(tonumber(args[3]), 0.1), 1.0)
             else
-                local cur = FidelityEMatrix_Config.stereoMode or "off"
-                if cur == "off" then FidelityEMatrix_Config.stereoMode = "sbs"
-                elseif cur == "sbs" then FidelityEMatrix_Config.stereoMode = "anaglyph"
-                else FidelityEMatrix_Config.stereoMode = "off" end
+                local order = { off = "sbs", sbs = "cross", cross = "anaglyph", anaglyph = "off" }
+                FidelityEMatrix_Config.stereoMode = order[StereoMode()] or "off"
             end
             UpdateStereoDisplay()
-            print(string.format("|cff00ffcc[Fidelity EMatrix]|r Stereo Mode: |cffffffff%s|r", FidelityEMatrix_Config.stereoMode:upper()))
+            CheckIdleCondition()
+            Say("Stereo: |cffffffff%s|r (turn %.3f rad, offset %d px, cyan mix %.2f)", StereoMode():upper(),
+                Cfg("stereoDelta"), Cfg("stereoPixels"), Cfg("anaglyphMix"))
+
+        elseif cmd == "calibrate" then
+            -- Moving the cursor right should slide the character right and turn it so you see
+            -- more of its side facing you on the right. If either goes the wrong way, flip it.
+            local which = args[2]
+            if which == "side" or which == "turn" then
+                local key = which .. "Sign"
+                FidelityEMatrix_Config[key] = -Cfg(key)
+                appliedEyeX = nil
+                Say("%s sign is now %d", which, FidelityEMatrix_Config[key])
+            else
+                Say("Usage: /fide calibrate <side|turn>  (side %d, turn %d)", Cfg("sideSign"), Cfg("turnSign"))
+            end
 
         elseif cmd == "diag" then
             RunDiagnostics()
-            print("|cff00ffcc[Fidelity EMatrix Client Diagnostics]|r")
+            print("|cff00ffcc[Fidelity EMatrix Client Diagnostics]|r v" .. VERSION)
             print(string.format("  Project ID: %s | TOC: %d | Client: %s (%s)",
                 tostring(DiagTable.projectID), DiagTable.tocVersion, tostring(DiagTable.buildVersion), tostring(DiagTable.buildNumber)))
             print("  Frame Support:")
@@ -717,41 +988,44 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 print(string.format("    - %s: %s", f, supported and "|cff00ff00YES|r" or "|cffff3333NO|r"))
             end
             print("  Key 3D Methods:")
-            local methods = { "SetFacing", "SetLight", "SetDefaultModelPosition", "SetCamera", "GetActiveCamera" }
-            for _, m in ipairs(methods) do
+            for _, m in ipairs({ "SetFacing", "SetLight", "SetPosition", "SetDefaultModelPosition", "SetCamera", "GetActiveCamera" }) do
                 print(string.format("    - %s: %s", m, DiagTable.methods[m] and "|cff00ff00YES|r" or "|cffff3333NO|r"))
             end
+            print(string.format("  SetLight form in use: |cffffffff%s|r", DiagTable.lightForm))
 
         elseif cmd == "scale" then
             local sc = tonumber(args[2])
             if sc and sc >= 0.5 and sc <= 2.5 then
                 FidelityEMatrix_Config.scale = sc
                 if masterFrame then masterFrame:SetScale(sc) end
-                print(string.format("|cff00ffcc[Fidelity EMatrix]|r Scale set to: %.2f", sc))
+                Say("Scale set to: %.2f", sc)
             else
-                print("|cff00ffcc[Fidelity EMatrix]|r Usage: /fide scale <0.5..2.5>")
+                Say("Usage: /fide scale <0.5..2.5>")
             end
 
         elseif cmd == "status" then
-            print("|cff00ffcc[Fidelity EMatrix Status]|r")
+            print("|cff00ffcc[Fidelity EMatrix Status]|r v" .. VERSION)
             print(string.format("  Matrix Grid: %d x %d (%d cells)", COLS, ROWS, TOTAL_CELLS))
-            print(string.format("  State: %s", waveTargetState and "|cff00ff00OPEN (Seamless Viewport)|r" or "|cffffcc00CLOSED (Puffy E-Cubes)|r"))
-            print(string.format("  Stereo Mode: %s", (FidelityEMatrix_Config.stereoMode or "off"):upper()))
-            print(string.format("  3D Model Engine: %s", sceneMain and sceneMain:GetObjectType() or "None"))
-            print(string.format("  Spin Speed: %.2f | Parallax: %.2f", FidelityEMatrix_Config.spinSpeed or 0, FidelityEMatrix_Config.parallaxStrength or 0))
+            print(string.format("  State: %s | open %.2f", waveTargetState and "|cff00ff00OPEN (lens window)|r" or "|cffffcc00CLOSED (E-cubes)|r", openAmount))
+            print(string.format("  Stereo: %s | Backdrop: %s | Lens: %.2f", StereoMode():upper(), Cfg("backdrop"), Cfg("lensAlpha")))
+            print(string.format("  3D Model Engine: %s | Light form: %s", sceneMain and sceneMain:GetObjectType() or "None", DiagTable.lightForm))
+            print(string.format("  Spin: %.2f | Parallax: %.2f | Eye: %.2f, %.2f", Cfg("spinSpeed"), Cfg("parallaxStrength"), smoothEyeX, smoothEyeY))
             print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
 
         else
-            print("|cff00ffcc[Fidelity EMatrix Commands]|r")
-            print("  |cffffcc00/fide|r (or /fide toggle)         - Show/Hide Matrix Frame (Shift-drag to move)")
-            print("  |cffffcc00/fide ripple [x y]|r               - Trigger scoreboard wave from (x, y)")
-            print("  |cffffcc00/fide scene <player|target>|r      - Set main 3D subject unit")
-            print("  |cffffcc00/fide spin <0..2>|r                - Set model rotation speed (0 = 0-CPU idle)")
-            print("  |cffffcc00/fide parallax <0..1>|r            - Set cursor/head parallax (0 = 0-CPU idle)")
-            print("  |cffffcc00/fide stereo [off|sbs|anaglyph]|r  - Switch stereoscopic 3D mode")
-            print("  |cffffcc00/fide diag|r                       - Print client engine probe table")
-            print("  |cffffcc00/fide scale <0.5..2.5>|r           - Uniform UI scale")
-            print("  |cffffcc00/fide status|r                     - Display current runtime & idle CPU status")
+            print("|cff00ffcc[Fidelity EMatrix Commands]|r v" .. VERSION)
+            print("  |cffffcc00/fide|r (or /fide toggle)          - Show/Hide (Shift-drag to move)")
+            print("  |cffffcc00/fide ripple [x y]|r                - Scoreboard wave from (x, y)")
+            print("  |cffffcc00/fide scene <player|target>|r       - Set the 3D subject")
+            print("  |cffffcc00/fide spin <0..2>|r                 - Model rotation speed (0 = 0-CPU idle)")
+            print("  |cffffcc00/fide parallax <0..1>|r             - Cursor-as-eye parallax (0 = 0-CPU idle)")
+            print("  |cffffcc00/fide lens <0..1>|r                 - Open microlens bezel alpha (0 = seamless)")
+            print("  |cffffcc00/fide backdrop <nebula|world|black>|r - Deep background")
+            print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
+            print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
+            print("  |cffffcc00/fide diag|r                        - Client engine probe")
+            print("  |cffffcc00/fide scale <0.5..2.5>|r            - Uniform UI scale")
+            print("  |cffffcc00/fide status|r                      - Runtime and idle-CPU status")
         end
     end)
     if not ok and err then
@@ -760,7 +1034,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
 end
 
 -- ============================================================================
--- 5. AddOn Loaded Event & Cross-Client Lifecycle
+-- 6. AddOn Loaded Event & Cross-Client Lifecycle
 -- ============================================================================
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
@@ -769,20 +1043,31 @@ loader:SetScript("OnEvent", function(self, event, addon)
     if event == "ADDON_LOADED" then
         if addon == "FidelityEMatrix" or addon == ADDON_NAME then
             CreateMatrixGrid()
-            print("|cff00ffcc[Fidelity EMatrix]|r v1.1.0 initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide|r.")
+            Say("v%s initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide help|r.", VERSION)
             self:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not masterFrame then
             CreateMatrixGrid()
-            print("|cff00ffcc[Fidelity EMatrix]|r v1.1.0 initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide|r.")
+            Say("v%s initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide help|r.", VERSION)
         end
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 end)
 
--- Exports
+-- Exports (for /dump and the headless tests)
 ns.TriggerScoreboardWave = TriggerScoreboardWave
 ns.CreateMatrixGrid = CreateMatrixGrid
+ns.UpdateStereoDisplay = UpdateStereoDisplay
+ns.ApplyDepthPlanes = ApplyDepthPlanes
 ns.cells = cells
 ns.DiagTable = DiagTable
+ns.State = function()
+    return {
+        open = waveTargetState, openAmount = openAmount, waveActive = waveActive,
+        eyeX = smoothEyeX, eyeY = smoothEyeY, facing = currentFacing,
+        frames = { main = sceneMain, left = sceneLeft, right = sceneRight, master = masterFrame },
+        walls = { wallL, wallR, wallT, wallB }, sheen = sheenTex,
+        reticle = { mono = reticleMono, left = reticleL, right = reticleR }, backplate = backplateTex,
+    }
+end

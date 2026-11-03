@@ -3,7 +3,8 @@
 // Zero-dependency Node ESM script to generate uncompressed 32-bit BGRA .tga texture assets
 // for the FidelityEMatrix WoW AddOn prototype:
 //   1. FidelityEMatrix/Media/Marshmallow_E_Closed.tga (128x128 RGBA, twice-folded puffy golden E-cube, alpha=255)
-//   2. FidelityEMatrix/Media/Marshmallow_E_Window.tga (128x128 RGBA, outer golden bezel + punched alpha=0 window with CRT scanlines)
+//   2. FidelityEMatrix/Media/Marshmallow_E_Window.tga (128x128 RGBA, 1 px sun-lit bevel, recess lip, lens glint, 2 px scanlines)
+//   2b-2d. Wall_Gradient.tga (64x64), Glass_Sheen.tga (256x128), Reticle.tga (128x128): the depth planes
 //   3. FidelityEMatrix/Media/Backplate_Nebula.tga (256x256 RGBA, deep cosmic nebula starfield for 3D depth chamber)
 
 import fs from 'node:fs';
@@ -213,55 +214,136 @@ function generateClosedTexture() {
 }
 
 // ============================================================================
-// 2. Marshmallow_E_Window.tga (128x128 32-bit BGRA)
-// Puffy golden bezel rim (4px soft bezel, alpha=255) + inner transparent aperture
-// with subtle CRT scanlines (alpha=24 max)
+// 2. Marshmallow_E_Window.tga (128x128 32-bit BGRA): one microlens of the open array.
+// The tile is drawn at 32 px, so 4 texels = 1 screen pixel. Light comes from the UPPER RIGHT
+// (the owner's single-sun rule): top and right rim edges are lit gold, bottom and left bronze.
+//   rim:        4 texels (1 px) bevel, alpha 210 lit / 170 shaded
+//   inner lip:  4 texels (1 px) recess shadow inside the rim, alpha <= 56
+//   scanlines:  4 texels on / 4 off (2 px period on screen, survives mipmapping), alpha 18
+//   lens glint: soft spot toward the upper right of the aperture, alpha <= 22
+//   aperture:   alpha 0 elsewhere (the 3D scene shows through)
 // ============================================================================
 function generateWindowTexture() {
   const W = 128;
   const H = 128;
   const pixelData = Buffer.alloc(W * H * 4);
+  const RIM = 4;
+  const LIP = 4;
 
-  // Bezel rim width: 4 pixels on 128px tile
-  const BEZEL_WIDTH = 4.0;
+  const put = (idx, r, g, b, a) => {
+    pixelData[idx + 0] = Math.max(0, Math.min(255, Math.round(b)));
+    pixelData[idx + 1] = Math.max(0, Math.min(255, Math.round(g)));
+    pixelData[idx + 2] = Math.max(0, Math.min(255, Math.round(r)));
+    pixelData[idx + 3] = Math.max(0, Math.min(255, Math.round(a)));
+  };
 
   for (let y = 0; y < H; y++) {
-    const v = (y / (H - 1)) * 2 - 1;
     for (let x = 0; x < W; x++) {
-      const u = (x / (W - 1)) * 2 - 1;
       const idx = (y * W + x) * 4;
+      const dl = x, dr = W - 1 - x, dt = y, db = H - 1 - y;
+      const pxDist = Math.min(dl, dr, dt, db);
 
-      // Distance from inner window edge
-      const pxDist = Math.min(x, W - 1 - x, y, H - 1 - y);
-
-      if (pxDist < BEZEL_WIDTH) {
-        // Outer Puffy Golden Bezel Rim
-        const t = pxDist / BEZEL_WIDTH; // 0 at outer edge, 1 at inner aperture
-        const goldR = 255;
-        const goldG = 215;
-        const goldB = 120;
-
-        // Soft iridescent bevel highlight
-        const glint = Math.sin(t * Math.PI) * 40;
-
-        pixelData[idx + 0] = Math.min(255, goldB + glint);
-        pixelData[idx + 1] = Math.min(255, goldG + glint);
-        pixelData[idx + 2] = Math.min(255, goldR + glint);
-        pixelData[idx + 3] = 255; // Fully opaque golden bezel
+      if (pxDist < RIM) {
+        // The nearest edge decides lit (top / right) or shaded (bottom / left); ties at the
+        // upper-right and lower-left corners go to lit and shaded respectively.
+        const lit = Math.min(dt, dr) <= Math.min(dl, db);
+        const t = pxDist / RIM;
+        const glint = Math.sin(t * Math.PI) * 30;
+        if (lit) put(idx, 255, 220 + glint * 0.6, 130 + glint, 210);
+        else put(idx, 150, 112, 58, 170);
+      } else if (pxDist < RIM + LIP) {
+        // Recess shadow just inside the rim: the lens sits below the bezel surface
+        const fall = 1 - (pxDist - RIM) / LIP;
+        put(idx, 6, 5, 10, 56 * fall);
       } else {
-        // Inner Transparent Aperture (alpha = 0)
-        // Subtle CRT scanline micro-grid for futuristic depth feel
-        const isScanline = (y % 2 === 0);
-        const scanlineAlpha = isScanline ? 24 : 0;
-
-        pixelData[idx + 0] = 30; // B
-        pixelData[idx + 1] = 20; // G
-        pixelData[idx + 2] = 15; // R
-        pixelData[idx + 3] = scanlineAlpha; // Transparent aperture
+        const scan = (y % 8) < 4 ? 18 : 0;
+        const gx = x - 90, gy = y - 38;
+        const glintA = 22 * Math.exp(-(gx * gx + gy * gy) / (2 * 9 * 9));
+        if (glintA > 1) put(idx, 255, 250, 235, Math.max(scan, glintA));
+        else put(idx, 15, 20, 30, scan);
       }
     }
   }
 
+  return createTgaBuffer(pixelData, W, H);
+}
+
+// ============================================================================
+// 2b. Wall_Gradient.tga (64x64): one inner wall of the depth box, dark at the bezel (x = 0) and
+// fading toward the back (x = 63), with cyan depth ribs bunching toward the back like a receding
+// holodeck grid. Mid-tone so SetVertexColor can light it: walls facing the upper-right sun bright,
+// the others in shade. Rotated per wall with SetTexCoord.
+// ============================================================================
+function generateWallTexture() {
+  const W = 64, H = 64;
+  const pixelData = Buffer.alloc(W * H * 4);
+  const ribs = [];
+  for (let k = 1; k <= 6; k++) ribs.push(63 * (1 - 1 / (1 + 0.45 * k)));
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const idx = (y * W + x) * 4;
+      const t = x / (W - 1);
+      const shade = 215 * Math.pow(1 - t, 1.4);
+      let rib = 0;
+      for (const rx of ribs) rib = Math.max(rib, Math.max(0, 1 - Math.abs(x - rx) / 0.9));
+      const ribA = rib * 90 * (1 - t * 0.5);
+      if (ribA > shade * 0.25) {
+        pixelData[idx + 0] = 204; pixelData[idx + 1] = 255; pixelData[idx + 2] = 120;
+        pixelData[idx + 3] = Math.round(Math.max(ribA, shade * 0.6));
+      } else {
+        pixelData[idx + 0] = 150; pixelData[idx + 1] = 120; pixelData[idx + 2] = 105; // mid tone: tinted per wall
+        pixelData[idx + 3] = Math.round(shade);
+      }
+    }
+  }
+  return createTgaBuffer(pixelData, W, H);
+}
+
+// ============================================================================
+// 2c. Glass_Sheen.tga (256x128): two soft diagonal reflection bands on the cover glass, drawn
+// with ADD blend in front of the bezel so the eye registers a pane between it and the scene.
+// Black is transparent under ADD; brightness is the sheen.
+// ============================================================================
+function generateSheenTexture() {
+  const W = 256, H = 128;
+  const pixelData = Buffer.alloc(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const idx = (y * W + x) * 4;
+      const u = x / (W - 1), v = y / (H - 1);
+      const d1 = (u - 0.32) + (v - 0.5) * 0.55;
+      const d2 = (u - 0.47) + (v - 0.5) * 0.55;
+      const a = 46 * Math.exp(-((d1 / 0.07) ** 2)) + 26 * Math.exp(-((d2 / 0.018) ** 2));
+      const edge = Math.min(1, Math.min(u, 1 - u, v, 1 - v) * 8);
+      const val = Math.round(Math.min(255, a) * edge);
+      pixelData[idx + 0] = val; pixelData[idx + 1] = val; pixelData[idx + 2] = val; pixelData[idx + 3] = 255;
+    }
+  }
+  return createTgaBuffer(pixelData, W, H);
+}
+
+// ============================================================================
+// 2d. Reticle.tga (128x128): the pop-out plane (z = -0.4): a thin cyan ring, a dashed inner
+// ring and four ticks, floating in front of the screen. White, tinted in the client per eye.
+// ============================================================================
+function generateReticleTexture() {
+  const W = 128, H = 128;
+  const pixelData = Buffer.alloc(W * H * 4);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const idx = (y * W + x) * 4;
+      const u = (x - 63.5) / 63.5, v = (y - 63.5) / 63.5;
+      const r = Math.hypot(u, v);
+      const ang = Math.atan2(v, u);
+      let a = 160 * Math.max(0, 1 - Math.abs(r - 0.86) / 0.018);
+      const dash = (Math.floor(((ang + Math.PI) / (2 * Math.PI)) * 24) % 2) === 0;
+      if (dash) a = Math.max(a, 90 * Math.max(0, 1 - Math.abs(r - 0.66) / 0.014));
+      const onAxis = Math.abs(u) < 0.012 || Math.abs(v) < 0.012;
+      if (onAxis && r > 0.74 && r < 0.98) a = Math.max(a, 150);
+      pixelData[idx + 0] = 255; pixelData[idx + 1] = 255; pixelData[idx + 2] = 255; // white: tinted per eye with SetVertexColor
+      pixelData[idx + 3] = Math.round(a);
+    }
+  }
   return createTgaBuffer(pixelData, W, H);
 }
 
@@ -344,6 +426,11 @@ function generateNebulaBackplate() {
 const closedTga = generateClosedTexture();
 const windowTga = generateWindowTexture();
 const nebulaTga = generateNebulaBackplate();
+const extraTextures = [
+  ['Wall_Gradient.tga', generateWallTexture()],
+  ['Glass_Sheen.tga', generateSheenTexture()],
+  ['Reticle.tga', generateReticleTexture()],
+];
 
 const closedPath = path.join(mediaDir, 'Marshmallow_E_Closed.tga');
 const windowPath = path.join(mediaDir, 'Marshmallow_E_Window.tga');
@@ -356,3 +443,8 @@ fs.writeFileSync(nebulaPath, nebulaTga);
 console.log(`[gen_e_atlas] Generated: ${closedPath} (${closedTga.length} bytes)`);
 console.log(`[gen_e_atlas] Generated: ${windowPath} (${windowTga.length} bytes)`);
 console.log(`[gen_e_atlas] Generated: ${nebulaPath} (${nebulaTga.length} bytes)`);
+for (const [name, buf] of extraTextures) {
+  const p = path.join(mediaDir, name);
+  fs.writeFileSync(p, buf);
+  console.log(`[gen_e_atlas] Generated: ${p} (${buf.length} bytes)`);
+}

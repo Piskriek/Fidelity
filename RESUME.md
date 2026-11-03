@@ -1,4 +1,44 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
+
+## EMatrix v1.2.0: Claude's depth pass (03 Nov 2026, Node 2) — Flash, start here
+
+**Branch:** `claude/ematrix-depth` (cut from `flash/wow-ematrix-polish` `87ec1ff`, with `main` merged in). **Not verified in the game yet**: everything below is proven headless only.
+
+### Bugs fixed in the old build
+1. **Parallax moved the wrong axis.** Model `SetPosition(x, y, z)` takes x = toward the camera, y = sideways, z = up. The old code fed cursor X into x, so the character zoomed instead of sliding.
+2. **Stereo had zero disparity.** Both eyes got the same facing every frame, so `sbs` showed two identical pictures. Now each eye's model is turned by ±`stereoDelta` (0.06 rad) and offset by `stereoPixels` (4 px).
+3. **The anaglyph "red" eye was lit blue.** The 12-value `SetLight` calls put the colours in the ambient slot (left was 0.2, 0.2, 0.8). A new `ApplyLight` tries the table form `SetLight(enabled, {…})` first and falls back to the 13 positional values; `/fide diag` prints which form the client took.
+4. **The backplate could collapse.** Its parallax cleared the anchors and re-anchored one point with no size. It now stays `SetAllPoints` and slides by texcoords (0.86 window), so it never leaves the frame.
+5. **Scanlines vanished.** They alternated every texel of a 128 px tile drawn at 32 px and blurred to a flat tint. Now 4 on / 4 off texels = a 2 px period on screen.
+6. **Idle CPU leak (new code, caught by the headless test):** with parallax at 0 a sub-threshold eye residue could keep `OnUpdate` attached forever. Fixed and tested.
+
+### The depth planes (EMatrix_Math.ParallaxShift: shift = eye · z / (1 + z))
+| Plane | z | Moves | What it is |
+| :--- | :--- | :--- | :--- |
+| Backplate | 1.0 | with the eye | nebula, or `world` (game shows through), or `black` |
+| Subject | 0.5 | with the eye, less | model slides (y, z) and turns toward the eye (view-dependent) |
+| Inner walls | 0..1 | widths follow the eye | four lit walls (sun upper right: left wall + floor lit, right + ceiling shaded) with depth ribs |
+| Lens array | 0 | never | 135 microlenses: 1 px sun-lit bevel, recess lip, lens glint, 2 px scanlines, at `lensAlpha` 0.35 |
+| Cover glass | -0.15 | against the eye | ADD sheen |
+| Pop-out | -0.4 | against the eye, most | reticle; in anaglyph a red/cyan pair with crossed disparity so it floats in front |
+
+Stereo modes: `sbs` (parallel free-view), `cross` (cross-eyed, halves swapped), `anaglyph` (red left, cyan right, black field).
+
+### New commands
+`/fide lens <0..1>`, `/fide backdrop <nebula|world|black>`, `/fide stereo <off|sbs|cross|anaglyph>`, `/fide stereo delta|pixels|mix <n>`, `/fide calibrate <side|turn>`. Old saves get the new defaults merged in at load.
+
+### Check in the game (owner, after `/reload`)
+1. `/fide diag`: note the **SetLight form** line (`table` or `positional`).
+2. Click to open. The lens lattice should be faint, not a cage (`/fide lens 0.2` or `0` if it still is).
+3. Move the cursor right: the character should **slide right** and turn so you see more of its side on your right; the reticle slides left; the left wall widens. If the slide or the turn goes the wrong way, run `/fide calibrate side` or `/fide calibrate turn` (the two signs could not be confirmed headless).
+4. `/fide backdrop world`: the live game should show through behind the character.
+5. `/fide stereo anaglyph` with red/cyan glasses: the character behind the screen, the reticle in front. Tune with `/fide stereo pixels 6` and `/fide stereo mix 0.6`. `/fide stereo cross` for cross-eyed free-viewing.
+6. Report what you see, and any `[Fidelity EMatrix Error]` line.
+
+### Tests
+`npm run ematrix:test`: the **real** Lua (fengari, Lua 5.3, devDependency) runs against a WoW API stub in two client profiles (table and positional `SetLight`): 13 checks each, plus `tools/test_ematrix_math.mjs` 12/12. `npm test` runs it too (107 pass, 1 skip). `npm run ematrix:atlas` regenerates the textures. The stub proves the code paths and the plane maths, not how the client renders them.
+
+---
 **Timestamp:** 2026-11-03T18:58:00+02:00 | **Author:** Flash (Execution Body under RULES 8a)  
 **Active Working Tree:** `D:\fidelity-repo` | **Active Branch:** `flash/wow-ematrix-polish` (commit `db2ae29`)  
 **Target WoW Client:** `D:\World of Warcraft\_anniversary_\` (Burning Crusade Classic `2.5.6.70577`, character `Ikkibotwo`, realm `Thunderstrike`)

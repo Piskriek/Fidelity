@@ -8,7 +8,7 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "node --test packages/triad-369/test/*.test.mjs bridge/hands/*.test.mjs",
+    "test": "node --test packages/triad-369/test/*.test.mjs bridge/hands/*.test.mjs tools/*.test.mjs",
     "hands:laptop": "node bridge/hands/hands_sync.mjs --role laptop",
     "triad": "node packages/triad-369/src/cli.mjs",
     "triad:legacy": "node packages/triad-369/src/triad_cli.mjs",
@@ -24,7 +24,9 @@
     "fractal-engine": "npm run dev -w @hm/fractal-engine",
     "build": "npm run build -w @hm/fractal-engine",
     "wow:audit": "node packages/triad-369/src/wow_adapter.mjs",
-    "anticheat:audit": "node packages/triad-369/src/universal_anticheat.mjs"
+    "anticheat:audit": "node packages/triad-369/src/universal_anticheat.mjs",
+    "ematrix:test": "node --test tools/ematrix-lua.test.mjs && node tools/test_ematrix_math.mjs",
+    "ematrix:atlas": "node tools/gen_e_atlas.mjs"
   },
   "dependencies": {
     "three": "^0.186.1"
@@ -33,6 +35,7 @@
     "@types/node": "22.19.17",
     "@types/three": "^0.186.0",
     "typescript": "5.9.3",
-    "vite": "^7.3.2"
+    "vite": "^7.3.2",
+    "fengari": "0.1.4"
   }
 }

@@ -1,8 +1,8 @@
 ## Interface: 120107, 110007, 110100, 20504, 20506, 11505, 11506, 11507, 16001, 40401
 ## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
-## Notes: Zero-GC Scoreboard Wave Matrix + Stereoscopic ModelScene Alpha-Punch Lens
+## Notes: Zero-GC scoreboard wave opening onto a 3D box: microlens array, off-axis multi-plane parallax, sbs/cross/anaglyph stereo
 ## Author: Antigravity Overwatch & Flash
-## Version: 1.0.0
+## Version: 1.2.0
 ## SavedVariables: FidelityEMatrix_Config
 
 EMatrix_Math.lua

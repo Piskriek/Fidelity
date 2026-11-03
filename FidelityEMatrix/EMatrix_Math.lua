@@ -121,6 +121,82 @@ end
 EMatrix_Math.EvaluateFlipVisuals = EMatrix_Math.GetFlipVisuals
 
 -- ============================================================================
+-- GUARDRAIL D: Off-Axis Multi-Plane Parallax (window into a box)
+-- The eye sits 1 depth unit in front of the screen. A point at depth z
+-- (z > 0 behind the screen, z < 0 in front of it) seen from an eye displaced
+-- by e moves on the screen by e * z / (1 + z):
+--   z = 0     the screen plane (bezel, grid) never moves
+--   z > 0     moves WITH the eye, less than the eye (background, subject)
+--   z < 0     moves AGAINST the eye, more as it nears the viewer (pop-out)
+-- ============================================================================
+local function finite(x) return type(x) == "number" and x == x and x ~= math.huge and x ~= -math.huge end
+local function clamp(x, lo, hi) if x < lo then return lo elseif x > hi then return hi end return x end
+
+--- Screen-space shift factor for a plane at depth z seen from eye offset e (both unitless).
+--- @return number shift (multiply by a pixel gain)
+function EMatrix_Math.ParallaxShift(eye, z)
+    if not finite(eye) or not finite(z) then return 0.0 end
+    z = clamp(z, -0.9, 4.0) -- never at or behind the eye
+    return eye * z / (1.0 + z)
+end
+
+--- Eye offset in [-strength, strength] from the cursor's position relative to the frame centre.
+function EMatrix_Math.EyeFromCursor(mx, my, cx, cy, halfW, halfH, strength)
+    if not (finite(mx) and finite(my) and finite(cx) and finite(cy)) then return 0.0, 0.0 end
+    if not finite(halfW) or halfW <= 0 then halfW = 1 end
+    if not finite(halfH) or halfH <= 0 then halfH = 1 end
+    if not finite(strength) or strength < 0 then strength = 0 end
+    return clamp((mx - cx) / halfW, -1.0, 1.0) * strength, clamp((my - cy) / halfH, -1.0, 1.0) * strength
+end
+
+--- Visible widths of the four inner walls of the box. Seen from the right you see more of the
+--- LEFT wall; seen from above you see more of the floor (BOTTOM wall).
+--- @return number left, right, top, bottom (pixels, clamped to [minW, maxW])
+function EMatrix_Math.WallWidths(eyeX, eyeY, base, gain, minW, maxW)
+    if not finite(eyeX) then eyeX = 0 end
+    if not finite(eyeY) then eyeY = 0 end
+    base = finite(base) and base or 0
+    gain = finite(gain) and gain or 0
+    minW = finite(minW) and minW or 0
+    maxW = finite(maxW) and maxW or base
+    local l = clamp(base * (1.0 + gain * eyeX), minW, maxW)
+    local r = clamp(base * (1.0 - gain * eyeX), minW, maxW)
+    local b = clamp(base * (1.0 + gain * eyeY), minW, maxW)
+    local t = clamp(base * (1.0 - gain * eyeY), minW, maxW)
+    return l, r, t, b
+end
+
+--- Texture coordinates of a sliding window of size `zoom` (0..1) over the backplate, centred on
+--- (0.5 + shiftU, 0.5 + shiftV) and kept inside [0, 1] so the texture never smears or clips.
+--- @return number left, right, top, bottom
+function EMatrix_Math.BackplateTexCoords(shiftU, shiftV, zoom)
+    if not finite(zoom) or zoom <= 0 or zoom > 1 then zoom = 0.86 end
+    local half = zoom * 0.5
+    local cu = clamp(0.5 + (finite(shiftU) and shiftU or 0), half, 1 - half)
+    local cv = clamp(0.5 + (finite(shiftV) and shiftV or 0), half, 1 - half)
+    return cu - half, cu + half, cv - half, cv + half
+end
+
+--- Facings for a stereo pair: each eye sees the subject turned by +/- delta (toe-in about the
+--- subject). The LEFT eye sits left of centre, which is the subject turned counter-clockwise.
+--- @return number leftFacing, rightFacing
+function EMatrix_Math.StereoFacings(facing, delta)
+    if not finite(facing) then facing = 0 end
+    if not finite(delta) then delta = 0 end
+    return facing + delta, facing - delta
+end
+
+--- Moves `current` toward `target` at `rate` per second without overshoot.
+function EMatrix_Math.Approach(current, target, rate, dt)
+    if not finite(current) then current = 0 end
+    if not finite(target) then return current end
+    if not finite(rate) or not finite(dt) or rate <= 0 or dt <= 0 then return current end
+    local step = rate * dt
+    if current < target then return math.min(current + step, target) end
+    return math.max(current - step, target)
+end
+
+-- ============================================================================
 -- Export to Namespace & Global Environment
 -- ============================================================================
 if ns then

@@ -256,25 +256,41 @@ runTest('Marshmallow_E_Closed.tga exists, has exact size (65554 bytes) and valid
   assert.ok(meanAlpha > 240, `Closed texture mean alpha must be > 240 (got ${meanAlpha.toFixed(1)})`);
 });
 
-runTest('Marshmallow_E_Window.tga has punched alpha=0 window with subtle CRT scanlines', () => {
+runTest('Marshmallow_E_Window.tga is a microlens: sun-lit 1 px bevel, recess lip, 2 px scanlines, glint, open aperture', () => {
   const p = path.join(mediaDir, 'Marshmallow_E_Window.tga');
   assert.ok(fs.existsSync(p), `Missing ${p}`);
   const buf = fs.readFileSync(p);
   assert.equal(buf.length, 65554, `Exact 32-bit TGA size must be 65,554 bytes`);
+  const alphaAt = (x, y) => buf[18 + (y * 128 + x) * 4 + 3];
 
-  // Check center pixel (x=64, y=64):
-  const idxEven = 18 + (64 * 128 + 64) * 4;
-  const alphaEven = buf[idxEven + 3];
-  assert.equal(alphaEven, 24, `Even CRT scanline pixel alpha must be 24 (got ${alphaEven})`);
+  // Scanlines: 4 texels on, 4 off (2 screen px period when the 128 px tile is drawn at 32 px)
+  assert.equal(alphaAt(64, 64), 18, `Scanline row alpha must be 18 (got ${alphaAt(64, 64)})`);
+  assert.equal(alphaAt(64, 68), 0, `Gap row must be fully open (got ${alphaAt(64, 68)})`);
 
-  const idxOdd = 18 + (65 * 128 + 64) * 4;
-  const alphaOdd = buf[idxOdd + 3];
-  assert.equal(alphaOdd, 0, `Odd punched window pixel alpha must be 0 (got ${alphaOdd})`);
+  // Bevel lit from the upper right: top/right edges more opaque than bottom/left
+  assert.equal(alphaAt(125, 64), 210, `Right (lit) rim alpha must be 210 (got ${alphaAt(125, 64)})`);
+  assert.equal(alphaAt(64, 1), 210, `Top (lit) rim alpha must be 210 (got ${alphaAt(64, 1)})`);
+  assert.equal(alphaAt(2, 64), 170, `Left (shaded) rim alpha must be 170 (got ${alphaAt(2, 64)})`);
+  assert.equal(alphaAt(64, 126), 170, `Bottom (shaded) rim alpha must be 170 (got ${alphaAt(64, 126)})`);
 
-  // Outer bezel border pixel at (x=2, y=64) should have solid golden alpha (255)
-  const idxBezel = 18 + (64 * 128 + 2) * 4;
-  const alphaBezel = buf[idxBezel + 3];
-  assert.equal(alphaBezel, 255, `Outer bezel alpha must be 255 (got ${alphaBezel})`);
+  // Recess lip just inside the rim, then the glint toward the upper right of the aperture
+  assert.ok(alphaAt(4, 64) > 0 && alphaAt(4, 64) <= 56, `Lip alpha must be in (0, 56] (got ${alphaAt(4, 64)})`);
+  assert.ok(alphaAt(90, 38) >= 20 && alphaAt(90, 38) <= 22, `Lens glint peak must be about 22 (got ${alphaAt(90, 38)})`);
+});
+
+runTest('Depth-plane textures exist with exact 32-bit TGA sizes (wall 64x64, sheen 256x128, reticle 128x128)', () => {
+  for (const [name, w, h] of [['Wall_Gradient.tga', 64, 64], ['Glass_Sheen.tga', 256, 128], ['Reticle.tga', 128, 128]]) {
+    const p = path.join(mediaDir, name);
+    assert.ok(fs.existsSync(p), `Missing ${p}`);
+    const buf = fs.readFileSync(p);
+    assert.equal(buf.length, 18 + w * h * 4, `${name} size`);
+    assert.equal(buf.readUInt16LE(12), w, `${name} width`);
+    assert.equal(buf.readUInt16LE(14), h, `${name} height`);
+    assert.equal(buf[16], 32, `${name} bpp`);
+  }
+  const wall = fs.readFileSync(path.join(mediaDir, 'Wall_Gradient.tga'));
+  const wallA = x => wall[18 + (32 * 64 + x) * 4 + 3];
+  assert.ok(wallA(0) > 200 && wallA(63) < 10, `Wall must fade from dark at the bezel to clear at the back (${wallA(0)} -> ${wallA(63)})`);
 });
 
 runTest('Backplate_Nebula.tga exists, has exact size (262162 bytes), power of two (256x256), and valid header', () => {
