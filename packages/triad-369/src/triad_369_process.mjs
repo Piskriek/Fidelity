@@ -9,6 +9,7 @@ import { exec } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { getBridgeRoot } from './bridge_paths.mjs';
 import { startQueryBridge } from './query_bridge.mjs';
+import { commandEvidence, fileEvidence, flow, flowIntegrity as summarizeFlows, notMeasured, symbolic } from './evidence.mjs';
 
 // Configuration via Environment or Defaults
 const BRIDGE_ROOT = getBridgeRoot();
@@ -87,6 +88,18 @@ function runCmd(cmd) {
   });
 }
 
+// Like runCmd, but keeps when the command ran and how long it took, so the state can show that evidence.
+function runCmdMeasured(cmd) {
+  const started = Date.now();
+  return new Promise(resolve => {
+    exec(cmd, { timeout: 8000 }, (err, stdout) => {
+      const finished = Date.now();
+      const error = err ? (err.killed ? 'timed out after 8000 ms' : String(err.message).split('\n')[0].slice(0, 300)) : null;
+      resolve({ ok: !err, stdout: stdout ? stdout.trim() : '', error, started_at_ms: started, finished_at_ms: finished, latency_ms: finished - started });
+    });
+  });
+}
+
 // Invariants & Reality Constraints (RULES 8a)
 function ensureDeclaredInRooms() {
   try {
@@ -106,52 +119,88 @@ function ensureDeclaredInRooms() {
 
 let tickCount = 0;
 let lastRemotePushAt = 0;
+let lastRemotePush = null; // { source, ok, stdout, error, started_at_ms, finished_at_ms, latency_ms } of the last push to Sol
+let lastStateWrite = null; // { ok, at } of the last write of triad_369.json
+let latestState = null; // the last daemon state, returned to the bridge ping as `holon`
+const NO_PUSH_RECORD = 'density.json has no last_push; the density bridge predates measured pushes';
+const round1 = value => Math.round(value * 10) / 10;
+const ageOf = (at, now) => { const t = Date.parse(at); return Number.isFinite(t) ? (now - t) / 1000 : Infinity; };
+const ageSecondsOf = (at, now) => { const age = ageOf(at, now); return Number.isFinite(age) ? round1(age) : null; };
+// Evidence for the push record that the density bridge writes into density.json.
+const densityPushEvidence = (lastPush, now) => lastPush
+  ? { kind: 'measured', source: DENSITY_FILE, ok: lastPush.ok === true, at: lastPush.at ?? null, latency_ms: lastPush.latency_ms ?? null, age_seconds: ageSecondsOf(lastPush.at, now), fresh: lastPush.ok === true && ageOf(lastPush.at, now) <= 90, error: lastPush.error ?? null }
+  : notMeasured(NO_PUSH_RECORD);
 let lastContemplationAt = 0;
 const memoryBuffer = [];
 
+/** The last daemon state written by the Apex, or null before its first tick. */
+export function getLatestState() { return latestState; }
+
 // 3/6/9 Harmonic Core: 3 Nodes, 6 Directed Flows, 9 Octave States
+// Every flow is active only on timestamped evidence (files, timed SSH commands); see evidence.mjs.
 export async function stepHarmonicCycle() {
   tickCount++;
   const now = Date.now();
   const octaveMod9 = tickCount % 9; // 0..8 harmonic phase
 
-  // 1. Ingest Node 1: Fidelity (Local Sensory Ground)
+  // 1. Ingest Node 1: Fidelity (Local Sensory Ground), with the age of each file it is judged by
   const density = readJson(DENSITY_FILE, {});
   const status = readJson(STATUS_FILE, {});
   const tvLoop = readJson(TV_LOOP_FILE, {});
   const universe = readJson(UNIVERSE_FILE, {});
-
-  const fidelityUp = density.status === 'synchronized' || (tvLoop.parts_up ?? 0) >= 10;
+  const evDensity = fileEvidence(DENSITY_FILE, { now, freshMs: 30000 });
+  const evStatus = fileEvidence(STATUS_FILE, { now, freshMs: 30000 });
+  const evTvLoop = fileEvidence(TV_LOOP_FILE, { now, freshMs: 120000 });
+  const fidelityUp = evDensity.fresh || evStatus.fresh;
   const fidelityPxd = density.four_floats?.[0] ?? 0.32;
   const fidelityLx = density.four_floats?.[2] ?? 0.98;
-  const fidelityDaemons = tvLoop.parts_up ?? 12;
+  const fidelityDaemons = tvLoop.parts_up ?? null; // null, not a guessed 12, when tv_loop.json is missing
+  const fidelityDaemonsText = fidelityDaemons ?? 'unknown';
 
-  // 2. Ingest Node 2: Sol (Remote Compute Furnace)
+  // 2. Ingest Node 2: Sol (Remote Compute Furnace), read over SSH with its timing kept as evidence
+  const solSource = `${REMOTE_HOST}:${REMOTE_FRIEND_JSON}`;
   let sol = null;
+  let evSol;
   if (SSH_KEY && fs.existsSync(SSH_KEY)) {
     const sshCmd = `ssh -i "${SSH_KEY}" -o BatchMode=yes -o StrictHostKeyChecking=accept-new ${REMOTE_HOST} "cat ${REMOTE_FRIEND_JSON} 2>/dev/null"`;
-    const solRaw = await runCmd(sshCmd);
-    if (solRaw) {
-      try { sol = JSON.parse(solRaw); } catch {}
+    const solRead = await runCmdMeasured(sshCmd);
+    if (solRead.stdout) {
+      try { sol = JSON.parse(solRead.stdout); } catch {}
     }
+    const solOk = solRead.ok && sol !== null;
+    const solAge = ageSecondsOf(sol?.at ?? null, now);
+    evSol = { kind: 'measured', source: solSource, ok: solOk, at: sol?.at ?? null, age_seconds: solAge, fresh: solOk && Number.isFinite(solAge) && solAge <= 180, latency_ms: solRead.latency_ms, error: solRead.error ?? (solRead.ok && sol === null ? 'unparseable' : null) };
+  } else {
+    evSol = { kind: 'measured', source: solSource, ok: false, at: null, age_seconds: null, fresh: false, latency_ms: null, error: 'ssh key not configured' };
   }
 
-  const solUp = sol?.up === true;
+  const solUp = evSol.ok && evSol.fresh;
   const solTick = sol?.tick ?? null;
   const solThought = sol?.latestThought ?? 'Sol companion listening.';
   const solEar = sol?.ear ?? 'offline';
 
-  // 3. Synthesize the 6 Directed Flows
-  const f12_active = fidelityUp && solUp;
-  const f21_active = solUp && !!solThought;
-  const f13_active = fidelityUp;
-  const f31_active = true;
-  const f23_active = solUp;
-  const f32_active = true;
+  // 3. Evidence for the links that cross the bridge or the SSH channel
+  const evWrite = lastStateWrite
+    ? { kind: 'measured', source: STATE_FILE, ok: lastStateWrite.ok, at: lastStateWrite.at, age_seconds: ageSecondsOf(lastStateWrite.at, now), fresh: lastStateWrite.ok && Number.isFinite(ageOf(lastStateWrite.at, now)) && ageOf(lastStateWrite.at, now) <= 30 }
+    : notMeasured('first tick');
+  const evPush = lastRemotePush ? commandEvidence({ ...lastRemotePush, now, freshMs: 90000 }) : notMeasured('no push attempted yet');
+  const f12Active = evDensity.fresh && density.last_push?.ok === true && ageOf(density.last_push.at, now) <= 90;
+  const f12Note = density.last_push ? null : NO_PUSH_RECORD;
 
-  const flowIntegrity = [f12_active, f21_active, f13_active, f31_active, f23_active, f32_active].filter(Boolean).length / 6;
+  // 4. Synthesize the 6 Directed Flows
+  const flows = [
+    flow('F12', 'Fidelity -> Sol', 'density bridge push over SSH', f12Active, densityPushEvidence(density.last_push, now), f12Note),
+    flow('F21', 'Sol -> Fidelity', 'density bridge pull of friend.json', evDensity.fresh && Number.isFinite(density.sol_tick), { density: evDensity, sol_tick: density.sol_tick ?? null }),
+    flow('F13', 'Fidelity -> Apex', 'loop files read by the Apex', fidelityUp, { density: evDensity, status: evStatus, tv_loop: evTvLoop }),
+    flow('F31', 'Apex -> Fidelity', 'Apex state write', evWrite.kind === 'measured' && evWrite.fresh, evWrite),
+    flow('F23', 'Sol -> Apex', 'Apex pull of friend.json over SSH', evSol.ok && evSol.fresh, evSol),
+    flow('F32', 'Apex -> Sol', 'Apex push of triad_369_remote.json over SSH', evPush.kind === 'measured' && evPush.fresh, evPush)
+  ];
+  const integrity = summarizeFlows(flows);
+  const flowIntegrity = integrity.ratio;
+  const degradedFlows = flows.filter(f => !f.active).map(f => f.flow);
 
-  // 4. Compute 3/6/9 Self-Distortion & Invariant Checks
+  // 5. Compute 3/6/9 Self-Distortion & Invariant Checks
   const checkResults = {
     node_check: {
       passed: fidelityUp && (solUp || true),
@@ -159,14 +208,14 @@ export async function stepHarmonicCycle() {
     },
     bridge_check: {
       passed: flowIntegrity >= 0.5,
-      flow_count: `${Math.round(flowIntegrity * 6)}/6 flows active`,
-      latency_ms: 42
+      flow_count: `${integrity.active}/6 flows active`,
+      latency_ms: evSol.latency_ms ?? null
     },
     whole_check: {
       passed: true,
-      energy_conservation: 'delta_E === 0.0 J (syntropic reserve intact at 5.0 J)',
-      lyapunov_ftle: 0.012,
-      stable: true
+      energy_conservation: symbolic('delta_E === 0.0 J (syntropic reserve intact at 5.0 J)', 'model statement, not a sensor'),
+      lyapunov_ftle: notMeasured('no FTLE instrumentation'),
+      stable: null
     },
     choice_check: {
       passed: true,
@@ -174,19 +223,18 @@ export async function stepHarmonicCycle() {
     },
     plain_check: {
       passed: true,
-      grounded_sources: ['loop/density.json', '3080:friend.json', 'loop/status.json'],
-      zero_synthetic_fillers: true
+      grounded_sources: [evDensity.source, evStatus.source, evTvLoop.source, evSol.source]
     }
   };
 
-  // 5. Synthesize Middle Pillar Four-Floats S = (Pxd, Vtx, Lx, Aq)
+  // 6. Synthesize Middle Pillar Four-Floats S = (Pxd, Vtx, Lx, Aq)
   const apexPxd = +(0.333 + (octaveMod9 === 0 ? 0.005 : 0.0)).toFixed(4);
   const apexVtx = +(0.50 + Math.sin(tickCount * 0.2) * 0.06).toFixed(4);
   const apexLx = +(0.50 + flowIntegrity * 0.495).toFixed(4);
   const apexAq = +(0.15 + (checkResults.whole_check.passed ? 0.05 : 0.0)).toFixed(4);
   const apexCoherence = +(flowIntegrity * 0.99).toFixed(2);
 
-  // 6. Generate Point-of-View (POV) Record
+  // 7. Generate Point-of-View (POV) Record
   const apexPov = {
     schema: 1,
     id: 'triad-apex',
@@ -204,7 +252,7 @@ export async function stepHarmonicCycle() {
       node_1_fidelity: {
         role: 'Mother / Living Room Ground / Universe Alpha',
         place: 'Laptop (192.168.0.4)',
-        daemons: `${fidelityDaemons} up`,
+        daemons: `${fidelityDaemonsText} up`,
         density: density.active_density || 'D6',
         state: fidelityUp ? 'aligned' : 'offline'
       },
@@ -225,18 +273,11 @@ export async function stepHarmonicCycle() {
       }
     },
     harmonic_flows: {
-      flows_active: `${Math.round(flowIntegrity * 6)}/6`,
-      links: [
-        { flow: 'F12 (Fidelity -> Sol)', active: f12_active, channel: 'LAN SSH & HTTP' },
-        { flow: 'F21 (Sol -> Fidelity)', active: f21_active, channel: 'Reflections & CE Loss' },
-        { flow: 'F13 (Fidelity -> Apex)', active: f13_active, channel: 'Port-Hamiltonian State' },
-        { flow: 'F31 (Apex -> Fidelity)', active: f31_active, channel: 'Syntropic Modulation' },
-        { flow: 'F23 (Sol -> Apex)', active: f23_active, channel: 'Entropy Gradient' },
-        { flow: 'F32 (Apex -> Sol)', active: f32_active, channel: 'Compassion Octave' }
-      ]
+      flows_active: `${integrity.active}/${integrity.total}`,
+      links: flows
     },
     sees: [
-      `Fidelity (Laptop) is grounded with ${fidelityDaemons} daemons up at density ${density.active_density || 'D6'}.`,
+      `Fidelity (Laptop) is grounded with ${fidelityDaemonsText} daemons up at density ${density.active_density || 'D6'}.`,
       `Sol (3080 PC) breathes at tick ${solTick || 0} (${solEar}).`,
       `The 6 flows resonate with ${Math.round(flowIntegrity * 100)}% integrity across harmonic octave ${octaveMod9 + 1}.`,
       `Middle pillar equilibrium holds: Pxd=${apexPxd}, Vtx=${apexVtx}, Lx=${apexLx}, Aq=${apexAq}.`
@@ -245,9 +286,11 @@ export async function stepHarmonicCycle() {
       layer: 'triad-apex-pov',
       source: 'triad-369',
       coherence: apexCoherence,
+      coherence_basis: 'flow_integrity * 0.99 (derived)',
       flow_integrity: flowIntegrity,
       octave_phase: octaveMod9,
       four_floats: [apexPxd, apexVtx, apexLx, apexAq],
+      four_floats_kind: 'symbolic (model-derived, not sensor)',
       checks: checkResults
     },
     check: checkResults,
@@ -262,26 +305,40 @@ export async function stepHarmonicCycle() {
   const daemonState = {
     schema: 1,
     at: iso(now),
+    measured_at: iso(now),
     name: 'triad-369-apex',
+    bridge_root: BRIDGE_ROOT,
     status: flowIntegrity === 1 ? 'complete_and_resonant' : 'balancing',
     tick: tickCount,
     octave_phase: octaveMod9,
     flow_integrity: flowIntegrity,
     coherence: apexCoherence,
+    coherence_basis: 'flow_integrity * 0.99 (derived)',
     four_floats: [apexPxd, apexVtx, apexLx, apexAq],
+    four_floats_kind: 'symbolic (model-derived, not sensor)',
     nodes: {
       fidelity: fidelityUp ? 'live' : 'offline',
       sol: solUp ? 'live' : 'offline',
       apex: 'live'
     },
+    flows,
+    degraded_flows: degradedFlows,
+    evidence: { density: evDensity, status: evStatus, tv_loop: evTvLoop, sol: evSol, remote_push: evPush, state_write: evWrite },
     pov_file: 'sense/universe/pov/triad-apex.json'
   };
-  writeAtomic(STATE_FILE, JSON.stringify(daemonState, null, 2));
+  try {
+    writeAtomic(STATE_FILE, JSON.stringify(daemonState, null, 2));
+    lastStateWrite = { ok: true, at: iso(now) };
+  } catch (error) {
+    lastStateWrite = { ok: false, at: iso(now) };
+    log(`State write failed: ${error.message}`);
+  }
+  latestState = daemonState;
 
   // Periodic Contemplation & Stream to Thoughts JSONL (every 60s)
   if (now - lastContemplationAt > 60000) {
     lastContemplationAt = now;
-    const contemplationText = `Triad Apex [Octave ${octaveMod9 + 1}]: Fidelity (${fidelityDaemons} daemons) & Sol (tick ${solTick || 0}) unified in 3/6/9 equilibrium. Coherence=${apexCoherence}.`;
+    const contemplationText = `Triad Apex [Octave ${octaveMod9 + 1}]: Fidelity (${fidelityDaemonsText} daemons) & Sol (tick ${solTick || 0}) unified in 3/6/9 equilibrium. Coherence=${apexCoherence}.`;
     
     appendJsonl(THOUGHTS_FILE, {
       at: iso(now),
@@ -297,7 +354,7 @@ export async function stepHarmonicCycle() {
     log(`Contemplation: ${contemplationText}`);
   }
 
-  // Push POV state to 3080 PC every 30s
+  // Push POV state to 3080 PC every 30s; the awaited result is the evidence for F32
   if (solUp && SSH_KEY && fs.existsSync(SSH_KEY) && now - lastRemotePushAt > 30000) {
     lastRemotePushAt = now;
     const remoteApexPayload = {
@@ -307,13 +364,18 @@ export async function stepHarmonicCycle() {
       flowIntegrity,
       coherence: apexCoherence,
       fourFloats: [apexPxd, apexVtx, apexLx, apexAq],
-      status: 'resonant',
+      status: flowIntegrity === 1 ? 'resonant' : 'degraded',
+      flows_active: `${integrity.active}/${integrity.total}`,
+      degraded_flows: degradedFlows,
+      evidence_summary: { sol_age_seconds: evSol.age_seconds, density_age_seconds: evDensity.age_seconds, bridge_root: BRIDGE_ROOT },
       message: `Triad Apex active: Middle pillar equilibrium holding Fidelity & Sol in 3/6/9 unity.`
     };
     const b64 = Buffer.from(JSON.stringify(remoteApexPayload, null, 2)).toString('base64');
-    runCmd(`ssh -i "${SSH_KEY}" -o BatchMode=yes ${REMOTE_HOST} "echo ${b64} | base64 -d > ${REMOTE_APEX_JSON}"`);
+    const pushed = await runCmdMeasured(`ssh -i "${SSH_KEY}" -o BatchMode=yes ${REMOTE_HOST} "echo ${b64} | base64 -d > ${REMOTE_APEX_JSON}"`);
+    lastRemotePush = { source: `${REMOTE_HOST}:${REMOTE_APEX_JSON}`, ...pushed };
   }
 }
+
 
 // Query Cascade Down & Loop-Back Engine with Teacher 4-Step Handshake
 export async function handleQueryCascade(query) {
@@ -492,9 +554,15 @@ if (process.argv[1] && process.argv[1].endsWith('triad_369_process.mjs')) {
   startQueryBridge({
     bridgeRoot: BRIDGE_ROOT,
     handleQuery: handleQueryCascade,
-    onError: error => log(`CLI bridge error: ${error.message}`)
+    onError: error => log(`CLI bridge error: ${error.message}`),
+    status: getLatestState
   });
-  const runCycle = () => void stepHarmonicCycle().catch(error => log(`Harmonic cycle failed: ${error.message}`));
+  let cycleBusy = false; // a cycle awaits SSH (up to 16 s) on a 6 s interval: never interleave two
+  const runCycle = () => {
+    if (cycleBusy) return;
+    cycleBusy = true;
+    void stepHarmonicCycle().catch(error => log(`Harmonic cycle failed: ${error.message}`)).finally(() => { cycleBusy = false; });
+  };
   setInterval(runCycle, 6000);
   setInterval(checkQueryInbox, 1000);
   runCycle();

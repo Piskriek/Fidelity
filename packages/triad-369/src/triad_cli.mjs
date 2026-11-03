@@ -131,7 +131,8 @@ function renderFlows() {
   console.log(`  ${c.dim}Overall Integrity: ${c.green}${flowCount}${c.reset}\n`);
   links.forEach(l => {
     const status = l.active ? `${c.green}[RESONANT 100%]${c.reset}` : `${c.red}[DEGRADED]${c.reset}`;
-    console.log(`  ${c.gold}⇄ ${l.flow.padEnd(28)}${c.reset} ${status} via ${c.dim}${l.channel}${c.reset}`);
+    const name = l.label ? `${l.flow} (${l.label})` : l.flow; // Apex flows carry an id and a label
+    console.log(`  ${c.gold}⇄ ${name.padEnd(28)}${c.reset} ${status} via ${c.dim}${l.channel}${c.reset}`);
   });
   console.log('');
 }

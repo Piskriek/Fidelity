@@ -149,8 +149,8 @@ function cleanStaleFiles(dir) {
   }
 }
 
-/** Start the local bridge in the Apex daemon. Returns a function to stop polling. */
-export function startQueryBridge({ bridgeRoot, handleQuery, onError = () => {}, pollIntervalMs = 150 }) {
+/** Start the local bridge in the Apex daemon. Returns a function to stop polling. An optional status() result, when not null, is returned to pings as `holon`. */
+export function startQueryBridge({ bridgeRoot, handleQuery, onError = () => {}, pollIntervalMs = 150, status }) {
   if (!bridgeRoot || typeof handleQuery !== 'function') throw new Error('A bridge root and query handler are required.');
   const dirs = locations(bridgeRoot);
   ensureDirectories(dirs);
@@ -176,6 +176,8 @@ export function startQueryBridge({ bridgeRoot, handleQuery, onError = () => {}, 
           bridge_root: bridgeRoot,
           query_mode: 'rule-based keyword routing; no language model connected',
         };
+        const holon = typeof status === 'function' ? status() : null;
+        if (holon !== null && holon !== undefined) result.holon = holon;
       } else {
         result = await handleQuery({ id, from: request.from, question: request.question, record: request.record !== false });
       }

@@ -65,12 +65,50 @@ function printResult(output, result, json) {
   output.write(json ? `${JSON.stringify(result, null, 2)}\n` : `${result.answer}\n`);
 }
 
-function printStatus(output, status, json) {
+const clip = (text, max = 99) => (text.length > max ? `${text.slice(0, max - 3)}...` : text);
+
+// One short evidence line per flow: a file's age, a timed command's result, or the note for what is not measured.
+function evidenceSummary(e) {
+  if (!e) return 'no evidence';
+  if (e.kind === 'not_measured' || e.kind === 'symbolic') return e.note ?? e.kind;
+  if (e.kind !== 'measured') { // composite evidence: show the fresh file, else the first file
+    const parts = Object.values(e).filter(v => v?.kind === 'measured');
+    const pick = parts.find(v => v.fresh) ?? parts.find(v => 'exists' in v) ?? parts[0];
+    return pick ? evidenceSummary(pick) : 'no evidence';
+  }
+  if ('exists' in e) {
+    const name = path.win32.basename(String(e.source)); // win32 rules accept both / and \ separators
+    const age = Number.isFinite(e.age_seconds) ? `${e.age_seconds}s old` : 'no timestamp';
+    return e.exists ? `${name} ${age} (fresh within ${e.fresh_within_seconds}s)` : `${name} missing`;
+  }
+  const age = Number.isFinite(e.age_seconds) ? ` ${e.age_seconds}s ago` : '';
+  const latency = Number.isFinite(e.latency_ms) ? `, ${e.latency_ms} ms` : '';
+  const failure = !e.ok && e.error ? `: ${e.error}` : '';
+  return `${e.ok ? 'ok' : 'failed'}${age}${latency}${failure}`;
+}
+
+// Plain-text lines for the holon the Apex reports in its bridge ping.
+function holonLines(holon) {
+  const flows = Array.isArray(holon.flows) ? holon.flows : [];
+  const active = flows.filter(f => f.active).length;
+  const degraded = flows.filter(f => !f.active).map(f => f.flow);
+  const lines = [
+    `Holon measured at ${holon.measured_at}, bridge root ${holon.bridge_root}`,
+    `  flows ${active}/${flows.length} active; degraded: ${degraded.join(', ') || 'none'}`
+  ];
+  for (const f of flows) lines.push(`  ${String(f.flow).padEnd(5)}${String(f.label).padEnd(18)}${f.active ? 'ON ' : 'off'}  ${evidenceSummary(f.evidence)}`);
+  lines.push('  symbolic (not measured): four floats, coherence, energy; FTLE not measured');
+  return lines.map(line => clip(line));
+}
+
+/** Print the bridge ping. Plain mode also lists the holon's flows, each with the evidence behind it. */
+export function printStatus(output, status, json) {
   if (json) {
     output.write(`${JSON.stringify(status, null, 2)}\n`);
     return;
   }
   output.write(`Triad query bridge: running (PID ${status.pid})\nBridge root: ${status.bridge_root}\nQuery mode: ${status.query_mode}\n`);
+  if (status.holon) output.write(holonLines(status.holon).map(line => `${line}\n`).join(''));
 }
 
 async function readQuestionFromStdin(input) {

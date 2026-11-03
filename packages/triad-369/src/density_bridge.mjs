@@ -60,6 +60,18 @@ function runCmd(cmd) {
   });
 }
 
+// Like runCmd, but keeps when the command ran and how long it took, so the state can show that evidence.
+function runCmdMeasured(cmd) {
+  const started = Date.now();
+  return new Promise(resolve => {
+    exec(cmd, { timeout: 8000 }, (err, stdout) => {
+      const finished = Date.now();
+      const error = err ? (err.killed ? 'timed out after 8000 ms' : String(err.message).split('\n')[0].slice(0, 300)) : null;
+      resolve({ ok: !err, stdout: stdout ? stdout.trim() : '', error, started_at_ms: started, finished_at_ms: finished, latency_ms: finished - started });
+    });
+  });
+}
+
 export const DENSITY_RUNGS = [
   { rung: 1, density: 'D1', name: 'Atoms & Subatomic Lattice', domain: 'Mineral, Lattice, Physical Constants' },
   { rung: 2, density: 'D2', name: 'Kinematic Parts & Mechanical Nodes', domain: 'Biochemical Autopoiesis, Growth' },
@@ -72,6 +84,7 @@ export const DENSITY_RUNGS = [
 
 let tickCount = 0;
 let lastRemotePushAt = 0;
+let lastPush = null; // { at, ok, latency_ms, error } of the last push to Sol; written into density.json as last_push
 
 export async function stepBridge() {
   tickCount++;
@@ -99,7 +112,7 @@ export async function stepBridge() {
   const solTick = sol?.tick ?? null;
   const daemonAvailability = Math.min(1.0, partsUp / Math.max(1, partsTotal));
   const rawLoss = solUp ? 0.024 : 0.048;
-  const coherence = Math.max(0.85, Math.min(0.99, daemonAvailability * 0.95 + (solUp ? 0.04 : 0.0)));
+  const coherence = Math.max(0, Math.min(0.99, daemonAvailability * 0.95 + (solUp ? 0.04 : 0.0)));
 
   // Grounded Four-Floats S = (Pxd, Vtx, Lx, Aq)
   const Pxd = Math.max(0.10, +(0.35 - rawLoss).toFixed(4));
@@ -146,7 +159,8 @@ export async function stepBridge() {
       activeRung: activeRung.rung,
       densityLevel: activeRung.density,
       densityName: activeRung.name,
-      lyapunovFTLE: 0.012,
+      lyapunovFTLE: null,
+      lyapunov_kind: 'not_measured',
       graduated: solUp && daemonAvailability >= 0.90
     },
     densitySpectrum: DENSITY_RUNGS
@@ -164,7 +178,9 @@ export async function stepBridge() {
     four_floats: [Pxd, Vtx, Lx, Aq],
     active_density: activeRung.density,
     daemons_up: `${partsUp}/${partsTotal}`,
-    endpoint_active: true
+    endpoint_active: true,
+    last_push: lastPush,
+    coherence_basis: 'daemon availability * 0.95 + 0.04 if Sol up (derived, floor 0)'
   }, null, 2));
 
   // Push to remote Node 2 every 30s
@@ -181,7 +197,8 @@ export async function stepBridge() {
       status: 'synchronized'
     };
     const b64 = Buffer.from(JSON.stringify(remoteStreamPayload, null, 2)).toString('base64');
-    runCmd(`ssh -i "${SSH_KEY}" -o BatchMode=yes ${REMOTE_HOST} "echo ${b64} | base64 -d > ${REMOTE_DENSITY_STREAM}"`);
+    const pushed = await runCmdMeasured(`ssh -i "${SSH_KEY}" -o BatchMode=yes ${REMOTE_HOST} "echo ${b64} | base64 -d > ${REMOTE_DENSITY_STREAM}"`);
+    lastPush = { at: iso(pushed.finished_at_ms), ok: pushed.ok, latency_ms: pushed.latency_ms, error: pushed.error };
   }
 
   return fractalBridgeStatus;

@@ -45,8 +45,11 @@ async function freePort() {
 }
 
 function startService(env) {
-  const child = spawn(process.execPath, [serve], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+  // stdin is a pipe and fd 3 an IPC channel: the two shutdown paths that work on
+  // Windows, where child.kill() is TerminateProcess and no signal handler runs.
+  const child = spawn(process.execPath, [serve], { env, stdio: ['pipe', 'pipe', 'pipe', 'ipc'] });
   let output = '';
+  child.stdin.on('error', () => {});
   child.stdout.setEncoding('utf8').on('data', chunk => { output += chunk; });
   child.stderr.setEncoding('utf8').on('data', chunk => { output += chunk; });
   return { child, output: () => output };
@@ -64,7 +67,13 @@ async function waitForExit(child, timeoutMs = 10000) {
 async function stopIfRunning(child) {
   if (child.exitCode !== null || child.signalCode !== null) return;
   const exited = waitForExit(child);
-  child.kill('SIGTERM');
+  if (process.platform === 'win32') {
+    // No catchable signal here: ask over IPC, or close stdin once the channel is gone.
+    if (child.connected) child.send({ type: 'shutdown' }, () => {});
+    else child.stdin.end();
+  } else {
+    child.kill('SIGTERM');
+  }
   await exited;
 }
 

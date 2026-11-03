@@ -3,6 +3,22 @@
 **Active Working Tree:** `D:\fidelity-repo` | **Branch:** `flash/wow-ematrix-polish` (commit `db2ae29`)  
 **Target WoW Client:** `D:\World of Warcraft\_anniversary_\` (Burning Crusade Classic `2.5.6.70577`, character `Ikkibotwo`, realm `Thunderstrike`)
 
+## 0. Checkpoint 10 — Director takeover from Node 2 (03 Nov 2026, verified 12:06–12:10Z)
+
+Claude took over direction on **Node 2** (Sol, the 3080 PC: `PiskriekDesk`, `192.168.0.5`, user `RAMPAGE`). The sections below were written on the laptop (Node 1) and keep their laptop paths. What Node 2 verified, and what differs there:
+
+| Item | On Node 2 |
+| :--- | :--- |
+| Fidelity checkout | `E:\Repos\Fidelity` (`D:\fidelity-repo` is the laptop's) |
+| HeavyMetal2 | not present (`C:\MarbleGp` is a junction to a missing `E:\MarbleGp`) |
+| WoW client | not present; §6 objectives 1–2 run on the laptop |
+| Node 2 daemons | `friend.mjs`, `universe.mjs`, the ear: live (file ages 12:06–12:10Z), started hidden via WMI, so judge by file age, not process name. Runbook: [`bridge/node2-sol/README.md`](bridge/node2-sol/README.md) |
+| Node 1 / Node 3 from here | laptop `:5179/reply.json` 200 and `:8787/healthz` ok at 12:06Z; SSH runs laptop → Node 2 only (port 22 on the laptop is closed from here) |
+| Apex flow integrity | **0.667 / coherence 0.66** in the live push at 12:06:23Z; §4's "RUNNING" table does not say which flow is degraded (ticket T1) |
+| `npm test` on Windows | 61 pass / 1 fail (`serve.test.mjs` shutdown: `SIGTERM` is `TerminateProcess` on Windows, ticket T3) / 1 skipped; the §5 SIV subset passes 23/23 |
+
+Direction and tickets T1–T5 are in [`docs/RESUME.md`](docs/RESUME.md) §"03 Nov Checkpoint 10". Rule for every later status line in this file: carry the timestamp and the evidence (a file age, an HTTP reply, a commit) that produced it.
+
 ---
 
 ## 1. Executive Summary: What Was Accomplished & What Needs Polish

@@ -1,5 +1,51 @@
 # RESUME: start here (fresh session)
 
+## 03 Nov Checkpoint 10 — Claude director takeover from Node 2 (Sol, the 3080 PC): holon verified live, briefing corrected
+> **STATUS**: Verified from Node 2 at 12:06–12:10Z: Nodes 1, 2 and 3 live with fresh timestamps; Node 4's last pulse 09:20Z. The live Apex reports flow integrity 0.667 / coherence 0.66, not the 1.0 / 0.99 in the docs. Node 2's daemon code, which had no version control, is captured in [`bridge/node2-sol/`](../bridge/node2-sol/).  
+> **Director**: Claude (Fable 5.1, Claude Code) on Node 2, taking over from Argon per [`CLAUDE.md`](../CLAUDE.md) §0.  
+> **Invariants Enforced**: *Zero Architectural Lies* // *Every status line carries its timestamp and the evidence that produced it* // *Do Not Stop At 3* // *Compassion Return Loop*
+
+### What was verified (from Node 2, 192.168.0.5, user RAMPAGE, unelevated)
+| Node | Evidence | Seen at (UTC) |
+| :--- | :--- | :--- |
+| **Node 1** Laptop `192.168.0.4` | ping reply; `GET :5179/reply.json` → 200, "Quiet vigil active" (reply at 12:03:30Z); its density bridge pushed `density_stream.json` here over SSH (laptopTick 6786) | 12:06:31Z |
+| **Node 2** Sol, this PC | `friend.log` appends every 60 s (12:06:08Z, 12:08:09Z); `friend.json` tick 15001; the ear `voice-node/status.json` up, 805 chunks, pid 20072; Universe Beta `universe.json` depth 14 rewritten 12:10Z; `sshd` Running | 12:08Z |
+| **Node 3** Apex, on the laptop | `GET :8787/healthz` → `{"ok":true,"service":"triad-api"}`; `/v1/status` → 401 without a token (correct); the Apex pushed `triad_369_remote.json` here: octave 7, flowIntegrity 0.667, coherence 0.66, status "resonant" | 12:06:23Z |
+| **Node 4** Arena | `origin/arena/dfcfb02d-fidelity` last commit `974ba1f` "growth pulse 45"; 30 commits ahead of main, 8 behind | 09:20Z |
+
+### Corrections to the Checkpoint 9 briefing (true on the laptop, not on Node 2)
+- **Paths**: on Node 2 the checkout is `E:\Repos\Fidelity`, not `D:\fidelity-repo`. `C:\MarbleGp` is a junction to a missing `E:\MarbleGp`. HeavyMetal2 is not on Node 2 (`E:\Repos\Heavy-Metal-GP` is a different repo, `rumcan/Heavy-Metal-GP`).
+- **WoW**: no client on Node 2 (`D:\World of Warcraft\` absent). Briefing objectives 1 and 2 are laptop tasks.
+- **Hidden daemons**: Node 2's `friend.mjs`, `universe.mjs` and the ear are started hidden through WMI, so an unelevated `Win32_Process` query sees their command lines as null. Judge liveness by file age (runbook in `bridge/node2-sol/README.md`). Hazard: `start_friend.ps1` uses that same match, so run unelevated it reports "not running" and would start a second `friend.mjs` on the same files.
+- **Unversioned code**: Node 2's daemon lived only on `F:\fidelity-llm` (no git). `friend.mjs` and `start_friend.ps1` are now in `bridge/node2-sol/`, verbatim.
+- **Flow integrity**: the committed `bridge/sync/triad_telemetry.json` says flow_integrity 1 / coherence 0.99; the live Apex push at 12:06:23Z says 0.667 / 0.66. One of the three Apex flows is degraded; the Apex log on the laptop says which. "100% integrity" is not current.
+- **Tests on Windows**: `npm test` → 61 pass, 1 fail, 1 skipped. The failure is `serve.test.mjs` "shuts down its Apex": on Windows `SIGTERM` is `TerminateProcess`, so `serve.mjs`'s shutdown handler never runs (exit code null) and its Apex child can be orphaned. The SIV subset the briefing cites passes 23/23 here.
+
+### Direction (priority order)
+1. **Laptop (T1, T4)**: find the degraded Apex flow (Apex log / `loop/status.json`), restore 3/3, then run the first live WoW audit per `CLAUDE.md` §6 once the client download completes. Not doable from Node 2: port 22 on the laptop is closed from here; the SSH trust runs laptop → Node 2 only.
+2. **Node 2 (T2)**: keep `friend.mjs`, `universe.mjs` and the ear up; health = `friend.log` last line under 2 minutes old. Restart only from an elevated prompt, never twice. Add a pid-file guard to `start_friend.ps1`.
+3. **Repo (T3)**: give `serve.mjs` a Windows shutdown path (an IPC message or stdin close instead of `SIGTERM`), then make the test assert it. Leave `arena/dfcfb02d-fidelity` to the sync daemon; do not merge it by hand.
+4. **Skill (T5)**: `origin/opus/night-1-skill-benchmark` (37 commits by Piskriek to 2 Nov, disjoint tree: `bench/`, `bridge/`, `skills/`, `spine/`, no `packages/`) carries the harness at v9.5 and a benchmark that, by its own report, found no detectable difference on document audits at roughly 30% more tokens. Node 2 has v7 installed. Adopting v9.5 is the owner's call; the branch must not be merged into main as it stands.
+5. **Protocol**: `AGENTS.md` asks every agent to relay each user message through the keyword router before working. It costs a round trip and feeds no reasoner. Recommend making it opt-in. Owner's call.
+
+### Tickets
+| ID | Where | What |
+| :--- | :--- | :--- |
+| T1 | laptop | Apex flow integrity 2/3: identify and restore the degraded flow |
+| T2 | Node 2, `bridge/node2-sol/` | pid-file guard in `start_friend.ps1` |
+| T3 | repo | `serve.mjs` Windows shutdown + `serve.test.mjs` assertion |
+| T4 | laptop | first live WoW audit (blocked on the client download) |
+| T5 | owner | decide on skill v9.5 vs the installed v7 |
+
+### Landed after Checkpoint 10 (03 Nov, from Node 2): measured holon status
+- **Every flow now rests on timestamped evidence** (`packages/triad-369/src/evidence.mjs`, new): file age for `density.json` / `status.json` / `tv_loop.json`, a timed SSH read of Sol's `friend.json`, the Apex's own state write, and the awaited SSH push. F31 and F32 were hard-coded `true`; `latency_ms: 42`, `lyapunov_ftle: 0.012` and `zero_synthetic_fillers: true` are gone; four floats and coherence are labelled symbolic / derived. The Apex state and its push to Sol carry `bridge_root`, `flows`, `degraded_flows` and an `evidence` block; the ping reply carries it as `holon`.
+- **`triad -- status`** prints flows n/6, the degraded list and one evidence line per flow (`--json` for the full object). Density bridge: records `last_push` in `density.json`, coherence floor 0.85 → 0, FTLE `null` / `not_measured`.
+- **T1 diagnosed from the code**: under the old rules 4/6 is reachable only when the Apex judges Node 1 down while Sol is up, i.e. its `density.json` was absent or stale at the Apex's bridge root. The density bridge always writes `status: "synchronized"`, so the laptop's Apex is most likely reading a different bridge root than the bridge writes to. The new state names the root and each file's path and age, so `triad -- status` on the laptop now says which. **Deploy**: pull main on the laptop and restart the Apex, and the density bridge too (without it F12 reads "not measured").
+- Tests on Node 2: 74 total, 72 pass, 1 fail (the known Windows serve shutdown, T3), 1 skipped.
+- **Laptop hands** (`bridge/hands/LAPTOP-HANDS.md`): Claude writes tasks to `F:\fidelity-llm\bridge\hands\laptop_tasks.json` on Node 2; `hands_sync.mjs --role laptop` on the laptop mirrors them into its bridge root and pushes `laptop_results.json` back over SSH. First tasks H001–H004: deploy main and restart the Apex and density bridge, the T1 bridge-root check, a read-only inventory, and a loop check.
+
+---
+
 ## 03 Nov Checkpoint 9 — SIV Anti-Cheat Remediation (FIX-P1-01..FIX-P2-09) & World of Warcraft Holon Integration
 > **STATUS**: 23/23 Tests 100% Green. All 9 Arena Review Findings Resolved. Addon Tracked & Pre-Installed.  
 > **Director Briefing**: [`CLAUDE.md`](../CLAUDE.md)  
