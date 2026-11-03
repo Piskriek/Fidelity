@@ -117,12 +117,11 @@ function Terrain.PlayerState()
     return { x = ux, y = uy, instanceID = instanceID or 0, mapName = mapName, facing = facing, zoom = zoom }
 end
 
+-- The pitch cannot be solved from the player's nameplate: the client refuses to measure
+-- nameplate frames ("Can't measure restricted regions"). The saved pitch is used; tune it with
+-- /fide terrain pitch <deg> while looking at a tree until the copy stands on it.
 local function PlateScreenY()
-    if not (Cfg("terrainPitchFromPlate") and C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return nil end
-    local p = C_NamePlate.GetNamePlateForUnit("player")
-    if not p then return nil end
-    local _, y = ns.World and ns.World.CenterInUI and ns.World.CenterInUI(p) or nil
-    return y
+    return nil
 end
 
 function Terrain.BuildCamera(ps, groundZ)
@@ -135,6 +134,7 @@ function Terrain.BuildCamera(ps, groundZ)
         local solved = Math.SolvePitch(ps.x, ps.y, pz, ps.facing, ps.zoom, fov, sw, sh, plateY)
         if solved then pitch = solved; lastPitch = solved end
     end
+    lastPitch = pitch
     local cam = Math.BuildCamera(ps.x, ps.y, pz, ps.facing, ps.zoom, pitch, fov, sw, sh)
     lastCam = cam
     return cam, pitch
@@ -316,7 +316,10 @@ end
 
 local lastInfo = { props = 0, tile = nil, groundZ = nil, pitch = nil }
 
-local function OnUpdate(self, dt)
+local errors = { count = 0, last = nil }
+Terrain.errors = errors
+
+local function Step(self, dt)
     scanAge = scanAge + dt
     if scanAge >= SCAN_INTERVAL or not lastCam then
         scanAge = 0
@@ -339,6 +342,18 @@ local function OnUpdate(self, dt)
     end
 end
 
+local function OnUpdate(self, dt)
+    local ok, err = pcall(Step, self, dt)
+    if not ok then
+        errors.count = errors.count + 1
+        errors.last = tostring(err)
+        if errors.count >= 3 then
+            Terrain.SetEnabled(false)
+            print("|cffff3333[Fidelity EMatrix]|r Terrain overlay stopped after repeated errors: " .. errors.last)
+        end
+    end
+end
+
 -- ---------------------------------------------------------------------------
 -- Enable / disable / commands
 -- ---------------------------------------------------------------------------
@@ -354,6 +369,7 @@ function Terrain.SetEnabled(on)
     enabled = on and true or false
     FidelityEMatrix_Config.terrainOverlay = enabled
     if enabled then
+        errors.count = 0
         if not overlay then
             overlay = CreateFrame("Frame", "FidelityEMatrix_TerrainOverlay", UIParent)
             overlay:SetAllPoints(UIParent)
@@ -423,9 +439,10 @@ function Terrain.Command(args, say)
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
     elseif sub == "status" then
         local ps = Terrain.PlayerState()
-        say("Terrain overlay: %s | client %s | tile %s | ground %s | pitch %s | props drawn %d | models loaded %d failed %d | pos %s",
+        say("Terrain overlay: %s | client %s | tile %s | ground %s | pitch %s | props drawn %d | models loaded %d failed %d | errors %d%s | pos %s",
             enabled and "ON" or "off", Terrain.BuildLabel(), tostring(lastInfo.tile), lastInfo.groundZ and string.format("%.1f", lastInfo.groundZ) or "?",
             lastInfo.pitch and string.format("%.1f deg", math.deg(lastInfo.pitch)) or "?", lastInfo.props or 0, loadStats.ok, loadStats.failed,
+            errors.count, errors.last and (" (last: " .. errors.last .. ")") or "",
             ps and string.format("%.1f, %.1f (%s)", ps.x, ps.y, ps.mapName) or "unknown (no UnitPosition here)")
         return
     else

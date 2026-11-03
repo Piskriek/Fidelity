@@ -100,12 +100,25 @@ _G.C_NamePlate = {
     GetNamePlates = function() return plates end,
     GetNamePlateForUnit = function(unit) for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return p end end return nil end,
 }
-local function addPlate(unit, x, y)
+-- Nameplates are restricted regions in the client: measuring them throws. The stub does the
+-- same, so any code path that measures a plate fails the tests. The third argument is the
+-- unit's distance in yards, for CheckInteractDistance.
+local plateDistance = {}
+local function addPlate(unit, x, y, distance)
     local p = newRegion("Frame", nil, nil)
     p.namePlateUnitToken = unit
-    p.GetCenter = function() return x, y end
+    local refuse = function() error("NamePlate1:GetCenter(): Action[FrameMeasurement] failed because[Can't measure restricted regions]") end
+    p.GetCenter, p.GetLeft, p.GetRight, p.GetTop, p.GetBottom, p.GetRect, p.GetWidth, p.GetHeight, p.GetSize = refuse, refuse, refuse, refuse, refuse, refuse, refuse, refuse, refuse
+    plateDistance[unit] = distance or 15
     plates[#plates + 1] = p
     return p
+end
+_G.CheckInteractDistance = function(unit, index)
+    local d = plateDistance[unit]
+    if not d then return nil end
+    if index == 3 then return d <= 9.9 end
+    if index == 4 then return d <= 28 end
+    return nil
 end
 _G.UnitExists = function(unit) if unit == "player" then return true end for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return true end end return false end
 _G.UnitIsUnit = function(a, b) return a == b end
@@ -400,24 +413,26 @@ test("idle detaches OnUpdate (0 CPU)", function()
     check(_G.FidelityEMatrixDriver:GetScript("OnUpdate") ~= nil, "spin did not re-attach OnUpdate")
 end)
 
-test("world overlay: nameplate units become depth-sorted actors, nearest biggest", function()
+test("world overlay: nameplate units become actors anchored to their plates, depth from range bands, never measured", function()
     check(ns.World, "EMatrix_World did not export ns.World")
-    addPlate("nameplate1", 1200, 600) -- mid distance
-    addPlate("nameplate2", 400, 760)  -- near the horizon: far
-    addPlate("nameplate3", 700, 450)  -- close (near the player's own height, 432)
-    check(M.DepthFromScreenY(432, 432, 777) == 0.15, "player's own height must be the nearest depth")
-    check(M.DepthFromScreenY(777, 432, 777) == 2.0, "horizon must be the deepest")
-    check(M.DepthFromScreenY(0 / 0, 432, 777) == 0.5, "NaN must give the reference depth")
+    local p1 = addPlate("nameplate1", 1200, 600, 15) -- mid band
+    local p2 = addPlate("nameplate2", 400, 760, 40)  -- far
+    local p3 = addPlate("nameplate3", 700, 450, 5)   -- near
+    check(M.DepthFromScreenY(432, 432, 777) == 0.15, "DepthFromScreenY still works for callers that have a measurable y")
+    check(ns.World.RangeBand("nameplate3") == "near" and ns.World.RangeBand("nameplate1") == "mid" and ns.World.RangeBand("nameplate2") == "far", "range bands from CheckInteractDistance")
     slash("parallax 0.5") -- the idle test above left it at 0
     slash("world on")
-    step(0.3)
+    step(0.6)
     check(ns.World.IsEnabled(), "overlay did not enable")
+    check(ns.World.errors.count == 0, "the overlay must not touch restricted plate measurements: " .. tostring(ns.World.errors.last))
     check(ns.World.ActorCount() == 4, "expected 4 actors (player + 3 plates), got " .. ns.World.ActorCount())
     local pool = ns.World._pool
-    check(pool[1].unit == "player", "slot 1 must be the player (nearest), got " .. tostring(pool[1].unit))
+    check(pool[1].unit == "player", "slot 1 must be the player, got " .. tostring(pool[1].unit))
     check(pool[2].unit == "nameplate3" and pool[3].unit == "nameplate1" and pool[4].unit == "nameplate2",
         "actors not sorted near to far: " .. tostring(pool[2].unit) .. "," .. tostring(pool[3].unit) .. "," .. tostring(pool[4].unit))
-    check(pool[1].h > pool[2].h and pool[2].h > pool[3].h and pool[3].h > pool[4].h, "nearer actors must be drawn taller")
+    check(pool[2].h > pool[3].h and pool[3].h > pool[4].h, "nearer actors must be drawn taller")
+    check(pool[3].mono.points.TOP and pool[3].mono.points.TOP.rel == p1, "an actor must be anchored to its unit's nameplate")
+    check(pool[1].mono.points.BOTTOM and pool[1].mono.points.BOTTOM.rel == _G.UIParent, "the player copy is anchored to the screen")
     check(pool[4].mono.shown and not pool[4].left.shown, "mono mode must show the mono model only")
     check(FidelityEMatrix_Config.worldOverlay == true, "overlay state not saved")
 end)
@@ -426,17 +441,17 @@ test("world overlay: parallax grows with depth and the anaglyph pair spreads wit
     cursorX, cursorY = 1440, 540
     step(1.5)
     local pool = ns.World._pool
-    local nearX = pool[1].mono.points.TOP.x - pool[1].x
-    local farX = pool[4].mono.points.TOP.x - pool[4].x
+    local nearX = pool[2].mono.points.TOP.x -- the anchor offset IS the parallax shift
+    local farX = pool[4].mono.points.TOP.x
     check(nearX > 0 and farX > nearX, string.format("far actors must move more with the eye (near %.1f, far %.1f)", nearX, farX))
     slash("stereo anaglyph")
     step(0.3)
-    check(not pool[1].mono.shown and pool[1].left.shown and pool[1].right.shown, "anaglyph must show the pair")
-    local nearPair = pool[1].right.points.TOP.x - pool[1].left.points.TOP.x
+    check(not pool[2].mono.shown and pool[2].left.shown and pool[2].right.shown, "anaglyph must show the pair")
+    local nearPair = pool[2].right.points.TOP.x - pool[2].left.points.TOP.x
     local farPair = pool[4].right.points.TOP.x - pool[4].left.points.TOP.x
     check(nearPair > 0 and farPair > nearPair, string.format("deeper actors need a wider uncrossed pair (near %.1f, far %.1f)", nearPair, farPair))
-    check(near(pool[1].left.facing - pool[1].right.facing, 0.12, 1e-9), "pair facings must differ by 2 * delta")
-    check(pool[1].left.light.ambient.r == 1 and pool[1].right.light.ambient.b == 1, "pair must be lit red / cyan")
+    check(near(pool[2].left.facing - pool[2].right.facing, 0.12, 1e-9), "pair facings must differ by 2 * delta")
+    check(pool[2].left.light.ambient.r == 1 and pool[2].right.light.ambient.b == 1, "pair must be lit red / cyan")
     slash("stereo off")
     cursorX, cursorY = 960, 540
     step(1.0)
@@ -518,6 +533,7 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     check(abbey and not abbey.mono.shown, "the abbey beside the player must be loaded but not drawn")
     local cam = T._lastCam()
     check(cam and near(cam.yaw, 0), "camera yaw must follow the facing")
+    check(near(T.Info().pitch, 0.35, 1e-9), "with no measurable nameplate the saved pitch (0.35) is used, got " .. tostring(T.Info().pitch))
 end)
 
 test("terrain overlay: anaglyph pairs, facing follows the player, off releases everything", function()
@@ -555,7 +571,7 @@ test("terrain overlay: anaglyph pairs, facing follows the player, off releases e
 end)
 
 test("/fide overlay on turns both overlays on and hides the box; off restores it", function()
-    addPlate("nameplate7", 1100, 600)
+    addPlate("nameplate7", 1100, 600, 12)
     slash("overlay on")
     step(0.6)
     check(ns.World.IsEnabled() and ns.Terrain.IsEnabled(), "both overlays must be on")

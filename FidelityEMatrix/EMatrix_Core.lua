@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.6.0"
+local VERSION = "1.6.1"
 local CONFIG_VERSION = 2 -- bumped when saved defaults must change for existing installs
 
 -- Configuration & Constants
