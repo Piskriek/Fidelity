@@ -93,6 +93,22 @@ _G.GetBuildInfo = function() return "2.5.6", "70577", "Oct 2026", 20506 end
 _G.IsShiftKeyDown = function() return false end
 _G.WOW_PROJECT_ID = 5
 _G.SlashCmdList = {}
+
+-- Nameplates: a list of fake plates the tests fill in; each is a region with a unit token
+local plates = {}
+_G.C_NamePlate = {
+    GetNamePlates = function() return plates end,
+    GetNamePlateForUnit = function(unit) for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return p end end return nil end,
+}
+local function addPlate(unit, x, y)
+    local p = newRegion("Frame", nil, nil)
+    p.namePlateUnitToken = unit
+    p.GetCenter = function() return x, y end
+    plates[#plates + 1] = p
+    return p
+end
+_G.UnitExists = function(unit) if unit == "player" then return true end for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return true end end return false end
+_G.UnitIsUnit = function(a, b) return a == b end
 if PROFILE == "table" then
     _G.CreateVector3D = function(x, y, z) return { x = x, y = y, z = z } end
     _G.CreateColor = function(r, g, b) return { r = r, g = g, b = b } end
@@ -105,8 +121,8 @@ local pass, fail = 0, 0
 local out = {}
 local function test(name, fn)
     local ok, err = pcall(fn)
-    if ok then pass = pass + 1; out[#out + 1] = "PASS " .. name
-    else fail = fail + 1; out[#out + 1] = "FAIL " .. name .. ": " .. tostring(err) end
+    if ok then pass = pass + 1; out[#out + 1] = "PASS\t" .. name
+    else fail = fail + 1; out[#out + 1] = "FAIL\t" .. name .. "\t" .. tostring(err) end
 end
 local function check(cond, msg) if not cond then error(msg or "check failed", 2) end end
 local function near(a, b, eps) return math.abs(a - b) <= (eps or 1e-6) end
@@ -117,8 +133,10 @@ local function near(a, b, eps) return math.abs(a - b) <= (eps or 1e-6) end
 local ns = {}
 local mathChunk = assert(load(MATH_SRC, "@EMatrix_Math.lua"))
 local coreChunk = assert(load(CORE_SRC, "@EMatrix_Core.lua"))
+local worldChunk = assert(load(WORLD_SRC, "@EMatrix_World.lua"))
 mathChunk("FidelityEMatrix", ns)
 coreChunk("FidelityEMatrix", ns)
+worldChunk("FidelityEMatrix", ns)
 local M = ns.Math
 
 -- The anonymous loader frame is the one holding an OnEvent script
@@ -131,8 +149,12 @@ local function step(seconds, dt)
     local t = 0
     while t < seconds do
         now = now + dt
+        -- the client ticks every shown frame with an OnUpdate: the window first, then the overlay
         local f = master and master:GetScript("OnUpdate")
         if f then f(master, dt) end
+        for _, r in ipairs(created) do
+            if r ~= master and r.shown and r.scripts.OnUpdate then r.scripts.OnUpdate(r, dt) end
+        end
         t = t + dt
     end
 end
@@ -288,12 +310,74 @@ test("idle detaches OnUpdate (0 CPU)", function()
     check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") ~= nil, "spin did not re-attach OnUpdate")
 end)
 
+test("world overlay: nameplate units become depth-sorted actors, nearest biggest", function()
+    check(ns.World, "EMatrix_World did not export ns.World")
+    addPlate("nameplate1", 1200, 600) -- mid distance
+    addPlate("nameplate2", 400, 760)  -- near the horizon: far
+    addPlate("nameplate3", 700, 450)  -- close (near the player's own height, 432)
+    check(M.DepthFromScreenY(432, 432, 777) == 0.15, "player's own height must be the nearest depth")
+    check(M.DepthFromScreenY(777, 432, 777) == 2.0, "horizon must be the deepest")
+    check(M.DepthFromScreenY(0 / 0, 432, 777) == 0.5, "NaN must give the reference depth")
+    slash("parallax 0.5") -- the idle test above left it at 0
+    slash("world on")
+    step(0.3)
+    check(ns.World.IsEnabled(), "overlay did not enable")
+    check(ns.World.ActorCount() == 4, "expected 4 actors (player + 3 plates), got " .. ns.World.ActorCount())
+    local pool = ns.World._pool
+    check(pool[1].unit == "player", "slot 1 must be the player (nearest), got " .. tostring(pool[1].unit))
+    check(pool[2].unit == "nameplate3" and pool[3].unit == "nameplate1" and pool[4].unit == "nameplate2",
+        "actors not sorted near to far: " .. tostring(pool[2].unit) .. "," .. tostring(pool[3].unit) .. "," .. tostring(pool[4].unit))
+    check(pool[1].h > pool[2].h and pool[2].h > pool[3].h and pool[3].h > pool[4].h, "nearer actors must be drawn taller")
+    check(pool[4].mono.shown and not pool[4].left.shown, "mono mode must show the mono model only")
+    check(FidelityEMatrix_Config.worldOverlay == true, "overlay state not saved")
+end)
+
+test("world overlay: parallax grows with depth and the anaglyph pair spreads with depth", function()
+    cursorX, cursorY = 1440, 540
+    step(1.5)
+    local pool = ns.World._pool
+    local nearX = pool[1].mono.points.TOP.x - pool[1].x
+    local farX = pool[4].mono.points.TOP.x - pool[4].x
+    check(nearX > 0 and farX > nearX, string.format("far actors must move more with the eye (near %.1f, far %.1f)", nearX, farX))
+    slash("stereo anaglyph")
+    step(0.3)
+    check(not pool[1].mono.shown and pool[1].left.shown and pool[1].right.shown, "anaglyph must show the pair")
+    local nearPair = pool[1].right.points.TOP.x - pool[1].left.points.TOP.x
+    local farPair = pool[4].right.points.TOP.x - pool[4].left.points.TOP.x
+    check(nearPair > 0 and farPair > nearPair, string.format("deeper actors need a wider uncrossed pair (near %.1f, far %.1f)", nearPair, farPair))
+    check(near(pool[1].left.facing - pool[1].right.facing, 0.12, 1e-9), "pair facings must differ by 2 * delta")
+    check(pool[1].left.light.ambient.r == 1 and pool[1].right.light.ambient.b == 1, "pair must be lit red / cyan")
+    slash("stereo off")
+    cursorX, cursorY = 960, 540
+    step(1.0)
+end)
+
+test("world overlay: a plate that leaves releases its slot; off hides everything and idles", function()
+    table.remove(plates, 1) -- nameplate1 gone
+    step(0.3)
+    check(ns.World.ActorCount() == 3, "expected 3 actors after a plate left, got " .. ns.World.ActorCount())
+    slash("world off")
+    slash("spin 0")
+    slash("parallax 0")
+    step(1.0)
+    check(not ns.World.IsEnabled() and ns.World.ActorCount() == 0, "overlay still has actors when off")
+    for i = 1, #ns.World._pool do
+        local s = ns.World._pool[i]
+        check(not s.mono.shown and not s.left.shown and not s.right.shown, "a model is still shown with the overlay off")
+    end
+    check(_G.FidelityEMatrixFrame:GetScript("OnUpdate") == nil, "OnUpdate must detach once the overlay is off and nothing moves")
+    slash("spin 0.5")
+    slash("parallax 0.5")
+    for i = #plates, 1, -1 do plates[i] = nil end
+end)
+
 test("every slash command runs without an addon error", function()
     printed = {}
     for _, cmd in ipairs({ "help", "diag", "status", "scene target", "scene player", "spin 1", "parallax 0.5",
         "lens 0.4", "backdrop black", "backdrop nebula", "stereo", "stereo", "stereo", "stereo",
         "stereo delta 0.08", "stereo pixels 6", "stereo mix 0.6", "stereo off", "calibrate", "calibrate side",
-        "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle", "bogus" }) do
+        "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
+        "world", "world status", "world off", "world bogus", "bogus" }) do
         slash(cmd)
         step(0.05)
     end

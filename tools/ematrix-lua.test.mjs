@@ -24,6 +24,7 @@ function runProfile(profile) {
   setGlobal('PROFILE', profile);
   setGlobal('MATH_SRC', read('FidelityEMatrix/EMatrix_Math.lua'));
   setGlobal('CORE_SRC', read('FidelityEMatrix/EMatrix_Core.lua'));
+  setGlobal('WORLD_SRC', read('FidelityEMatrix/EMatrix_World.lua'));
   const driver = read('tools/ematrix_headless.lua');
   if (lauxlib.luaL_loadbuffer(L, to_luastring(driver), null, to_luastring('@ematrix_headless.lua')) !== lua.LUA_OK) {
     throw new Error(`driver did not compile: ${lua.lua_tojsstring(L, -1)}`);
@@ -41,7 +42,7 @@ for (const profile of ['table', 'positional']) {
     assert.ok(done, `no DONE line; output:\n${lines.join('\n')}`);
   });
   for (const line of lines) {
-    const m = /^(PASS|FAIL) ([^:]+)(?::\s*(.*))?$/s.exec(line);
+    const m = /^(PASS|FAIL)\t([^\t]+)(?:\t(.*))?$/s.exec(line);
     if (!m) continue;
     test(`EMatrix headless (${profile} SetLight): ${m[2]}`, () => {
       assert.equal(m[1], 'PASS', m[3] || 'failed');

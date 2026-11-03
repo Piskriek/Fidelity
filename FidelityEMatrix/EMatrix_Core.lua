@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.2.0"
+local VERSION = "1.3.0"
 
 -- Configuration & Constants
 local COLS = 15
@@ -66,6 +66,7 @@ local DEFAULTS = {
     -- turnSign +1 assumes positive facing is counter-clockwise seen from above.
     sideSign = 1,
     turnSign = 1,
+    worldOverlay = false,     -- EMatrix_World: live actors re-rendered over the game (restored at load)
 }
 FidelityEMatrix_Config = FidelityEMatrix_Config or {}
 
@@ -212,6 +213,13 @@ local function FaceModel(model, facing)
         model:SetRotation(facing)
     end
 end
+
+-- Shared with EMatrix_World.lua
+ns.Cfg = Cfg
+ns.ApplyLight = ApplyLight
+ns.PlaceModel = PlaceModel
+ns.FaceModel = FaceModel
+ns.LIGHTS = { mono = LIGHT_MONO, red = LIGHT_RED, cyan = LIGHT_CYAN }
 
 -- ============================================================================
 -- 1. Master Frame & Layer Architecture
@@ -797,8 +805,10 @@ function CheckIdleCondition()
     local pStr = Cfg("parallaxStrength")
     local target = waveTargetState and 1.0 or 0.0
     local settlingEye = (pStr <= 0.0) and (smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0)
+    -- the world overlay reads the eye and facing from here, so keep the driver alive while it runs
+    local worldOn = ns.World and ns.World.IsEnabled()
 
-    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye then
+    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn then
         if not masterFrame:GetScript("OnUpdate") then
             masterFrame:SetScript("OnUpdate", OnUpdateDriver)
         end
@@ -965,6 +975,14 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             Say("Stereo: |cffffffff%s|r (turn %.3f rad, offset %d px, cyan mix %.2f)", StereoMode():upper(),
                 Cfg("stereoDelta"), Cfg("stereoPixels"), Cfg("anaglyphMix"))
 
+        elseif cmd == "world" then
+            if ns.World then
+                ns.World.Command(args, Say)
+                CheckIdleCondition()
+            else
+                Say("EMatrix_World.lua did not load.")
+            end
+
         elseif cmd == "calibrate" then
             -- Moving the cursor right should slide the character right and turn it so you see
             -- more of its side facing you on the right. If either goes the wrong way, flip it.
@@ -1011,6 +1029,9 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print(string.format("  3D Model Engine: %s | Light form: %s", sceneMain and sceneMain:GetObjectType() or "None", DiagTable.lightForm))
             print(string.format("  Spin: %.2f | Parallax: %.2f | Eye: %.2f, %.2f", Cfg("spinSpeed"), Cfg("parallaxStrength"), smoothEyeX, smoothEyeY))
             print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
+            if ns.World then
+                print(string.format("  World overlay: %s, %d actor(s)", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount()))
+            end
 
         else
             print("|cff00ffcc[Fidelity EMatrix Commands]|r v" .. VERSION)
@@ -1022,6 +1043,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide lens <0..1>|r                 - Open microlens bezel alpha (0 = seamless)")
             print("  |cffffcc00/fide backdrop <nebula|world|black>|r - Deep background")
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
+            print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
             print("  |cffffcc00/fide diag|r                        - Client engine probe")
             print("  |cffffcc00/fide scale <0.5..2.5>|r            - Uniform UI scale")
@@ -1044,6 +1066,7 @@ loader:SetScript("OnEvent", function(self, event, addon)
         if addon == "FidelityEMatrix" or addon == ADDON_NAME then
             CreateMatrixGrid()
             Say("v%s initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide help|r.", VERSION)
+            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true); CheckIdleCondition() end
             self:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
@@ -1062,6 +1085,7 @@ ns.UpdateStereoDisplay = UpdateStereoDisplay
 ns.ApplyDepthPlanes = ApplyDepthPlanes
 ns.cells = cells
 ns.DiagTable = DiagTable
+ns.GetEye = function() return smoothEyeX, smoothEyeY, currentFacing end
 ns.State = function()
     return {
         open = waveTargetState, openAmount = openAmount, waveActive = waveActive,

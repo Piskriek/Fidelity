@@ -186,6 +186,17 @@ function EMatrix_Math.StereoFacings(facing, delta)
     return facing + delta, facing - delta
 end
 
+--- Depth of a ground unit from where its nameplate sits on screen, for a camera behind and above
+--- the player: at the player's own height z = 0.15, rising to 2.0 at the horizon line.
+--- @return number z in [0.15, 2.0]
+function EMatrix_Math.DepthFromScreenY(plateY, playerY, horizonY)
+    if not (finite(plateY) and finite(playerY) and finite(horizonY)) then return 0.5 end
+    local span = horizonY - playerY
+    if span <= 1 then return 0.5 end
+    local t = clamp((plateY - playerY) / span, 0.0, 1.0)
+    return 0.15 + 1.85 * t * t
+end
+
 --- Moves `current` toward `target` at `rate` per second without overshoot.
 function EMatrix_Math.Approach(current, target, rate, dt)
     if not finite(current) then current = 0 end

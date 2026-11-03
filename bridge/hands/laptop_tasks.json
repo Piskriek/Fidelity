@@ -1,26 +1,26 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T17:28:48Z",
+  "updated_at": "2026-11-03T17:39:40Z",
   "note": "Live copy: F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2. This repo file is a snapshot. Protocol: bridge/hands/LAPTOP-HANDS.md.",
   "tasks": [
     {
       "id": "H005",
-      "requested_at": "2026-11-03T17:28:48Z",
+      "requested_at": "2026-11-03T17:39:40Z",
       "priority": 0,
-      "title": "Deploy FidelityEMatrix v1.2.0 (Claude depth pass) to the TBC Anniversary client and run the in-game check",
+      "title": "Deploy FidelityEMatrix v1.3.0 (Claude depth pass + world overlay) to the TBC Anniversary client and run the in-game check",
       "steps": [
         "git -C D:\fidelity-repo fetch origin",
         "If D:\fidelity-repo is on flash/wow-ematrix-polish with no new local commits: git -C D:\fidelity-repo merge --ff-only origin/claude/ematrix-depth (it is a fast-forward of 87ec1ff). If it is not a fast-forward, stop and report blocked with git status.",
         "node D:\fidelity-repo\tools\test_ematrix_math.mjs (expect 12 passed, 0 failed)",
         "Copy (do not mirror or delete) D:\fidelity-repoFidelityEMatrix* over D:World of Warcraft_anniversary_InterfaceAddOnsFidelityEMatrix : robocopy D:\fidelity-repoFidelityEMatrix \"D:World of Warcraft_anniversary_InterfaceAddOnsFidelityEMatrix\" /E (no /MIR, no /PURGE)",
-        "List the AddOnsFidelityEMatrix folder with sizes: it must hold EMatrix_Core.lua, EMatrix_Math.lua, FidelityEMatrix.toc and Media with 6 .tga files (Wall_Gradient, Glass_Sheen, Reticle are new)",
-        "Then hand over to the owner for the in-game part: /reload, then the six checks in RESUME.md section \"EMatrix v1.2.0: Claude's depth pass\" (diag light form, lens lattice faint, cursor-right slide and turn, backdrop world, anaglyph, errors). Set status blocked with blocked_on: \"owner: /reload and run the RESUME.md EMatrix check list\" until the owner reports; then write what the owner saw into output and set done."
+        "List the AddOnsFidelityEMatrix folder with sizes: it must hold EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, FidelityEMatrix.toc and Media with 6 .tga files (Wall_Gradient, Glass_Sheen, Reticle are new)",
+        "Then hand over to the owner for the in-game part: /reload, then the seven checks in RESUME.md section \"EMatrix v1.2.0: Claude's depth pass\" (diag light form, lens lattice faint, cursor-right slide and turn, backdrop world, anaglyph, errors). Set status blocked with blocked_on: \"owner: /reload and run the RESUME.md EMatrix check list\" until the owner reports; then write what the owner saw into output and set done."
       ],
       "report": [
         "The merge result (new HEAD) and the test summary line",
         "The AddOns folder listing",
-        "After the owner check: the /fide diag SetLight form line, whether the slide/turn went the right way (and any /fide calibrate used), how the lens lattice and walls look, anaglyph result, any [Fidelity EMatrix Error] lines verbatim"
+        "After the owner check: the /fide diag SetLight form line, whether the slide/turn went the right way (and any /fide calibrate used), how the lens lattice and walls look, anaglyph result, any [Fidelity EMatrix Error] lines verbatim; for check 7 (/fide world on): the /fide world status actor count, whether the overlay models line up with the real units, and how the red/cyan pairs look near vs far"
       ],
       "status": "requested"
     },

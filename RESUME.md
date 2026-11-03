@@ -35,6 +35,10 @@ Stereo modes: `sbs` (parallel free-view), `cross` (cross-eyed, halves swapped), 
 5. `/fide stereo anaglyph` with red/cyan glasses: the character behind the screen, the reticle in front. Tune with `/fide stereo pixels 6` and `/fide stereo mix 0.6`. `/fide stereo cross` for cross-eyed free-viewing.
 6. Report what you see, and any `[Fidelity EMatrix Error]` line.
 
+### v1.3.0: world overlay (`/fide world on`)
+The owner asked for the stereo effect on every model in the scene. What the API allows: `EMatrix_World.lua` re-renders the **player and every unit with a nameplate** over the game, each at its nameplate's screen position, sized and parallaxed by an estimated depth (`DepthFromScreenY`: lower on screen = nearer, 0.15 at the player, 2.0 at the horizon), and in `anaglyph` as a red/cyan pair whose offset grows with depth. Up to 8 nearest actors, scan every 0.1 s, positions every frame, idle-safe. What it cannot do, and says so in chat: terrain, trees, buildings and units without nameplates stay the game's own flat picture (no API lists them). Side-by-side does not apply over a mono world; only anaglyph and mono parallax. Enable nameplates (V / Shift-V) so there are actors to draw. The saved `worldOverlay` flag restores it at login.
+
+In-game check 7: `/fide world on`, `/fide stereo anaglyph` with glasses, stand near a few NPCs with nameplates on: each should get a red/cyan ghost pair at its nameplate, nearer ones tighter, farther ones wider and smaller; moving the cursor should shift far actors more than near ones. `/fide world status` prints the actor count. Report whether the overlay models line up with the real units (the depth estimate assumes a camera behind and above the player).
 ### Tests
 `npm run ematrix:test`: the **real** Lua (fengari, Lua 5.3, devDependency) runs against a WoW API stub in two client profiles (table and positional `SetLight`): 13 checks each, plus `tools/test_ematrix_math.mjs` 12/12. `npm test` runs it too (107 pass, 1 skip). `npm run ematrix:atlas` regenerates the textures. The stub proves the code paths and the plane maths, not how the client renders them.
 
