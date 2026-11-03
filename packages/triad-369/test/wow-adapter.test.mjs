@@ -113,3 +113,4 @@ FidelityWoW_Export = {
   assert.ok(optInAudit.confidence > 0.8);
   assert.equal(optInAudit.character, 'Thrall');
 });
+
