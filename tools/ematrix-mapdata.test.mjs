@@ -110,8 +110,8 @@ test('synthetic obj tile: named doodad, FileDataID doodad and WMO come out in wo
 test('tileToLua emits loadable Lua with decimetre heights and resolved paths', () => {
   const st = stitchTile(parseRootAdt(syntheticRoot()));
   const o = parseObjAdt(syntheticObj());
-  const lua = tileToLua('azeroth', 32, 48, st, o, new Map([[123456, 'world/azeroth/elwynn/passivedoodads/trees/elwynntree01.m2']]));
-  assert.match(lua, /^EMatrix_Data\["azeroth:32:48"\] = \{/);
+  const lua = tileToLua('azeroth', 32, 48, st, o, new Map([[123456, 'world/azeroth/elwynn/passivedoodads/trees/elwynntree01.m2']]), 'vanilla');
+  assert.match(lua, /^EMatrix_Data\["vanilla"\]\["azeroth:32:48"\] = \{/);
   assert.match(lua, /heights = \{1000,1005,1010/);
   assert.match(lua, /\{123456,"world\/azeroth\/elwynn\/passivedoodads\/trees\/elwynntree01\.m2",0\.00,0\.00,0\.00,0\.0,1\.000\}/);
   assert.match(lua, /\{0,"world\/tree\.m2",-8800\.00,-100\.00,60\.00,45\.0,2\.000\}/);

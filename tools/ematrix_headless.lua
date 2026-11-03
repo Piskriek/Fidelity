@@ -153,7 +153,14 @@ mathChunk("FidelityEMatrix", ns)
 do
     local heights = {}
     for i = 1, 129 * 129 do heights[i] = 800 end
+    local vanillaHeights = {}
+    for i = 1, 129 * 129 do vanillaHeights[i] = 900 end
     EMatrix_Data = {
+        builds = { tbc = { build = "2.5.6.70577", product = "wow_anniversary" }, vanilla = { build = "1.60.1.70753", product = "wowf" } },
+        vanilla = {
+            ["azeroth:32:48"] = { map = "azeroth", col = 32, row = 48, originX = -8533.333, originY = 0.0, unit = 4.16667, heights = vanillaHeights, doodads = {}, wmos = {} },
+        },
+        tbc = {
         ["azeroth:32:48"] = {
             map = "azeroth", col = 32, row = 48, originX = -8533.333, originY = 0.0, unit = 4.16667, heights = heights,
             doodads = {
@@ -162,6 +169,7 @@ do
                 { 189929, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2", -8747.0, -178.3, 80.0, 0.0, 1.0 },
             },
             wmos = { { 0, "world/wmo/azeroth/buildings/nsabbey/nsabbey.wmo", -8897.0, -150.0, 80.1, 0.0, 1.0 } },
+        },
         },
     }
 end
@@ -448,6 +456,18 @@ test("terrain: tile lookup, ground height and the player state from UnitPosition
     tile.heights[1] = 800
     local ps = T.PlayerState()
     check(ps and near(ps.x, -8897.0) and near(ps.y, -178.3) and ps.mapName == "azeroth", "PlayerState must map UnitPosition (y, x) to x north / y west")
+    -- the client family picks the data set: this stub is a 2.5.6 client (toc 20506) -> tbc
+    check(T.Family() == "tbc", "a 2.5.6 client must use the tbc data, got " .. T.Family())
+    check(T.BuildLabel():find("2.5.6.70577", 1, true), "build label must name the data build: " .. T.BuildLabel())
+    local savedBuildInfo = _G.GetBuildInfo
+    _G.GetBuildInfo = function() return "1.60.1", "70753", "Nov 2026", 16001 end
+    check(T.Family() == "vanilla", "a 1.60 (WoW Forever) client must use the vanilla data, got " .. T.Family())
+    local _, _, vtile = T.TileFor("azeroth", -8897.0, -178.3)
+    check(vtile and near(T.GroundHeight(vtile, -8897.0, -178.3), 90.0, 1e-6), "the vanilla family must read its own tile (ground 90)")
+    _G.GetBuildInfo = function() return "1.15.9", "70576", "Oct 2026", 11509 end
+    check(T.Family() == "vanilla", "Classic Era (1.15) also maps to the vanilla data")
+    _G.GetBuildInfo = savedBuildInfo
+    check(T.Family() == "tbc", "restored client must be tbc again")
 end)
 
 test("terrain overlay: nearby placements become props at projected positions; far ones are not drawn", function()

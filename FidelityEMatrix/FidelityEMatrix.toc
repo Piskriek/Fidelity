@@ -2,11 +2,12 @@
 ## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
 ## Notes: Scoreboard wave window, world overlay (nameplate units) and terrain overlay (map placements) with depth parallax and anaglyph stereo
 ## Author: Antigravity Overwatch & Flash
-## Version: 1.4.0
+## Version: 1.4.1
 ## SavedVariables: FidelityEMatrix_Config
 
 EMatrix_Math.lua
-DataMatrix_Data_Azeroth.lua
+Data\EMatrix_Data_Azeroth_tbc.lua
+Data\EMatrix_Data_Azeroth_vanilla.lua
 EMatrix_Core.lua
 EMatrix_World.lua
 EMatrix_Terrain.lua

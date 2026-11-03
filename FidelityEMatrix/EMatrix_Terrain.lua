@@ -38,6 +38,25 @@ local function NominalHeight(path, isWmo)
 end
 
 local MAP_BY_INSTANCE = { [0] = "azeroth", [1] = "kalimdor", [530] = "expansion01", [571] = "northrend" }
+
+--- The data family for this client: 1.x (WoW Forever, Classic Era) = "vanilla", 2.x = "tbc".
+--- Each family's data is generated from that family's own build (model ids differ between them).
+function Terrain.Family()
+    local toc = GetBuildInfo and select(4, GetBuildInfo()) or 0
+    toc = tonumber(toc) or 0
+    if toc >= 20000 and toc < 30000 then return "tbc" end
+    return "vanilla"
+end
+
+function Terrain.Data()
+    return EMatrix_Data and EMatrix_Data[Terrain.Family()] or nil
+end
+
+function Terrain.BuildLabel()
+    local fam = Terrain.Family()
+    local b = EMatrix_Data and EMatrix_Data.builds and EMatrix_Data.builds[fam]
+    return fam .. (b and (" (data from build " .. tostring(b.build) .. ", " .. tostring(b.product) .. ")") or " (no data for this client family)")
+end
 local TILE = 533.33333
 
 local overlay, backdropTex
@@ -60,7 +79,8 @@ end
 function Terrain.TileFor(mapName, x, y)
     local row = math.floor(32 - x / TILE)
     local col = math.floor(32 - y / TILE)
-    return col, row, EMatrix_Data and EMatrix_Data[mapName .. ":" .. col .. ":" .. row] or nil
+    local data = Terrain.Data()
+    return col, row, data and data[mapName .. ":" .. col .. ":" .. row] or nil
 end
 
 --- Ground height at world (x, y) from a tile's 129x129 grid (bilinear), or nil outside it.
@@ -357,8 +377,8 @@ function Terrain.Command(args, say)
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
     elseif sub == "status" then
         local ps = Terrain.PlayerState()
-        say("Terrain overlay: %s | tile %s | ground %s | pitch %s | props drawn %d | pos %s",
-            enabled and "ON" or "off", tostring(lastInfo.tile), lastInfo.groundZ and string.format("%.1f", lastInfo.groundZ) or "?",
+        say("Terrain overlay: %s | client %s | tile %s | ground %s | pitch %s | props drawn %d | pos %s",
+            enabled and "ON" or "off", Terrain.BuildLabel(), tostring(lastInfo.tile), lastInfo.groundZ and string.format("%.1f", lastInfo.groundZ) or "?",
             lastInfo.pitch and string.format("%.1f deg", math.deg(lastInfo.pitch)) or "?", lastInfo.props or 0,
             ps and string.format("%.1f, %.1f (%s)", ps.x, ps.y, ps.mapName) or "unknown (no UnitPosition here)")
         return
@@ -366,8 +386,7 @@ function Terrain.Command(args, say)
         say("Usage: /fide terrain <on|off|status|fov <deg>|head <yd>|pitch <deg>|autopitch|backdrop <none|dim|black>>")
         return
     end
-    say("Terrain overlay %s: map placements near you drawn as depth props (data: %s).", enabled and "ON" or "OFF",
-        EMatrix_Data and "loaded" or "MISSING: EMatrix_Data_*.lua not in the toc")
+    say("Terrain overlay %s: map placements near you drawn as depth props (client %s).", enabled and "ON" or "OFF", Terrain.BuildLabel())
 end
 
 -- Test / dump access

@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.4.0"
+local VERSION = "1.4.1"
 
 -- Configuration & Constants
 local COLS = 15
