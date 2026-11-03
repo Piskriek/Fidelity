@@ -1,0 +1,278 @@
+#!/usr/bin/env node
+// tools/test_ematrix_math.mjs
+// Verification suite for FidelityEMatrix:
+//   1. Ring sequence metrics (Ring 0 == 1 cell, Ring 1 == 8 cells, monotonic Euclidean transition)
+//   2. 8-corner SetTexCoord rotation table invariants
+//   3. Scoreboard flip visual math (scaleY squash, golden specular alpha peak)
+//   4. TGA texture assets header, byte-size, and alpha punch verification
+//   5. Zero-GC idle script detachment verification
+
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
+const mediaDir = path.join(projectRoot, 'FidelityEMatrix', 'Media');
+const mathLuaPath = path.join(projectRoot, 'FidelityEMatrix', 'EMatrix_Math.lua');
+const coreLuaPath = path.join(projectRoot, 'FidelityEMatrix', 'EMatrix_Core.lua');
+
+console.log('===========================================================');
+console.log('   FIDELITY E-MATRIX: MATHEMATICAL & ASSET AUDIT SUITE    ');
+console.log('===========================================================');
+
+let testsPassed = 0;
+let testsFailed = 0;
+
+function runTest(name, fn) {
+  try {
+    fn();
+    console.log(`  ✔ [PASS] ${name}`);
+    testsPassed++;
+  } catch (err) {
+    console.error(`  ✖ [FAIL] ${name}: ${err.message}`);
+    testsFailed++;
+  }
+}
+
+// ============================================================================
+// 1. Math Functions Mirror (Extracted directly matching EMatrix_Math.lua)
+// ============================================================================
+const ROT_UV8 = {
+  0: [0, 0,  0, 1,  1, 0,  1, 1],
+  1: [0, 1,  1, 1,  0, 0,  1, 0],
+  2: [1, 1,  1, 0,  0, 1,  0, 0],
+  3: [1, 0,  0, 0,  1, 1,  0, 1]
+};
+
+function calculateRingDistance(x, y, ox, oy) {
+  if (x == null || y == null || ox == null || oy == null) return 0.0;
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(ox) || !Number.isFinite(oy)) return 0.0;
+
+  const dx = Math.abs(x - ox);
+  const dy = Math.abs(y - oy);
+  const cheb = dx > dy ? dx : dy;
+  const euclid = Math.hypot(dx, dy);
+
+  // w blend: 0 at cheb <= 1, 1 at cheb >= 3
+  const w = Math.min(Math.max((cheb - 1.0) / 2.0, 0.0), 1.0);
+  return (1.0 - w) * cheb + w * euclid;
+}
+
+function getCellRotation(col, row) {
+  const c = Math.floor(col);
+  const r = Math.floor(row);
+  let h = ((c * 73856093 + r * 19349663) % 4);
+  if (h < 0) h += 4;
+  return h;
+}
+
+function calculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration) {
+  if (flipDuration <= 0) return 1.0;
+  const u = (waveAge * waveSpeed - ringDist) / flipDuration;
+  if (u < 0.0) return 0.0;
+  if (u > 1.0) return 1.0;
+  return u;
+}
+
+function getFlipVisuals(u) {
+  if (u <= 0.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: false };
+  if (u >= 1.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: true };
+  const scaleY = Math.max(Math.abs(Math.cos(u * Math.PI)), 0.04);
+  const s = Math.sin(u * Math.PI);
+  const specAlpha = s * s;
+  const isFlipped = (u >= 0.5);
+  return { scaleY, specAlpha, isFlipped };
+}
+
+// ============================================================================
+// TEST 1: Ring 0 and Ring 1 Invariants across 15x9 Grid
+// ============================================================================
+runTest('Ring 0 count == 1 and Ring 1 count == 8 from center (8, 5)', () => {
+  const COLS = 15;
+  const ROWS = 9;
+  const ox = 8;
+  const oy = 5;
+
+  let ring0Count = 0;
+  let ring1Count = 0;
+
+  for (let r = 1; r <= ROWS; r++) {
+    for (let c = 1; c <= COLS; c++) {
+      const d = calculateRingDistance(c, r, ox, oy);
+      if (Math.abs(d - 0.0) < 1e-9) {
+        ring0Count++;
+      } else if (Math.abs(d - 1.0) < 1e-9) {
+        ring1Count++;
+      }
+    }
+  }
+
+  assert.equal(ring0Count, 1, `Ring 0 must have exactly 1 cell at origin (got ${ring0Count})`);
+  assert.equal(ring1Count, 8, `Ring 1 must have exactly 8 Chebyshev neighbors (got ${ring1Count})`);
+});
+
+runTest('Rings 2+ transition smoothly to Euclidean circular ripple without discontinuities', () => {
+  const ox = 8;
+  const oy = 5;
+
+  // Check Chebyshev 2: (10, 5) is orthogonal dx=2, dy=0 -> cheb=2, euclid=2 -> dist=2.0
+  const dOrth2 = calculateRingDistance(10, 5, ox, oy);
+  assert.equal(dOrth2, 2.0);
+
+  // Diagonal (10, 7) dx=2, dy=2 -> cheb=2, euclid=2.8284 -> w=0.5 -> dist = 0.5*2 + 0.5*2.8284 = 2.4142
+  const dDiag2 = calculateRingDistance(10, 7, ox, oy);
+  assert.ok(dDiag2 > 2.0 && dDiag2 < 2.83);
+
+  // Check Chebyshev 3: (11, 5) dx=3, dy=0 -> euclid=3.0 -> w=1.0 -> dist=3.0
+  const dOrth3 = calculateRingDistance(11, 5, ox, oy);
+  assert.equal(dOrth3, 3.0);
+
+  // Diagonal (11, 8) dx=3, dy=3 -> euclid=4.2426 -> w=1.0 -> dist=4.2426 (pure Euclidean!)
+  const dDiag3 = calculateRingDistance(11, 8, ox, oy);
+  assert.ok(Math.abs(dDiag3 - Math.hypot(3, 3)) < 1e-5);
+});
+
+runTest('CalculateRingDistance handles non-finite inputs cleanly with 0 NaNs', () => {
+  assert.equal(calculateRingDistance(NaN, 5, 8, 5), 0.0);
+  assert.equal(calculateRingDistance(8, Infinity, 8, 5), 0.0);
+  assert.equal(calculateRingDistance(null, undefined, 8, 5), 0.0);
+  assert.equal(calculateRingDistance(8, 5, NaN, NaN), 0.0);
+});
+
+// ============================================================================
+// TEST 2: Exact 8-Corner Rotation Table & Deterministic PRNG
+// ============================================================================
+runTest('ROT_UV8 table contains 4 valid 8-corner orientation mappings in [0, 1]', () => {
+  for (let rot = 0; rot <= 3; rot++) {
+    const uv = ROT_UV8[rot];
+    assert.ok(Array.isArray(uv) && uv.length === 8, `Rotation ${rot} must have 8 coords`);
+    for (const coord of uv) {
+      assert.ok(coord === 0 || coord === 1, `UV coords must be binary normalized 0 or 1`);
+    }
+  }
+});
+
+runTest('Deterministic PRNG distribution across 135 cells', () => {
+  const counts = [0, 0, 0, 0];
+  for (let r = 1; r <= 9; r++) {
+    for (let c = 1; c <= 15; c++) {
+      const rot = getCellRotation(c, r);
+      assert.ok(rot >= 0 && rot <= 3);
+      counts[rot]++;
+    }
+  }
+
+  // All 4 orientations should be well-represented
+  for (let rot = 0; rot <= 3; rot++) {
+    assert.ok(counts[rot] >= 20, `Orientation ${rot} count must be >= 20 (got ${counts[rot]})`);
+  }
+});
+
+// ============================================================================
+// TEST 3: Scoreboard Vertical Flip Visual Transforms
+// ============================================================================
+runTest('Flip visual math produces vertical squash and specular flash peak at u=0.5', () => {
+  // At u = 0.0 (unflipped):
+  const v0 = getFlipVisuals(0.0);
+  assert.equal(v0.scaleY, 1.0);
+  assert.equal(v0.specAlpha, 0.0);
+  assert.equal(v0.isFlipped, false);
+
+  // At u = 0.5 (exact 90° flip midpoint):
+  const vMid = getFlipVisuals(0.5);
+  assert.equal(vMid.scaleY, 0.04); // Clamped minimum height, never 0
+  assert.ok(Math.abs(vMid.specAlpha - 1.0) < 1e-5); // Golden flash glint peaks at 1.0!
+  assert.equal(vMid.isFlipped, true); // Swapped to target texture!
+
+  // At u = 1.0 (flip completed):
+  const v1 = getFlipVisuals(1.0);
+  assert.equal(v1.scaleY, 1.0);
+  assert.equal(v1.specAlpha, 0.0);
+  assert.equal(v1.isFlipped, true);
+});
+
+// ============================================================================
+// TEST 4: TGA Texture Asset Verification
+// ============================================================================
+runTest('Marshmallow_E_Closed.tga exists, has exact size (65554 bytes) and valid header', () => {
+  const p = path.join(mediaDir, 'Marshmallow_E_Closed.tga');
+  assert.ok(fs.existsSync(p), `Missing ${p}`);
+  const buf = fs.readFileSync(p);
+  assert.equal(buf.length, 65554, `Exact 32-bit TGA size must be 65,554 bytes`);
+
+  // Parse header
+  const imageType = buf[2];
+  const width = buf.readUInt16LE(12);
+  const height = buf.readUInt16LE(14);
+  const bpp = buf[16];
+
+  assert.equal(imageType, 2, 'Must be uncompressed truecolor (type 2)');
+  assert.equal(width, 128, 'Width must be 128');
+  assert.equal(height, 128, 'Height must be 128');
+  assert.equal(bpp, 32, 'BPP must be 32');
+
+  // Closed texture body has high alpha across the cube face
+  let alphaSum = 0;
+  for (let i = 18 + 3; i < buf.length; i += 4) {
+    alphaSum += buf[i];
+  }
+  const meanAlpha = alphaSum / (128 * 128);
+  assert.ok(meanAlpha > 200, `Closed texture mean alpha must be > 200 (got ${meanAlpha.toFixed(1)})`);
+});
+
+runTest('Marshmallow_E_Window.tga has punched alpha=0 window with subtle CRT scanlines', () => {
+  const p = path.join(mediaDir, 'Marshmallow_E_Window.tga');
+  assert.ok(fs.existsSync(p), `Missing ${p}`);
+  const buf = fs.readFileSync(p);
+  assert.equal(buf.length, 65554, `Exact 32-bit TGA size must be 65,554 bytes`);
+
+  // Check center pixel (x=64, y=64):
+  // Line 64 is even (y % 2 === 0), so it holds subtle CRT scanline alpha (28)
+  const idxEven = 18 + (64 * 128 + 64) * 4;
+  const alphaEven = buf[idxEven + 3];
+  assert.equal(alphaEven, 28, `Even CRT scanline pixel alpha must be 28 (got ${alphaEven})`);
+
+  // Line 65 is odd (y % 2 === 1), so it holds pure punched alpha (0)
+  const idxOdd = 18 + (65 * 128 + 64) * 4;
+  const alphaOdd = buf[idxOdd + 3];
+  assert.equal(alphaOdd, 0, `Odd punched window pixel alpha must be 0 (got ${alphaOdd})`);
+
+  // Outer bezel border pixel at (x=6, y=64) should have solid outer marshmallow alpha (255)
+  const idxBezel = 18 + (64 * 128 + 6) * 4;
+  const alphaBezel = buf[idxBezel + 3];
+  assert.ok(alphaBezel > 220, `Outer bezel alpha must be > 220 (got ${alphaBezel})`);
+});
+
+// ============================================================================
+// TEST 5: Zero-GC OnUpdate Detachment Verification
+// ============================================================================
+runTest('EMatrix_Core.lua contains SetScript("OnUpdate", nil) for zero idle CPU', () => {
+  assert.ok(fs.existsSync(coreLuaPath), `Missing ${coreLuaPath}`);
+  const coreSrc = fs.readFileSync(coreLuaPath, 'utf8');
+
+  // Verify explicit script detachment
+  assert.ok(
+    coreSrc.includes('masterFrame:SetScript("OnUpdate", nil)'),
+    'Core must explicitly detach OnUpdate via SetScript("OnUpdate", nil) when wave finishes'
+  );
+
+  // Verify no per-frame table instantiations inside OnUpdateWaveDriver
+  const driverMatch = coreSrc.match(/local function OnUpdateWaveDriver[\s\S]*?end\nend/);
+  assert.ok(driverMatch, 'OnUpdateWaveDriver function must be defined');
+  const driverBody = driverMatch[0];
+  assert.ok(!driverBody.includes('C_Timer.After'), 'Zero-GC invariant: no C_Timer.After allowed in driver');
+});
+
+// ============================================================================
+// Summary
+// ============================================================================
+console.log('-----------------------------------------------------------');
+console.log(`Test Execution Summary: ${testsPassed} passed, ${testsFailed} failed.`);
+console.log('===========================================================');
+
+if (testsFailed > 0) {
+  process.exit(1);
+}

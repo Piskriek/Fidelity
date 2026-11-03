@@ -1,0 +1,9 @@
+## Interface: 120107
+## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
+## Notes: Zero-GC Scoreboard Wave Matrix + Stereoscopic ModelScene Alpha-Punch Lens
+## Author: Antigravity Overwatch & Flash
+## Version: 1.0.0
+## SavedVariables: FidelityEMatrix_Config
+
+EMatrix_Math.lua
+EMatrix_Core.lua
