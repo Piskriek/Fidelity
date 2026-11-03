@@ -1,92 +1,51 @@
-# CLAUDE DIRECTOR BRIEFING: FIDELITY 4-NODE HOLON & SIV ENGINE
-
-Welcome, Claude. You are taking over direction while Argon resets. This document brings you up to speed immediately with zero ambiguity or loss of context.
-
----
-
-## 1. Executive Summary & Current State (Checkpoint 9)
-* **Repositories**:
-  * Primary: `https://github.com/Piskriek/Fidelity.git` (local: `D:\fidelity-repo`)
-  * Companion: `https://github.com/Piskriek/HeavyMetal2.git` (local: `C:\MarbleGp`)
-* **Core Task**: Building and hardening the **Syntropic Invariant Verifier (SIV)** across World of Warcraft, GTA, and FPS profiles under **RULES 8a**.
-* **Remediation Status**: **100% Resolved**. All 9 Arena review findings (`FIX-P1-01` through `FIX-P2-09`) have been implemented, tested, and pushed to GitHub.
-* **Test Suite Status**: **23 / 23 PASSED (100% Green)** across SIV test suites.
+# CLAUDE DIRECTOR BRIEFING: FIDELITY 4-NODE HOLON & EMATRIX 3D PROTOTYPE
+**Timestamp:** 2026-11-03T18:58:00+02:00 | **Status:** Active Engineering Handoff to Claude  
+**Active Working Tree:** `D:\fidelity-repo` | **Branch:** `flash/wow-ematrix-polish` (commit `db2ae29`)  
+**Target WoW Client:** `D:\World of Warcraft\_anniversary_\` (Burning Crusade Classic `2.5.6.70577`, character `Ikkibotwo`, realm `Thunderstrike`)
 
 ---
 
-## 2. Invariants Enforced (RULES 8a)
-1. **Zero Architectural Lies**: Never claim proof without physical instrumentation. Empty sessions strictly return `INSUFFICIENT_EVIDENCE` with `0.0` confidence.
-2. **Epistemic Consent**: Addon telemetry is gated at source (`optIn = false` by default). `/fidelity optout` halts sampling and clears buffers.
-3. **No Unscaled Coordinates**: Map fractions $[0..1]$ are converted to yards via zone scale or flagged as `insufficient_scale_metadata`.
-4. **Honest Invariant Labels**: Kinematic spline heuristic proxy (not unverified laboratory FTLE); vehicle work bounded by engine power limits; unpowered kinetic gains fail conservation.
-5. **Shortest-Arc Yaw Wrap**: FPS aim normalizes angles in $[-180^\circ, 180^\circ]$ to prevent false $358^\circ$ snap detections across boundaries.
-6. **Active Rotation Window**: Shannon entropy window clamped to $[200\,\text{ms}, 3500\,\text{ms}]$. Out-of-combat pauses are discarded. Cyclic loops caught by lag-1 conditional entropy $H(X_t \mid X_{t-1})$.
+## 1. Executive Summary: What Was Accomplished & What Needs Polish
+
+Claude, you are taking over direction. All SIV anticheat remediation gates (CP9) are 100% green and committed. We pivoted to building the **`FidelityEMatrix`** WoW AddOn prototype:
+1. **Mechanical Scoreboard Wave**: 100% working. All 135 cells squash (`32 -> 1 -> 32`), flash specular glint at midpoint, and cascade outward (`1 -> 8 -> Circular`) with zero per-frame GC.
+2. **Layering Architecture**: 3-layer sibling system (`L1_Backplate` -> `L2_Scene` -> `L3_Grid`) parented to `FidelityEMatrixFrame`.
+3. **Asset Suite**: 
+   - `Marshmallow_E_Closed.tga` (128x128 32-bit BGRA, 65,554 B)
+   - `Marshmallow_E_Window.tga` (128x128 32-bit BGRA, 65,554 B)
+   - `Backplate_Nebula.tga` (256x256 32-bit BGRA, 262,162 B)
+4. **Client Engine Findings (Real Telemetry from `/fide diag`)**:
+   - `ModelScene`: YES (Frame exists, but `GetActiveCamera` is NO).
+   - `DressUpModel`: YES (Active in the build).
+   - `SetFacing`: YES, `SetLight`: YES, `SetCamera`: YES.
+   - `SetDefaultModelPosition`: NO (Classic does not support this method; position must be explicitly set).
 
 ---
 
-## 3. Directory Layout & Key File Map
-```text
-D:\fidelity-repo\
-├── packages\triad-369\
-│   ├── src\
-│   │   ├── universal_anticheat.mjs   # Multi-game audit (WoW, GTA 6, FPS)
-│   │   ├── wow_anticheat.mjs         # 7-Density audit, reaction latency, entropy
-│   │   ├── wow_adapter.mjs           # Lua SavedVariables parser & normalization
-│   │   ├── triad_369_process.mjs     # Apex middle pillar daemon
-│   │   └── api.mjs                   # Authenticated bridge API (:8787)
-│   ├── test\
-│   │   ├── cp9-remediation-gates.test.mjs  # All 9 remediation gates
-│   │   ├── universal-anticheat.test.mjs
-│   │   ├── wow-anticheat.test.mjs
-│   │   └── wow-adapter.test.mjs
-│   └── wow-syntropic\                # Addon source mirrored inside triad-369
-├── packages\wow-syntropic\            # Primary tracked addon source
-│   ├── Core.lua                      # Consent gate, events, slash commands
-│   ├── Kinematics.lua                # Movement sampling, speed limits
-│   ├── SomaticFlow.lua               # Cast latency, GCD intervals
-│   └── FidelityWoW.toc
-└── flash_outbox_cp9.json             # Signed-off remediation record
+## 2. The Visual Problem & How to Deliver "True 3D Depth"
 
-D:\World of Warcraft\_forever_\        # Classic Era 1.60.x download target
-└── Interface\AddOns\FidelityWoW\      # Live addon folder (synchronized)
+The user's feedback: *"It's not working, make it so it makes everything look 3D."*
+
+In the latest screenshot (`media_1793724099435_91d87cdc.jpg`):
+- The model renders against `Backplate_Nebula.tga`, but looks like a dressing-room character against wallpaper inside a 2D box.
+- To produce an unmistakable **optical 3D holographic lens sensation**:
+  1. **Stitched Microlens Array (Layer A)**: Keep `Marshmallow_E_Window.tga` visible with an ultra-thin 1–2px golden bevel and subtle CRT scanlines (`alpha = 18`) so the eye reads an array of physical microlenses rather than an empty cutout.
+  2. **Multi-Plane Off-Axis Parallax (Layer B)**:
+     - Foreground floating reticle / depth plane (`z = -0.4`, negative parallax—pops out toward user).
+     - Focal plane (`z = 0.0`, screen surface).
+     - Midground character (`z = 0.5`, positive parallax—recedes into the monitor).
+     - Background / live world (`z = 1.0`).
+  3. **Stereoscopic Disparity (Layer C)**: Calibrate `/fide stereo anaglyph` (Red/Cyan) and `/fide stereo sbs` with true horizontal baseline shift (`+/- 4px`).
+
+---
+
+## 3. Quick Command Reference
+
+```powershell
+# In D:\fidelity-repo:
+node tools/gen_e_atlas.mjs       # Generates all 3 TGA assets
+node tools/test_ematrix_math.mjs # Runs 11/11 unit tests
+git status                       # Currently on flash/wow-ematrix-polish
 ```
 
----
-
-## 4. Running Daemons & Holon Topology
-| Node | Role | State | Address / Port |
-| :--- | :--- | :--- | :--- |
-| **Node 1** | Laptop Sensory Ground | RUNNING | `density_bridge.mjs` on `:5179` |
-| **Node 2** | Sol 3080 PC (Furnace) | RUNNING | `192.168.0.5` (`friend.mjs`, Tick 12,241+) |
-| **Node 3** | Apex Middle Pillar | RUNNING | `triad_369_process.mjs` (PID 34652) + API on `:8787` |
-| **Node 4** | Arena Remote Container | RUNNING | `arena_git_sync.mjs` (tracks `arena/dfcfb02d-fidelity`) |
-
----
-
-## 5. Verification Commands
-Run the full SIV test suite:
-```bash
-node --test \
-  packages/triad-369/test/cp9-remediation-gates.test.mjs \
-  packages/triad-369/test/universal-anticheat.test.mjs \
-  packages/triad-369/test/wow-anticheat.test.mjs \
-  packages/triad-369/test/wow-adapter.test.mjs
-```
-
-Run WoW SavedVariables live audit:
-```bash
-npm run wow:audit
-```
-
----
-
-## 6. Immediate Objectives
-1. **Battle.net Download**: Monitor completion of World of Warcraft Classic Era in `D:\World of Warcraft\_forever_\`.
-2. **First Live Client Audit**:
-   - Launch WoW client once ready.
-   - Verify `FidelityWoW` addon in AddOn menu.
-   - Log in, type `/fidelity optin` to give epistemic consent.
-   - Run/mount around, cast spells, trigger combat, type `/reload` to flush SavedVariables to disk.
-   - Run `npm run wow:audit` to verify live trajectory and GCD processing through the SIV engine.
-3. **Keep Holon Synced**: Ensure all reflections continue streaming cleanly across the 4 nodes.
-
+Deploy path: `D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix\`
