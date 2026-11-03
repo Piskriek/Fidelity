@@ -329,6 +329,7 @@ export function auditSavedVariablesFile(filePathOrContent) {
  */
 export function findLatestSavedVariables() {
   const candidateRoots = [
+    'D:/World of Warcraft/_anniversary_',
     'D:/World of Warcraft/_forever_',
     'D:/World of Warcraft/_retail_',
     'D:/World of Warcraft/_classic_',
