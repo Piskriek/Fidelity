@@ -104,7 +104,7 @@ local function CreateMatrixGrid()
             }
 
             -- Texture 1: slotBg (BACKGROUND, sublevel 1)
-            -- Static dark crevice frame where the cube sits (visible only when closed)
+            -- Static dark crevice frame (visible only when closed, hides on window open)
             local slotBg = masterFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
             slotBg:SetSize(CELL_SIZE, CELL_SIZE)
             slotBg:SetPoint("CENTER", masterFrame, "TOPLEFT", cx, cy)
@@ -165,7 +165,7 @@ local function CreateMatrixGrid()
     masterFrame:SetScript("OnMouseDown", HandleMatrixClick)
     masterFrame:SetScript("OnMouseUp", HandleMatrixClick)
 
-    -- 3D ModelScene / PlayerModel Container (Parented to UIParent, sits directly behind masterFrame)
+    -- 3D ModelScene / DressUpModel Container (Parented to UIParent, sits directly behind masterFrame)
     pcall(function()
         sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", UIParent)
         sceneContainer:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
@@ -174,17 +174,17 @@ local function CreateMatrixGrid()
         sceneContainer:SetFrameLevel(45) -- Directly behind masterFrame (50)
         sceneContainer:EnableMouse(false)
 
-        -- Deep space cosmic background behind the 3D model
+        -- Soft translucent vignette background (lets game world and 3D scene blend naturally)
         local spaceBg = sceneContainer:CreateTexture(nil, "BACKGROUND", nil, -5)
         spaceBg:SetAllPoints(sceneContainer)
-        spaceBg:SetColorTexture(0.04, 0.05, 0.10, 0.95)
+        spaceBg:SetColorTexture(0.02, 0.03, 0.06, 0.65)
 
         CreateStereoModelScenes()
     end)
 end
 
 -- ============================================================================
--- 2. Guardrail D: 3D ModelScene Rig (Retail ModelScene + Classic PlayerModel Fallback)
+-- 2. Guardrail D: 3D ModelScene Rig (DressUpModel for Classic + ModelScene for Retail)
 -- ============================================================================
 function CreateStereoModelScenes()
     if not sceneContainer then return end
@@ -192,7 +192,25 @@ function CreateStereoModelScenes()
     local function SetupScene(name, w, h, point, relPoint, x, y)
         local scene, actor
 
-        -- 1. Try Retail ModelScene
+        -- 1. Try Classic DressUpModel (Standard, robust 3D character rendering in Classic / TBC)
+        local okDM, dm = pcall(CreateFrame, "DressUpModel", name, sceneContainer)
+        if okDM and dm then
+            scene = dm
+            scene:SetSize(w, h)
+            scene:SetPoint(point, sceneContainer, relPoint, x, y)
+            scene:SetFrameLevel(46)
+            scene:EnableMouse(false)
+            pcall(function()
+                dm:SetUnit("player")
+                if dm.SetDefaultModelPosition then
+                    dm:SetDefaultModelPosition()
+                end
+                if dm.SetRotation then dm:SetRotation(0) end
+            end)
+            return scene, nil
+        end
+
+        -- 2. Try Retail ModelScene (Modern 3D engine)
         local okMS, ms = pcall(CreateFrame, "ModelScene", name, sceneContainer)
         if okMS and ms and ms.CreateActor then
             scene = ms
@@ -219,12 +237,20 @@ function CreateStereoModelScenes()
                         scene:SetActiveCamera(camera)
                     end
                 end
+                if camera then
+                    if camera.SetTarget then camera:SetTarget(0, 0, 0.9) end
+                    if camera.SetZoomDistance then camera:SetZoomDistance(2.8) end
+                    if camera.SetMinZoomDistance then camera:SetMinZoomDistance(1.0) end
+                    if camera.SetMaxZoomDistance then camera:SetMaxZoomDistance(10.0) end
+                    if camera.SetYaw then camera:SetYaw(0) end
+                    if camera.SetPitch then camera:SetPitch(0.05) end
+                end
             end)
 
             return scene, actor
         end
 
-        -- 2. Fallback to Classic / TBC PlayerModel
+        -- 3. Fallback to basic PlayerModel
         local okPM, pm = pcall(CreateFrame, "PlayerModel", name, sceneContainer)
         if okPM and pm then
             scene = pm
@@ -233,11 +259,8 @@ function CreateStereoModelScenes()
             scene:SetFrameLevel(46)
             scene:EnableMouse(false)
             pcall(function()
-                pm:ClearModel()
                 pm:SetUnit("player")
-                if pm.SetCamera then pm:SetCamera(0) end
-                if pm.SetPortraitZoom then pm:SetPortraitZoom(0.0) end
-                if pm.SetPosition then pm:SetPosition(0, 0, 0) end
+                if pm.SetPosition then pm:SetPosition(0, 0, -0.2) end
                 if pm.SetRotation then pm:SetRotation(0) end
             end)
             return scene, nil
@@ -385,17 +408,15 @@ local function OnUpdateWaveDriver(self, dt)
         end
     end
 
-    -- Camera Parallax Update (subtle head/orbit motion behind the static grid)
+    -- 3D Character Model continuous rotation behind the matrix window
     if sceneMain and sceneMain:IsShown() then
-        if sceneMain.GetActiveCamera then
+        if sceneMain.SetRotation then
+            sceneMain:SetRotation(parallaxTime * 0.4)
+        elseif sceneMain.GetActiveCamera then
             local cam = sceneMain:GetActiveCamera()
-            if cam and cam.SetPosition then
-                local facing = (GetPlayerFacing and GetPlayerFacing()) or 0.0
-                local orbitX = math.sin(parallaxTime * 0.5) * 0.15 + (facing * 0.1)
-                cam:SetPosition(orbitX, -3.2, 1.1)
+            if cam and cam.SetYaw then
+                cam:SetYaw(parallaxTime * 0.4)
             end
-        elseif sceneMain.SetRotation then
-            sceneMain:SetRotation(parallaxTime * 0.5)
         end
     end
 
@@ -511,6 +532,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print(string.format("  Matrix Grid: %d x %d (%d cells)", COLS, ROWS, TOTAL_CELLS))
             print(string.format("  Wave Active: %s (Target: %s)", waveActive and "|cff00ff00YES|r" or "NO", waveTargetState and "Window" or "Closed"))
             print(string.format("  Stereo Mode: %s", (FidelityEMatrix_Config.stereoMode or "off"):upper()))
+            print(string.format("  3D Model Engine: %s", sceneMain and sceneMain:GetObjectType() or "None"))
             print(string.format("  UI Scale: %.2f", FidelityEMatrix_Config.scale or 1.0))
             print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
 
