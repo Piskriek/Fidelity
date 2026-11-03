@@ -1,53 +1,54 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T18:51:38Z",
-  "note": "Live copy: F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2. This repo file is a snapshot. Protocol: bridge/hands/LAPTOP-HANDS.md.",
+  "updated_at": "2026-11-03T19:26:39Z",
+  "note": "Live copy on Node 2. Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
       "id": "H005",
-      "requested_at": "2026-11-03T18:46:49Z",
+      "requested_at": "2026-11-03T19:26:39Z",
       "priority": 0,
-      "title": "Deploy FidelityEMatrix v1.6.0 (branch tip) to the TBC Anniversary client and WoW Forever when present; owner runs /fide terrain probe",
+      "title": "Deploy the FidelityEMatrix branch tip (v1.6.1 or later) to the TBC Anniversary client and WoW Forever when present; owner runs /fide terrain probe",
       "steps": [
-        "git -C D:\fidelity-repo fetch origin",
-        "If D:\fidelity-repo is on flash/wow-ematrix-polish with no new local commits: git -C D:\fidelity-repo merge --ff-only origin/claude/ematrix-depth (it is a fast-forward of 87ec1ff). If it is not a fast-forward, stop and report blocked with git status.",
-        "node D:\fidelity-repo\tools\test_ematrix_math.mjs (expect 12 passed, 0 failed)",
-        "Copy (do not mirror or delete) D:\fidelity-repoFidelityEMatrix* over D:World of Warcraft_anniversary_InterfaceAddOnsFidelityEMatrix : robocopy D:\fidelity-repoFidelityEMatrix \"D:World of Warcraft_anniversary_InterfaceAddOnsFidelityEMatrix\" /E (no /MIR, no /PURGE)",
-        "List the AddOnsFidelityEMatrix folder with sizes: it must hold EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, DataEMatrix_Data_Azeroth.lua (1.2 MB) and Media with 6 .tga files (Wall_Gradient, Glass_Sheen, Reticle are new)",
-        "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\ exists, robocopy the same addon folder there too (no /MIR): the addon picks the vanilla data set on a 1.x client by itself. Report whether that client exists and its version.",
-        "Then hand over to the owner for the in-game part: /reload, then the eight checks in RESUME.md section \"EMatrix v1.2.0: Claude's depth pass\" (diag light form, lens lattice faint, cursor-right slide and turn, backdrop world, anaglyph, errors). Set status blocked with blocked_on: \"owner: /reload and run the RESUME.md EMatrix check list\" until the owner reports; then write what the owner saw into output and set done.",
-        "Owner, after /reload (scene is on by itself): stand at the Northshire Abbey door, then paste the output of /fide terrain probe, /fide terrain status, /fide world status and /fide status. On v1.4.2 the scene showed only the character copy and no trees: the probe prints the position, tile, ground, camera, the first six placements with their screen positions, and how many models loaded or failed, which says exactly why."
+        "git -C D:\\fidelity-repo fetch origin",
+        "If D:\\fidelity-repo is on flash/wow-ematrix-polish or claude/ematrix-depth with no new local commits: git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth. If that is not a fast-forward, stop and report blocked with the output of git status; never reset, clean or checkout -f.",
+        "node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs (expect 0 fail)",
+        "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\FidelityEMatrix \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix\" /E (no /MIR, no /PURGE).",
+        "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared and any mismatch. Expected files: EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6).",
+        "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityEMatrix (or its parent AddOns folder) exists, do the same backup, copy and hash check there; report whether that client exists and its version from its .build.info if present.",
+        "Report the version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc (## Version) and the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
+        "Owner, after /reload (the scene is on by itself): stand at the Northshire Abbey door and paste the output of /fide terrain probe, /fide terrain status, /fide world status and /fide status. The probe prints position, tile, ground, camera, the first six placements with screen positions, and how many models loaded or failed. Set status blocked with blocked_on \"owner: paste the probe output\" until the owner reports; Claude relays the owner's answer into this file as a new requested_at when needed."
       ],
       "report": [
-        "The merge result (new HEAD) and the test summary line",
-        "The AddOns folder listing",
-        "After the owner check: the /fide diag SetLight form line, whether the slide/turn went the right way (and any /fide calibrate used), how the lens lattice and walls look, anaglyph result, any [Fidelity EMatrix Error] lines verbatim; for check 7 (/fide world on): the /fide world status actor count, whether the overlay models line up with the real units, and how the red/cyan pairs look near vs far; for check 8 (/fide terrain on): the /fide terrain status line, whether tree copies stand on the real trees, and which way they are off if not",
-        "The complete /fide status and /fide diag output, verbatim, plus what /fide overlay on showed"
+        "The merge result (new HEAD) and both test summary lines",
+        "The backup folder name, the robocopy summary line, the hash comparison count and any mismatch, for each client",
+        "The toc version and commit",
+        "After the owner check: the full probe/status output verbatim"
       ],
       "status": "requested"
     },
     {
       "id": "H006",
-      "requested_at": "2026-11-03T18:51:38Z",
+      "requested_at": "2026-11-03T19:26:39Z",
       "priority": 0,
       "title": "Laptop: set up webcam head tracking for FidelityEMatrix v1.6.0 (virtual gamepad)",
       "steps": [
-        "git -C D:\\fidelity-repo fetch origin && git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth (then redeploy the addon folder as in H005; the addon is v1.6.0)",
+        "git -C D:\\fidelity-repo fetch origin && git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth (same guard as H005: stop and report if not a fast-forward)",
         "Read D:\\fidelity-repo\\tools\\headtrack\\README.md",
-        "OWNER-AUTHORISED (Piskriek, 2026-11-03): install the ViGEmBus driver yourself. Download only from the official release page https://github.com/nefarius/ViGEmBus/releases (latest ViGEmBus_*_x64.exe, publisher Nefarius Software Solutions e.U.). Before running it: Get-AuthenticodeSignature on the file must be Valid and name Nefarius; report the version and the signature line. Run the installer from an elevated prompt (if UAC asks on the laptop screen, the owner clicks it). Reboot only if the installer says so, and say so in the report. Then continue with the venv steps.",
-        "python -m venv D:\\fidelity-repo\\.venv-headtrack ; D:\\fidelity-repo\\.venv-headtrack\\Scripts\\pip install -r D:\\fidelity-repo\\tools\\headtrack\\requirements.txt",
-        "D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\check_pad.py (must print PASS; if XInput sees no device, the driver is missing or needs a reboot)",
-        "Find out which process holds the webcam (the fractal daemons): if the camera is free, run the tracker with --source 0; if a daemon owns it, find what it exposes (a folder of frames or an MJPEG stream) and use --source frames:<dir> or --source <url>. Report which.",
-        "Start the tracker and keep it running: D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\headtrack.py --show (sit normally for the 2 s calibration). Report its first console lines and the contents of tools\\headtrack\\head.json after 10 s.",
-        "Hand to the owner for the in-game part: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0, /fide eye probe while moving the head, /fide eye calibrate sitting normally, /fide eye source gamepad; then lean left/right and report whether the scene follows the head (and /fide eye output)."
+        "OWNER-AUTHORISED (Piskriek, 2026-11-03): install the ViGEmBus driver. Download only from https://github.com/nefarius/ViGEmBus/releases (the latest ViGEmBus_*_x64.exe; record its version from the file name and Get-FileHash -Algorithm SHA256). Before running: Get-AuthenticodeSignature must report Valid and a SignerCertificate Subject containing \"Nefarius\"; report both lines. If it is already installed (Get-PnpDevice | Where FriendlyName -match ViGEm, or sc query ViGEmBus), skip the install and say so. Run the installer from an elevated prompt and record its exit code; if UAC appears on the laptop screen the owner clicks it. After it: sc query ViGEmBus must show RUNNING; report it. Do NOT reboot: if the installer asks for a reboot, stop, set blocked_on \"owner: reboot the laptop, then restart hands_sync\", and continue only after the owner says so.",
+        "python -m venv D:\\fidelity-repo\\.venv-headtrack ; D:\\fidelity-repo\\.venv-headtrack\\Scripts\\pip install -r D:\\fidelity-repo\\tools\\headtrack\\requirements.txt (report the installed versions of opencv-python, numpy and vgamepad)",
+        "Close WoW first if it is running (check_pad drives a real virtual pad). D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\check_pad.py must print PASS; if XInput sees no device, report it and stop (do not reboot).",
+        "Find out which process holds the webcam (the fractal daemons): if the camera is free, the tracker uses --source 0; if a daemon owns it, find what it exposes (a folder of frames or an MJPEG stream) and use --source frames:<dir> or --source <url>. Report which, and the process name.",
+        "Start the tracker only when the owner is at the laptop (it calibrates on the face it sees in the first 2 s): D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\headtrack.py --show. Keep it running. Report its first console lines and the contents of D:\\fidelity-repo\\tools\\headtrack\\head.json after 10 s. To stop it later: press q in its window.",
+        "Hand to the owner for the in-game part, and record the prior values first (/dump GetCVar(\"GamePadEnable\"), GetCVar(\"GamePadCameraYawSpeed\"), GetCVar(\"GamePadCameraPitchSpeed\")) so they can be restored: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0, then /fide eye probe while moving the head, /fide eye calibrate sitting normally, /fide eye source gamepad; then lean left/right and report whether the scene follows the head and the /fide eye line."
       ],
       "report": [
-        "ViGEmBus installer version, its Authenticode signature line, and whether a reboot was needed",
+        "ViGEmBus: version, SHA-256, signature lines, installer exit code, sc query state, whether a reboot was requested",
+        "Installed Python package versions",
         "check_pad.py output",
-        "which source the tracker uses and why",
+        "which camera source the tracker uses and why, and the holder process",
         "head.json after 10 s",
-        "the /fide eye probe line and whether the scene follows the head"
+        "the prior CVar values, the /fide eye probe line, and whether the scene follows the head"
       ],
       "status": "requested"
     },
