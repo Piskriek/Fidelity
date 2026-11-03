@@ -1,0 +1,62 @@
+[
+  {
+    "id": "C1",
+    "diff": "hard",
+    "cat": "physics-sign",
+    "desc": "Gravity numerator flipped to (q - q_star): attraction becomes repulsion"
+  },
+  {
+    "id": "C2",
+    "diff": "hard",
+    "cat": "logic-min-max",
+    "desc": "4D progress uses max(1.0, ...) instead of min: progress is always >= 1 after one session (instant graduation)"
+  },
+  {
+    "id": "C3",
+    "diff": "hard",
+    "cat": "logic-inversion",
+    "desc": "Mask law inverted (=== false): unmasked actors become anonymous, masked actors get the grudge"
+  },
+  {
+    "id": "C4",
+    "diff": "medium",
+    "cat": "inequality-flip",
+    "desc": "Zero-G stability gate passes when S_stab <= 0.50 (unstable craft pass, stable ones fail); planetary branch still uses >= 0.50"
+  },
+  {
+    "id": "C5",
+    "diff": "hard",
+    "cat": "drift",
+    "desc": "Reputation update uses (S + 0.5): every day raises reputation, it can never fall (neutral point lost)"
+  },
+  {
+    "id": "C6",
+    "diff": "medium",
+    "cat": "unit-crossref",
+    "desc": "E_max set to 1,200 MPa (1.2 GPa) while the same section spans Diamond at 1050 GPa"
+  },
+  {
+    "id": "C7",
+    "diff": "hard",
+    "cat": "broken-inverse",
+    "desc": "Inverse density map divides by ln(rho_max) instead of ln(rho_max/rho_min): V_tx(rho(V)) != V, not a bijection"
+  },
+  {
+    "id": "C8",
+    "diff": "hard",
+    "cat": "precision",
+    "desc": "Local offset stored as Float16Array: spacing at 512 m is 0.5 m, contradicting the sub-millimetre precision claim"
+  },
+  {
+    "id": "C9",
+    "diff": "medium",
+    "cat": "table-numbering",
+    "desc": "Archetype table lists #11 twice (Enchantress and Hanged Man); #12 is missing from the Body complex 8..14"
+  },
+  {
+    "id": "C10",
+    "diff": "medium",
+    "cat": "arithmetic",
+    "desc": "VSA-4096 stated as Uint32Array(64) = 2048 bits / 256 bytes, not 4096 bits / 512 bytes"
+  }
+]

@@ -1,0 +1,14 @@
+<!-- Positive control 2, written by Opus before any run. Propagates T1, T3 and T6; catches T2, T4 and T5. -->
+## Toroid model results
+
+In an idealised model (axisymmetric, zero pressure, perfectly conducting wall), every start we tried relaxed into a single toroidal state. All 8 random starts converged to within 0.01% of the lowest eigenstate. The result was independently reproduced: re-running taylor_relax.mjs matched the original log line for line. At b = 0.9 the pair released 96.47% of its stored magnetic energy, so the coupler is 96% efficient (C = 0.96).
+
+**Key numbers**
+- 8 of 8 starts within 0.01% of the lowest eigenstate
+- Coupling coefficient C = 0.96
+- Released fraction: 32.9% (balanced) to 96.5% (b = 0.9) on the 40×40 grid
+
+## Notes to the owner
+- I left out "zero energy-rise violations confirm energy conservation". The method only ever lowers the energy, so no rise is guaranteed by construction, and the energy is released, not conserved.
+- I left out "grid-independent". The 20×20 grid gives 32.59% and 96.45% against 32.86% and 96.47%: close, but not identical.
+- I left out "any counter-rotating plasma will form one". The model is idealised and the starts were chosen, so it does not generalise.

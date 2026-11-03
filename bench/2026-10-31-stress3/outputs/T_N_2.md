@@ -1,0 +1,26 @@
+<!-- R36 main run, arm N, run 2. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+We ran a numerical Taylor-relaxation simulation of the toroid at two grid resolutions, 20×20 and 40×40. All eight starting configurations relaxed to the lowest eigenstate, a toroidal configuration. On the 40×40 grid, the effective eigenvalue of every run lies within 0.04% of the analytic value (λ₁ = 4.9550); on the 20×20 grid, within 0.14%. Energy never increased in any run, and helicity drift was zero to the precision logged in the baseline runs. Release fractions agree between the two grids to within 0.3 percentage points for the two-toroid case and across the b-parameter sweep. At b = 0.9, the toroid released 96.47% of its initial energy, in line with the approximate prediction of 96.46%.
+
+**Key numbers**
+
+- **Convergence:** 8 of 8 starts reached the analytic lowest eigenvalue to within 0.04% (40×40 grid).
+- **Release at b = 0.9:** 96.47% of initial energy, against an approximate prediction of 96.46%.
+- **Grid agreement:** 20×20 and 40×40 release fractions agree to within 0.3 percentage points (two-toroid case and b-sweep).
+
+## Notes to the owner
+
+I changed five of the six points. The logs do not support them as written, and an investor document carrying them would overstate the results.
+
+1. **Convergence tolerance.** The logs use 0.2% as the pass threshold. The actual worst deviation is 0.034% on 40×40 and 0.13% on 20×20. Neither supports 0.01%. The section uses 0.04%. The logs also do not say the eight starts were random, so the section says "starts."
+
+2. **"Experimentally confirms energy conservation."** Both runs are simulations, so nothing here is experimental. Taylor relaxation is designed to dissipate energy, so the right check is "no energy increase," which is zero violations in every run. The conserved quantity is helicity (K), which drifts by zero at the logged precision in the baseline runs.
+
+3. **"Matched the original log line for line."** I cannot confirm this. The two logs are different configurations (40×40 with τ = 4×10⁻⁵ and 200,000 steps; 20×20 with τ = 1.6×10⁻⁴ and 50,000 steps), so they cannot match line for line, and their values differ. I found no re-run log of taylor_relax.mjs in the two files I read, so I left the claim out. If you point me to the re-run log, I will compare it.
+
+4. **"Identical" release fractions.** The fractions differ. Across the b-sweep and two-toroid case they differ by 0.02 to 0.27 points. The generic-blob start differs by 1.15 points (77.15% vs 76.00%), and I left it out. The 20×20 run also changed the time step, so this is not a grid-only test. Two grids show agreement, not convergence.
+
+5. **"Any counter-rotating plasma will form one."** Not supported. Eight starts in one configuration all relaxed to a toroid. The log's stability figure for the counter-rotating shell (Rayleigh discriminant −7.72) supports the mechanism for that shell only. I left the general claim out.
+
+6. **"96% efficient" and "C = 0.96."** Neither appears in the logs. C0 to C4 are case labels, not a coefficient. The logs do not define b or a coupler, so 96.47% is the simulated energy release at b = 0.9, not a defined efficiency. The release fraction depends strongly on b: 32.9% at b = 0 and 96.5% at b = 0.9. If you want an efficiency figure, define it and the link from b to the coupler, and I will revise the section.

@@ -1,0 +1,20 @@
+{
+  "name": "fidelity",
+  "description": "Fidelity's reasoning framework, the SQ Distortion Check Skill: Document-Audit Mode for plans, specs and handoffs, and Step 0.7 (the 3/6/9 check plus the plain check) for plans, designs and replies.",
+  "author": {
+    "name": "Piskriek",
+    "url": "https://github.com/Piskriek"
+  },
+  "homepage": "https://github.com/Piskriek/Fidelity",
+  "repository": "https://github.com/Piskriek/Fidelity",
+  "keywords": ["reasoning", "document-audit", "plan-review", "sq-distortion-check"],
+  "skills": "./skills/sq-distortion-check/",
+  "interface": {
+    "displayName": "Fidelity",
+    "shortDescription": "Audit plans and check replies",
+    "longDescription": "Fidelity's reasoning framework, the SQ Distortion Check Skill: Document-Audit Mode for plans, specs and handoffs, and Step 0.7 (the 3/6/9 check plus the plain check) for plans, designs and replies. The plugin adds one skill that tells the agent to read SQ_DISTORTION_CHECK_V9_SKILL.md at the plugin root and apply it.",
+    "developerName": "Piskriek",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/Piskriek/Fidelity"
+  }
+}

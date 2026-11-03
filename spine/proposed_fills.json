@@ -1,0 +1,150 @@
+{
+  "about": "Plan §8.2 proposals applied to the point cloud (PROPOSED, not accepted). `node scripts/fractal_gap_map.mjs --overlay spine/proposed_fills.json` regrows the cloud with these fills and re-maps it: closed holes show the proposals are complete; remaining holes are the owner's questions (Plan §8.3). Each new operator is grounded in the §8.2 text that proposes it.",
+  "quantities": {
+    "fourFloats": {
+      "seam": "ms.s"
+    },
+    "archetypeProfile": {
+      "seam": "ms.arch"
+    },
+    "vitalReserveJoules": {
+      "seam": "ms.vital"
+    },
+    "somaticStrainJoules": {
+      "seam": "ms.strain"
+    },
+    "recoveryCyclesDebt": {
+      "seam": "ms.debt"
+    },
+    "unrecoveredDoses": {
+      "seam": "ms.doses",
+      "range": "0..7"
+    },
+    "townTension": {
+      "persistence": "persistent",
+      "seam": "worldLedger",
+      "unit": "fraction",
+      "range": "[0,1]"
+    },
+    "ambientEnergy": {
+      "persistence": "persistent",
+      "seam": "worldLedger"
+    },
+    "childUniverses": {
+      "seam": "worldLedger"
+    },
+    "lineages": {
+      "seam": "worldLedger"
+    },
+    "pins": {
+      "seam": "worldLedger"
+    },
+    "progress4D": {
+      "seam": "gamebridgeProfile"
+    },
+    "reputation": {
+      "seam": "hostSdk"
+    },
+    "stmQueue": {
+      "range": "0..64"
+    },
+    "integrity": {
+      "range": "[0,1]",
+      "seam": "ms.hp"
+    }
+  },
+  "operators": [
+    {
+      "id": "ambientRegeneration",
+      "ground": "Ambient energy regenerates from stellar flux",
+      "pkg": "genesis",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "ambientEnergy": "+"
+      },
+      "tested": null
+    },
+    {
+      "id": "catalystPrecisionRise",
+      "ground": "Catalyst surprise raises precision",
+      "pkg": "kernel",
+      "role": [
+        "dynamics"
+      ],
+      "touches": {
+        "precision": "+"
+      },
+      "tested": null
+    },
+    {
+      "id": "excitementHabituation",
+      "ground": "Excitement habituates",
+      "pkg": "soul",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "excitement": "-"
+      },
+      "tested": null
+    },
+    {
+      "id": "eventTensionRelease",
+      "ground": "It is released by events",
+      "pkg": "rules-litrpg",
+      "role": [
+        "restore"
+      ],
+      "touches": {
+        "townTension": "-"
+      },
+      "tested": null
+    },
+    {
+      "id": "wave6CommunityTick",
+      "ground": "Wave 6 extends the tick",
+      "pkg": "smc-nexus",
+      "role": [
+        "driver"
+      ],
+      "touches": {},
+      "calls": [
+        "stepLodPopulationTick",
+        "v2ValidateCartridge",
+        "v2EvaluateCircleAndPolarityInterference",
+        "stepSymbioticUniverseBridge"
+      ],
+      "tested": null
+    }
+  ],
+  "operatorPatches": {
+    "v2StepRestAndRecoveryCycle": {
+      "touches": {
+        "ambientEnergy": "-"
+      }
+    },
+    "stepUniverseAppStateMachine": {
+      "calls": [
+        "stepCoupledSomaticSystem",
+        "stepEnrageNemesisEncounter",
+        "v2StepAndRebaseOrigin64",
+        "v2MultiStarField",
+        "translateWiregraphToRig",
+        "runHeadlessEonGenesis",
+        "formatShorthandRecordV2",
+        "stepHardwareFidelityGovernor",
+        "eventTensionRelease",
+        "generateEmergentQuestFromWorld",
+        "invokeAdeptIndigoWorking",
+        "v2IngestSporeConserved",
+        "v2StepRestAndRecoveryCycle",
+        "recordExperience",
+        "synthesizeEmergentLitRpgClass",
+        "stepSqJepaLatentRollout"
+      ],
+      "note": "Wave 6 extends this tick with the cohort tick (stepLodPopulationTick), v2ValidateCartridge (on import), circle evaluation and stepSymbioticUniverseBridge; modelled as wave6CommunityTick so build order stays valid."
+    }
+  }
+}

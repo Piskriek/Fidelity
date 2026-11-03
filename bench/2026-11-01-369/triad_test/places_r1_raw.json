@@ -1,0 +1,1633 @@
+{
+  "summary": "Search the nine no-third pairs and three controls for a third in three places (surrounding, inside, bridge); three blind judges grade each candidate",
+  "agentCount": 13,
+  "logs": [
+    "P01: NONE | P02: VARIABLE | P03: NONE | P04: NONE | P05: NONE | P06: VARIABLE | P07: FIXED | P08: FIXED | P09: FIXED | P10: VARIABLE | P11: NONE | P12: FIXED"
+  ],
+  "result": {
+    "byPair": [
+      {
+        "pair": "P01",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "NONE",
+          "bridge": "NONE"
+        },
+        "best": "NONE"
+      },
+      {
+        "pair": "P02",
+        "places": {
+          "surrounding": "VARIABLE",
+          "inside": "FIXED",
+          "bridge": "VARIABLE"
+        },
+        "best": "VARIABLE"
+      },
+      {
+        "pair": "P03",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "NONE",
+          "bridge": "NONE"
+        },
+        "best": "NONE"
+      },
+      {
+        "pair": "P04",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "NONE",
+          "bridge": "NONE"
+        },
+        "best": "NONE"
+      },
+      {
+        "pair": "P05",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "NONE",
+          "bridge": "NONE"
+        },
+        "best": "NONE"
+      },
+      {
+        "pair": "P06",
+        "places": {
+          "surrounding": "VARIABLE",
+          "inside": "NONE",
+          "bridge": "VARIABLE"
+        },
+        "best": "VARIABLE"
+      },
+      {
+        "pair": "P07",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "FIXED",
+          "bridge": "NONE"
+        },
+        "best": "FIXED"
+      },
+      {
+        "pair": "P08",
+        "places": {
+          "surrounding": "FIXED",
+          "inside": "NONE",
+          "bridge": "NONE"
+        },
+        "best": "FIXED"
+      },
+      {
+        "pair": "P09",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "FIXED",
+          "bridge": "NONE"
+        },
+        "best": "FIXED"
+      },
+      {
+        "pair": "P10",
+        "places": {
+          "surrounding": "FIXED",
+          "inside": "NONE",
+          "bridge": "VARIABLE"
+        },
+        "best": "VARIABLE"
+      },
+      {
+        "pair": "P11",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "NONE",
+          "bridge": "NONE"
+        },
+        "best": "NONE"
+      },
+      {
+        "pair": "P12",
+        "places": {
+          "surrounding": "NONE",
+          "inside": "FIXED",
+          "bridge": "FIXED"
+        },
+        "best": "FIXED"
+      }
+    ],
+    "table": [
+      {
+        "pair": "P01",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P02",
+        "place": "surrounding",
+        "third": "The chirality of the environment: an achiral, parity-symmetric medium (vacuum, gas, achiral solvent, no chiral field).",
+        "judges": [
+          "VARIABLE",
+          "VARIABLE",
+          "VARIABLE"
+        ],
+        "majority": "VARIABLE"
+      },
+      {
+        "pair": "P03",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P04",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P05",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P06",
+        "place": "surrounding",
+        "third": "The ambient field content: a single gravitational field with no composition-dependent coupling (the universality of free fall in the surrounding field).",
+        "judges": [
+          "VARIABLE",
+          "VARIABLE",
+          "VARIABLE"
+        ],
+        "majority": "VARIABLE"
+      },
+      {
+        "pair": "P07",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P08",
+        "place": "surrounding",
+        "third": "The universe the complement is taken in: the one-bit Boolean algebra {0,1} (the word width and alphabet, with NOT as the complementing operation).",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "FIXED"
+        ],
+        "majority": "FIXED"
+      },
+      {
+        "pair": "P09",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P10",
+        "place": "surrounding",
+        "third": "The vacuum and theory they are excitations of: a Lorentz- and CPT-invariant vacuum of the shared electron-positron field.",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "VARIABLE"
+        ],
+        "majority": "FIXED"
+      },
+      {
+        "pair": "P11",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P12",
+        "place": "surrounding",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P01",
+        "place": "inside",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P02",
+        "place": "inside",
+        "third": "The shared interatomic distance matrix (the constitution plus bond geometry of the C-centred tetrahedron with H, F, Cl, Br). The only thing that differs between A and B is one bit, the handedness sign at the stereocentre.",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "FIXED"
+        ],
+        "majority": "FIXED"
+      },
+      {
+        "pair": "P03",
+        "place": "inside",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P04",
+        "place": "inside",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P05",
+        "place": "inside",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P06",
+        "place": "inside",
+        "third": "The internal mass-energy budget of each body by interaction: constituent rest masses, nuclear binding, Coulomb energy and the neutron/proton imbalance. These differ strongly between Pt (Z=78, N/Z about 1.5) and Ti (Z=22, N/Z about 1.2).",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P07",
+        "place": "inside",
+        "third": "N's self-copy: N contains a proper part in bijection with itself (the successor image {1,2,...}, or the evens). It is Dedekind-infiniteness read as internal structure.",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "FIXED"
+        ],
+        "majority": "FIXED"
+      },
+      {
+        "pair": "P08",
+        "place": "inside",
+        "third": "The digit-position count (width = 1) of each bit string.",
+        "judges": [
+          "FIXED",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P09",
+        "place": "inside",
+        "third": "The shared vertex identification: the common labelling that makes vertex 1 of A the same vertex as vertex 1 of B, and so on.",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "FIXED"
+        ],
+        "majority": "FIXED"
+      },
+      {
+        "pair": "P10",
+        "place": "inside",
+        "third": "The single Dirac electron field of which both are excitations (particle and antiparticle quanta), the one source of the mass parameter m and of the U(1) charge.",
+        "judges": [
+          "FIXED",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P11",
+        "place": "inside",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P12",
+        "place": "inside",
+        "third": "The shared data triple (constraint matrix = identity I2, bound vector b = (1,1), cost vector c = (1,1)) that both LPs are literally made of: the primal reads it by rows, the dual by columns.",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "FIXED"
+        ],
+        "majority": "FIXED"
+      },
+      {
+        "pair": "P01",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P02",
+        "place": "bridge",
+        "third": "The parity-invariant interaction law (the electromagnetic molecular Hamiltonian) that acts identically on both molecules.",
+        "judges": [
+          "VARIABLE",
+          "VARIABLE",
+          "VARIABLE"
+        ],
+        "majority": "VARIABLE"
+      },
+      {
+        "pair": "P03",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P04",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P05",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P06",
+        "place": "bridge",
+        "third": "The shared gravitational field (the common spacetime geometry), which couples universally to inertial energy-momentum regardless of composition.",
+        "judges": [
+          "FIXED",
+          "VARIABLE",
+          "VARIABLE"
+        ],
+        "majority": "VARIABLE"
+      },
+      {
+        "pair": "P07",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P08",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P09",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P10",
+        "place": "bridge",
+        "third": "The single Dirac electron-positron field, with CPT invariance of the underlying local, Lorentz-invariant quantum field theory.",
+        "judges": [
+          "FIXED",
+          "VARIABLE",
+          "VARIABLE"
+        ],
+        "majority": "VARIABLE"
+      },
+      {
+        "pair": "P11",
+        "place": "bridge",
+        "third": "none",
+        "judges": [
+          "NONE",
+          "NONE",
+          "NONE"
+        ],
+        "majority": "NONE"
+      },
+      {
+        "pair": "P12",
+        "place": "bridge",
+        "third": "LP strong duality: the transposed pairing of the shared data (constraint matrix I, right-hand sides (1,1), costs (1,1)), with weak duality sandwiching the optimum.",
+        "judges": [
+          "FIXED",
+          "FIXED",
+          "FIXED"
+        ],
+        "majority": "FIXED"
+      }
+    ],
+    "judgesRaw": [
+      {
+        "place": "surrounding",
+        "candidates": [
+          {
+            "pair": "P01",
+            "third": "none",
+            "why": "Disjointness and the union are fixed by the members of A and B alone. The only surrounding available is the universe {1..6}, and the stated relation already names it as the union, so naming it again would restate the relation.",
+            "vary_test": "Enlarge the ambient universe to {1..10}. A and B are unchanged, they stay disjoint, and their union stays {1..6}, so the stated relation does not move. Only a 'complement' relation would depend on the universe, and that is not the stated one."
+          },
+          {
+            "pair": "P02",
+            "third": "The chirality of the environment: an achiral, parity-symmetric medium (vacuum, gas, achiral solvent, no chiral field).",
+            "why": "The mirror-image relation is intrinsic. 'Equal energies and boiling points' holds only because nothing in the surround distinguishes left from right, so a parity-symmetric environment maps one enantiomer onto the other.",
+            "vary_test": "Keep A as exactly (R) and B as exactly (S) and put both in a chiral environment: a single-enantiomer solvent, a chiral stationary phase, circularly polarised light or a chiral crystal. The interactions become diastereomeric, so solvation energies and the volatility of each enantiomer from that solution differ, and the equality breaks. In an achiral environment it holds, apart from a tiny computed weak-interaction parity-violation energy."
+          },
+          {
+            "pair": "P03",
+            "third": "none",
+            "why": "The ratio of two numbers is intrinsic. The plausible surroundings (the transmitting medium, the observer's frame, the tuning standard) cannot reach it.",
+            "vary_test": "Change the medium from air to helium: frequency is conserved, so only the wavelengths change. Change the observer's frame: a Doppler shift scales both frequencies by the same factor, so the ratio is unchanged. Retune the reference pitch from A4=440 to 432: the pair is still the stated 440 and 880 Hz. The ratio stays exactly 2 each time. Only whether the pair counts as an octave in a given tuning or hearing context could vary, and that is a different relation from the stated exact ratio."
+          },
+          {
+            "pair": "P04",
+            "third": "none",
+            "why": "Coprimality here is witnessed by the identity 3*12 - 35 = 1. It uses only integer arithmetic on A and B, so the ambient ring does not enter.",
+            "vary_test": "Move the pair into Z[i], Q, or any ring that receives these integers. The identity still holds, so the ideal (35,12) is still the whole ring and they stay coprime. In a field the relation is trivially true. The relation survives every change of container."
+          },
+          {
+            "pair": "P05",
+            "third": "none",
+            "why": "B is defined as {A}, so membership is the definition of B and not a fact resting on a surround. The set-theoretic framework only hosts it.",
+            "vary_test": "Any framework in which both objects exist and B = {A} (ZF, ZFC, non-well-founded set theory, a typed set theory) yields A in B. Varying the framework either keeps the relation or removes B, which redefines it."
+          },
+          {
+            "pair": "P06",
+            "third": "The ambient field content: a single gravitational field with no composition-dependent coupling (the universality of free fall in the surrounding field).",
+            "why": "The vacuum and the initial conditions are already fixed in the pair. What is not fixed is which fields act on the masses. Equal acceleration holds only because the only field acting couples to mass alone.",
+            "vary_test": "Keep Pt and Ti, the same vacuum and the same initial conditions, and add a composition-dependent field to the surround. Candidates are a Yukawa fifth force coupling to baryon number or B-L (Pt and Ti differ in neutron excess), or a magnetic field gradient (they differ in susceptibility per unit mass). The accelerations then differ, so the relation changes. In a pure gravitational field it holds."
+          },
+          {
+            "pair": "P07",
+            "third": "none",
+            "why": "A bijection exists as an explicit formula (n -> n/2 for even n, -(n+1)/2 for odd n). It needs no choice, so the existence claim holds in every model of ZF and constructively.",
+            "vary_test": "The only surround that matters is the category in which 'isomorphic' is read. Moving from Set to ordered sets or monoids turns 'bijection' into 'structure-preserving bijection', which is a different and false relation. That redefines the relation and does not vary a third, so there is no third to vary."
+          },
+          {
+            "pair": "P08",
+            "third": "The universe the complement is taken in: the one-bit Boolean algebra {0,1} (the word width and alphabet, with NOT as the complementing operation).",
+            "why": "'Complement' is a relative notion and is not intrinsic to two symbols. It needs an ambient universe, and here it is the two-element alphabet that A and B jointly fill. Caveat: if 'binary 1' is read as the algebra's top element, the relation survives any width and there is no third.",
+            "vary_test": "Take the same values 0 and 1 as numbers inside 8-bit words, or in a ternary alphabet. The bitwise complement of 00000000 is 11111111, not 00000001, so 0 and 1 are no longer complements and the relation fails. At one-bit width it holds."
+          },
+          {
+            "pair": "P09",
+            "third": "none",
+            "why": "The six vertex pairs, which are the edges of K4 on {1,2,3,4}, are named in the relation. The vertex set is also built into A ('on vertices {1,2,3,4}') and B ('the same vertices').",
+            "vary_test": "Add a vertex 5 and there are ten pairs, so A and B no longer partition them. But then A and B are no longer graphs on exactly those vertices, which redefines both. Within the stated setup nothing in the surround can change."
+          },
+          {
+            "pair": "P10",
+            "third": "The vacuum and theory they are excitations of: a Lorentz- and CPT-invariant vacuum of the shared electron-positron field.",
+            "why": "Equal mass and opposite charge for a particle and its antiparticle follow from CPT invariance of the surrounding field theory. The relation rests on the symmetry of that frame and not on anything intrinsic to either particle taken alone.",
+            "vary_test": "Keep an electron and a positron, but put them in a theory or vacuum with a CPT-odd Lorentz-violating background (for example a background vector coupling in the Standard-Model-Extension form). Their energy levels and effective masses then differ, so the equal-mass relation changes. This is counterfactual, since precision Penning-trap comparisons see no such difference."
+          },
+          {
+            "pair": "P11",
+            "third": "none",
+            "why": "2 and 3 are the numerals S(S(0)) and S(S(S(0))) of the structure (N, 0, S). The successor relation is how B is built from A, so the structure is already inside the relation and not around it.",
+            "vary_test": "Change the encoding (von Neumann, Zermelo, Church) or move to a non-standard model of Peano arithmetic. The objects called 2 and 3 change, but S(2) = 3 holds in each. Changing S itself redefines the stated relation."
+          },
+          {
+            "pair": "P12",
+            "third": "none",
+            "why": "Each optimum is computed from its own LP data: A gives 2 at x=(1,1) and B gives 2 at y=(1,1). Their equality is strong duality for this pair, and the shared constraint data is a common source, not a surrounding.",
+            "vary_test": "Change the ambient number system to Q, a real closed field, a non-Archimedean ordered field, or restrict to integer solutions (the constraint matrix is the identity, so integrality costs nothing). Both optima stay 2. A floating-point solver also returns 2. The relation does not change."
+          }
+        ],
+        "judges": [
+          {
+            "judge": "opus",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "Disjointness and the union follow from the listed members alone. Enlarging the ambient universe leaves the stated relation unchanged, so no surrounding enters."
+              },
+              {
+                "pair": "P02",
+                "grade": "VARIABLE",
+                "reason": "This is a real variation. Keep (R) and (S) exactly as they are and put both in a single-enantiomer solvent or on a chiral stationary phase. The interactions become diastereomeric, so solvation energies and volatility differ and the equality breaks. In an achiral medium the equality holds."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "A ratio of two stated numbers is intrinsic. Changing the medium, the observer's frame or the tuning standard leaves 880/440 = 2 unchanged."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "The Bezout identity 3*12 - 35 = 1 carries into any ring that receives the integers, so the pair is coprime in every container. No surrounding can change the relation."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "B is defined as {A}, so membership is the definition of B itself. Any framework that contains both objects gives the relation, and the framework only hosts it."
+              },
+              {
+                "pair": "P06",
+                "grade": "VARIABLE",
+                "reason": "The concrete variation is real. Keep Pt and Ti, the same vacuum and the same initial conditions, and add a magnetic field gradient. Their mass susceptibilities differ, so their accelerations differ. In a purely gravitational field the accelerations are equal."
+              },
+              {
+                "pair": "P07",
+                "grade": "NONE",
+                "reason": "An explicit bijection exists in ZF and constructively. Reading the relation in a different category changes the relation itself, not a surrounding third."
+              },
+              {
+                "pair": "P08",
+                "grade": "FIXED",
+                "reason": "'Complement' does rest on an ambient universe, the one-bit Boolean algebra. But the word 'binary' fixes that algebra by definition. Moving to 8-bit words or a ternary alphabet turns the bits into different objects, which redefines A and B rather than varying a surrounding with them held fixed."
+              },
+              {
+                "pair": "P09",
+                "grade": "NONE",
+                "reason": "The six vertex pairs are named in the relation, and the vertex set is built into A and B. Adding a vertex redefines both graphs."
+              },
+              {
+                "pair": "P10",
+                "grade": "FIXED",
+                "reason": "Equal mass and opposite charge rest on the CPT invariance of the field theory the particles are excitations of. The proposed CPT-odd background is counterfactual and experimentally excluded. Changing the theory redefines what an electron and its antiparticle are; it is not a real surrounding that can vary while A and B stay as stated."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "Successorship is how 3 is built from 2 in (N, 0, S). Changing the encoding or the model keeps S(2) = 3, and changing S redefines the relation."
+              },
+              {
+                "pair": "P12",
+                "grade": "NONE",
+                "reason": "Both optima are computed from each LP's own data. Changing the ordered field or requiring integer solutions leaves both values at 2, so no surrounding changes the relation."
+              }
+            ]
+          },
+          {
+            "judge": "sonnet",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "No third. Disjointness and the union follow from the members of A and B, and the universe is already named as their union."
+              },
+              {
+                "pair": "P02",
+                "grade": "VARIABLE",
+                "reason": "Environmental chirality is a real surround. With A=(R) and B=(S) held exactly, a chiral solvent, stationary phase or chiral field makes the interactions diastereomeric, so energies and volatilities differ and the equality breaks. In an achiral medium the equality holds."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "The ratio 880/440 is intrinsic. Medium, Doppler shift and tuning standard leave it at exactly 2, so the relation does not depend on a surround."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "gcd(35,12)=1 is integer arithmetic on A and B alone. The identity 3*12-35=1 survives any ring, so nothing around the pair matters."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "B is defined as {A}, so membership is the definition of B. The set-theory framework only hosts it and does not condition the relation."
+              },
+              {
+                "pair": "P06",
+                "grade": "VARIABLE",
+                "reason": "The ambient field content is a real surround, not fixed by the pair. Keeping Pt, Ti, the vacuum and the initial conditions, adding a composition-dependent field (a magnetic field gradient, or a Yukawa-type coupling) makes the accelerations differ. In a purely gravitational field they are equal."
+              },
+              {
+                "pair": "P07",
+                "grade": "NONE",
+                "reason": "An explicit bijection between N and Z exists with no dependence on a surround. Moving to a category with structure only swaps the relation for a different, false one."
+              },
+              {
+                "pair": "P08",
+                "grade": "FIXED",
+                "reason": "Complement is universe-relative, and the universe here is the one-bit algebra {0,1}, which is just A and B together. Widening it to 8-bit words or a ternary alphabet breaks the relation only by turning A and B into different objects (bit versus word, binary versus ternary digit). The candidate's own caveat concedes that reading 1 as the top element removes the third."
+              },
+              {
+                "pair": "P09",
+                "grade": "NONE",
+                "reason": "The six vertex pairs are the edges of K4 on the stated vertex set, which is part of the definition of A and B. Changing it redefines both graphs, and nothing in a surround can vary."
+              },
+              {
+                "pair": "P10",
+                "grade": "FIXED",
+                "reason": "Equal mass and opposite charge rest on a CPT-invariant theory, which is a real third. But the electron and positron are defined as particle and antiparticle within that theory. A CPT-odd background changes their effective properties, so A and B no longer stay as stated. The variation is also purely counterfactual."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "The successor structure is built into the relation, since 3 is S(2). Changing the encoding keeps S(2)=3, and changing S redefines the relation, so there is no external third."
+              },
+              {
+                "pair": "P12",
+                "grade": "NONE",
+                "reason": "Each optimum is computed from its own LP data, and both equal 2. Changing the number system, integrality or solver leaves them at 2, and the shared constraint data is a common source, not a surround."
+              }
+            ]
+          },
+          {
+            "judge": "haiku",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P02",
+                "grade": "VARIABLE",
+                "reason": "The chirality of the surrounding medium is a real third. Keeping A as (R) and B as (S) and placing them in a single-enantiomer solvent or chiral stationary phase makes their solvation energies and volatilities diastereomeric, so the stated equal energies and boiling points fail. The relation changes with A and B unchanged."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P06",
+                "grade": "VARIABLE",
+                "reason": "The ambient field content is a real third. Keeping platinum and titanium masses in the same vacuum and initial conditions, adding a magnetic field gradient (susceptibility per unit mass differs) or a composition-dependent fifth force makes the accelerations differ, so equal acceleration fails. In a pure gravitational field it holds."
+              },
+              {
+                "pair": "P07",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P08",
+                "grade": "FIXED",
+                "reason": "The universe of the complement is real and the relation rests on it. However, the candidate itself identifies it as the two-element alphabet that A and B jointly fill, which is what 'binary 0' and 'binary 1' are defined as. Widening it to 8-bit words or a ternary alphabet changes what A and B are, so the third is held fixed by definition rather than varying independently."
+              },
+              {
+                "pair": "P09",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P10",
+                "grade": "VARIABLE",
+                "reason": "The vacuum and theory are a real surround on which equal mass rests via CPT invariance. Keeping the electron and positron as stated but placing them in a CPT-odd Lorentz-violating background (SME-type coefficient) shifts their energies and effective masses differently, so the equal-mass relation changes. The variation is counterfactual, but it is concrete and the particle labels are unchanged."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              },
+              {
+                "pair": "P12",
+                "grade": "NONE",
+                "reason": "No candidate third was proposed (candidate is 'none'), so there is nothing to grade."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "place": "inside",
+        "candidates": [
+          {
+            "pair": "P01",
+            "third": "none",
+            "why": "The only inside content is the six elements, and those are A and B themselves. Disjointness and the union are element-by-element membership facts, so nothing is left over for a third to hold. The even/odd pattern is a description of the grouping, not a part the relation rests on.",
+            "vary_test": "The parity rule can be dropped or redescribed (rename the six elements arbitrarily, keep the same memberships) and disjointness and the union stay exactly as they were. The only thing that changes the relation is an element, and swapping an element, for example putting 1 into A, redefines A."
+          },
+          {
+            "pair": "P02",
+            "third": "The shared interatomic distance matrix (the constitution plus bond geometry of the C-centred tetrahedron with H, F, Cl, Br). The only thing that differs between A and B is one bit, the handedness sign at the stereocentre.",
+            "why": "Mirror images share every interatomic distance. The electromagnetic energy and the intermolecular forces behind the boiling point depend on those distances, not on the handedness sign, so equal energies and boiling points follow. This is moderate, not strong: it is largely what 'mirror image' means. A footnote on the one inside piece that is not blind to the sign: parity-violating weak-interaction terms in the nuclei (growing steeply with nuclear charge, so Br matters) give a tiny real energy difference, so the stated equality holds only to that vanishing accuracy.",
+            "vary_test": "With A and B exactly as stated the distance matrix cannot vary; changing it, for example swapping F for I, redefines both molecules. Flipping the handedness bit just swaps A and B, and the relation is unchanged. Changing the distances in only one enantiomer breaks both the mirror relation and the energy equality. Changing them in both together, for example an isotopologue, keeps the relation, so the relation rests on the distances being shared, not on their values."
+          },
+          {
+            "pair": "P03",
+            "third": "none",
+            "why": "A and B are bare numbers with a unit. The only inside structure is the factorisation, 440 = 2^3*5*11 and 880 = 2^4*5*11. The shared odd part 55 is real, but the relation is blind to its value; it contributes only sameness, which is the stated ratio restated at the level of parts. The unit (cycles per second) is shared and cancels in the ratio, so the relation does not rest on it either.",
+            "vary_test": "Nothing inside can vary while 440 and 880 stay fixed. Varied jointly, the cofactor (456 and 912) or the unit (rad/s) leaves the ratio at exactly 2, so neither carries the relation. Varying either number alone redefines A or B."
+          },
+          {
+            "pair": "P04",
+            "third": "none",
+            "why": "The only parts are the prime factors, 35 = 5*7 and 12 = 2*2*3. Coprimality is exactly the statement that those two sets of parts do not overlap. The relation is the absence of a shared inside part, so there is nothing further inside for it to rest on. Bezout coefficients (-1 and 3) or Z/420 = Z/35 x Z/12 are consequences derived from the pair, not constituents of A or B.",
+            "vary_test": "Changing any prime redefines A or B, for example 35 to 33 shares the factor 3 and gcd becomes 3. Re-expressing the same numbers (base, representation) leaves gcd = 1 unchanged, so no inside representation detail carries the relation."
+          },
+          {
+            "pair": "P05",
+            "third": "none",
+            "why": "A has no members, so it has no inside. B has exactly one member, and that member is A. The relation A is a member of B is B's entire internal structure (B = {A}), so no leftover part could be a separate third. The brace construction is the relation, not an addition to it.",
+            "vary_test": "B's single member cannot vary without redefining B. For example B = {{empty set}} has a different member, and A is then not in B. A has nothing inside to vary."
+          },
+          {
+            "pair": "P06",
+            "third": "The internal mass-energy budget of each body by interaction: constituent rest masses, nuclear binding, Coulomb energy and the neutron/proton imbalance. These differ strongly between Pt (Z=78, N/Z about 1.5) and Ti (Z=22, N/Z about 1.2).",
+            "why": "Equal acceleration is a non-trivial statement only because the two budgets differ. It holds because each slice of the budget gravitates exactly as it resists acceleration. It is a real inside quantity with a measurable contrast, but the final step, that gravity is blind to the slices, is a law outside the bodies. That is why this is moderate and not strong.",
+            "vary_test": "The budgets cannot vary with A and B as stated. Counterfactual: if one slice (say the Coulomb energy) gravitated with a weight shifted by a small epsilon relative to its inertia, Pt and Ti would accelerate differently by about epsilon times the difference in that slice's fraction, so the relation would change. Control: if A and B had identical budgets (Pt against Pt), the equality would hold trivially for any epsilon."
+          },
+          {
+            "pair": "P07",
+            "third": "N's self-copy: N contains a proper part in bijection with itself (the successor image {1,2,...}, or the evens). It is Dedekind-infiniteness read as internal structure.",
+            "why": "The bijection is built by splitting. Z = N plus a reflected second copy of N, and N absorbs a disjoint copy of itself (evens and odds). That is the inside reason the extra half of Z costs no cardinality. This is moderate: it is a property of A, not an independent object. Note the negative half of Z is not the third. It can be shrunk to finite or removed and the relation survives; what it rests on is A's self-absorbing infinity.",
+            "vary_test": "It cannot vary without redefining A. Counterfactual: replace N by a finite set of k elements and the doubled set has 2k elements, so the equal-size relation fails. Changing which bijection is used (many exist) changes nothing, so the particular map is not the third."
+          },
+          {
+            "pair": "P08",
+            "third": "The digit-position count (width = 1) of each bit string.",
+            "why": "Bitwise complement is defined position by position over a fixed width. 0 and 1 are complements only because both occupy exactly one position. This is weak: the width is implied by the relation more than stated by A and B, and if A and B are read as abstract Boolean values with no digit positions the answer is none.",
+            "vary_test": "Keep the values 0 and 1 but widen both to 8 positions: 00000000 and 00000001 are no longer complements, since the complement of 0 is 11111111. So the relation changes while the values stay as stated. Whether widening counts as redefining A and B is the ambiguity that makes this weak."
+          },
+          {
+            "pair": "P09",
+            "third": "The shared vertex identification: the common labelling that makes vertex 1 of A the same vertex as vertex 1 of B, and so on.",
+            "why": "Both graphs are paths (B is 3-1-4-2), so their isomorphism types are identical and give no hint of complementarity. The partition of the six pairs lives entirely in how the vertices of A line up with the vertices of B. It is a real inside structure (vertex identity), common to both and not part of either isomorphism type.",
+            "vary_test": "Keep B a path on four vertices but relabel it. Of the 12 labelled copies of P4 on {1,2,3,4}, only the stated B has edge set exactly 13, 14, 24. For example, swapping labels 1 and 2 in B gives edges 23, 24, 14, which overlaps A on 23, so the partition fails. A as stated and B's isomorphism type are unchanged by this variation, while the relation breaks."
+          },
+          {
+            "pair": "P10",
+            "third": "The single Dirac electron field of which both are excitations (particle and antiparticle quanta), the one source of the mass parameter m and of the U(1) charge.",
+            "why": "The electron has no known sub-parts, so there is nothing else inside. Treated as quanta of one field, equal mass follows from one m and opposite charge from the antiparticle quantum carrying the reversed charge. This is borderline for the place: it is closer to the thing they are excitations of than to a part inside them. It is theory-laden, since CPT symmetry guarantees the oneness.",
+            "vary_test": "It cannot vary with A and B as stated. Counterfactual: two independent fields with independent mass and charge parameters would allow unequal masses and non-opposite charges, so the relation would change. Varying m jointly in the one field keeps the relation, so the relation rests on the oneness of the field, not on its parameter values."
+          },
+          {
+            "pair": "P11",
+            "third": "none",
+            "why": "Under the Peano axioms 2 and 3 are primitive terms, S(S(0)) and S(S(S(0))), with no internal parts beyond the iteration chain. B containing A as its first two steps is just 'B is the successor of A' restated. Any set-theoretic encoding of the numbers (von Neumann 3 = 2 union {2}, or Zermelo 3 = {{{empty}}}) is an optional inside that varies freely.",
+            "vary_test": "Switching the encoding changes everything inside A and B and leaves B = S(A) exactly intact, so no inside detail carries the relation. Changing the chain length redefines A or B."
+          },
+          {
+            "pair": "P12",
+            "third": "The shared data triple (constraint matrix = identity I2, bound vector b = (1,1), cost vector c = (1,1)) that both LPs are literally made of: the primal reads it by rows, the dual by columns.",
+            "why": "Both optimal values equal 2 because the two programmes are built from the same numbers. The equality rests on that coupling (strong duality applied to a feasible pair), and the value 2 rests on the entries of b and c. This is moderate: the dual is by construction the transpose reading of the same data.",
+            "vary_test": "A and B cannot vary with the data fixed. Counterfactual: change the primal bound to x1 <= 2 and leave the dual untouched, and the values become 3 and 2, so equality breaks. Change b to (2,1) in both consistently and equality survives while the common value moves to 3. So the equality rests on the sharing, and the value 2 on the entries."
+          }
+        ],
+        "judges": [
+          {
+            "judge": "opus",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "The candidate is none. Disjointness and the union rest only on the six elements, which are A and B themselves. The parity pattern is just a description of the grouping."
+              },
+              {
+                "pair": "P02",
+                "grade": "FIXED",
+                "reason": "The shared interatomic distance matrix is real internal structure, and equal energies and boiling points rest on it being shared. It cannot vary without redefining one or both molecules. Varying it in one enantiomer swaps A or B for a different molecule, so it is not VARIABLE."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "The candidate is none. The ratio is blind to the shared odd factor and to the unit. Nothing inside carries the relation beyond the two numbers themselves."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "The candidate is none. Coprimality is the absence of a shared prime part, which restates the relation at the level of factors. Changing a prime redefines A or B."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "The candidate is none. B = {A} makes membership B's whole inside, so no leftover part exists, and A has nothing inside."
+              },
+              {
+                "pair": "P06",
+                "grade": "NONE",
+                "reason": "Equal acceleration does not depend on the mass-energy budgets. It holds whether they differ (Pt vs Ti) or match (Pt vs Pt). The only claimed variation changes an outside law (epsilon), not anything inside, and the candidate itself admits the deciding step is external."
+              },
+              {
+                "pair": "P07",
+                "grade": "FIXED",
+                "reason": "N containing a proper part in bijection with itself is real internal structure, and the equal cardinality rests on it: a finite A would break the relation. It cannot vary without redefining A, and the counterfactual swaps A for a finite set."
+              },
+              {
+                "pair": "P08",
+                "grade": "FIXED",
+                "reason": "Read as bit strings, width 1 is a real structural feature that bitwise complement rests on. Widening to 8 positions replaces A and B with different bit strings (00000000, 00000001), which is swapping them, not varying a third with A and B kept as stated. That caps it at FIXED."
+              },
+              {
+                "pair": "P09",
+                "grade": "FIXED",
+                "reason": "The shared vertex labelling is real, and the partition rests on it. But B is defined by its edge set {13,14,24}, so relabelling B produces a different graph, not the stated B. The variation is a swap of B, so FIXED, not VARIABLE."
+              },
+              {
+                "pair": "P10",
+                "grade": "FIXED",
+                "reason": "Equal mass and opposite charge rest on electron and positron being particle and antiparticle quanta of one Dirac field. This is held fixed by what a positron is. The counterfactual of two independent fields redefines the pair. It sits at the edge of 'inside' but is what both are made of."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "The candidate is none. The iteration chain restates the successor relation, and set-theoretic encodings vary freely without affecting B = S(A)."
+              },
+              {
+                "pair": "P12",
+                "grade": "FIXED",
+                "reason": "The shared data (I2, b, c) is literally what both LPs are made of, and equal optimal values of 2 rest on it. Every variation changes the data in A, B or both, which redefines the programmes. Nothing varies with A and B held as stated."
+              }
+            ]
+          },
+          {
+            "judge": "sonnet",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "Candidate is none. Disjointness and the union are element-by-element membership facts, so nothing is left over for a third."
+              },
+              {
+                "pair": "P02",
+                "grade": "FIXED",
+                "reason": "The shared distance matrix is real inside structure, and equal energy and boiling point follow from it. It is held fixed by 'mirror image'. Changing it in one enantiomer breaks the pair, and changing it in both (an isotopologue) leaves the relation intact. So it cannot vary without redefining A or B."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "Candidate is none. The shared odd cofactor and the unit cancel in the ratio, so the relation does not rest on them."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "Candidate is none. Coprimality is just the prime-factor sets not overlapping, which restates the relation. Bezout coefficients are derived consequences, not parts."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "Candidate is none. B = {A}, so the membership relation is B's whole structure and no leftover part exists."
+              },
+              {
+                "pair": "P06",
+                "grade": "NONE",
+                "reason": "Equal acceleration holds whatever the mass-energy budgets are. It rests on the equivalence principle, a law outside the bodies, so the relation does not depend on the budgets. The claimed variation changes the coupling law, not the budget, and the budgets cannot vary with A and B fixed."
+              },
+              {
+                "pair": "P07",
+                "grade": "FIXED",
+                "reason": "The bijection N to Z is built from N absorbing a disjoint copy of itself (Dedekind-infiniteness), and a finite set would fail. That is real internal structure of A the relation rests on, but it is held fixed by the definition of N."
+              },
+              {
+                "pair": "P08",
+                "grade": "NONE",
+                "reason": "Width 1 only restates that A and B are single bits. For abstract Boolean values the complement is plain negation and needs no position count. Widening swaps A and B for different strings."
+              },
+              {
+                "pair": "P09",
+                "grade": "FIXED",
+                "reason": "The common vertex identification is what the partition of the six pairs depends on, and isomorphism types do not determine it. It is fixed by the stated labelled edge sets. Relabelling B swaps in a different labelled graph, so it is not a variation with A and B held as stated."
+              },
+              {
+                "pair": "P10",
+                "grade": "NONE",
+                "reason": "The Dirac field is not inside A or B, since the electron has no known parts. 'Quanta of one field with antiparticle reversed charge' mostly restates that B is the antiparticle of A, and the guarantee is CPT, a law outside both. The candidate is theory-laden and borderline."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "Candidate is none. B containing A as its first steps is the successor relation restated, and set-theoretic encodings are optional and irrelevant to the relation."
+              },
+              {
+                "pair": "P12",
+                "grade": "FIXED",
+                "reason": "The shared data triple (I2, b, c) is what both programmes are literally read from, and the value 2 depends on those entries. It is held fixed by B being the dual of A. Changing the data in one LP only changes A or B, and changing it in both keeps equality with a different value."
+              }
+            ]
+          },
+          {
+            "judge": "haiku",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "No candidate was proposed. The only inside content is the six elements, which are A and B themselves, so no third is left over."
+              },
+              {
+                "pair": "P02",
+                "grade": "FIXED",
+                "reason": "The shared interatomic distance matrix lies inside both molecules, and the mirror relation and equal energies rest on it. It is held fixed by the definition of mirror image. Changing it in one enantiomer or swapping atoms redefines A or B, and changing it in both is a different molecule (an isotopologue), so it cannot vary with A and B as stated."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "No candidate was proposed."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "No candidate was proposed."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "No candidate was proposed."
+              },
+              {
+                "pair": "P06",
+                "grade": "NONE",
+                "reason": "The mass-energy budget is inside each body, but equal acceleration holds for any budget under universality of free fall. Varying the budget (for example the isotope mix of platinum, keeping it platinum) leaves the relation intact. The only variation that breaks it changes the gravitational law, not the candidate, so the relation does not depend on it."
+              },
+              {
+                "pair": "P07",
+                "grade": "FIXED",
+                "reason": "N's self-copy (a proper subset in bijection with N, such as the evens) lies inside N, and the bijection with Z rests on it. It is held fixed by the definition of N as infinite. Replacing N by a finite set removes it, but that redefines A."
+              },
+              {
+                "pair": "P08",
+                "grade": "NONE",
+                "reason": "Digit-position width is a representation choice. Read as abstract Boolean values, 0 and 1 are complements at any width, so the relation does not depend on width. Only the bit-string reading makes width part of A and B, and the candidate itself calls that reading ambiguous. Default to NONE."
+              },
+              {
+                "pair": "P09",
+                "grade": "FIXED",
+                "reason": "The common vertex labelling lies inside both graphs, and the partition of the six pairs rests on it. It is held fixed by the stated 'same vertices'. The claimed variation relabels B, which changes B's stated edge set (13,14,24) into a different graph, so it redefines B and is not a VARIABLE."
+              },
+              {
+                "pair": "P10",
+                "grade": "NONE",
+                "reason": "The Dirac field is the medium both particles are excitations of, not something within either the electron or the positron. The candidate itself concedes it is borderline for the inside category. Its role in equal mass and opposite charge is theory-laden (CPT), and it is outside the scope of what A and B are made of. Default to NONE."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "No candidate was proposed. The Peano encoding is the only inside, and it can vary freely while B = S(A) stays intact, so it carries nothing the relation rests on."
+              },
+              {
+                "pair": "P12",
+                "grade": "FIXED",
+                "reason": "The shared data (constraint matrix I2, b=(1,1), c=(1,1)) lies inside both LPs, and the equal optimal value 2 rests on it through duality. Changing b in the primal alone redefines A, and changing b in both redefines both LPs, so the data cannot vary with A and B as stated."
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "place": "bridge",
+        "candidates": [
+          {
+            "pair": "P01",
+            "third": "none",
+            "why": "Disjointness and the exhaustive union are properties of the two extensions {2,4,6} and {1,3,5}. Nothing travels between them, so there is no medium, process or agency that carries the relation. The nearest miss is the parity map n -> n mod 2 on {1..6}, whose two fibres are A and B. That map is one description of A and B, not something the relation rests on.",
+            "vary_test": "Replace the parity map with (-1)^n or with 'divisible by 2': the fibres are the same sets and the relation is identical. Replace it with classes of n mod 3: the fibres change, which redefines A and B. It only varies where the relation is untouched, or by redefining A and B."
+          },
+          {
+            "pair": "P02",
+            "third": "The parity-invariant interaction law (the electromagnetic molecular Hamiltonian) that acts identically on both molecules.",
+            "why": "The mirror-image geometry is the stated relation. Equal energies and equal boiling points need more: the law of interaction must not distinguish left from right. That law carries the mirror relation of the shapes over into equality of the energies, and boiling points follow because each pure liquid is the exact mirror of the other.",
+            "vary_test": "Keep R and S exactly as stated and add the weak neutral-current (parity-violating) term. The two energies then differ by a tiny parity-violating energy difference that has been computed but never measured, so 'equal' becomes 'almost equal'. Rescaling the electromagnetic coupling instead moves both energies together and equality holds, so the symmetry is what the equality rests on, not the interaction strength."
+          },
+          {
+            "pair": "P03",
+            "third": "none",
+            "why": "A ratio of exactly 2 is a property of the two numbers. The things that carry sound, namely the medium and the time standard that defines the hertz, do not carry the ratio. A harmonic generator, such as a string whose second harmonic is 880 Hz, would be a real conduit, but A and B are not stated to come from one source. Nothing real is available without inventing it.",
+            "vary_test": "Move both tones to another medium (water, steel): frequency is conserved across media, only wavelength changes, and the ratio stays 2. Redefine the unit as cycles per minute (26,400 and 52,800): the ratio is still 2. The nearest candidates can vary freely with no effect on the relation."
+          },
+          {
+            "pair": "P04",
+            "third": "none",
+            "why": "The nearest miss is a Bezout witness such as 3*12 - 1*35 = 1, along with the factorizations 5*7 and 2^2*3. Existence of such a witness is equivalent to gcd = 1, so it is the stated relation restated, not an independent conduit.",
+            "vary_test": "Witnesses form a whole family, (x,y) = (-1+12k, 3-35k). For example 11*35 - 32*12 = 1 also works. Any member can be swapped for another and the relation does not change, so the witness is not what the relation rests on."
+          },
+          {
+            "pair": "P05",
+            "third": "none",
+            "why": "The nearest miss is the singleton-forming operation x -> {x} (the pairing axiom), which makes B from A. B is defined as {A}, so membership holds by B's own extension. The operation is part of how B is written down, not a conduit between two independent things.",
+            "vary_test": "The power-set operation gives P(empty set) = {empty set}, and the von Neumann successor gives empty set union {empty set} = {empty set}. Both yield the same B from the same A, and A is a member of B in every case. The operation is freely substitutable with the relation untouched, and removing it while keeping B = {empty set} is not possible because the relation is B's extension."
+          },
+          {
+            "pair": "P06",
+            "third": "The shared gravitational field (the common spacetime geometry), which couples universally to inertial energy-momentum regardless of composition.",
+            "why": "Both masses are acted on by one field, and equal acceleration holds because that field's coupling does not depend on what the body is made of. This is the weak equivalence principle, and the field is the agency that carries the same push to platinum and titanium. A and B are only the two receivers of it.",
+            "vary_test": "Change the field's strength, for example moving to the Moon at about 1.6 m/s^2: both still fall equally, so the relation is unchanged. Add a composition-dependent coupling (a hypothetical fifth force coupling to baryon number or neutron excess): platinum and titanium, still exactly as stated, now fall unequally and the Eotvos parameter is nonzero. MICROSCOPE bounds this at roughly 1e-15."
+          },
+          {
+            "pair": "P07",
+            "third": "none",
+            "why": "The nearest misses are an explicit bijection (zigzag: n -> n/2 for even n, -(n+1)/2 for odd n) and the Cantor-Schroeder-Bernstein route through the inclusion N -> Z plus the map Z -> N. 'A bijection exists' is the stated relation, so any witness of it is the relation restated, not a third.",
+            "vary_test": "The zigzag can be swapped for any of continuum-many other bijections, or the CSB route can be used instead. Every swap leaves the relation unchanged, and no change to the witness can alter it while N and Z stay as stated."
+          },
+          {
+            "pair": "P08",
+            "third": "none",
+            "why": "Complementarity is defined inside the two-symbol alphabet {0,1}, and that alphabet is already in the words 'binary 0' and 'binary 1'. The NOT operation is the relation itself. The physical carrier, such as voltage levels in a logic family, conducts bits but does not conduct the complement relation.",
+            "vary_test": "Switch from positive to negative logic or change the voltages (0 V and 3.3 V swapped): A and B are still binary 0 and 1 and are still complements. Change the alphabet to ternary digits and 0 and 1 stop being complements, but that redefines what A and B are."
+          },
+          {
+            "pair": "P09",
+            "third": "none",
+            "why": "The six vertex pairs of K4 and the shared vertex set are already named inside the stated relation. The nearest miss is the permutation (1 3 4 2), an isomorphism taking the path to the other graph, which shows A is self-complementary. It explains a further fact and is not what the partition rests on.",
+            "vary_test": "Relabel the vertices by any permutation applied to both graphs: the edge sets still partition the six pairs. Add a fifth vertex and there are ten pairs, so the pair no longer partitions them, but that redefines A and B. The isomorphism can be removed from consideration and the partition still holds."
+          },
+          {
+            "pair": "P10",
+            "third": "The single Dirac electron-positron field, with CPT invariance of the underlying local, Lorentz-invariant quantum field theory.",
+            "why": "The electron and positron are the particle and antiparticle excitations of one field. CPT invariance forces equal mass and opposite charge, so the field and its symmetry carry the relation between them. It is not a bare restatement, because a different field theory could in principle give unequal values.",
+            "vary_test": "Keep an electron and a positron but use a CPT- and Lorentz-violating extension of the theory (for example Standard-Model-Extension coefficients): masses and charge magnitudes are then allowed to differ, and the relation could change. Experiment shows equality to high precision. Treating them as two unrelated fields would remove the link and also redefine 'positron'."
+          },
+          {
+            "pair": "P11",
+            "third": "none",
+            "why": "The successor function S is the stated relation, and the Peano structure is what defines these numerals. Nothing separate carries 2 to 3.",
+            "vary_test": "Encode numbers as von Neumann sets (2 = {0,1}, 3 = {0,1,2} = 2 union {2}) or Zermelo sets (2 = {{empty}}, 3 = {{{empty}}}). Each has its own successor, and B is the successor of A in all of them. The realization is freely substitutable with the relation unchanged."
+          },
+          {
+            "pair": "P12",
+            "third": "LP strong duality: the transposed pairing of the shared data (constraint matrix I, right-hand sides (1,1), costs (1,1)), with weak duality sandwiching the optimum.",
+            "why": "B is built from A by transposing the same coefficients. Weak duality then gives c.x <= b.y for every feasible pair. Here x = (1,1) is primal feasible with value 2 and y = (1,1) is dual feasible with value 2, so 2 <= opt(A) <= opt(B) <= 2, and strong duality is the general theorem that forces the equality. This is a real conduit, but weaker than the physical ones. Each value can also be computed directly, so the numeric statement 'both equal 2' stands without it. The bridge explains why equality was forced rather than coincidental.",
+            "vary_test": "The theorem cannot vary, and the shared data cannot be varied without redefining A and B. As a diagnostic only, change the caps to x1 <= 1 and x2 <= 2 (dual objective y1 + 2*y2): both values become 3. Equality survives while the number 2 does not, so the equality rests on the duality pairing and the value 2 rests on the data."
+          }
+        ],
+        "judges": [
+          {
+            "judge": "opus",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "The candidate is none. Disjointness and the exhaustive union are properties of the two extensions. The parity map only describes A and B; varying it either leaves the relation untouched or redefines the sets. No real third was missed."
+              },
+              {
+                "pair": "P02",
+                "grade": "VARIABLE",
+                "reason": "The molecular interaction law is a real third, distinct from the two molecules and from the mirror relation. Keep R and S exactly as stated and include the weak neutral-current term, which really acts on these molecules. A parity-violating energy difference then appears, so 'equal' becomes 'unequal by a tiny amount'. Rescaling only the electromagnetic coupling leaves equality intact, so the dependence is specifically on the law's parity content. The variation and its changed outcome can both be named concretely."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "The candidate is none. A ratio of exactly 2 is a property of the two numbers. The medium and the unit of time can vary freely without touching the ratio, and no common source is stated. No real third was missed."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "The candidate is none. A Bezout witness is equivalent to gcd = 1, so it restates the relation, and any member of the witness family can be swapped for another with no effect. No real third was missed."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "The candidate is none. B is {A}, so membership is B's own extension. The constructing operation (singleton, power set or successor) is interchangeable and is part of how B is written down, not a conduit."
+              },
+              {
+                "pair": "P06",
+                "grade": "FIXED",
+                "reason": "The gravitational field is real, and falling at all rests on it. But no variation of the field itself (its strength, the Moon, any geometry) changes equal acceleration, because geodesic motion does not depend on composition. That universality is what makes it the gravitational field. The only variation that changes the outcome adds a different, hypothetical fifth force, which is another third and not a variation of this one."
+              },
+              {
+                "pair": "P07",
+                "grade": "NONE",
+                "reason": "The candidate is none. 'A bijection exists' is the relation itself. Any witness (the zigzag map, or the Cantor-Schroeder-Bernstein route) restates it and can be swapped with no effect."
+              },
+              {
+                "pair": "P08",
+                "grade": "NONE",
+                "reason": "The candidate is none. Complementarity is internal to the binary alphabet named in A and B. Physical encodings (logic polarity, voltage levels) can vary without effect, and changing the alphabet redefines A and B."
+              },
+              {
+                "pair": "P09",
+                "grade": "NONE",
+                "reason": "The candidate is none. The partition of the six pairs is a property of the two edge sets on the shared vertex set, which are already in the stated relation. The self-complementary isomorphism explains a further fact and is not needed for the partition."
+              },
+              {
+                "pair": "P10",
+                "grade": "FIXED",
+                "reason": "The single Dirac field is real, and the relation rests on it. But it is what makes the positron the electron's antiparticle, so it is fixed by B's definition. Opposite charge follows from the single charged field and its gauge structure, and no CPT-violating extension makes the charge magnitudes differ. That part of the claimed variation is wrong. A particle-antiparticle mass difference for a single species is not cleanly available in the local Standard-Model Extension, and the claim itself only says the relation 'could' change. So no concrete changed outcome is established."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "The candidate is none. Successor is the stated relation, and any set-theoretic realization (von Neumann or Zermelo) can be substituted with the relation unchanged. Nothing separate carries 2 to 3."
+              },
+              {
+                "pair": "P12",
+                "grade": "FIXED",
+                "reason": "The primal-dual transposition pairing is distinct from A, B and the stated equality, and strong duality is why the two optima are forced to coincide. But B is defined as A's dual, and the theorem is a mathematical necessity. Neither can vary without redefining A or B. The claim's own diagnostic changes the data, which means changing A and B."
+              }
+            ]
+          },
+          {
+            "judge": "sonnet",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. Disjointness and the exhaustive union are properties of the two extensions. The parity map is only another description of A and B."
+              },
+              {
+                "pair": "P02",
+                "grade": "VARIABLE",
+                "reason": "The parity-invariant interaction law is a real third. With R and S unchanged, adding the weak parity-violating term makes the energies differ slightly, so 'equal' becomes 'almost equal'."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. The ratio 2 is a property of the two numbers. The medium and the unit can change freely without touching it."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. A Bezout witness is equivalent to gcd = 1, so it restates the relation, and witnesses are freely interchangeable."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. B is defined as {A}, so membership is B's own extension. The singleton operation is just how B is written."
+              },
+              {
+                "pair": "P06",
+                "grade": "VARIABLE",
+                "reason": "The universal gravitational coupling is a real third. With platinum and titanium unchanged, a composition-dependent coupling (a fifth force) makes them fall unequally, giving a nonzero Eotvos parameter."
+              },
+              {
+                "pair": "P07",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. A bijection is the stated relation itself, and any witness can be swapped without effect."
+              },
+              {
+                "pair": "P08",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. Complementarity is the NOT operation on the two-symbol alphabet, which is already inside the words 'binary 0' and 'binary 1'. The physical carrier does not conduct the relation."
+              },
+              {
+                "pair": "P09",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. The partition of the six pairs holds by the edge sets alone. The isomorphism explains a different fact."
+              },
+              {
+                "pair": "P10",
+                "grade": "VARIABLE",
+                "reason": "The single Dirac field with CPT invariance is a real third. With electron and positron kept, a CPT- and Lorentz-violating extension (SME) lets the masses and charge magnitudes differ, so the stated relation can change."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "Candidate is 'none'. The successor function is the stated relation and the Peano structure defines the numerals. Realizations are interchangeable."
+              },
+              {
+                "pair": "P12",
+                "grade": "FIXED",
+                "reason": "The duality pairing is real and explains why the equality is forced. But B is defined as the dual of A, so the pairing cannot vary without redefining A or B. Changing the caps changes the LP data, which is a different A and B."
+              }
+            ]
+          },
+          {
+            "judge": "haiku",
+            "grades": [
+              {
+                "pair": "P01",
+                "grade": "NONE",
+                "reason": "Candidate is none. The disjointness and exhaustive union are properties of the two extensions, and no conduit carries them."
+              },
+              {
+                "pair": "P02",
+                "grade": "VARIABLE",
+                "reason": "Keep R and S fixed and add a parity-violating weak term to the molecular interaction law: the two energies then differ slightly, so equal becomes almost equal. Rescaling the EM coupling leaves equality intact, so the relation changes only when the law's parity invariance is varied."
+              },
+              {
+                "pair": "P03",
+                "grade": "NONE",
+                "reason": "Candidate is none. The ratio 2 is a property of the two numbers, and no conduit is named."
+              },
+              {
+                "pair": "P04",
+                "grade": "NONE",
+                "reason": "Candidate is none. Bezout witnesses restate gcd = 1 and vary freely without affecting the relation."
+              },
+              {
+                "pair": "P05",
+                "grade": "NONE",
+                "reason": "Candidate is none. The singleton-forming operation is part of how B is written, not a conduit between A and B."
+              },
+              {
+                "pair": "P06",
+                "grade": "VARIABLE",
+                "reason": "Keep platinum and titanium fixed and make the gravitational coupling composition-dependent (a fifth force, or a non-universal coupling in an alternative gravity theory): the two masses then fall unequally. Changing field strength alone does not change the relation, but varying the universality of the coupling does."
+              },
+              {
+                "pair": "P07",
+                "grade": "NONE",
+                "reason": "Candidate is none. Any bijection witnesses the relation and can be swapped without changing it."
+              },
+              {
+                "pair": "P08",
+                "grade": "NONE",
+                "reason": "Candidate is none. Complementarity is defined inside the alphabet {0,1} and the carrier does not conduct the relation."
+              },
+              {
+                "pair": "P09",
+                "grade": "NONE",
+                "reason": "Candidate is none. The isomorphism explains an extra fact and is not what the partition rests on."
+              },
+              {
+                "pair": "P10",
+                "grade": "VARIABLE",
+                "reason": "Keep the electron and positron fixed and use a CPT-violating extension (for example SME coefficients): masses and charge magnitudes can then differ, so the equal-mass, opposite-charge relation changes. The variation does not redefine A or B, though experiment bounds it tightly."
+              },
+              {
+                "pair": "P11",
+                "grade": "NONE",
+                "reason": "Candidate is none. The successor relation is the stated relation itself, and the set encodings are interchangeable realizations."
+              },
+              {
+                "pair": "P12",
+                "grade": "FIXED",
+                "reason": "The transposed dual pairing, with weak duality sandwiching the optimum, is what forces the two optima to be equal. It cannot vary without redefining B as the dual of A, and strong duality is a theorem. The value 2 rests on the shared data instead, which the caps diagnostic shows."
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "critic": "**1. Majority grades that look wrong or inconsistent**\n\n- **P10 gets three grades for one object.** Inside (the Dirac field) is NONE, surrounding (the CPT-invariant vacuum/theory) is FIXED, and bridge (the Dirac field plus CPT) is VARIABLE. The surrounding and bridge candidates are almost the same, yet their majorities flip on 2-1 votes. You cannot vary the field while holding an electron and a positron fixed, because they are its excitations. So FIXED is the consistent grade for all three rows.\n- **P10 bridge contradicts P12 bridge.** Strong duality is a theorem and got FIXED in P12. CPT is also a theorem, for local Lorentz-invariant field theory, so P10 bridge should not be VARIABLE.\n- **P08 width gets two grades.** \"Width = 1\" as an inside candidate got NONE. The surrounding candidate, which explicitly includes \"the word width\", got a unanimous FIXED. By the rubric's own test, width is VARIABLE: keep the values 0 and 1, switch to 2-bit words, and NOT 00 = 11, which is not 01, so the relation breaks.\n- **Context is graded by subject area, not by the test.** P02 surrounding (the medium) got VARIABLE and P08 surrounding (the universe the complement is taken in) got FIXED. Both pass \"vary it with A and B fixed and the relation changes\". The pattern looks like physics gets VARIABLE and math gets FIXED.\n- **P06 surrounding is circular.** \"Universality of free fall\" restates \"they fall with equal acceleration\", so it should be flagged as a restatement rather than graded VARIABLE. P06 surrounding and P06 bridge are also the same candidate offered in two places.\n- **P02 bridge is factually off.** The full Hamiltonian is not parity-invariant: the weak force gives the two enantiomers a tiny energy difference, so \"equal energies\" is only approximately true. None of the judges checked whether a candidate was true.\n- **P07 inside FIXED is too strong.** Containing a copy of itself (being Dedekind-infinite) is necessary but not sufficient: the reals have that property too and are not in bijection with N. The candidate also describes only N, not Z.\n- **Some NONEs are checker misses, not judgments:**\n  - P01 and P09 have the same structure as P08 (a named universe split in two), but neither got a universe candidate. That would be {1..6} for P01 and the six pairs of the complete graph on four vertices for P09.\n  - P01 has parity (n mod 2) as an obvious third.\n  - P04 has the prime factorizations as an inside third: 35 uses {5, 7} and 12 uses {2, 3}, and coprime means those sets share no prime.\n\n**2. Where the judges disagreed and why**\n\n- **The split rows have a pattern.** Only 5 of the 15 real candidates split.\n  - Opus is the lone dissenter in 4 of them (P06 bridge, P08 inside, P10 inside, P10 bridge), always toward FIXED.\n  - Haiku dissents once (P10 surrounding, toward VARIABLE).\n  - Sonnet contradicts itself: FIXED on P10 surrounding, VARIABLE on the nearly identical P10 bridge.\n- **The first underlying question: where do laws of nature go?** The equivalence principle, CPT and parity invariance are neither fixed by definition nor something you can actually vary. The rubric has no slot for them, so judges force them into FIXED or VARIABLE.\n- **The second underlying question: does a shared base count?** For things like the Dirac field or the word width, the judges disagree on whether the relation \"rests on\" them or whether they are only background. Opus reads \"rests on\" broadly; Sonnet and Haiku read it narrowly.\n- **What that means for the majority.** The dissent is systematic, so the majority is not averaging out noise. It just encodes how Sonnet and Haiku read the rubric. A rule such as \"theorem or law of nature goes to FIXED\" or a separate LAW grade would remove most of the splits.\n\n**3. What this test cannot show**\n\n- **Whether the checkers miss real thirds.** 21 of the 36 rows had no candidate, and grading \"none\" as NONE is automatic. Headline unanimity is 31 of 36, but on real candidates it is 10 of 15. Whether a NONE is a true absence or a checker miss is untested (see P01, P04, P09), and only one model (Sonnet) proposed candidates.\n- **Whether the grades are correct.** There are no reference answers, and three Anthropic models agreeing may share one bias. The judges did not check whether a candidate is true (P02 parity), sufficient (P07) or circular (P06, and arguably P12 bridge).\n- **Whether the three places are distinct.** The same candidate shows up in two or three places (P06, P10, P12), so counting hits per place double-counts.\n- **Whether the grades are stable.** This was one run with no repeats, so the 2-1 rows could flip.\n- **Whether it transfers.**\n  - These are 12 textbook pairs with clean answers, which says little about forced thirds in messy text such as replies.\n  - There are no planted controls (a pair with a known real third and a pair with a known absent one), so false-positive and false-negative rates are unmeasured.\n  - P06 inside, where a difference was offered as a third and correctly rejected, is the only near-control, and it is one data point."
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Place"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Judge"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Critic"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "place:surrounding",
+      "phaseIndex": 1,
+      "phaseTitle": "Place",
+      "agentId": "a8c1011eef168bc95",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531363529,
+      "queuedAt": 1793531363493,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are searching pairs of things for a real third element, in one place only.\n\nThe place: SURROUNDING: the container, context, frame, medium or system that the pair sits in (what is around A and B).\n\nFor each of the 12 pairs below, name the strongest candidate third in this place only. Rules:\n- Do not restate A, B or the stated relation and call it a third.\n- A forced third is a failure. If nothi…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531485478,
+      "tokens": 52402,
+      "toolCalls": 1,
+      "durationMs": 121948,
+      "resultPreview": "{\"candidates\":[{\"pair\":\"P01\",\"third\":\"none\",\"why\":\"Disjointness and the union are fixed by the members of A and B alone. The only surrounding available is the universe {1..6}, and the stated relation already names it as the union, so naming it again would restate the relation.\",\"vary_test\":\"Enlarge the ambient universe to {1..10}. A and B are unchanged, they stay disjoint, and their union stays {1…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "place:inside",
+      "phaseIndex": 1,
+      "phaseTitle": "Place",
+      "agentId": "a4a4412e7cca646e3",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531363529,
+      "queuedAt": 1793531363493,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are searching pairs of things for a real third element, in one place only.\n\nThe place: INSIDE: what A and B are made of, their parts or internal structure (what is within A and B).\n\nFor each of the 12 pairs below, name the strongest candidate third in this place only. Rules:\n- Do not restate A, B or the stated relation and call it a third.\n- A forced third is a failure. If nothing real exists …",
+      "promptFramed": true,
+      "lastProgressAt": 1793531591199,
+      "tokens": 52400,
+      "toolCalls": 1,
+      "durationMs": 224588,
+      "resultPreview": "{\"candidates\":[{\"pair\":\"P01\",\"third\":\"none\",\"why\":\"The only inside content is the six elements, and those are A and B themselves. Disjointness and the union are element-by-element membership facts, so nothing is left over for a third to hold. The even/odd pattern is a description of the grouping, not a part the relation rests on.\",\"vary_test\":\"The parity rule can be dropped or redescribed (rename …"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "place:bridge",
+      "phaseIndex": 1,
+      "phaseTitle": "Place",
+      "agentId": "a4d670fe8dab89753",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531363529,
+      "queuedAt": 1793531363493,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are searching pairs of things for a real third element, in one place only.\n\nThe place: BRIDGE: what carries or conducts the relation between A and B, a conduit between them. It must be something other than A, B and the bare relation itself. (Think of each thing as a conduit between its own surrounding and its inside, and look for what connects A to B.)\n\nFor each of the 12 pairs below, name the…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531516734,
+      "tokens": 52452,
+      "toolCalls": 1,
+      "durationMs": 150122,
+      "resultPreview": "{\"candidates\":[{\"pair\":\"P01\",\"third\":\"none\",\"why\":\"Disjointness and the exhaustive union are properties of the two extensions {2,4,6} and {1,3,5}. Nothing travels between them, so there is no medium, process or agency that carries the relation. The nearest miss is the parity map n -> n mod 2 on {1..6}, whose two fibres are A and B. That map is one description of A and B, not something the relation…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 4,
+      "label": "judge:surrounding:opus",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "a6a98f1d75c6d20b3",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793531488076,
+      "queuedAt": 1793531488029,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: SURROUNDING: the container, context, frame, medium or system that the pair sits in (what is around A and B).\n\nGrade every candidate with exactly one grade:\n- VARIABLE: a real third that, varied while A and B stay exactly as stated, changes the stated relation. You must…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531520049,
+      "tokens": 54930,
+      "toolCalls": 1,
+      "durationMs": 31972,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"Disjointness and the union follow from the listed members alone. Enlarging the ambient universe leaves the stated relation unchanged, so no surrounding enters.\"},{\"pair\":\"P02\",\"grade\":\"VARIABLE\",\"reason\":\"This is a real variation. Keep (R) and (S) exactly as they are and put both in a single-enantiomer solvent or on a chiral stationary phase. The i…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 5,
+      "label": "judge:surrounding:sonnet",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "af682bbe27b1b6a90",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531488076,
+      "queuedAt": 1793531488030,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: SURROUNDING: the container, context, frame, medium or system that the pair sits in (what is around A and B).\n\nGrade every candidate with exactly one grade:\n- VARIABLE: a real third that, varied while A and B stay exactly as stated, changes the stated relation. You must…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531542512,
+      "tokens": 54936,
+      "toolCalls": 1,
+      "durationMs": 54435,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"No third. Disjointness and the union follow from the members of A and B, and the universe is already named as their union.\"},{\"pair\":\"P02\",\"grade\":\"VARIABLE\",\"reason\":\"Environmental chirality is a real surround. With A=(R) and B=(S) held exactly, a chiral solvent, stationary phase or chiral field makes the interactions diastereomeric, so energies a…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 6,
+      "label": "judge:surrounding:haiku",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "aa6eb7c6191606161",
+      "model": "claude-haiku-5-5",
+      "state": "done",
+      "startedAt": 1793531488076,
+      "queuedAt": 1793531488031,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: SURROUNDING: the container, context, frame, medium or system that the pair sits in (what is around A and B).\n\nGrade every candidate with exactly one grade:\n- VARIABLE: a real third that, varied while A and B stay exactly as stated, changes the stated relation. You must…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531553512,
+      "tokens": 54928,
+      "toolCalls": 1,
+      "durationMs": 65434,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"No candidate third was proposed (candidate is 'none'), so there is nothing to grade.\"},{\"pair\":\"P02\",\"grade\":\"VARIABLE\",\"reason\":\"The chirality of the surrounding medium is a real third. Keeping A as (R) and B as (S) and placing them in a single-enantiomer solvent or chiral stationary phase makes their solvation energies and volatilities diastereom…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 7,
+      "label": "judge:bridge:opus",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "ae6e808be054f3d2d",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793531518961,
+      "queuedAt": 1793531518955,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: BRIDGE: what carries or conducts the relation between A and B, a conduit between them. It must be something other than A, B and the bare relation itself. (Think of each thing as a conduit between its own surrounding and its inside, and look for what connects A to B.)\n\n…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531692623,
+      "tokens": 55435,
+      "toolCalls": 1,
+      "durationMs": 173661,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"The candidate is none. Disjointness and the exhaustive union are properties of the two extensions. The parity map only describes A and B; varying it either leaves the relation untouched or redefines the sets. No real third was missed.\"},{\"pair\":\"P02\",\"grade\":\"VARIABLE\",\"reason\":\"The molecular interaction law is a real third, distinct from the two m…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 8,
+      "label": "judge:bridge:sonnet",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "a956111d28556f666",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531518962,
+      "queuedAt": 1793531518956,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: BRIDGE: what carries or conducts the relation between A and B, a conduit between them. It must be something other than A, B and the bare relation itself. (Think of each thing as a conduit between its own surrounding and its inside, and look for what connects A to B.)\n\n…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531542329,
+      "tokens": 55445,
+      "toolCalls": 1,
+      "durationMs": 23365,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"Candidate is 'none'. Disjointness and the exhaustive union are properties of the two extensions. The parity map is only another description of A and B.\"},{\"pair\":\"P02\",\"grade\":\"VARIABLE\",\"reason\":\"The parity-invariant interaction law is a real third. With R and S unchanged, adding the weak parity-violating term makes the energies differ slightly, s…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 9,
+      "label": "judge:bridge:haiku",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "a6d31b4d22e6642e6",
+      "model": "claude-haiku-5-5",
+      "state": "done",
+      "startedAt": 1793531522230,
+      "queuedAt": 1793531518956,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: BRIDGE: what carries or conducts the relation between A and B, a conduit between them. It must be something other than A, B and the bare relation itself. (Think of each thing as a conduit between its own surrounding and its inside, and look for what connects A to B.)\n\n…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531667003,
+      "tokens": 55436,
+      "toolCalls": 1,
+      "durationMs": 144772,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"Candidate is none. The disjointness and exhaustive union are properties of the two extensions, and no conduit carries them.\"},{\"pair\":\"P02\",\"grade\":\"VARIABLE\",\"reason\":\"Keep R and S fixed and add a parity-violating weak term to the molecular interaction law: the two energies then differ slightly, so equal becomes almost equal. Rescaling the EM coup…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 10,
+      "label": "judge:inside:opus",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "a09072f95d8b39eee",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793531593466,
+      "queuedAt": 1793531593449,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: INSIDE: what A and B are made of, their parts or internal structure (what is within A and B).\n\nGrade every candidate with exactly one grade:\n- VARIABLE: a real third that, varied while A and B stay exactly as stated, changes the stated relation. You must be able to nam…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531648344,
+      "tokens": 55751,
+      "toolCalls": 1,
+      "durationMs": 54877,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"The candidate is none. Disjointness and the union rest only on the six elements, which are A and B themselves. The parity pattern is just a description of the grouping.\"},{\"pair\":\"P02\",\"grade\":\"FIXED\",\"reason\":\"The shared interatomic distance matrix is real internal structure, and equal energies and boiling points rest on it being shared. It cannot…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 11,
+      "label": "judge:inside:sonnet",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "a4b39438b4679415f",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531593466,
+      "queuedAt": 1793531593450,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: INSIDE: what A and B are made of, their parts or internal structure (what is within A and B).\n\nGrade every candidate with exactly one grade:\n- VARIABLE: a real third that, varied while A and B stay exactly as stated, changes the stated relation. You must be able to nam…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531681637,
+      "tokens": 55757,
+      "toolCalls": 1,
+      "durationMs": 88168,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"Candidate is none. Disjointness and the union are element-by-element membership facts, so nothing is left over for a third.\"},{\"pair\":\"P02\",\"grade\":\"FIXED\",\"reason\":\"The shared distance matrix is real inside structure, and equal energy and boiling point follow from it. It is held fixed by 'mirror image'. Changing it in one enantiomer breaks the pai…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 12,
+      "label": "judge:inside:haiku",
+      "phaseIndex": 2,
+      "phaseTitle": "Judge",
+      "agentId": "a00082550f8e26411",
+      "model": "claude-haiku-5-5",
+      "state": "done",
+      "startedAt": 1793531593466,
+      "queuedAt": 1793531593450,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "You are a strict judge. Each item is a pair of things (A, B, stated relation) and a candidate third someone proposed in one place: INSIDE: what A and B are made of, their parts or internal structure (what is within A and B).\n\nGrade every candidate with exactly one grade:\n- VARIABLE: a real third that, varied while A and B stay exactly as stated, changes the stated relation. You must be able to nam…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531707627,
+      "tokens": 55750,
+      "toolCalls": 1,
+      "durationMs": 114157,
+      "resultPreview": "{\"grades\":[{\"pair\":\"P01\",\"grade\":\"NONE\",\"reason\":\"No candidate was proposed. The only inside content is the six elements, which are A and B themselves, so no third is left over.\"},{\"pair\":\"P02\",\"grade\":\"FIXED\",\"reason\":\"The shared interatomic distance matrix lies inside both molecules, and the mirror relation and equal energies rest on it. It is held fixed by the definition of mirror image. Changi…"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 13,
+      "label": "critic",
+      "phaseIndex": 3,
+      "phaseTitle": "Critic",
+      "agentId": "a0cad9cf7f2fccc62",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793531709650,
+      "queuedAt": 1793531709646,
+      "attempt": 1,
+      "promptPreview": "A test searched 12 pairs for a third in three places (surrounding, inside, bridge). Sonnet checkers proposed candidates; three judges (Opus, Sonnet, Haiku) graded each VARIABLE (varying it with A and B fixed changes the relation), FIXED (the relation rests on it but it is fixed by definition), or NONE.\n\nFull table (pair | place | candidate | three judge grades | majority):\nP01 | surrounding | none…",
+      "promptFramed": true,
+      "lastProgressAt": 1793531813446,
+      "tokens": 53883,
+      "toolCalls": 0,
+      "durationMs": 103795,
+      "resultPreview": "**1. Majority grades that look wrong or inconsistent**\n\n- **P10 gets three grades for one object.** Inside (the Dirac field) is NONE, surrounding (the CPT-invariant vacuum/theory) is FIXED, and bridge (the Dirac field plus CPT) is VARIABLE. The surrounding and bridge candidates are almost the same, yet their majorities flip on 2-1 votes. You cannot vary the field while holding an electron and a po…"
+    }
+  ],
+  "totalTokens": 709505,
+  "totalToolCalls": 12
+}

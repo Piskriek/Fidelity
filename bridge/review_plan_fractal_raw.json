@@ -1,0 +1,365 @@
+[
+ {
+  "findings": [
+   {
+    "quote": "## Decisions waiting on the owner",
+    "problem": "The list has six items (B-1, B-2, B-3, C-1, C-2, A-1). The senses scout (scout_fractal_raw.json, scout 3, gaps OWNER 1-10) names ten owner rulings. It says OWNER 1-5 must come before any sense is built, and OWNER 6-10 bear on the senses that use them. Missing from the plan: whether a being can remember its last fruit (OWNER 2); whether a being is told when the season turns (OWNER 3); who may watch whom and whether looking costs anything (OWNER 4); whether another being's fainting or poisoning enters one's surprise (OWNER 5); inner state versus outward facts (OWNER 6); whether groups exist (OWNER 7); who answers an ask from above (OWNER 8); who may widen a sense (OWNER 9); the open value questions (OWNER 10). The owner would meet these mid-build.",
+    "fix": "Add a block 'Rulings needed before any sense is built', numbered in the scout's order and each one a plain question: C-3 'Can a being remember what each fruit did to it last time?' C-4 'Should a being be told when the season turns, or should the turn stay unannounced, as now?' C-5 'Can a being see what others eat and how they fare, by default, or only when the other gives and the watcher asks? Does looking cost anything?' C-6 'Should one being's fainting or poisoning change another being's surprise? (Scout recommends no.)' C-7 'Should beings sense only what is in front of them, or also their own predictions?' C-8 'Do groups exist here: a triad, a four-ball, an open seat for a wanderer?' C-9 'When a being asks for help, who answers, and does asking cost anything?' C-10 'Can a being's senses widen only by its own higher self's choice, as its intensity can only go down?' C-11 'What counts as better for a being, how much a thing is worth when a being needs it, and how a faint is scored when pain is off?' Mark each 'no recommendation yet' unless a scout gives one. State that C-1 and C-3 to C-6 gate the first sense.",
+    "severity": "missing"
+   },
+   {
+    "quote": "starts now. It needs no decision.",
+    "problem": "The plan says when each track starts but not what the owner will see first, or in what order. The only owner-facing output named is 'a new bulletin' written by 'the PR translator', which is not defined and not placed anywhere. Track B has no step the owner is asked to see before scoring. The one thing the owner can see first (the board fixes) is not called out.",
+    "fix": "Add near the top, in steps and not dates: 'What you will see, in order: (1) the five board fixes (Track A step 1), no decision needed; (2) a sample thought file from world 31000 that you can open (Track A step 2); (3) the lens brief and a first draw for you to look at (Track A steps 3-4); (4) the pass rules for Track B, which you can read before any life runs (Track B step 3); (5) the headroom probe report, which you read before answering C-2 (Track C step 2); (6) your own pass test of the lens (Track A step 5).' Then say where each bulletin is posted, and what the translator is.",
+    "severity": "missing"
+   },
+   {
+    "quote": "The mind is already fractal, in a ladder of four",
+    "problem": "The plan says 'a ladder of four' and then lists three rungs. The facts sheet (scout 3, facts 3) says only rungs 0-2 exist; a fourth step is that scout's own arithmetic extension. The handoff lists a season-scale node only as a proposed nursery v2 change. The owner will count three and be right. Track A step 4 repeats the error ('holons in a ladder of four').",
+    "fix": "Replace with: 'The mind already has three rungs, each updating four times more slowly than the one below: every token, every tick, and every four ticks. A season (384 to 640 ticks) is 96 to 160 times the slowest rung's interval. A rung that spans a season does not exist yet; it is a proposed change (nursery v2).' In Track A step 4, replace 'holons in a ladder of four' with 'holons in the three-rung ladder', or name the fourth rung the arena should build.",
+    "severity": "wrong"
+   },
+   {
+    "quote": "the last test before \"evolved\"",
+    "problem": "The header and the first line of Track B are the owner's entry point, and both use terms with no plain meaning nearby: 'E3', 'evolved', 'the learners', 'advantage', 'a changing world'. The owner cannot tell what the test asks or why it is the last one.",
+    "fix": "Header: '## Track B: E3, the still-world test (the last check before the project may say 'evolved')'. First line: 'E3 asks: when the fruit rules stop changing, do the learning beings still beat their frozen copies? If they still lead, learning pays even in a still world. If the lead vanishes, the lead needed change.' Add one sentence: 'Evolved' names the claim that learning gives these beings a real edge; the handoff does not allow that claim until E2 and E3 hold.",
+    "severity": "missing"
+   },
+   {
+    "quote": "This is preset-only: a season longer than a life.",
+    "problem": "B-1 is the owner's first decision and is written in build terms: 'preset-only', 'readout window', 'F_stat', 'L_stat', 'disclosed departure', 'a default-off flag in world/valleys.mjs'. The owner cannot tell what each route would show or cost, and the plan never says why the choice matters to the question (does learning help in a still world?).",
+    "fix": "Replace the two route paragraphs with: 'Route A: each life gets its own fruit rules, fixed inside that life and different from life to life. No change to the world's code. Scoring stops splitting at season boundaries, which the design does; we must say so. The frozen beings cannot know a new life's rules, but the learning beings can work them out inside one life, so the test shows whether learning helps even when nothing changes. Route B: every life uses the same fruit rules, as the design says. It needs an edit to the world's rules and a full re-test. The frozen beings already hold those rules, so the test may be unable to show any difference. Recommended: Route A, stated openly as a departure from the design.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "fix it now by a hash rule (the critique), not as a tunable",
+    "problem": "B-2 and B-3 are unanswerable as written. 'Hash rule' and 'tunable' are undefined. B-3 asks the owner to add 'the missing \"L_stat behind F_stat\" branch and per-seed conditions' and to decide on F2_stat 'so the stationary world gets its own noise floor'. These are scoring rules, not choices the owner can weigh.",
+    "fix": "B-2 becomes: 'Lock the fruit table now with a fixed formula (a hash rule), so nobody can tune it to win after seeing results. Recommended: yes.' B-3 becomes: 'Before the run, write down what counts as a win, including the case where the learners do worse than the frozen beings (the rules have no line for that case yet). Also decide whether to add a second frozen group for this world, so its normal chance variation is measured (F2_stat). Recommended: yes to both.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "New observation tokens, so a new nursery, and E1–E3 re-run in the new world.",
+    "problem": "C-1 is the first decision on Track C, and it has no cost and no recommendation. Reading (a) gives a cost in words that the owner cannot compare; readings (b) and (c) give no cost at all. 'Stage-3' in (c) is undefined. The measured cost of a nursery (about 25 minutes for three seeds run together, from the logs) is not in the plan.",
+    "fix": "Give each reading one plain line with its cost: '(a) The beings get new senses; the world stays the same. The minds are retrained (measured: about 25 minutes for three training seeds run together), and the three tests are re-run.' '(b) Fruit comes in patterns that repeat at 4, 16 and 64 ticks, so the slower layers of the mind have a pattern to read. This changes the world itself.' '(c) Each being sees the space around it: near things in detail, far things blurred. This changes the world itself.' Define or drop 'stage-3'. Add the scouts' order: a sense the owner approves comes first; a change to the world waits for the owner's confirmation.",
+    "severity": "missing"
+   },
+   {
+    "quote": "Answer CE is 0.310 with no memory and 0.025 with the last outcome per kind; the trunk is at 0.320–0.343",
+    "problem": "The row's key evidence is in lab terms: 'answer CE', 'trunk', with no direction. The reader cannot tell that lower is better, or that the shared trained part of the current minds (0.320-0.343) guesses slightly worse than a simple count with no memory (0.310). That is the most important number for the owner's question about senses, and the plan hides it. 'Cells' in the Finer body row is also undefined.",
+    "fix": "Replace with: 'How well a being guesses the next answer (lower is better): 0.310 with no memory of past fruit; 0.025 if it remembers what each fruit kind did last time. The shared trained part of the current minds scores 0.320 to 0.343, slightly worse than no memory at all.' For 'A small measured payoff: 8 of 904 cells', define 'cells' in one clause or drop the figure.",
+    "severity": "missing"
+   },
+   {
+    "quote": "celebrate the climb back",
+    "problem": "Step 5 says 'with pass rules written first', but the three items are goals, not rules. 'Guess the being's next choice' has no pass value, and 'celebrate the climb back' cannot be checked. As written, anyone can say the owner's compassion test was passed.",
+    "fix": "Replace the three items with: '- You guess the being's next choice (eat, pass or rest) more often than 1 time in 3, the rate of guessing at random.' '- After a season turns, write the tick count before the test by which the surprise number is back to its usual level. The v1a runs measured the fruit guesses: worse right after a turn, better from 128 ticks on. Use that as the reference, and say which measure the lens shows.' '- Replace 'celebrate the climb back' with a number the lens already shows (the awake share, if A-1 is yes), and write the value that counts as a pass before the test.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "which senses first. Recommended: the kind trace and the witness, after the headroom probes.",
+    "problem": "The recommendation depends on a result the owner has not yet seen. The probes that rank the senses are step 2 of this track, which can start now. Asking now means approving a ranking that has not run. 'Headroom probe' is also undefined.",
+    "fix": "'C-2 Which sense first? Answer after the headroom probe report (Track C, step 2). The probe is a quick check, with no training, of how much each sense would help the beings guess. The plan's current lean: the kind trace and the witness.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "Stop the stream on 5199, which this work started.",
+    "problem": "Step 6 stops the the host game stream that the owner has praised ('looks awesome') and hands the 5198 view to 'the twin', with no decision in the list. 'The twin' is undefined in the plan; HANDOFF names it as the other the host game work on port 5200.",
+    "fix": "Add a decision: 'C-12 Stop the the host game stream on 5199 once the lens shows a life? Your 5198 watch view keeps running unless you stop it. Your call.' Replace 'the twin' with 'the other the host game session (port 5200)'. If 'retire as the main view' means moving the host game to a second page you can still open, say that.",
+    "severity": "missing"
+   },
+   {
+    "quote": "**B-4, regime checks** in the stationary world: compute the reference minds on the stationary preset.",
+    "problem": "B-4 sits under 'Owner decisions first' but it is a task the team runs, not a question for the owner. It is missing from 'Decisions waiting on the owner', so the owner cannot tell whether it needs an answer.",
+    "fix": "Move B-4 into the build steps after 'Build in a copy tree', or reword it as a question: 'Should the stationary world's reference minds be checked before any counted run? Recommended: yes.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "Felt pain is off, by the owner's ruling.",
+    "problem": "The owner's ruling is that felt pain is a higher-self choice, never a setting, and that intensity only goes down. 'Off' reads as a switch, which the ruling forbids. The next sentence, 'show surprise and relief, never pain', could also be read as hiding the world's harms (toxic fruit, hunger, fainting), which the owner needs to see in order to feel compassion. The scouts recommend showing the engine's pain apart as a world fact.",
+    "fix": "Replace with: 'In this build the beings do not feel pain. By the owner's ruling, felt pain is a higher-self choice, never a setting.' Replace 'show surprise and relief, never pain' with: 'Show the being's surprise and relief. Show the world's harms (toxic fruit, hunger, fainting) as world facts, labelled as the world's, never as the being's pain.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "We can see the season turn; the being can't, and it finds out by being surprised.",
+    "problem": "True only while the season stays unannounced. Track C's candidate 'Season weather' and scout OWNER 3 ('announce the season') would change it, and the plan does not say so. If the owner chooses to announce the season, the lens would be showing a gap that no longer exists.",
+    "fix": "Change to: 'While the season stays unannounced (decision C-4), we can see the season turn; the being can't, and it finds out by being surprised. If C-4 says the season is announced, the lens must show that the being knows the turn.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "They pick by weighing those guesses with their wants table",
+    "problem": "'Wants table' is undefined, and the lens brief (step 3) does not label it. Per scout 2, the wants are set for the highest intensity (2), but every being is at intensity 1 for at least 75% of its life. A lens that shows 'what it wants' without a label shows something the being does not experience at the rate shown, which breaks the 'a lens never lies' rule.",
+    "fix": "Define once: 'the wants table is the fixed weights that say how much each outcome is worth to the being.' Add a row to step 3's mapping table: 'what it wants: the design's fixed weights, set for the highest intensity; not felt; beings are at a lower intensity for most of their lives.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "how faints should show as an up-is-good number",
+    "problem": "The owner cannot answer this as worded: 'up-is-good' and 'faints' are board terms, and the plan does not say what the two options look like. The recommendation sits in the next sentence.",
+    "fix": "'A-1 Should the board show share of time awake (up is good) in place of a faint count (up is bad)? Recommended: yes.'",
+    "severity": "minor"
+   },
+   {
+    "quote": "Each tick, one observation token",
+    "problem": "Terms with no plain meaning nearby, so the owner cannot check the plan from its text: 'tick' and 'token' (never defined); 'NGE' (in the checks only; the scout's definition is 100 x (nourishing eats minus toxic eats) divided by the times a fruit was in front of the being, which the page calls 'per 100 times a fruit was there'); 'the season, table' (which fruit kinds are safe each season); 'Skill Step 0.8' and 'the Skill's first real use'; 'K5 = 0'; 'the lede'; 'in-flight verdict calls'; 'four-ball'; 'PR translator'; 'Tier 1' and 'Tier 2'; 'stage-3'; 'cells'; 'pre-register'. The lede item in Track A step 1 is folded in here.",
+    "fix": "Add a short glossary at the top, or define each on first use: tick = one step of the world's clock (a life is 16,384 ticks); token = one symbol the being is shown each tick; NGE = nourishing eats minus toxic eats, per 100 times a fruit was in front of the being; table = which fruit kinds are safe and nourishing in each season; pre-register = write the pass rules down, with their numbers, before the run; K5 = a built-in check the runner reports every tick, which must read 0. Replace 'the lede' with 'the opening sentence', and 'in-flight verdict calls' with 'the live win calls made while lives are still running'. Define or name 'PR translator'. Move Tier 1, Tier 2, Skill step numbers and hash steps into a separate builder section, so the owner's part reads on its own.",
+    "severity": "missing"
+   }
+  ],
+  "note": "Read as the owner (a non-programmer who wants to feel the beings' point of view and to see progress). Checked every quoted string against PLAN_FRACTAL.md: all match exactly once. Checked the plan's claims against scout_fractal_raw.json: the rung count (scout 3, facts 3: only rungs 0-2 exist), the NGE definition (scout 0, facts 7), the trained trunk's answer CE of 0.320-0.343 against 0.310 (scout 1, gaps), and the owner rulings OWNER 1-10 (scout 3, gaps). Also used HANDOFF.md for the 128-tick v1a fit figure, the 16,384-tick life, nursery v2's season node, and the port 5200 twin. Per finding I ran the 3/6/9 check (the thing, its opposite, the test between them). The 'never pain' ambiguity is folded into the felt-pain finding, and the 'lede' item into the glossary finding. Nothing was dropped outright. Not verified: the board in a browser, and what 'PR translator' and K5 are in the code. No files were edited."
+ },
+ {
+  "findings": [
+   {
+    "quote": "in a ladder of four: rung 0 reads 2 tokens, rung 1 fires every tick, and rung 2 fires every 4 ticks (PLAN line 28); also \"holons in a ladder of four\" (line 58)",
+    "problem": "The mind has three rungs, not four. live.mjs:87-89 sets k 2, span1 4, span2 16, fan 4; grep finds no rung 3; scout 3.3 says only rungs 0-2 exist. The arena brief would describe a fourth rung that does not exist.",
+    "fix": "Replace with \"a ladder of three rungs with ratio 4\" (rung 0 reads 2 tokens; rung 1 every 4 tokens, one tick; rung 2 every 16 tokens, four ticks) in both places.",
+    "severity": "wrong"
+   },
+   {
+    "quote": "Answer CE is 0.310 with no memory and 0.025 with the last outcome per kind; the trunk is at 0.320–0.343. (PLAN line 101, and the C-2 recommendation at line 121 rests on it)",
+    "problem": "0.025 assumes last-outcome memory with no limit on reach. NURSERY_RESULTS.md:35 gives 0.1895 when the outcome is kept only inside the trunk's feed-forward reach, and scout 3.5 says only 40.5% of eats have the outcome in reach. The plan does not name a delivery route that could carry memory beyond reach (a side vector, scout 3.4 route c), so the 0.025 headroom is not attainable as written.",
+    "fix": "Cite both numbers with their source (NURSERY_RESULTS.md:35 and :38). State that 0.025 needs a route outside the trunk's reach. Have the Track C headroom probe measure the in-reach case as well, before C-2 is recommended.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "the lede says 192 lives, where the data says 240 (PLAN line 35); \"guess right\" should be \"how sure it was of the true answer\" (line 36)",
+    "problem": "The current lens2/index.html (mtime 07:50:51, after PLAN_FRACTAL.md at 07:49) already has both fixes. The tech and lay ledes (lines 94, 95) use <span class=\"totalLives\">240</span>, filled from d.total at line 343. The race card (line 131) reads \"How sure they were of what really happened\", and the phrase \"guess right\" is absent. Item 1 is partly stale and may conflict with a parallel edit.",
+    "fix": "Re-read lens2/index.html before any edit. Drop the two items already done and re-check the rest against the current text.",
+    "severity": "wrong"
+   },
+   {
+    "quote": "the win line is described as 'decided before the race', when only the rule was decided (PLAN line 39)",
+    "problem": "The quoted phrase is not on the page. Lay note line 106 reads \"Its rule was set before the race\", and line 116 says the same. The page already says the height comes from the pairs so far, so the claimed defect is mostly a misquote.",
+    "fix": "Quote the real text, or drop this bullet unless the owner wants an explicit note that the win value is recomputed as pairs finish.",
+    "severity": "wrong"
+   },
+   {
+    "quote": "the in-flight verdict calls are the page's own reading, not registered results (PLAN line 38); \"'every number goes up' conflicts with the faint counter\" (line 37)",
+    "problem": "The page already says both things. Lay note line 106: \"Calls like 'heading for a clear win' are this page's own reading ... only the final verdict follows the registered rule\"; tech line 104: \"This is a running estimate\". Lines 94 and 95 already say \"except faints, where fewer is better\". The open defect is that faints is a down-is-good count, which HANDOFF.md:74 forbids, and possibly the verdict-card text at lines 196 and 288 lacks the note.",
+    "fix": "Rewrite these two bullets to name the open defects: the faint count against the up-is-good rule (decision A-1), and any verdict-card line without the disclosure (lines 196, 288).",
+    "severity": "minor"
+   },
+   {
+    "quote": "Half the minds never learn after they are born (index.html line 95, lay lede). Not in PLAN item 1, which claims to list the five places.",
+    "problem": "There are five arms, and two are frozen (F and F2, index.html:155-159), so two of five never learn. The lay board says \"Half\", which is false, and the plan's list omits it.",
+    "fix": "Add to item 1: replace \"Half the minds\" with \"Two of the five minds\" (index.html:95).",
+    "severity": "missing"
+   },
+   {
+    "quote": "relearn (index.html lines 123, 128, 129 and 187, per scout 0.12): \"until they relearn\", \"then catch up again\", \"Its fruit knowledge went stale\"",
+    "problem": "HANDOFF.md:25 says relearning is an inference, not tested. The board states it as fact. The plan's item 1 does not list it, though item 1 is about claims that do not trace to a number.",
+    "fix": "Add to item 1: state the measured facts (eat-fruit CE 2.46 against 1.11 right after a turn, 0.59 against 0.95 from 128 ticks, from HANDOFF.md:25) and label relearning an inference.",
+    "severity": "missing"
+   },
+   {
+    "quote": "**Replay is exact.** (PLAN line 27)",
+    "problem": "Scout 2.21's laptop replay of scored L s1 w101 matched the chain, NGE and all 640 integer fields. But ceAnswer differs in the last digit, and 58 of 128 window score floats are not bit-equal (max relative difference 6.2e-16). The plan's own next sentence says some floats differed, so the headline overclaims.",
+    "fix": "\"The discrete life replays exactly. Floats agree only to about 1e-15 across machines and are bit-equal only on the machine that made the record.\"",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The engine's pain is bookkeeping the minds never see. (PLAN line 25)",
+    "problem": "live.mjs:994-1000 builds the wants table as preset gain minus pain per answer at the default intensity 2. The minds' choices therefore carry pain-derived weights, which never follow the drop to intensity 1 (scout 2.6). Pain is not felt, but it does shape choices, and the lens must not present those choices as pain-free.",
+    "fix": "\"Felt pain is off. The choice weights are preset gain minus pain at intensity 2, fixed for the life (live.mjs:994-1000); the lens must not show choices as free of pain.\"",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "v1a and v1b both ran their review after launch. (PLAN line 86)",
+    "problem": "PREREG_bridge_v1a.md:133-135 (Amendment 1) records a pre-run review by four reviewers that confirmed eight findings, \"before any of the 192 runs exists\". The after-launch reviews were the v1a runner review (RUNLOG_bridge.txt:44, 20:19:57Z; the worker started at 20:05:41, mind/runs/v1a/RUNLOG.txt:1) and the v1b Haiku triad (PREREG_bridge_v1b.md:86).",
+    "fix": "State those three reviews precisely. Cite BRIDGE_DESIGN.md:543-552 (§6.7), which already requires \"a fresh code review before launch\", as the rule step 3 follows.",
+    "severity": "wrong"
+   },
+   {
+    "quote": "Decisions waiting on the owner (PLAN lines 115-122) and \"Track B: starts once B-1 to B-3 are answered.\" (line 127)",
+    "problem": "B-4 (line 81, regime checks: compute the reference minds on the stationary preset) is missing from both the decision list and the start condition. Step 3's pre-registration needs it. It implies 64 reference runs (4 minds x 16 worlds, scout 1.9), which no step schedules.",
+    "fix": "Add B-4 to the decision list and the start condition. Add the 64 reference runs to step 4, or state explicitly that B-4 is dropped.",
+    "severity": "missing"
+   },
+   {
+    "quote": "1. Build in a copy tree, so every locked file in the main tree stays byte-identical. Give the stationary preset its own file. (PLAN line 84)",
+    "problem": "The filename valleys_v1.json is read at nursery.mjs:165 and live.mjs:175, and the live runner's startup reads it again at live.mjs:1039 (verified by grep). make_live.mjs:10 pins nursery.mjs by hash afaa90a8, so editing it changes the generator's check. The scorer's trunk-name check rejects W0stat names, and its reference runs use the seasonal preset (scout 1.27; score_bridge_v1b.mjs:34-35, 45-48). None of this appears in step 1.",
+    "fix": "Add an explicit list to step 1: each file changed in the copy tree with its new hash, the preset path change in each loader, and the scorer changes, all before step 2 starts.",
+    "severity": "missing"
+   },
+   {
+    "quote": "**B-2, table seed:** fix it now by a hash rule (the critique), not as a tunable. Recommended. (PLAN line 79)",
+    "problem": "Under Route A, which the plan recommends (line 78), there is no separate table seed. The table is drawn from each world's seed (valleys.mjs:21-32, seasonTable(P, seed, s)), and the 20 nursery tables are the 20 world seeds. The table-seed tunable (BRIDGE_DESIGN.md:548) exists only under Route B.",
+    "fix": "Make B-2 apply only under Route B, or define what the table seed is under Route A.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Train W0stat seeds 1–3 with a new worker (PLAN line 85) and \"floats are bit-equal when replayed on the machine that made the record\" (line 50)",
+    "problem": "HANDOFF.md:75 requires below-normal priority and a /tmp/worker.lock check on the PC. Grep of mind/run_worker_*.mjs finds neither (scout 1.28, confirmed by grep). The Track A float check can only run on the PC, and no step schedules it there.",
+    "fix": "Add a step: check the lock and set priority before each PC launch, or add both to the copy-tree worker. Schedule the Track A float check on the PC.",
+    "severity": "missing"
+   },
+   {
+    "quote": "**Track A, steps 1–3:** starts now. It needs no decision. (PLAN line 126), with step 3's \"a mapping table from each visual property to its record field\" (line 55)",
+    "problem": "The record fields are defined by step 2's thought recorder, which is not built yet. Step 3 cannot check fields that do not exist, and step 4's sample file needs step 2 finished. The claim that steps 1-3 can start now is therefore wrong for step 3.",
+    "fix": "Say that step 3 uses a draft schema from the scouts' field list (scout 2.2-2.20), re-checked after step 2's first 512-tick run on world 31000.",
+    "severity": "missing"
+   },
+   {
+    "quote": "The bridge code is public in the repository, so they can read it. (PLAN line 58)",
+    "problem": "D:/fidelity-llm is not a git repository in this checkout, so its public status cannot be checked here. HANDOFF.md:77 says only that pushes go to one branch after a privacy scan. Sending the code to the arena is internal, but \"public\" is not established.",
+    "fix": "Remove \"public\", or cite the pushed commit after the privacy scan.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Stop the stream on 5199, which this work started. The watch view on 5198 is the owner's and the twin's to stop. (PLAN line 68)",
+    "problem": "HANDOFF.md:75 says \"Our host game dev server is on 5199 (the F: copy)\". the host-game map (kept privately):28 and :411 attribute the 5199 server to a peer's message and say its author did not touch it. The plan says \"stream\" where HANDOFF says \"dev server\". No bridge file mentions 5198, and <private path> does not exist at this check.",
+    "fix": "Before any stop, confirm with the owner which process on which machine, and who started it. Use the same word (stream or dev server) in both places.",
+    "severity": "overclaim"
+   }
+  ],
+  "note": "Lens: facts. I read PLAN_FRACTAL.md and HANDOFF.md in full, and the four scout reports in full via their persisted dumps (the raw JSON was searched, not read whole). I then checked the important claims against code and records: lens2/index.html (current text and mtime), world/valleys.mjs and preset/valleys_v1.json (season logic; no test or code reads minLength or lengthSpan except valleys.mjs:21, so Route A needs no code change, only a new preset file), mind/live.mjs and nursery.mjs (preset loaders, wantsTable, rung spans), mind/make_live.mjs (nursery hash pin), NURSERY_RESULTS.md (0.3097, 0.1895, 0.0251), the v1a/v1b RUNLOG and PREREG review records, BRIDGE_DESIGN.md §6.4 and §6.7, HANDOFF.md, and the host-game map (kept privately). Verified as matching the plan: 240 lives (192 + 48), season 384 + hash mod 257, 101 observation tokens, the 58.1% and 40.5% figures, the 1,468–1,639 s and per-life ranges, and the 8-of-904 body cells. Dropped after the 3/6/9 check: the stage counter under Route A (stage only enters the chain and the snapshot, not the dynamics; VIEW_KERNEL does not show it); the \"14 answers\" wording (minor and unlikely to change a decision); and the claim that items are iid (accepted, because valleys.mjs:20 is an independent hash per tick). Not verified here: PC file hashes and the PC's live state, the 5198 watch view, the Step 0.7 and 0.8 skill references, and the Track A float check (needs the PC). No files were edited."
+ },
+ {
+  "findings": [
+   {
+    "quote": "Felt pain is off, by the owner's ruling. The engine's pain is bookkeeping the minds never see.",
+    "problem": "Wrong. Pain does reach choice. The preset's values note says \"V = gain - pain is the character's preference table (its wants)\", and the choice rule weighs each guess by that table (mind/live.mjs:994-1007, 1078-1083). The table fixes pain at the default intensity 2, while HANDOFF.md:43 says every character spent at least 75% of each life at intensity 1, and the wants never follow it. 3/6/9: thing = pain is absent from choice; opposite = pain is in choice; test = the wants table and live.mjs:1080. The opposite holds. HANDOFF.md:69 also says felt pain is \"a higher-self choice, never a setting\", so 'off' is a build setting, not the owner's wording.",
+    "fix": "Replace with: no felt-pain channel exists (the sting is three numbers). But choice runs on wants = gain minus pain at a fixed intensity 2 (valleys_v1.json values; live.mjs:994-1007), while characters sit at intensity 1 for most of each life. PREREG_bridge_v1a.md:26 says that table is still pending the owner's review. Add the wants table to 'Decisions waiting on the owner', and have the lens label wants 'at intensity 2, not felt'.",
+    "severity": "wrong"
+   },
+   {
+    "quote": "This ranks the senses by evidence before anything is trained.",
+    "problem": "Overclaim. A count model measures the information in the world, not what a learner uses. NURSERY_RESULTS.md shows the gap: memory headroom of 0.025 and 0.190 existed, yet the trunk's ANSWER CE was 0.320-0.343, above the 0.310 memoryless count. The nursery also says the comparisons are not like for like. Scout3 g3: whether the trunk or heads can use any percept is untested. The ranking can order probes; it cannot predict uptake.",
+    "fix": "Write: 'This ranks senses by information in the world only, to order probes. It does not predict what a learner gains; the nursery's trunk did not use the memory headroom it had (0.320-0.343 against 0.310). Uptake is tested only in a pre-registered arm.' Name the unscored seeds used (the scout used 40000-40015, which no prereg lists).",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The largest measured gap. Answer CE is 0.310 with no memory and 0.025 with the last outcome per kind",
+    "problem": "Overclaim. The 0.025 uses the last eat of that kind in this life with no reach limit. Within the trunk's feed-forward reach it is 0.1895, and only 40.5% of eats have their last same-kind eat in reach (NURSERY_RESULTS.md, readouts 2-3). 'Largest' also leaves out the true-table oracle (0.0043), which the design keeps hidden, so the claim holds only among senses the design allows. Scout3 [9]: the trace 'adds no information the tokens did not already carry' and is a memory aid, which the owner must classify.",
+    "fix": "Put the 0.1895 and the 40.5% beside the 0.025. Change 'largest measured gap' to 'largest gap among senses the design allows (the hidden table oracle, 0.004, excluded)'. Label the trace 'a memory aid, the owner's classification'.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "The same kind is on show elsewhere on 58% of item ticks. A step toward groups and shared memory (Ra 47.2, as paraphrased in lookup 6)",
+    "problem": "Overclaim. The 58% is chance. Items are hash-mod-4 draws per valley and tick (world/valleys.mjs:20). For a kind present here, the chance another valley shows it on the same tick is 1-(3/4)^3 = 57.8% (measured 58.1%). Over the 12 other valley-slots in four ticks, 1-(3/4)^12 = 96.8% (measured 96.7%). So the figure shows availability by chance, not structure, and it says nothing about whether the neighbour ate the kind, which was not measured (scout3 [2], g2). Ra 47.2 describes a fourth-density social memory complex (RA_GROUP_DENSITY_6.md:11), not neighbour witnessing in a world with no groups (scout3 [12]). That is an analogy, not a Ra finding.",
+    "fix": "Replace the evidence with 'chance under independent draws: 58% (1-(3/4)^3)'. Add 'whether neighbours ate the kind: not measured'. Mark the Ra link 'analogy; not a Ra finding'.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "**Candidate senses** (senses scout; owner rulings bind all of them):",
+    "problem": "Missing. Owner rulings do not bind all of them. These choices are the owner's and the plan leaves them unmarked: whether a memory aid counts as a sense (scout3 g8); whether senses default open or on ask (witness; scout3 g10); whether the season may be announced, which changes E1 and M3 (scout3 [13], g9); whether groups exist, since none do today (scout3 [12], g13); what an answer from above contains and what asking costs (g14); whether a neighbour's TOXIC or collapse may enter an observer's sting (g11); whether senses may only widen by higher-self choice (g15); whether looking costs anything (g10); and the wants table itself (PREREG_bridge_v1a.md:26). The 'Decisions waiting on the owner' list has only B-1 to B-3, C-1, C-2 and A-1.",
+    "fix": "Add each of these to '## Decisions waiting on the owner'. Change the heading to: 'owner rulings bind all of them; these open owner decisions remain: ...'.",
+    "severity": "missing"
+   },
+   {
+    "quote": "- **C-2** which senses first. Recommended: the kind trace and the witness, after the headroom probes.",
+    "problem": "Missing evidence against its own recommendation. The two existing help channels were null: LH minus L -0.13 and Y minus F -0.11 (HANDOFF.md:25, 29; NURSERY_RESULTS point 4). The design predicts H2 fails for help, because the frozen gate cannot learn which donors fit (BRIDGE_DESIGN.md:532; critique finding 5, BRIDGE_CRITIQUE_369.md:107). The first recommended item is a memory aid (see the trace row). No uptake has been measured for either.",
+    "fix": "State these beside the recommendation. Recommend the trace as its own pre-registered memory question, as scout3's order suggests. Recommend the witness only after the owner rules on sharing, and with H2's predicted failure stated in the pre-registration.",
+    "severity": "missing"
+   },
+   {
+    "quote": "The bridge code is public in the repository, so they can read it.",
+    "problem": "Missing: arena safety and privacy. (a) The public copy is not the code the plan builds on. Local lens2/server.mjs:20 hard-codes user@pc-host and a key path. The public copy of that file (branch opus/night-1-skill-benchmark, 2458 bytes against 2433 local) uses 'user@pc-host'. The public HANDOFF.md is a different version with no dashboard line. Arenas told to read 'the repository' would build against different files, which contradicts the 'self-contained brief' in the same step. (b) 'Haiku viewpoints check it' is a language-model reading. No reader can certify that code makes no network call or eval; that check is mechanical. The renderer then runs on a page served by lens2, whose listen host is unverified (scout0 g2). Nothing requires a human to read the final code before it runs.",
+    "fix": "Send a self-contained brief with exact file hashes, and say which copy it is. Before any run, grep the renderer for fetch, XMLHttpRequest, WebSocket, sendBeacon, eval, Function(, import(, document.cookie, localStorage, window.open, and external src or href. Serve it under a CSP with connect-src 'none' and script-src 'self'. The owner reads the final file before it runs on the page. Keep PC addresses and key paths out of the brief.",
+    "severity": "missing"
+   },
+   {
+    "quote": "**After each milestone,** the PR translator writes a new bulletin, and the dashboard and the handoff are updated.",
+    "problem": "Missing owner gates. HANDOFF.md:73: 'A fresh claim-strength reader goes over every write-up before it goes out.' HANDOFF.md:76: push to the public repo only to opus/night-1-skill-benchmark, after a privacy scan (the repo is public; checked read-only). The plan puts claim readers on Track B's and C's own write-ups, but not on the text that goes public at each milestone.",
+    "fix": "Add: 'Before any bulletin, dashboard text or handoff goes out: a fresh claim-strength reader (HANDOFF.md:73), and a privacy scan before any push (HANDOFF.md:76).'",
+    "severity": "missing"
+   },
+   {
+    "quote": "with a new worker whose output folder and file names differ from the nursery's.",
+    "problem": "Missing owner rule. HANDOFF.md:75 requires a /tmp/worker.lock check, below-normal priority, and keeping clear of the twin's ports (5200) on the PC. The run_worker scripts contain no lock check and set no priority (scout1 [28]; grep of mind/run_worker_*.mjs finds none). Track B's new worker is where these belong.",
+    "fix": "Add to step 2: 'the new worker checks /tmp/worker.lock and runs at below-normal priority (HANDOFF.md:75), in code, since the existing workers have neither.'",
+    "severity": "missing"
+   },
+   {
+    "quote": "## Track B: E3, the stationary control (the last test before \"evolved\")",
+    "problem": "Overclaim. BRIDGE_DESIGN.md:536: 'Evolved (within a life) is licensed only if E1 and E2 pass, E3 does not downgrade, and M1-M3 and G0 hold.' E3 is one gate of several. HANDOFF.md:25 says G0 'ran with stated departures', and the per-tick tests sit outside the live runner (scout1 [39]).",
+    "fix": "Write: 'one of the gates to \"evolved\" (BRIDGE_DESIGN.md:536 also requires M1-M3 and G0, and G0 ran with stated departures).'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "and L_stat can learn it within a life",
+    "problem": "Overclaim. Whether a trunk can learn one fixed table is unmeasured, and N4 (head-learning on an unseen fixed table) was never run (PREREG_bridge_v1a.md:153; scout1 g5). 'It is the more informative control' (Route A) is reasoning stated as fact.",
+    "fix": "Write: 'L_stat may be able to learn it within a life; untested, since N4 has not run.' Make N4 a launch gate for Route A, and label 'more informative' as reasoning.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "watch its surprise fall after a season turn;",
+    "problem": "Overclaim, with missing thresholds. Relearning is an inference: HANDOFF.md:25 says 'That they relearn is an inference, not tested.' 'Climb back' (\"celebrate the climb back\") is the page's own recoveries(), with a 0.08 page constant (lens2/index.html:309-318). PREREG_bridge_v1a.md:45 says the registered recovery readout was 'Not implemented in v1a'. The plan says 'with pass rules written first', but none are written, so nothing is pre-registered and the test assumes its result.",
+    "fix": "Write numeric pass rules into the plan now: a baseline and a threshold for guess accuracy (for example against the most-frequent choice on world 31000), and a stated predicted size for surprise change after a turn, labelled as a prediction. Drop 'climb back' until a registered readout exists.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "and root for it.",
+    "problem": "Overclaim against the owner's ruling. HANDOFF.md:70: 'We don't judge: describe fit, not worth.' 'Root for it' asks the viewer to take a side on the beings' worth, as does 'celebrate' in the pass rules. 'The gap between them is where compassion lives.' (plan line 56) is stated as fact, but it is an interpretation; the review rules say framings are one viewpoint, not findings.",
+    "fix": "Replace 'and root for it' with 'and see what it senses and guesses'. Mark the compassion sentence as the owner's view, with the owner's quote. Keep verbs of verdict ('celebrate', 'root for') out of lens copy.",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "**Replay is exact.** A run is a pure function of its seeds, weights and code.",
+    "problem": "Overclaim. One life (L seed 1, world 101) was replayed across machines (scout2 [2.21]). Discrete fields matched across Node 22 and 24. But 58 of 128 window scores were not bit-equal and ceAnswer differed in the last digit. The plan says the float differences occurred 'because the scored run was made on the PC', yet the Node version also changed, and the cause was not separated (scout2 g3).",
+    "fix": "Write: 'Replay is exact for one life tested across machines: chain, NGE and 640 integer fields matched; floats agreed to about 1e-15, not bit-equal. The cause (machine or Node version) is not isolated.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Today the fruit is random tick to tick, so rungs 1 and 2 find no structure in it.",
+    "problem": "Overclaim. That the item stream is iid is right by construction (world/valleys.mjs:20). But the claim that grouped fruit would give the upper rungs something to read is untested. NURSERY_RESULTS.md point 1 gives the mind's OBS edge (0.09-0.11 nats over a previous-tick predictor) as '[inference] ... the recent run of items', which iid draws cannot produce. Body bands are the likelier source, and that is untested (scout3 [2]).",
+    "fix": "Write: 'Items are independent draws by construction (valleys.mjs:20). Whether grouped fruit would help rungs 1-2 is untested. The nursery's OBS edge is unexplained and may come from body bands.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "Prayer: one side asks, the other permits",
+    "problem": "Missing risk and departure. An answer that says which kinds are good hands the learner the oracle: O scores 50.53 and F 28.61 (mind/runs/v1a/RESULTS_bridge_v1a.md:26, 30). Unless asking costs something, M2 and M3 stop being regime checks (scout3 [16]). The row also omits that the owner's 'aliens or gods so they start to pray' departs from the verified Ra lookup, where the call comes first (law_of_one/RA_PRAYER_4.md row A; Ra 73.3).",
+    "fix": "Add both risks to the row. List 'what an answer contains and what asking costs' as an owner decision (scout3 g14).",
+    "severity": "missing"
+   },
+   {
+    "quote": "v1a and v1b both ran their review after launch.",
+    "problem": "Wrong for v1a's pre-registration. PREREG_bridge_v1a.md:135 records a four-reviewer pre-run review of that pre-registration, with eight findings fixed 'before any of the 192 runs exists'. The post-launch reviews were v1a's runner review (RUNLOG.txt:44, completed 20:19:57 during a run that started 20:05) and v1b's triad (PREREG_bridge_v1b.md:86).",
+    "fix": "Write: 'v1a's pre-registration had a pre-run review; v1a's runner review and v1b's triad ran after launch.'",
+    "severity": "wrong"
+   },
+   {
+    "quote": "Arena battles prototype the chosen world from the design, untrusted until reviewed.",
+    "problem": "Wrong source. BRIDGE_DESIGN.md still describes a 5-number sting, 13 answers and V = 34 (line 292 gives V = 34). The build has 3 sting numbers, 14 answers and V = 120 (scout2 [2.0], g8; MIND_STEP7.md:15). A world prototyped from the design would be wrong.",
+    "fix": "Write: 'from the code and the v1 token table (V = 120, tokens.mjs), not BRIDGE_DESIGN.md, which is stale.'",
+    "severity": "wrong"
+   },
+   {
+    "quote": "A small measured payoff: 8 of 904 cells",
+    "problem": "Overclaim. The 8 of 904 is B6's undecided set: in those (state, action) cells the coarse body token does not fix the answer (RUNLOG.txt:10). The critique's pass mark was 0 collisions (BRIDGE_CRITIQUE_369.md:37), and the build accepted one named case. That is a known token gap, not a measured payoff, and no cross-entropy gain from finer body has been measured. 'Payoff' is also a worth word.",
+    "fix": "Write: 'B6 leaves 8 of 904 (state, action) cells undecided by the coarse body token (accepted, one named case; RUNLOG.txt:10). No cross-entropy gain from finer body is measured.'",
+    "severity": "overclaim"
+   },
+   {
+    "quote": "whether this kind is safe this season",
+    "problem": "Minor wording. The world's effect classes are FED, PLAIN and TOXIC (nourish, plain, toxic), and 'safe' is a verdict the world does not state. The lens must use the world's own names.",
+    "fix": "Write: 'whether this kind is toxic this season (the world's own class name).'",
+    "severity": "minor"
+   },
+   {
+    "quote": "4. Run 48 F_stat and 48 L_stat lives on worlds 101–116.",
+    "problem": "Minor. PREREG_bridge_v1a.md names 101–116 as the scored world seeds. The plan does not say whether a stationary preset makes new worlds under those seeds or uses a new seed block. The owner rule is 'never tune on scored worlds' (HANDOFF.md:73).",
+    "fix": "State the choice in the E3 pre-registration. If the seeds are reused, say the worlds are new (new preset hash) and disclose it; or use a new seed block.",
+    "severity": "minor"
+   },
+   {
+    "quote": "6. **Retire the host game as the main view** once the lens shows a life.",
+    "problem": "Minor. The stated reason is the owner's framing ('heavy on resources'), and no scout or log measured resources. Retiring the main view is the owner's decision, but the plan presents it as a step.",
+    "fix": "Mark it 'the owner's call', and drop 'heavy on resources' as a fact.",
+    "severity": "minor"
+   },
+   {
+    "quote": "the lede says 192 lives, where the data says 240",
+    "problem": "Minor. The 240 was summed from the laptop copies of the run logs. The board's computed total comes from PC copies, which no scout read (scout0 g1, [0.4]).",
+    "fix": "Check the PC RUNLOG totals before changing the lede. Until then, say 'from the laptop copies'.",
+    "severity": "minor"
+   },
+   {
+    "quote": "**The mind is already fractal, in a ladder of four:**",
+    "problem": "Minor. The three-rung ladder with fan-out 4 is a design construction (mind/nursery.mjs:77-80). 'Fractal' is the owner's word for the engine, and its meaning is not written down (scout3 g0). The plan states the label as fact.",
+    "fix": "Write: 'The mind has a three-rung ladder with fan-out 4 (nursery.mjs:77-80). Whether that counts as fractal waits on the owner's C-1 reading.'",
+    "severity": "minor"
+   }
+  ],
+  "note": "Lens: claim strength and the owner's rulings, read against the source files. I read PLAN_FRACTAL.md, HANDOFF.md and all four scout reports, then checked the claims against source: world/valleys.mjs:20, mind/live.mjs:994-1083, preset valleys_v1.json, NURSERY_RESULTS.md, RUNLOG_bridge.txt, the PREREG files, BRIDGE_DESIGN.md, BRIDGE_CRITIQUE_369.md, the Ra lookups, and the public repo on branch opus/night-1-skill-benchmark (read-only via gh). 3/6/9 was run on each finding (thing, opposite, test); findings whose opposite held were dropped. Checked and not flagged: the Creative Mode and Step 0.7/0.8 references exist, the four-ball idea is sourced (MIND_STEP7.md:89), the Ra 47.2 citation is supported by lookup 6 (kept only as an analogy point), and the 'stop the stream on 5199' step was not verified. Caveats: no browser run; PC copies not read; the iid figures are my arithmetic; scout numbers are cited from the reports and were re-checked only where a source line was in reach. Disclosure: I briefly created two scratch files in D:/fidelity-llm/bridge (.nothing from a misdirected redirect, and a temp copy of the public HANDOFF). I deleted both; no other file was changed."
+ }
+]

@@ -1,0 +1,113 @@
+name: Outside-agent checks
+
+# Layer 1 of the PR loop (bridge/PR_LOOP.md): free and automatic.
+# Outside agents (Codex, Flash, Argon) work on codex/<task> or argon/<task> branches and open pull
+# requests into the shared branch. These checks say what a script can say; they approve nothing.
+# The manager reviews and is the only one who merges onto the shared branch.
+#
+#   privacy       pull request and push   added lines and file names: home paths, IPs, emails, claude.ai links,
+#                                         key shapes, private project names (bridge/tools/privacy_scan.mjs)
+#   report-shape  pull request            the description carries a shape-B report (REPORT, LEAD, INSIGHTS TO ROUTE)
+#   gates         push                    the seven repo gates (README.md); a pull request gets them from
+#                                         triad-gates.yml, which runs on every pull_request
+#
+# A change cannot rewrite the checker that judges it: the checkers are taken from the base branch
+# whenever it has them. A change that edits the checkers, the workflows or the manager's files is flagged
+# with a warning so the reviewer reads those first. A push to a branch with an open pull request runs the
+# same checks twice (push and pull_request); both give the same answer.
+
+on:
+  pull_request:
+    branches: [opus/night-1-skill-benchmark]
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: ['codex/**', 'argon/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: outside-agent-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  BASE_BRANCH: opus/night-1-skill-benchmark
+
+jobs:
+  privacy:
+    runs-on: ubuntu-latest
+    env:
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Take the checkers from the base branch
+        run: |
+          git fetch --no-tags origin "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}"
+          mkdir -p "$RUNNER_TEMP/checkers"
+          for f in privacy_scan.mjs classify_paths.mjs; do
+            if git cat-file -e "origin/${BASE_BRANCH}:bridge/tools/$f" 2>/dev/null; then
+              git show "origin/${BASE_BRANCH}:bridge/tools/$f" > "$RUNNER_TEMP/checkers/$f"
+              echo "$f: taken from ${BASE_BRANCH}"
+            else
+              git show "${HEAD_SHA}:bridge/tools/$f" > "$RUNNER_TEMP/checkers/$f"
+              echo "::notice::$f is not on ${BASE_BRANCH} yet; using the copy on this branch"
+            fi
+          done
+      - name: Privacy scan of the added lines and file names
+        run: node "$RUNNER_TEMP/checkers/privacy_scan.mjs" --range "origin/${BASE_BRANCH}..${HEAD_SHA}" --github
+      - name: Paths to read first
+        run: node "$RUNNER_TEMP/checkers/classify_paths.mjs" --range "origin/${BASE_BRANCH}..${HEAD_SHA}" --github
+
+  report-shape:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      PR_BODY: ${{ github.event.pull_request.body }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Take the checker from the base branch
+        run: |
+          git fetch --no-tags --depth=1 origin "+refs/heads/${BASE_BRANCH}:refs/remotes/origin/${BASE_BRANCH}"
+          mkdir -p "$RUNNER_TEMP/checkers"
+          f=check_report_shape.mjs
+          if git cat-file -e "origin/${BASE_BRANCH}:bridge/tools/$f" 2>/dev/null; then
+            git show "origin/${BASE_BRANCH}:bridge/tools/$f" > "$RUNNER_TEMP/checkers/$f"
+            echo "$f: taken from ${BASE_BRANCH}"
+          else
+            git show "HEAD:bridge/tools/$f" > "$RUNNER_TEMP/checkers/$f"
+            echo "::notice::$f is not on ${BASE_BRANCH} yet; using the copy on this branch"
+          fi
+      - name: The description carries a shape-B report
+        run: node "$RUNNER_TEMP/checkers/check_report_shape.mjs" --github
+
+  gates:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Semantic audit (S1–S15)
+        run: node scripts/triad_semantic_audit.mjs
+      - name: Formula spine (plan formulas tested by behaviour)
+        run: node scripts/formula_spine.mjs
+      - name: Count & identity audit (advisory; stated numbers that should agree)
+        run: node scripts/count_identity_audit.mjs
+        continue-on-error: true
+      - name: Fractal gap map (spine grounded in the plan)
+        run: node scripts/fractal_gap_map.mjs --strict
+      - name: v9 red-team operator fuzz + token gates
+        run: node scripts/adversarial_red_team_v9_audit.mjs
+      - name: Wave 0 reference tests (B178; energy ledger, gateway, me pinning, ms line)
+        run: node scripts/wave0_reference_test.mjs
+      - name: Mutation test (gates must fail on planted defects)
+        run: node scripts/mutation_test_audits.mjs

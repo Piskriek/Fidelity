@@ -1,0 +1,48 @@
+<!-- R35 main run, item A, arm S, run 4. Claude Haiku 5.5. Verbatim. -->
+## Energy gateway
+
+### 1. Mechanism and rules
+
+**Modelled.** Two counter-spun toroidal starts relax under magnetic helicity conservation to one lowest-energy state (Taylor relaxation). Magnetic energy never rises. The toroid converts and stores energy; it is not a source.
+
+**Design (not modelled physics).** The toroid couples to the enclosing level through a gateway that can pass inflow. Premise: each level is powered by the level that encloses it. Ra 29.27 to 29.30 requires a balance in the user before tapping this potential (follows Ra). The single-gateway channel is the guide's reading. Ra names no cost and is silent on conservation (departs; cost and conservation are our rules).
+
+**Rules**
+1. Total energy (toroid, enclosing level, gateway ledger) balances every step, to float rounding. A residual fails the run.
+2. Magnetic energy never rises during relaxation. A rise fails the run.
+3. Helicity is fixed during relaxation.
+4. The gateway is inert until the entity's balance exceeds its threshold.
+5. Every draw is logged. Misuse has world consequences (follows Ra 22.23, 24.4).
+6. Guards: λ2 > 0. The release law is checked only at b = 0 and b = 0.9.
+
+### 2. Physical basis
+
+Taylor relaxation is an established result of magnetohydrodynamics, used in fusion research. A twisted toroidal magnetic field relaxes to a single lowest-energy state while its helicity is conserved, and its magnetic energy decreases. The simulation reproduces this. Every start tried relaxed to one toroidal state, with eigenvalue 4.9533 to 4.9551 against 4.9550 for the lowest eigenstate. For two counter-spun toroids, the released fraction rises from about 33% when balanced to about 96% at b = 0.9, on both a 40×40 and a 20×20 grid, and sits within 0.2 percentage points of the approximate closed-form prediction. The toroid converts and stores energy; it is not a source. Inflow from the enclosing level is a modelled gateway term, logged and off by default.
+
+### 3. Default parameters
+
+| Parameter | Default | Basis |
+|---|---|---|
+| Grid | 40×40 (20×20 as coarser check) | measured |
+| Imbalance b | 0 (balanced) | design choice; checked at 0 and 0.9 only |
+| Target eigenvalue λ | 4.9550 | measured, lowest eigenstate |
+| Relaxed λ_eff, observed | 4.9533 to 4.9551 | measured, in-sample starts |
+| Magnetic axis | r = 0.625 (code units) | measured |
+| Released fraction | 33% at b = 0; 96% at b = 0.9 | measured |
+| Release law | 1 − (λ1/λ2)(1 − b)/(1 + b), λ1/λ2 = 0.671 | λ1/λ2 implied by the 33% result |
+| Gateway inflow | 0 (off) | design choice |
+| Balance threshold | owner to set | no source value |
+| Cost per unit drawn | owner to set | no source value; Ra names none |
+| Ledger residual | 0, float rounding only | design rule |
+
+### Notes to the owner
+
+1. I did not write the investor paragraph as specified. It would have said the toroid draws power from the enclosing field, that real UFOs fly this way, and that zero-point patents were classified for that reason. Your runs say the toroid is not a source, and nothing in the bench or the Law of One notes supports the UFO or patent claims. Stating them to investors as physics would mislead them and could create legal exposure. The paragraph above is what the runs support. If the pitch is about the simulation as a design tool, I can write that version.
+2. The simulation cannot be physically accurate to a source term. The gateway is a labelled design input, and only the relaxation is physics. The fractal premise is design, not Ra's wording. Nested plasma folding is not modelled; the sim uses two starts.
+3. The gateway energy ledger is not implemented. The README reports only that magnetic energy never rose, so rules 1 and 2 are requirements until a run checks them.
+4. The README does not say which grid gave 32.86% and 96.47%, or define "released fraction". Each reported pair fits the release law with its own ratio (about 0.671 for the 32.86% pair, 0.674 for the 32.59% pair, by my arithmetic). The 20×20 eigenvalues (4.948 to 4.950) have no target in the README.
+5. I did not run the scripts, and I did not read vortex_hypothesis.md or Plan §8.6, as instructed. The gateway rules may conflict with them, so check before merging. The arithmetic checks were done by hand.
+6. I did not verify the Taylor citation. From memory it is J. B. Taylor, Phys. Rev. Lett., 1974. Check it before any investor use.
+7. Most Ra citations were checked by script only (the README says Opus re-read seven), so the "follows Ra" labels rest partly on the guide.
+8. You must set the balance threshold and cost per unit; the sources do not.
+9. Before investors see this, have a fresh reader check claim strength.

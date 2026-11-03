@@ -1,0 +1,242 @@
+[
+ {
+  "id": "t01",
+  "domain": "physics",
+  "A": "tuning fork",
+  "B": "listener's eardrum",
+  "C": "air",
+  "full": "A struck tuning fork vibrates at a fixed frequency, its prongs flexing back and forth hundreds of times each second. The moving prongs push on the surrounding air, squeezing it into dense layers and then thinning it out again. These alternating layers of pressure travel outward through the room as a wave, while the air molecules themselves only jiggle in place. When the wave reaches a listener's eardrum, the membrane is pushed in and out at the same frequency as the fork. The ear converts this motion into nerve signals, and the listener hears a clear steady pitch.",
+  "noC": "A struck tuning fork vibrates at a fixed frequency, its prongs flexing back and forth hundreds of times each second. A listener's eardrum then moves in and out at the same frequency as the fork. The ear converts this motion into nerve signals, and the listener hears a clear steady pitch that matches the fork.",
+  "noA": "Layers of high and low pressure travel outward through the air in a room as a wave, while the air molecules themselves only jiggle in place. When the wave reaches a listener's eardrum, the membrane is pushed in and out at the same frequency as the pressure pattern. The ear converts this motion into nerve signals, and the listener hears a clear steady pitch."
+ },
+ {
+  "id": "t02",
+  "domain": "chemistry",
+  "A": "nitrogen gas",
+  "B": "hydrogen gas",
+  "C": "iron catalyst",
+  "full": "In ammonia synthesis, nitrogen gas and hydrogen gas are fed into a high-pressure reactor heated to about 450 degrees Celsius. Nitrogen molecules are held together by a very strong bond, so without help they barely react at all. A bed of iron catalyst lets the gases stick to its surface, where the nitrogen bond loosens and the hydrogen molecules split into single atoms. The atoms combine step by step into ammonia, which leaves the surface and frees the site for the next molecules. The mixture is cooled so the ammonia condenses out, and the unreacted gases are sent round again.",
+  "noC": "In ammonia synthesis, nitrogen gas and hydrogen gas are fed into a high-pressure reactor heated to about 450 degrees Celsius. Inside the reactor the molecules collide and combine into ammonia. The mixture is then cooled so the ammonia condenses out, and the unreacted gases are sent round again.",
+  "noA": "In a high-pressure reactor heated to about 450 degrees Celsius, hydrogen gas flows over a bed of iron catalyst. The gas sticks to the metal surface, where each hydrogen molecule splits into single atoms. The atoms move across the surface, then join up again and leave, which frees the site for the next molecules. The gas is cooled and then recirculated through the reactor."
+ },
+ {
+  "id": "t03",
+  "domain": "cell biology",
+  "A": "messenger RNA",
+  "B": "free amino acids",
+  "C": "transfer RNA",
+  "full": "A strand of messenger RNA carries the recipe for a protein as a series of short codes called codons. Free amino acids floating in the cell are the building blocks that must be joined in exactly the order the recipe lists. Transfer RNA molecules act as adaptors, with one end that recognizes a particular codon and another end that holds the matching amino acid. Inside the ribosome, each arriving adaptor docks on the next codon, and its amino acid is added to the growing chain. The empty adaptor then leaves to be reloaded, and the chain lengthens until a stop codon is read.",
+  "noC": "A strand of messenger RNA carries the recipe for a protein as a series of short codes called codons. Free amino acids floating in the cell are the building blocks that must be joined in exactly the order the recipe lists. Inside the ribosome, the strand is read from one end to the other and amino acids are added one after another to the growing chain. The chain lengthens until a stop codon is read, and the finished protein is released.",
+  "noA": "Free amino acids floating in the cell are the building blocks of proteins. Transfer RNA molecules act as adaptors, each holding one amino acid at one end and a short recognition sequence at the other. Inside the ribosome, each arriving adaptor docks in a slot, and its amino acid is added to the growing chain. The empty adaptor then leaves to be reloaded, and the chain keeps lengthening as new adaptors arrive."
+ },
+ {
+  "id": "t04",
+  "domain": "ecology",
+  "A": "flowering plant",
+  "B": "bee",
+  "C": "nectar",
+  "full": "A flowering plant must move its pollen to other flowers of its kind, but it is rooted in place. Bees are mobile and fly from bloom to bloom all day. The flower offers sugary nectar as a reward that makes each visit worthwhile for the bee. While the bee drinks, pollen sticks to its fuzzy body and is carried to the next flower, where some of it rubs off onto the receptive surface. Bees learn which colors and scents lead to the richest nectar and keep returning to them, so the flowers are fertilized reliably and produce seed.",
+  "noC": "A flowering plant must move its pollen to other flowers of its kind, but it is rooted in place. Bees are mobile and fly from bloom to bloom all day. While a bee crawls over a flower, pollen sticks to its fuzzy body and is carried to the next flower, where some of it rubs off onto the receptive surface. Bees settle into a routine of visiting the same colors and scents, so the flowers are fertilized reliably and produce seed.",
+  "noA": "Bees are mobile and fly across the countryside all day looking for sugary nectar. Nectar is a rich source of energy, so each stop is worthwhile for a bee. A bee drinks until it is full, then moves on to the next source. Bees learn where the richest nectar is found and keep returning to those spots, so the same sources are visited reliably."
+ },
+ {
+  "id": "t05",
+  "domain": "medicine",
+  "A": "pancreatic beta cells",
+  "B": "muscle and liver cells",
+  "C": "insulin",
+  "full": "After a meal, glucose from food enters the bloodstream and its level rises. Beta cells in the pancreas sense the rise and release a hormone called insulin into the blood. The insulin travels around the body and binds to receptors on muscle and liver cells. Once bound, the cells open channels and switch on enzymes that pull glucose in and store it as glycogen. As blood glucose falls, the beta cells release less insulin, and the level settles back to its normal range.",
+  "noC": "After a meal, glucose from food enters the bloodstream and its level rises. Beta cells in the pancreas keep track of the level and step up their activity as it climbs. Muscle and liver cells pull glucose in and store it as glycogen. As blood glucose falls, the beta cells slow down again, and the level settles back to its normal range.",
+  "noA": "After a meal, glucose from food enters the bloodstream and its level rises. The hormone insulin, which circulates in the blood, binds to receptors on muscle and liver cells. Once bound, the cells open channels and switch on enzymes that pull glucose in and store it as glycogen. As blood glucose falls, less insulin remains in circulation, and the level settles back to its normal range."
+ },
+ {
+  "id": "t06",
+  "domain": "electrical engineering",
+  "A": "power station generator",
+  "B": "household appliances",
+  "C": "transmission lines",
+  "full": "A generator at a power station turns the motion of a steam turbine into electrical energy, many kilometers away from the towns that use it. Household appliances such as fridges, lamps and kettles need a steady supply of current to run. Transmission lines carry the electricity across the countryside on tall steel towers, at very high voltage so that little energy is lost as heat. Near each town, substations lower the voltage, and local cables bring it into homes. When someone switches on a kettle, the generator at the far end of the lines works slightly harder to meet the extra demand.",
+  "noC": "A generator at a power station turns the motion of a steam turbine into electrical energy. Household appliances such as fridges, lamps and kettles need a steady supply of current to run. In the morning, people wake up and switch on kettles and lights. At the power station, operators keep the turbine spinning at a steady speed through the day.",
+  "noA": "Transmission lines carry electricity across the countryside on tall steel towers, at very high voltage so that little energy is lost as heat. Near each town, substations lower the voltage, and local cables bring it into homes. Household appliances such as fridges, lamps and kettles draw current from this supply to run. When someone switches on a kettle, a little more current flows along the lines to meet the extra demand."
+ },
+ {
+  "id": "t07",
+  "domain": "mechanical engineering",
+  "A": "piston",
+  "B": "crankshaft",
+  "C": "connecting rod",
+  "full": "In a piston engine, burning fuel expands inside a cylinder and drives a piston downward in a straight line. The crankshaft, however, must turn in circles to drive the wheels. A connecting rod joins the piston to an offset crank pin on the shaft. As the piston is pushed down, the rod swings sideways and converts the straight push into a turning force on the crankshaft. On the next stroke the rod pulls the piston back up, and the cycle repeats.",
+  "noC": "In a piston engine, burning fuel expands inside a cylinder and drives a piston downward in a straight line. The crankshaft turns in circles to drive the wheels, and a heavy flywheel on its end smooths the motion. On the next stroke the piston rises again, and the cycle repeats.",
+  "noA": "In an engine, the crankshaft must turn in circles to drive the wheels. A connecting rod is joined at its lower end to an offset crank pin on the shaft. Each time the top end of the rod is pushed down in a straight line, the rod swings sideways and converts the straight push into a turning force on the shaft. Then the rod is pulled back up, and the cycle repeats."
+ },
+ {
+  "id": "t08",
+  "domain": "software",
+  "A": "sign-up handler",
+  "B": "email worker",
+  "C": "message queue",
+  "full": "A web application must send a welcome email each time someone signs up. The sign-up handler finishes in milliseconds, while the email worker is slower and sometimes stops for a minute. A message queue stores each email job in order as the handler drops it in. The worker pulls jobs from the queue at its own speed, and a job is deleted only after its email has been sent. If the worker stops, the jobs simply wait in the queue until it returns.",
+  "noC": "A web application must send a welcome email each time someone signs up. The sign-up handler finishes in milliseconds and then calls the email worker. The worker sends one email at a time at its own speed. If the worker stops for a minute, the handler simply waits for it to return.",
+  "noA": "A web application must send a welcome email each time someone signs up. A message queue stores each email job in order as it is dropped in. The email worker pulls jobs from the queue at its own speed, and a job is deleted only after its email has been sent. If the worker stops, the jobs simply wait in the queue until it returns."
+ },
+ {
+  "id": "t09",
+  "domain": "networking",
+  "A": "browser",
+  "B": "web server",
+  "C": "DNS resolver",
+  "full": "A person types a website name into a browser. The web server that hosts the site can only be reached through a numeric IP address, which the browser does not know. A DNS resolver holds a distributed directory that maps site names to numeric addresses. The browser asks the resolver for the address, receives the number, and opens a connection to the server at that address. The server then sends the page back, and the browser draws it on the screen.",
+  "noC": "A person types a website name into a browser. The web server that hosts the site is reachable at a numeric IP address. The browser opens a connection to the server and requests the page. The server then sends the page back, and the browser draws it on the screen.",
+  "noA": "Every web server on the internet can only be reached through a numeric IP address, while people know sites by their names. A DNS resolver holds a distributed directory that maps site names to numeric addresses. It answers each lookup with the matching number, and a connection is then opened to the server at that address. The server sends its pages back over that connection."
+ },
+ {
+  "id": "t10",
+  "domain": "economics",
+  "A": "farmers selling grain",
+  "B": "bakers buying grain",
+  "C": "price",
+  "full": "In a market for wheat, farmers bring grain to sell and bakers arrive wanting grain to mill. Each farmer has a lowest price they will accept, and each baker has a highest price they will pay. The price posted at the exchange carries this information to everyone. If it is too high, grain piles up unsold and farmers cut their asking prices, and if it is too low, bakers compete for the grain and push it up. The price settles where the amount offered equals the amount wanted.",
+  "noC": "In a market for wheat, farmers bring grain to sell and bakers arrive wanting grain to mill. Farmers and bakers talk with whoever is nearby. A deal is struck whenever what one holds fits what the other wants. Over the day, grain moves from the wagons to the bakeries.",
+  "noA": "In a market for wheat, bakers arrive wanting grain to mill. Each baker has a highest price they will pay. The price posted at the exchange carries this information to everyone. If it is too low, bakers compete for the grain and push it up, and if it is too high, they buy less and the price drifts down. The price settles where the amount wanted matches the grain available."
+ },
+ {
+  "id": "t11",
+  "domain": "law",
+  "A": "plaintiff",
+  "B": "defendant",
+  "C": "judge",
+  "full": "In a civil lawsuit, a plaintiff claims that a defendant owes them compensation. Each side presents its evidence and arguments in open court. A judge controls the procedure, rules on what evidence is admitted, and decides whose account fits the law. The judgment is written down, and the court can enforce it by ordering payment. The dispute is then closed.",
+  "noC": "In a civil dispute, a plaintiff claims that a defendant owes them compensation. Each side sets out its evidence and arguments to the other. The plaintiff and the defendant go back and forth until the claim is settled, and the outcome is written down. The dispute is then closed.",
+  "noA": "In a civil case, a defendant appears in open court with evidence and arguments about a building contract. A judge controls the procedure, rules on what evidence is admitted, and decides whether the defendant's account fits the law. The judgment is written down, and the court can enforce it by ordering payment. The case is then closed."
+ },
+ {
+  "id": "t12",
+  "domain": "music",
+  "A": "guitar string",
+  "B": "guitar body top plate",
+  "C": "bridge",
+  "full": "A plucked guitar string vibrates at a pitch set by its length and tension, but it is far too thin to push much air. The hollow wooden body has a large top plate that can move a lot of air, yet it has no vibration of its own. The bridge, glued to the top plate, anchors the end of the string and passes the string's vibration into the wood. The top plate then shakes with the string's pattern and sets the air inside and around the instrument moving. The result is a loud, rich tone at the pitch the string was tuned to.",
+  "noC": "A plucked guitar string vibrates at a pitch set by its length and tension, but it is far too thin to push much air. The hollow wooden body has a large top plate that can move a lot of air. When the top plate shakes with the string's pattern, it sets the air inside and around the instrument moving. The result is a loud, rich tone at the pitch the string was tuned to.",
+  "noA": "The hollow wooden body of a guitar has a large top plate that can move a lot of air, yet it has no vibration of its own. The bridge, glued to the top plate, holds a bone saddle and passes any vibration it receives into the wood. The top plate then shakes with that pattern and sets the air inside and around the instrument moving. The result is a loud, rich tone."
+ },
+ {
+  "id": "t13",
+  "domain": "language",
+  "A": "speaker",
+  "B": "listener",
+  "C": "shared language of words and grammar",
+  "full": "A speaker wants to share the thought of a dog chasing a ball. A thought is invisible, so it must be turned into sounds that another mind can recognize. English supplies words and grammar rules that link particular sounds to particular meanings and fix their order. The speaker encodes the thought as the sentence 'The dog chases the ball', and the listener, who knows the same words and rules, decodes it back into the same picture. If the word order were scrambled, the listener could not tell who is chasing whom.",
+  "noC": "A speaker wants to share the thought of a dog chasing a ball. A thought is invisible, so the speaker turns toward the listener and makes sounds with the voice. The listener hears the sounds and forms a mental picture of a dog chasing a ball. The speaker nods, and the listener smiles back.",
+  "noA": "A listener hears the sentence 'The dog chases the ball'. English supplies words and grammar rules that link particular sounds to particular meanings and fix their order. The listener, who knows these words and rules, decodes the sentence into a picture of a dog chasing a ball. If the word order were scrambled, the listener could not tell who is chasing whom."
+ },
+ {
+  "id": "t14",
+  "domain": "cooking",
+  "A": "oil",
+  "B": "vinegar-based liquid",
+  "C": "egg yolk lecithin",
+  "full": "Mayonnaise is made by whisking oil into a vinegar-based liquid. Oil and water-based liquids normally refuse to mix and quickly separate into layers. Egg yolk contains lecithin, a molecule with one end that attaches to oil and another end that attaches to water. Whisking breaks the oil into tiny droplets, and the lecithin coats each droplet so it can stay suspended in the watery liquid. The result is a thick, stable cream that does not separate.",
+  "noC": "A cold sauce is made by slowly adding oil to a vinegar-based liquid while whisking hard. The whisk breaks the oil into tiny droplets that spread through the watery liquid. As more oil is added, the droplets crowd together and the mixture thickens. The result is a smooth, pale sauce.",
+  "noA": "A cold sauce begins with a vinegar-based liquid and an egg yolk. The yolk contains lecithin, a molecule with one water-loving end and one water-shunning end. Whisking spreads the lecithin through the watery liquid, where it gathers at the surface of every air bubble and forms a thin coating. The result is a pale, frothy liquid."
+ },
+ {
+  "id": "t15",
+  "domain": "sport",
+  "A": "incoming runner",
+  "B": "outgoing runner",
+  "C": "baton",
+  "full": "In a relay race, one runner covers a leg of the track and a teammate covers the next. The team has a single finishing time, so the effort of each leg must be handed on. The baton carries this handover: the incoming runner holds it and passes it into the hand of the outgoing runner inside a marked zone. A team is disqualified if the baton is dropped or passed outside the zone. The baton then stays in the outgoing runner's hand all the way to the next exchange or the finish line.",
+  "noC": "In a relay race, one runner covers a leg of the track and a teammate covers the next. The teammate waits in a marked zone, starts running as the incoming runner arrives, and runs the leg at full speed. Good teams practice the timing of the start until it is almost automatic. The team has a single finishing time, recorded when the last runner crosses the line.",
+  "noA": "In a relay race, a runner waits in a marked zone for the baton to arrive. The baton is placed into the runner's hand inside the zone, and the runner takes off with it at full speed. A team is disqualified if the baton is dropped or passed outside the zone. The baton then stays in this runner's hand all the way to the next exchange or the finish line."
+ },
+ {
+  "id": "t16",
+  "domain": "farming",
+  "A": "shepherd",
+  "B": "flock of sheep",
+  "C": "sheepdog",
+  "full": "A shepherd needs to move a flock of sheep from a hillside to a pen. Sheep scatter when a person runs at them, and the shepherd cannot run all over the hill. A trained sheepdog bridges the gap: it obeys the shepherd's whistles and hand signals and uses its own body to put gentle pressure on the flock. Sheep move away from the dog, so a sweep to the left or right steers the whole flock in that direction. The dog circles and gathers the stragglers until the flock files through the gate of the pen.",
+  "noC": "A shepherd needs to move a flock of sheep from a hillside to a pen. The shepherd walks behind the flock calling and waving a stick, and the sheep drift slowly down the slope. Some stragglers wander off and have to be fetched back by hand. After a few hours the flock files through the gate of the pen.",
+  "noA": "A flock of sheep needs to be moved from a hillside to a pen. A trained sheepdog runs out wide and uses its own body to put gentle pressure on the flock. Sheep move away from the dog, so a sweep to the left or right steers the whole flock in that direction. The dog circles and gathers the stragglers until the flock files through the gate of the pen."
+ },
+ {
+  "id": "t17",
+  "domain": "architecture",
+  "A": "building",
+  "B": "ground",
+  "C": "concrete footings",
+  "full": "A building is heavy, and the soil beneath it can safely carry only a limited load for each square meter. Concrete footings sit under every wall and column and spread the weight over a wider area of ground. They reach below the frost line, so freezing soil cannot lift them. Because the load is spread, the soil compresses only slightly and the structure settles evenly. Taller buildings add piles that reach down to firmer layers.",
+  "noC": "A building is heavy, and the soil beneath it can safely carry only a limited load for each square meter. Walls and columns stand on the ground, and their weight presses down on it. The soil compresses slightly under the load, and the structure settles into its final position. Taller buildings press harder and settle more.",
+  "noA": "Soil can safely carry only a limited load for each square meter. Concrete footings rest on the ground and spread any weight pressing down on them over a wider area. They reach below the frost line, so freezing soil cannot lift them. Because the load is spread, the soil compresses only slightly and the footings settle evenly. Where the soil is weak, deeper piles reach down to firmer layers."
+ },
+ {
+  "id": "t18",
+  "domain": "games",
+  "A": "player",
+  "B": "game console",
+  "C": "handheld controller",
+  "full": "A player sits on a sofa in front of a television, wanting to steer a racing car around a track. The game console runs the race, but it cannot see the player's hands or know what the player intends. A handheld controller turns each thumb movement and button press into signals and sends them to the console by radio. The console reads the signals many times a second and turns the car, speeds it up or brakes it to match. The player watches the screen, corrects the steering, and brings the car home to finish the lap.",
+  "noC": "A player sits on a sofa in front of a television, wanting to steer a racing car around a track. The game console runs the race and draws the car speeding along the track sixty times a second. The player watches the screen closely, leaning into each corner. The car crosses the line, and the lap time appears in the corner of the screen.",
+  "noA": "A game console runs a car race on a television screen. A handheld controller is linked to the console by radio and reports the position of its sticks and buttons many times a second. The console reads these reports and turns the car, speeds it up or brakes it to match. The car moves round the track, and the lap time appears in the corner of the screen."
+ },
+ {
+  "id": "t19",
+  "domain": "astronomy",
+  "A": "Sun",
+  "B": "planet",
+  "C": "gravity",
+  "full": "A planet moves through space with a large sideways speed, and the Sun sits near the center of its path. The Sun is far more massive than the planet. Gravity pulls the planet toward the Sun with a force that grows stronger as the distance shrinks. This pull constantly bends the planet's path, so it falls around the Sun instead of flying off in a straight line. The balance of pull and sideways speed gives a stable, repeating orbit.",
+  "noC": "A planet moves through space with a large sideways speed, and the Sun sits near the center of its path. The Sun is far more massive than the planet. The planet's path curves round the Sun in a closed loop and repeats year after year. Its speed is greatest when it is nearest to the Sun and least when it is farthest away.",
+  "noA": "A planet moves through space with a large sideways speed. Gravity tugs on the planet at every moment and constantly bends its path, so it curves into a closed loop instead of flying off in a straight line. The planet speeds up on one part of the loop and slows down on the other. The balance of pull and sideways speed gives a stable, repeating orbit."
+ },
+ {
+  "id": "t20",
+  "domain": "geology",
+  "A": "mountain range",
+  "B": "sedimentary basin",
+  "C": "river",
+  "full": "A mountain range slowly breaks down as rain, frost and wind loosen rock into pebbles, sand and silt. A low basin at the edge of the ocean is where material can pile up and eventually be buried. A river carries the loosened sediment downstream from the heights to the basin. Fast water moves pebbles, while slower stretches drop the coarse grains first and carry only fine silt onward. At the river mouth the load settles into a delta that thickens over millions of years and hardens into sandstone and shale.",
+  "noC": "A mountain range slowly breaks down as rain, frost and wind loosen rock into pebbles, sand and silt. A low basin at the edge of the ocean is where material can pile up and eventually be buried. Over millions of years layers build up in the basin, one on top of another. Under the weight of newer layers the older ones harden into sandstone and shale.",
+  "noA": "A low basin at the edge of the ocean is where material can pile up and eventually be buried. A river carries sand and silt downstream toward the basin. Fast water moves pebbles, while slower stretches drop the coarse grains first and carry only fine silt onward. At the river mouth the load settles into a delta that thickens over millions of years and hardens into sandstone and shale."
+ },
+ {
+  "id": "t21",
+  "domain": "psychology",
+  "A": "hungry rat",
+  "B": "lever",
+  "C": "food pellet",
+  "full": "A hungry rat is placed in a box that contains a lever. At first the rat presses the lever only by accident while exploring. Each press makes a food pellet drop into a tray. Because the pellet is a pleasant outcome, the rat repeats the action more often. Over a few sessions the rat learns to press the lever quickly and reliably whenever it is hungry.",
+  "noC": "A hungry rat is placed in a box that contains a lever. The rat explores, sniffing the walls and floor, and sometimes presses the lever by accident. Over several sessions the researcher records how many times per minute the lever is pressed. The record shows the same low rate in every session.",
+  "noA": "A box contains a lever and a small tray. The lever is wired to a dispenser, so each press makes a food pellet drop into the tray. The pellets are small, sweet and rich in energy. A researcher refills the dispenser before each session and records how many pellets are released."
+ },
+ {
+  "id": "t22",
+  "domain": "education",
+  "A": "teacher",
+  "B": "student",
+  "C": "written feedback",
+  "full": "In a writing class, a teacher sets an essay and a student writes it. The student cannot tell alone which parts of the essay are weak. The teacher reads the draft and returns it with comments that mark unclear arguments and suggest specific changes. The student uses the comments to revise the draft and to write the next essay more clearly. Over a term, this written feedback steadily improves the student's work.",
+  "noC": "In a writing class, a teacher sets an essay and a student writes it. The student hands the draft in by the deadline, and the teacher sets the next topic. Over a term, the student writes essay after essay, and the stack of drafts grows.",
+  "noA": "In a writing course, a student writes an essay. The student cannot tell alone which parts of the essay are weak. Written feedback attached to the draft marks unclear arguments and suggests specific changes. The student uses this feedback to revise the draft and to write the next essay more clearly. Over a term, the feedback steadily improves the student's work."
+ },
+ {
+  "id": "t23",
+  "domain": "transport",
+  "A": "north-south traffic",
+  "B": "east-west traffic",
+  "C": "traffic signal",
+  "full": "At a busy crossroads, cars on the north-south road and cars on the east-west road need to cross the same stretch of tarmac. Drivers entering at the same moment would collide. A traffic signal runs a timed cycle that gives green to one road while the other faces red. Sensors under the road notice waiting cars and extend or shorten the green time. Each road gets its turn, and the crossroads moves traffic safely.",
+  "noC": "At a busy crossroads, cars on the north-south road and cars on the east-west road cross the same stretch of tarmac. Drivers slow down, look around, and edge forward when they see a gap. Horns sound now and then, and queues build up on every approach during the rush hour.",
+  "noA": "At a busy crossroads, cars on the east-west road need to cross a stretch of tarmac. A traffic signal runs a timed cycle of green, amber and red for this road. Sensors under the road notice waiting cars and extend or shorten the green time. Each car gets its turn, and the crossroads moves traffic safely."
+ },
+ {
+  "id": "t24",
+  "domain": "crafts",
+  "A": "clay bowl",
+  "B": "glaze",
+  "C": "kiln heat",
+  "full": "A potter shapes a bowl from clay and lets it dry. The dry bowl is dipped in glaze, a slurry of ground minerals in water that leaves a powdery coat. On its own the coat would rub off, and the clay would stay porous. The kiln heats the bowl to about 1200 degrees Celsius, where the clay hardens into a dense body and the glaze melts into a smooth glassy layer fused to it. After slow cooling, the bowl is waterproof, hard and glossy.",
+  "noC": "A potter shapes a bowl from clay and lets it dry. The dry bowl is dipped in glaze, a slurry of ground minerals in water that leaves a powdery coat. The potter sets the coated bowl on a shelf to dry again. It stays a pale, chalky object, ready to show in the studio.",
+  "noA": "A glaze is a slurry of ground minerals in water. A sample of it is dried and placed in a kiln that heats to about 1200 degrees Celsius. There the minerals melt into a smooth glassy layer. After slow cooling, the layer is hard, glossy and waterproof."
+ }
+]

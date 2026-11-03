@@ -1,0 +1,1854 @@
+{
+ "meta": {
+  "script": "mind/probe_senses.mjs",
+  "alpha": 0.5,
+  "logBase": "natural",
+  "targets": 14,
+  "trainSeeds": [
+   40000,
+   40015
+  ],
+  "testSeeds": [
+   40016,
+   40019
+  ],
+  "lifeTicks": 16384,
+  "sparseRule": {
+   "unseenRecordShare": 0.005,
+   "gapOverBase": 0.005
+  },
+  "policy": "nursery.mjs scripted behaviour policy (50% uniform random action, else scripted)",
+  "seconds": 51.999
+ },
+ "sanity": {
+  "note": "rebuilt nursery logs; the base must equal refs.json ansMemoryless",
+  "checks": {
+   "base": {
+    "ce": 0.3096994566997321,
+    "refs": "ansMemoryless",
+    "expected": 0.3096994566997321,
+    "difference": 0,
+    "identical": true,
+    "within1e9": true
+   },
+   "trace_unlimited": {
+    "ce": 0.02511804924376278,
+    "refs": "ansLastOutcome",
+    "expected": 0.02511804924376278,
+    "difference": 0,
+    "identical": true,
+    "within1e9": true
+   },
+   "trace_reach": {
+    "ce": 0.18949860385676875,
+    "refs": "ansLastOutcomeFeedForward",
+    "expected": 0.18949860385676875,
+    "difference": 0,
+    "identical": true,
+    "within1e9": true
+   },
+   "table_oracle": {
+    "ce": 0.0042813342817017725,
+    "refs": "ansTableOracle",
+    "expected": 0.0042813342817017725,
+    "difference": 0,
+    "identical": true,
+    "within1e9": true
+   }
+  },
+  "eatsWithItem": 42729,
+  "shareLastEatInReach": 0.40501766949846707,
+  "shareAnyEarlierEat": 0.9994383205785298,
+  "bandMismatch": {
+   "train": 0,
+   "valid": 0
+  },
+  "baseOk": true
+ },
+ "results": [
+  {
+   "id": "base",
+   "name": "base: (OBS, ACTION)",
+   "view": "none: the token stream as it is",
+   "ce": 0.31759049547075474,
+   "n": 262144,
+   "ceAlpha0p1": 0.31614198520598735,
+   "ceAlpha0p01": 0.31582765620899367,
+   "thinRecordShare": 0,
+   "trainCE": 0.31577762496482686,
+   "gap": 0.0018128705059278771,
+   "contexts": 303,
+   "testContexts": 303,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 932,
+   "contextsUnder10": 0,
+   "ceFromEatsWithItem": 0.31588098243200435,
+   "ceFromOther": 0.0017095130386928043,
+   "eatsWithItem": 86464,
+   "coverageOfEats": null,
+   "perLifeCE": [
+    0.3325158023414031,
+    0.32628597694206274,
+    0.3001337512919103,
+    0.3114264513074648
+   ],
+   "perUnitCE": [
+    0.3439666713856252,
+    0.32459708780746954,
+    0.3246330469599494,
+    0.3368664032124502,
+    0.31773344471502446,
+    0.2934809483139142,
+    0.3618247313002916,
+    0.3321047834389527,
+    0.2930365092940821,
+    0.3153963548807529,
+    0.30130895175739314,
+    0.29079318923529573,
+    0.2966660310599686,
+    0.3318166625344855,
+    0.3155260949720257,
+    0.30169701666329146
+   ],
+   "deltaVsBase": 0,
+   "perLifeDeltaVsBase": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "unitsLowerThanBase": 0,
+   "deltaVsBaseAlpha0p01": 0,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "foldDeltaMean": 0,
+   "foldDeltaMin": 0,
+   "foldDeltaMax": 0,
+   "foldsBelowBase": 0
+  },
+  {
+   "id": "trace_unlimited",
+   "name": "kind trace, unlimited",
+   "view": "no change to the view; needs memory kept beyond the trunk's reach (the trace is a function of the being's own past tokens)",
+   "ce": 0.027189954408626472,
+   "n": 262144,
+   "ceAlpha0p1": 0.023680935866271634,
+   "ceAlpha0p01": 0.0229906357291274,
+   "thinRecordShare": 0.001018524169921875,
+   "trainCE": 0.027159254829685918,
+   "gap": 0.000030699578940553834,
+   "contexts": 814,
+   "testContexts": 770,
+   "unseenTestContexts": 3,
+   "unseenRecords": 4,
+   "unseenRecordShare": 0.0000152587890625,
+   "unseenCEContribution": 0.00004026881911644377,
+   "medianTrainCount": 259,
+   "contextsUnder10": 63,
+   "ceFromEatsWithItem": 0.0236150720044692,
+   "ceFromOther": 0.0035748824041688253,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.9994448556624722,
+   "perLifeCE": [
+    0.0278389965231539,
+    0.02637456042517859,
+    0.027177827987808673,
+    0.027368432698386992
+   ],
+   "perUnitCE": [
+    0.02894999329339761,
+    0.027485989557786344,
+    0.025601820390838668,
+    0.029318182850602385,
+    0.026864156719821317,
+    0.024469494286680535,
+    0.02622177220770125,
+    0.027942818486523253,
+    0.027144366785885662,
+    0.028750151294949386,
+    0.026781363277042478,
+    0.026035430593363315,
+    0.025654198136411534,
+    0.027731847593689202,
+    0.028769022420384233,
+    0.02731866264307431
+   ],
+   "deltaVsBase": -0.29040054106212826,
+   "perLifeDeltaVsBase": [
+    -0.3046768058182492,
+    -0.29991141651688413,
+    -0.2729559233041016,
+    -0.2840580186090778
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.29283702047986626,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.28646412944709626,
+    -0.28877787369837643,
+    -0.2868094401503532,
+    -0.29432027785020554,
+    -0.29040054106212826
+   ],
+   "foldDeltaMean": -0.28935445244163194,
+   "foldDeltaMin": -0.29432027785020554,
+   "foldDeltaMax": -0.28646412944709626,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_reach",
+   "name": "kind trace within reach",
+   "view": "no change to the view; the trace is a function of the being's own past tokens inside the trunk's feed-forward window",
+   "ce": 0.19607262911461681,
+   "n": 262144,
+   "ceAlpha0p1": 0.1918198361736722,
+   "ceAlpha0p01": 0.1909858840299873,
+   "thinRecordShare": 0.002307891845703125,
+   "trainCE": 0.1938588002205777,
+   "gap": 0.0022138288940391215,
+   "contexts": 969,
+   "testContexts": 938,
+   "unseenTestContexts": 1,
+   "unseenRecords": 1,
+   "unseenRecordShare": 0.000003814697265625,
+   "unseenCEContribution": 0.000010067204779110942,
+   "medianTrainCount": 197,
+   "contextsUnder10": 66,
+   "ceFromEatsWithItem": 0.19186480399173275,
+   "ceFromOther": 0.004207825122865714,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.40864405995558845,
+   "perLifeCE": [
+    0.20397689676669967,
+    0.1980342352347167,
+    0.1882255048656149,
+    0.1940538795913928
+   ],
+   "perUnitCE": [
+    0.21180461672769493,
+    0.20179811397826528,
+    0.19751010875833092,
+    0.20479474760243072,
+    0.19361774476280705,
+    0.18256703952865383,
+    0.21353540227702297,
+    0.20241675437032342,
+    0.18340625067631,
+    0.19707472431090706,
+    0.1885802701634398,
+    0.18384077431169762,
+    0.1871003903863588,
+    0.20264076236218803,
+    0.19508781664780148,
+    0.1913865489691532
+   ],
+   "deltaVsBase": -0.12151786635613793,
+   "perLifeDeltaVsBase": [
+    -0.12853890557470343,
+    -0.12825174170734605,
+    -0.11190824642629538,
+    -0.11737257171607202
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.12484177217900636,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.12053196547453329,
+    -0.12093286412005957,
+    -0.12174642209641201,
+    -0.12461222966031313,
+    -0.12151786635613793
+   ],
+   "foldDeltaMean": -0.12186826954149119,
+   "foldDeltaMin": -0.12461222966031313,
+   "foldDeltaMax": -0.12053196547453329,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "witness4",
+   "name": "witness, 4 ticks",
+   "view": "changes the view: it shows other valleys (VIEW_KERNEL: \"other valleys\")",
+   "ce": 0.2637089645077621,
+   "n": 262144,
+   "ceAlpha0p1": 0.259240499817218,
+   "ceAlpha0p01": 0.2582534167816714,
+   "thinRecordShare": 0.00211334228515625,
+   "trainCE": 0.25038079505147487,
+   "gap": 0.013328169456287231,
+   "contexts": 978,
+   "testContexts": 976,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 252,
+   "contextsUnder10": 10,
+   "ceFromEatsWithItem": 0.25927292766969956,
+   "ceFromOther": 0.0044360368379834664,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.7387351961509993,
+   "perLifeCE": [
+    0.26263560103307826,
+    0.2696007964294338,
+    0.2639263383917026,
+    0.25867312217648186
+   ],
+   "perUnitCE": [
+    0.2695945921013109,
+    0.24579187654525664,
+    0.25366618841125405,
+    0.2814897470744965,
+    0.2555873040020058,
+    0.25707680323064636,
+    0.2984911261313933,
+    0.26724795235367693,
+    0.2620315256965103,
+    0.2769411359518875,
+    0.2561302833782903,
+    0.26060240854002165,
+    0.250990116304689,
+    0.28699389151778887,
+    0.2550521546219183,
+    0.2416563262614457
+   ],
+   "deltaVsBase": -0.05388153096299264,
+   "perLifeDeltaVsBase": [
+    -0.06988020130832484,
+    -0.05668518051262894,
+    -0.03620741290020768,
+    -0.05275332913098296
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.05757423942732226,
+   "sparse": true,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.06706190912775142,
+    -0.07525174816402452,
+    -0.055455577555040825,
+    -0.06038596852100875,
+    -0.05388153096299264
+   ],
+   "foldDeltaMean": -0.06240734686616363,
+   "foldDeltaMin": -0.07525174816402452,
+   "foldDeltaMax": -0.05388153096299264,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "witness16",
+   "name": "witness, 16 ticks",
+   "view": "changes the view: it shows other valleys (VIEW_KERNEL: \"other valleys\")",
+   "ce": 0.24260427499223633,
+   "n": 262144,
+   "ceAlpha0p1": 0.23858555428940395,
+   "ceAlpha0p01": 0.23772074086793732,
+   "thinRecordShare": 0.00225830078125,
+   "trainCE": 0.22803735672846634,
+   "gap": 0.01456691826376999,
+   "contexts": 951,
+   "testContexts": 910,
+   "unseenTestContexts": 2,
+   "unseenRecords": 2,
+   "unseenRecordShare": 0.00000762939453125,
+   "unseenCEContribution": 0.000020134409558221885,
+   "medianTrainCount": 207,
+   "contextsUnder10": 107,
+   "ceFromEatsWithItem": 0.23850856674442025,
+   "ceFromOther": 0.004095708247722519,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.9939049777942265,
+   "perLifeCE": [
+    0.23624383639572796,
+    0.24561231710012743,
+    0.24980639960841347,
+    0.2387545468645653
+   ],
+   "perUnitCE": [
+    0.24287707027904337,
+    0.21919113225044046,
+    0.22415141211374595,
+    0.25875573093959836,
+    0.22819288819381553,
+    0.24279543685031377,
+    0.2712243148612833,
+    0.24023662849498725,
+    0.24420922624816194,
+    0.26364220799987187,
+    0.24149870532230808,
+    0.24987545886316134,
+    0.2327348763256852,
+    0.27030958107904385,
+    0.23175354094853098,
+    0.22022018910485322
+   ],
+   "deltaVsBase": -0.07498622047851841,
+   "perLifeDeltaVsBase": [
+    -0.09627196594567514,
+    -0.08067365984193531,
+    -0.05032735168349681,
+    -0.07267190444289953
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.07810691534105635,
+   "sparse": true,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.0892913435244567,
+    -0.1012927315715054,
+    -0.0753607854431613,
+    -0.08114610187799545,
+    -0.07498622047851841
+   ],
+   "foldDeltaMean": -0.08441543657912745,
+   "foldDeltaMin": -0.1012927315715054,
+   "foldDeltaMax": -0.07498622047851841,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "season_turn",
+   "name": "season turn flag",
+   "view": "changes the view: it shows the season clock (VIEW_KERNEL: \"the season index and clock\")",
+   "ce": 0.3183940248090024,
+   "n": 262144,
+   "ceAlpha0p1": 0.3164780970541052,
+   "ceAlpha0p01": 0.31601361462678573,
+   "thinRecordShare": 0.00115203857421875,
+   "trainCE": 0.3163312119423208,
+   "gap": 0.0020628128666816403,
+   "contexts": 520,
+   "testContexts": 441,
+   "unseenTestContexts": 9,
+   "unseenRecords": 10,
+   "unseenRecordShare": 0.00003814697265625,
+   "unseenCEContribution": 0.00010067204779110942,
+   "medianTrainCount": 143,
+   "contextsUnder10": 163,
+   "ceFromEatsWithItem": 0.3160844262648596,
+   "ceFromOther": 0.0023095985442460974,
+   "eatsWithItem": 86464,
+   "coverageOfEats": null,
+   "perLifeCE": [
+    0.333380188832409,
+    0.3271968892463556,
+    0.30084185383315826,
+    0.3121571673247397
+   ],
+   "perUnitCE": [
+    0.34493341891819196,
+    0.32570032707335933,
+    0.32517089175055436,
+    0.3377161175873434,
+    0.3185569359437311,
+    0.29436196711862983,
+    0.36253668992605564,
+    0.3333319639968358,
+    0.2937902825246793,
+    0.31631728133775816,
+    0.30201731117178415,
+    0.29124254029831265,
+    0.29727325123157045,
+    0.3326424699951968,
+    0.3163668645691292,
+    0.30234608350290515
+   ],
+   "deltaVsBase": 0.0008035293382476771,
+   "perLifeDeltaVsBase": [
+    0.0008643864910058974,
+    0.0009109123042928546,
+    0.0007081025412479791,
+    0.0007307160172748683
+   ],
+   "unitsLowerThanBase": 0,
+   "deltaVsBaseAlpha0p01": 0.0001859584177920648,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    0.0007468513274188071,
+    0.0007290458664214738,
+    0.0008086209457413007,
+    0.0007795763936430111,
+    0.0008035293382476771
+   ],
+   "foldDeltaMean": 0.000773524774294454,
+   "foldDeltaMin": 0.0007290458664214738,
+   "foldDeltaMax": 0.0008086209457413007,
+   "foldsBelowBase": 0
+  },
+  {
+   "id": "season_age",
+   "name": "season age (0-31, 32-127, 128+)",
+   "view": "changes the view: it shows the season clock (VIEW_KERNEL: \"the season index and clock\")",
+   "ce": 0.3208422269305036,
+   "n": 262144,
+   "ceAlpha0p1": 0.31660035993146024,
+   "ceAlpha0p01": 0.3156091955952422,
+   "thinRecordShare": 0.00234222412109375,
+   "trainCE": 0.3180714306361888,
+   "gap": 0.0027707962943148146,
+   "contexts": 909,
+   "testContexts": 902,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 210,
+   "contextsUnder10": 46,
+   "ceFromEatsWithItem": 0.31632152753081105,
+   "ceFromOther": 0.004520699399671333,
+   "eatsWithItem": 86464,
+   "coverageOfEats": null,
+   "perLifeCE": [
+    0.33620338007671574,
+    0.32963949807744475,
+    0.3030364956638781,
+    0.31448953390356527
+   ],
+   "perUnitCE": [
+    0.34752418636733606,
+    0.3282889696768398,
+    0.3275832197577641,
+    0.3414171445050931,
+    0.3212899850047327,
+    0.29704879538036055,
+    0.3647682140152871,
+    0.335450997909506,
+    0.2953331590115937,
+    0.3186048099104833,
+    0.30427404822602677,
+    0.293933965507524,
+    0.2989336438247618,
+    0.3350873911487039,
+    0.31856483877614966,
+    0.30537226186474403
+   ],
+   "deltaVsBase": 0.0032517314597488856,
+   "perLifeDeltaVsBase": [
+    0.0036875777353126415,
+    0.0033535211353820094,
+    0.0029027443719678026,
+    0.0030630825961004415
+   ],
+   "unitsLowerThanBase": 0,
+   "deltaVsBaseAlpha0p01": -0.00021846061375146997,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    0.0026231746225364727,
+    0.0028361580604301384,
+    0.002673428270506706,
+    0.0028633502991526893,
+    0.0032517314597488856
+   ],
+   "foldDeltaMean": 0.0028495685424749784,
+   "foldDeltaMin": 0.0026231746225364727,
+   "foldDeltaMax": 0.0032517314597488856,
+   "foldsBelowBase": 0
+  },
+  {
+   "id": "group",
+   "name": "group field (others down, others warned)",
+   "view": "changes the view: it shows other valleys (VIEW_KERNEL: \"other valleys\")",
+   "ce": 0.33051284488459354,
+   "n": 262144,
+   "ceAlpha0p1": 0.31816003629112694,
+   "ceAlpha0p01": 0.31530617521419,
+   "thinRecordShare": 0.01204681396484375,
+   "trainCE": 0.3267061927660969,
+   "gap": 0.003806652118496623,
+   "contexts": 2982,
+   "testContexts": 2860,
+   "unseenTestContexts": 13,
+   "unseenRecords": 15,
+   "unseenRecordShare": 0.000057220458984375,
+   "unseenCEContribution": 0.0001510080716866641,
+   "medianTrainCount": 77,
+   "contextsUnder10": 410,
+   "ceFromEatsWithItem": 0.31767543469903425,
+   "ceFromOther": 0.012837410185587485,
+   "eatsWithItem": 86464,
+   "coverageOfEats": null,
+   "perLifeCE": [
+    0.3484311656827585,
+    0.339982747188763,
+    0.3111248858462646,
+    0.3225125808208577
+   ],
+   "perUnitCE": [
+    0.35887466297503545,
+    0.3416856462165122,
+    0.3395431353020762,
+    0.3536212182373786,
+    0.3299707610492673,
+    0.3108376440241676,
+    0.3738082264844673,
+    0.3453143571971467,
+    0.30596065924239796,
+    0.3244853487888053,
+    0.3131670458019929,
+    0.300886489551805,
+    0.30625087157399616,
+    0.34593482228619465,
+    0.32660738318714283,
+    0.31125724623601814
+   ],
+   "deltaVsBase": 0.012922349413838796,
+   "perLifeDeltaVsBase": [
+    0.015915363341355404,
+    0.01369677024670024,
+    0.010991134554354298,
+    0.011086129513392884
+   ],
+   "unitsLowerThanBase": 0,
+   "deltaVsBaseAlpha0p01": -0.000521480994803647,
+   "sparse": false,
+   "smoothingLimited": true,
+   "foldDeltas": [
+    0.012838062058735111,
+    0.013925815700587707,
+    0.013074986841027036,
+    0.014372415531225535,
+    0.012922349413838796
+   ],
+   "foldDeltaMean": 0.013426725909082837,
+   "foldDeltaMin": 0.012838062058735111,
+   "foldDeltaMax": 0.014372415531225535,
+   "foldsBelowBase": 0
+  },
+  {
+   "id": "finer_body",
+   "name": "finer body (exact E and H)",
+   "view": "changes the view: it shows exact E and H inside a band (VIEW_KERNEL), and so changes the OBS token itself",
+   "ce": 0.33136743073002933,
+   "n": 262144,
+   "ceAlpha0p1": 0.318662308203057,
+   "ceAlpha0p01": 0.31579073296616605,
+   "thinRecordShare": 0.004024505615234375,
+   "trainCE": 0.3273030971317331,
+   "gap": 0.004064333598296221,
+   "contexts": 2703,
+   "testContexts": 2698,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 127,
+   "contextsUnder10": 25,
+   "ceFromEatsWithItem": 0.3187269032416828,
+   "ceFromOther": 0.012640527488197873,
+   "eatsWithItem": 86464,
+   "coverageOfEats": null,
+   "perLifeCE": [
+    0.34719569154576463,
+    0.3394517420709296,
+    0.312561658374534,
+    0.32626063092812313
+   ],
+   "perUnitCE": [
+    0.3596485403192449,
+    0.33922669270125744,
+    0.33804524635053923,
+    0.35186228681221393,
+    0.33132256827667,
+    0.3048522507680211,
+    0.3752698904655108,
+    0.34636225877365984,
+    0.304292382277805,
+    0.32957231186582825,
+    0.315687044055727,
+    0.3006948952989473,
+    0.31059448914118454,
+    0.3483133324075732,
+    0.33051913415620754,
+    0.31561556800763263
+   ],
+   "deltaVsBase": 0.013776935259274592,
+   "perLifeDeltaVsBase": [
+    0.01467988920436153,
+    0.013165765128866858,
+    0.012427907082623701,
+    0.014834179620658305
+   ],
+   "unitsLowerThanBase": 0,
+   "deltaVsBaseAlpha0p01": -0.00003692324282761339,
+   "sparse": false,
+   "smoothingLimited": true,
+   "foldDeltas": [
+    0.012642323903287345,
+    0.013003530824074516,
+    0.012577661130606821,
+    0.01330959200036036,
+    0.013776935259274592
+   ],
+   "foldDeltaMean": 0.013062008623520726,
+   "foldDeltaMin": 0.012577661130606821,
+   "foldDeltaMax": 0.013776935259274592,
+   "foldsBelowBase": 0
+  },
+  {
+   "id": "trace_witness16",
+   "name": "kind trace + witness 16",
+   "view": "changes the view (the witness half): other valleys",
+   "ce": 0.03542676784434895,
+   "n": 262144,
+   "ceAlpha0p1": 0.02516833769796768,
+   "ceAlpha0p01": 0.022855837114433914,
+   "thinRecordShare": 0.012298583984375,
+   "trainCE": 0.033217566484554345,
+   "gap": 0.0022092013597946047,
+   "contexts": 2678,
+   "testContexts": 2302,
+   "unseenTestContexts": 28,
+   "unseenRecords": 41,
+   "unseenRecordShare": 0.000156402587890625,
+   "unseenCEContribution": 0.00041275539594354824,
+   "medianTrainCount": 36,
+   "contextsUnder10": 790,
+   "ceFromEatsWithItem": 0.025659249259790025,
+   "ceFromOther": 0.00976751858456452,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.9998149518874907,
+   "perLifeCE": [
+    0.0361522510900014,
+    0.033984845342351945,
+    0.03602726949730156,
+    0.035542705447758755
+   ],
+   "perUnitCE": [
+    0.03768057022521398,
+    0.03465430682614636,
+    0.03309380277408488,
+    0.03918032453456992,
+    0.03243596111567875,
+    0.034561237051374934,
+    0.03491151268297673,
+    0.034030670519390474,
+    0.03538850206038845,
+    0.038909358894005645,
+    0.03499672585054256,
+    0.03481449118427128,
+    0.03558472956471823,
+    0.037475502619390845,
+    0.03536197675795432,
+    0.03374861284898093
+   ],
+   "deltaVsBase": -0.2821637276264058,
+   "perLifeDeltaVsBase": [
+    -0.2963635512514017,
+    -0.2923011315997108,
+    -0.2641064817946087,
+    -0.2758837458597061
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.29297181909455977,
+   "sparse": false,
+   "smoothingLimited": true,
+   "foldDeltas": [
+    -0.28014288794984277,
+    -0.28282696881714947,
+    -0.27869877389854636,
+    -0.28609231922740186,
+    -0.2821637276264058
+   ],
+   "foldDeltaMean": -0.28198493550386927,
+   "foldDeltaMin": -0.28609231922740186,
+   "foldDeltaMax": -0.27869877389854636,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_season_age",
+   "name": "kind trace + season age",
+   "view": "changes the view (the season-age half): the season clock",
+   "ce": 0.026388829042187263,
+   "n": 262144,
+   "ceAlpha0p1": 0.016574713843488284,
+   "ceAlpha0p01": 0.014239342532012434,
+   "thinRecordShare": 0.009525299072265625,
+   "trainCE": 0.025018681972143797,
+   "gap": 0.0013701470700434662,
+   "contexts": 2292,
+   "testContexts": 2144,
+   "unseenTestContexts": 13,
+   "unseenRecords": 20,
+   "unseenRecordShare": 0.0000762939453125,
+   "unseenCEContribution": 0.00020134409558221874,
+   "medianTrainCount": 67,
+   "contextsUnder10": 387,
+   "ceFromEatsWithItem": 0.017006577419994076,
+   "ceFromOther": 0.009382251622191822,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.9994448556624722,
+   "perLifeCE": [
+    0.027854495223766994,
+    0.0265730267936642,
+    0.024957055237706017,
+    0.026170738913624477
+   ],
+   "perUnitCE": [
+    0.029675055913918814,
+    0.026966555658633717,
+    0.02600085913107209,
+    0.028775510191425352,
+    0.026617979487027994,
+    0.02517695993351843,
+    0.02691762362896633,
+    0.027579544125129297,
+    0.023610659391079536,
+    0.02595141695735306,
+    0.025249642228981226,
+    0.02501650237338599,
+    0.02493012542750164,
+    0.026660375626851297,
+    0.026840385061827333,
+    0.026252069538301878
+   ],
+   "deltaVsBase": -0.2912016664285675,
+   "perLifeDeltaVsBase": [
+    -0.3046613071176361,
+    -0.29971295014839855,
+    -0.27517669605420425,
+    -0.28525571239384034
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.30158831367698125,
+   "sparse": false,
+   "smoothingLimited": true,
+   "foldDeltas": [
+    -0.288322059141117,
+    -0.29065532040088904,
+    -0.28858538189736355,
+    -0.2957740347270684,
+    -0.2912016664285675
+   ],
+   "foldDeltaMean": -0.29090769251900117,
+   "foldDeltaMin": -0.2957740347270684,
+   "foldDeltaMax": -0.288322059141117,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "table_oracle",
+   "name": "reference ceiling: true effect of the item this season (not a sense)",
+   "view": "not a sense: a ceiling",
+   "ce": 0.00554390316116191,
+   "n": 262144,
+   "ceAlpha0p1": 0.001894610814127845,
+   "ceAlpha0p01": 0.0010620100070030955,
+   "thinRecordShare": 0.000858306884765625,
+   "trainCE": 0.005249887418255009,
+   "gap": 0.0002940157429069017,
+   "contexts": 753,
+   "testContexts": 746,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 301,
+   "contextsUnder10": 15,
+   "ceFromEatsWithItem": 0.00207349322474768,
+   "ceFromOther": 0.0034704099364167387,
+   "eatsWithItem": 86464,
+   "coverageOfEats": null,
+   "perLifeCE": [
+    0.006209039386781929,
+    0.005433177785343965,
+    0.005148094543249828,
+    0.005385300929283897
+   ],
+   "perUnitCE": [
+    0.006491959020129498,
+    0.005890801640941357,
+    0.005831627290846794,
+    0.006621769595204747,
+    0.005625197490239892,
+    0.004818546743796172,
+    0.005470639893739449,
+    0.005818327013596164,
+    0.004946349239554639,
+    0.005406820144857295,
+    0.0054307628496832305,
+    0.004808445938901827,
+    0.005037292064453675,
+    0.0057813183225439,
+    0.005439707891047465,
+    0.00528288543908623
+   ],
+   "deltaVsBase": -0.3120465923095928,
+   "perLifeDeltaVsBase": [
+    -0.3263067629546212,
+    -0.32085279915671877,
+    -0.29498565674866045,
+    -0.3060411503781809
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.31476564620199055,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.3088129717115295,
+    -0.3112816764141461,
+    -0.30896069163832596,
+    -0.3167525097818657,
+    -0.3120465923095928
+   ],
+   "foldDeltaMean": -0.31157088837109204,
+   "foldDeltaMin": -0.3167525097818657,
+   "foldDeltaMax": -0.3088129717115295,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_within8",
+   "name": "kind trace kept up to 8 ticks old (extra)",
+   "view": "no change to the view; needs memory kept beyond the trunk's reach (the trace is a function of the being's own past tokens)",
+   "ce": 0.13642701465755622,
+   "n": 262144,
+   "ceAlpha0p1": 0.13209355098770478,
+   "ceAlpha0p01": 0.1312629483171667,
+   "thinRecordShare": 0.00206756591796875,
+   "trainCE": 0.13452204105755397,
+   "gap": 0.0019049736000022466,
+   "contexts": 973,
+   "testContexts": 954,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 218,
+   "contextsUnder10": 43,
+   "ceFromEatsWithItem": 0.1321462754707289,
+   "ceFromOther": 0.004280739186848353,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.6079293116210215,
+   "perLifeCE": [
+    0.1416201878427472,
+    0.13577775301159192,
+    0.13201975316915862,
+    0.13629036460677077
+   ],
+   "perUnitCE": [
+    0.14622932253253712,
+    0.1410244905516847,
+    0.13853969333393643,
+    0.14068724495285717,
+    0.1360147985111746,
+    0.12788019516064245,
+    0.14242401245139735,
+    0.1367920059231854,
+    0.12701030879237915,
+    0.13815453408384323,
+    0.13195011683207453,
+    0.13096405296840272,
+    0.1320291328823999,
+    0.14292271710023238,
+    0.13396369141186493,
+    0.13624591703263067
+   ],
+   "deltaVsBase": -0.18116348081319852,
+   "perLifeDeltaVsBase": [
+    -0.19089561449865589,
+    -0.19050822393047082,
+    -0.16811399812275166,
+    -0.17513608670069405
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.18456470789182697,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.1797839488460327,
+    -0.17996156285550075,
+    -0.1805511078883966,
+    -0.18541131196549096,
+    -0.18116348081319852
+   ],
+   "foldDeltaMean": -0.18137428247372392,
+   "foldDeltaMin": -0.18541131196549096,
+   "foldDeltaMax": -0.1797839488460327,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_within16",
+   "name": "kind trace kept up to 16 ticks old (extra)",
+   "view": "no change to the view; needs memory kept beyond the trunk's reach (the trace is a function of the being's own past tokens)",
+   "ce": 0.07038909507639284,
+   "n": 262144,
+   "ceAlpha0p1": 0.0659717485819222,
+   "ceAlpha0p01": 0.06507977971296651,
+   "thinRecordShare": 0.001918792724609375,
+   "trainCE": 0.06949702835467907,
+   "gap": 0.000892066721713769,
+   "contexts": 978,
+   "testContexts": 964,
+   "unseenTestContexts": 0,
+   "unseenRecords": 0,
+   "unseenRecordShare": 0,
+   "unseenCEContribution": 0,
+   "medianTrainCount": 225,
+   "contextsUnder10": 41,
+   "ceFromEatsWithItem": 0.06603514362857975,
+   "ceFromOther": 0.004353951447799965,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.8403728719467062,
+   "perLifeCE": [
+    0.07326225978512223,
+    0.0677594989097831,
+    0.06938140357274575,
+    0.07115321803784766
+   ],
+   "perUnitCE": [
+    0.07591711551239275,
+    0.0738140575528503,
+    0.06933014170185495,
+    0.07398772437342152,
+    0.07185587033311973,
+    0.06540618628328587,
+    0.06856058870606198,
+    0.06521535031668658,
+    0.06969537317291113,
+    0.07277193569542888,
+    0.06811011990422075,
+    0.06694818551843178,
+    0.0699659202911094,
+    0.07340126996252047,
+    0.0706919786509333,
+    0.07055370324684937
+   ],
+   "deltaVsBase": -0.2472014003943619,
+   "perLifeDeltaVsBase": [
+    -0.25925354255628086,
+    -0.2585264780322796,
+    -0.23075234771916453,
+    -0.24027323326961716
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.25074787649602714,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.24383101518952255,
+    -0.24658091113122654,
+    -0.24452107168841603,
+    -0.2514155076603941,
+    -0.2472014003943619
+   ],
+   "foldDeltaMean": -0.24670998121278426,
+   "foldDeltaMin": -0.2514155076603941,
+   "foldDeltaMax": -0.24383101518952255,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_within32",
+   "name": "kind trace kept up to 32 ticks old (extra)",
+   "view": "no change to the view; needs memory kept beyond the trunk's reach (the trace is a function of the being's own past tokens)",
+   "ce": 0.03556677448579277,
+   "n": 262144,
+   "ceAlpha0p1": 0.03141436215551688,
+   "ceAlpha0p01": 0.030591473083159907,
+   "thinRecordShare": 0.001819610595703125,
+   "trainCE": 0.034799016936662576,
+   "gap": 0.0007677575491301936,
+   "contexts": 969,
+   "testContexts": 943,
+   "unseenTestContexts": 6,
+   "unseenRecords": 8,
+   "unseenRecordShare": 0.000030517578125,
+   "unseenCEContribution": 0.00008053763823288754,
+   "medianTrainCount": 206,
+   "contextsUnder10": 83,
+   "ceFromEatsWithItem": 0.03133966463875299,
+   "ceFromOther": 0.004227109847037649,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.9680676350851222,
+   "perLifeCE": [
+    0.036921304407459145,
+    0.03373376625579247,
+    0.03571296329235405,
+    0.035899063987581345
+   ],
+   "perUnitCE": [
+    0.03870710056328499,
+    0.03447154920365375,
+    0.034896116765553285,
+    0.03961045109734695,
+    0.03396076191963716,
+    0.03225274705719232,
+    0.033767802907803846,
+    0.034953753138539156,
+    0.036989121203948594,
+    0.03801969061938991,
+    0.03417217918319915,
+    0.03367086216288042,
+    0.03483574421565012,
+    0.03730380731021279,
+    0.03481156871802016,
+    0.036645135706440395
+   ],
+   "deltaVsBase": -0.282023720984962,
+   "perLifeDeltaVsBase": [
+    -0.29559449793394393,
+    -0.29255221068627024,
+    -0.2644207879995562,
+    -0.27552738731988347
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.28523618312583376,
+   "sparse": false,
+   "smoothingLimited": false,
+   "foldDeltas": [
+    -0.27844256537234413,
+    -0.28133608379512925,
+    -0.2788845424319503,
+    -0.28658837091229183,
+    -0.282023720984962
+   ],
+   "foldDeltaMean": -0.2814550566993355,
+   "foldDeltaMin": -0.28658837091229183,
+   "foldDeltaMax": -0.27844256537234413,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_reach_witness16",
+   "name": "kind trace within reach + witness 16 (extra, added after the report)",
+   "view": "changes the view (the witness half): other valleys; the trace half needs no change to the view",
+   "ce": 0.16093819396216605,
+   "n": 262144,
+   "ceAlpha0p1": 0.14907709694360868,
+   "ceAlpha0p01": 0.14623273286641933,
+   "thinRecordShare": 0.013538360595703125,
+   "trainCE": 0.1513656217965726,
+   "gap": 0.009572572165593457,
+   "contexts": 3146,
+   "testContexts": 2734,
+   "unseenTestContexts": 59,
+   "unseenRecords": 68,
+   "unseenRecordShare": 0.0002593994140625,
+   "unseenCEContribution": 0.0006845699249795443,
+   "medianTrainCount": 35,
+   "contextsUnder10": 943,
+   "ceFromEatsWithItem": 0.14964997394841673,
+   "ceFromOther": 0.011288220013752657,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.9963568652849741,
+   "perLifeCE": [
+    0.15790096406754062,
+    0.1603181663936035,
+    0.16637380260428125,
+    0.15915984278327705
+   ],
+   "perUnitCE": [
+    0.16224866665914467,
+    0.15010004835953225,
+    0.1475673975681291,
+    0.1716877436833608,
+    0.1493397106024439,
+    0.16123381012836388,
+    0.17127923416575935,
+    0.15941991067785086,
+    0.1625260174560085,
+    0.17401943845209802,
+    0.15981393363284901,
+    0.16913582087616424,
+    0.15687511014721933,
+    0.17759005616044285,
+    0.15223318381644096,
+    0.14994102100902046
+   ],
+   "deltaVsBase": -0.1566523015085887,
+   "perLifeDeltaVsBase": [
+    -0.17461483827386248,
+    -0.16596781054845924,
+    -0.13375994868762903,
+    -0.15226660852418777
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.16959492334257434,
+   "sparse": true,
+   "smoothingLimited": true,
+   "foldDeltas": [
+    -0.1636165812751432,
+    -0.17106731094968938,
+    -0.15583321220382423,
+    -0.1610710989553219,
+    -0.1566523015085887
+   ],
+   "foldDeltaMean": -0.16164810097851348,
+   "foldDeltaMin": -0.17106731094968938,
+   "foldDeltaMax": -0.15583321220382423,
+   "foldsBelowBase": 5
+  },
+  {
+   "id": "trace_reach_witness4",
+   "name": "kind trace within reach + witness 4 (extra, added after the report)",
+   "view": "changes the view (the witness half): other valleys; the trace half needs no change to the view",
+   "ce": 0.17564031676203612,
+   "n": 262144,
+   "ceAlpha0p1": 0.16177539665371546,
+   "ceAlpha0p01": 0.1585351260889683,
+   "thinRecordShare": 0.016361236572265625,
+   "trainCE": 0.16613607840821873,
+   "gap": 0.00950423835381739,
+   "contexts": 3445,
+   "testContexts": 3145,
+   "unseenTestContexts": 37,
+   "unseenRecords": 53,
+   "unseenRecordShare": 0.000202178955078125,
+   "unseenCEContribution": 0.0005335618532928796,
+   "medianTrainCount": 44,
+   "contextsUnder10": 776,
+   "ceFromEatsWithItem": 0.16273102185922728,
+   "ceFromOther": 0.012909294902742735,
+   "eatsWithItem": 86464,
+   "coverageOfEats": 0.8437037379718727,
+   "perLifeCE": [
+    0.17599757381313877,
+    0.17646719332029023,
+    0.17676443269674214,
+    0.17333206721779051
+   ],
+   "perUnitCE": [
+    0.18135937666922633,
+    0.1681808628754108,
+    0.16653266419405952,
+    0.1879173915138203,
+    0.16827230720233027,
+    0.17140969854811872,
+    0.18971353162351148,
+    0.1764732359071601,
+    0.174378333848323,
+    0.18398806448575042,
+    0.17119447225469883,
+    0.1774968601981199,
+    0.17074680977439857,
+    0.18877420297366618,
+    0.16872957793326218,
+    0.1650776781898037
+   ],
+   "deltaVsBase": -0.14195017870871862,
+   "perLifeDeltaVsBase": [
+    -0.15651822852826433,
+    -0.1498187836217725,
+    -0.12336931859516814,
+    -0.1380943840896743
+   ],
+   "unitsLowerThanBase": 16,
+   "deltaVsBaseAlpha0p01": -0.15729253012002536,
+   "sparse": true,
+   "smoothingLimited": true,
+   "foldDeltas": [
+    -0.14861896255584214,
+    -0.15459641705180782,
+    -0.14254584909822768,
+    -0.1469450562048998,
+    -0.14195017870871862
+   ],
+   "foldDeltaMean": -0.1469312927238992,
+   "foldDeltaMin": -0.15459641705180782,
+   "foldDeltaMax": -0.14195017870871862,
+   "foldsBelowBase": 5
+  }
+ ],
+ "folds": [
+  {
+   "fold": 0,
+   "testSeeds": [
+    40000,
+    40003
+   ],
+   "probes": {
+    "base": {
+     "ce": 0.3140685668928548,
+     "delta": 0
+    },
+    "trace_unlimited": {
+     "ce": 0.02760443744575854,
+     "delta": -0.28646412944709626
+    },
+    "trace_reach": {
+     "ce": 0.1935366014183215,
+     "delta": -0.12053196547453329
+    },
+    "witness4": {
+     "ce": 0.24700665776510336,
+     "delta": -0.06706190912775142
+    },
+    "witness16": {
+     "ce": 0.2247772233683981,
+     "delta": -0.0892913435244567
+    },
+    "season_turn": {
+     "ce": 0.3148154182202736,
+     "delta": 0.0007468513274188071
+    },
+    "season_age": {
+     "ce": 0.31669174151539126,
+     "delta": 0.0026231746225364727
+    },
+    "group": {
+     "ce": 0.3269066289515899,
+     "delta": 0.012838062058735111
+    },
+    "finer_body": {
+     "ce": 0.32671089079614213,
+     "delta": 0.012642323903287345
+    },
+    "trace_witness16": {
+     "ce": 0.033925678943012,
+     "delta": -0.28014288794984277
+    },
+    "trace_season_age": {
+     "ce": 0.025746507751737768,
+     "delta": -0.288322059141117
+    },
+    "table_oracle": {
+     "ce": 0.005255595181325275,
+     "delta": -0.3088129717115295
+    },
+    "trace_within8": {
+     "ce": 0.1342846180468221,
+     "delta": -0.1797839488460327
+    },
+    "trace_within16": {
+     "ce": 0.07023755170333225,
+     "delta": -0.24383101518952255
+    },
+    "trace_within32": {
+     "ce": 0.03562600152051066,
+     "delta": -0.27844256537234413
+    },
+    "trace_reach_witness16": {
+     "ce": 0.1504519856177116,
+     "delta": -0.1636165812751432
+    },
+    "trace_reach_witness4": {
+     "ce": 0.16544960433701264,
+     "delta": -0.14861896255584214
+    }
+   }
+  },
+  {
+   "fold": 1,
+   "testSeeds": [
+    40004,
+    40007
+   ],
+   "probes": {
+    "base": {
+     "ce": 0.31661540375567326,
+     "delta": 0
+    },
+    "trace_unlimited": {
+     "ce": 0.027837530057296833,
+     "delta": -0.28877787369837643
+    },
+    "trace_reach": {
+     "ce": 0.1956825396356137,
+     "delta": -0.12093286412005957
+    },
+    "witness4": {
+     "ce": 0.24136365559164874,
+     "delta": -0.07525174816402452
+    },
+    "witness16": {
+     "ce": 0.21532267218416787,
+     "delta": -0.1012927315715054
+    },
+    "season_turn": {
+     "ce": 0.31734444962209474,
+     "delta": 0.0007290458664214738
+    },
+    "season_age": {
+     "ce": 0.3194515618161034,
+     "delta": 0.0028361580604301384
+    },
+    "group": {
+     "ce": 0.33054121945626097,
+     "delta": 0.013925815700587707
+    },
+    "finer_body": {
+     "ce": 0.3296189345797478,
+     "delta": 0.013003530824074516
+    },
+    "trace_witness16": {
+     "ce": 0.0337884349385238,
+     "delta": -0.28282696881714947
+    },
+    "trace_season_age": {
+     "ce": 0.025960083354784242,
+     "delta": -0.29065532040088904
+    },
+    "table_oracle": {
+     "ce": 0.005333727341527144,
+     "delta": -0.3112816764141461
+    },
+    "trace_within8": {
+     "ce": 0.13665384090017252,
+     "delta": -0.17996156285550075
+    },
+    "trace_within16": {
+     "ce": 0.0700344926244467,
+     "delta": -0.24658091113122654
+    },
+    "trace_within32": {
+     "ce": 0.03527931996054402,
+     "delta": -0.28133608379512925
+    },
+    "trace_reach_witness16": {
+     "ce": 0.14554809280598388,
+     "delta": -0.17106731094968938
+    },
+    "trace_reach_witness4": {
+     "ce": 0.16201898670386544,
+     "delta": -0.15459641705180782
+    }
+   }
+  },
+  {
+   "fold": 2,
+   "testSeeds": [
+    40008,
+    40011
+   ],
+   "probes": {
+    "base": {
+     "ce": 0.31409920147705706,
+     "delta": 0
+    },
+    "trace_unlimited": {
+     "ce": 0.027289761326703847,
+     "delta": -0.2868094401503532
+    },
+    "trace_reach": {
+     "ce": 0.19235277938064504,
+     "delta": -0.12174642209641201
+    },
+    "witness4": {
+     "ce": 0.25864362392201623,
+     "delta": -0.055455577555040825
+    },
+    "witness16": {
+     "ce": 0.23873841603389576,
+     "delta": -0.0753607854431613
+    },
+    "season_turn": {
+     "ce": 0.31490782242279836,
+     "delta": 0.0008086209457413007
+    },
+    "season_age": {
+     "ce": 0.31677262974756376,
+     "delta": 0.002673428270506706
+    },
+    "group": {
+     "ce": 0.3271741883180841,
+     "delta": 0.013074986841027036
+    },
+    "finer_body": {
+     "ce": 0.3266768626076639,
+     "delta": 0.012577661130606821
+    },
+    "trace_witness16": {
+     "ce": 0.03540042757851072,
+     "delta": -0.27869877389854636
+    },
+    "trace_season_age": {
+     "ce": 0.02551381957969349,
+     "delta": -0.28858538189736355
+    },
+    "table_oracle": {
+     "ce": 0.005138509838731113,
+     "delta": -0.30896069163832596
+    },
+    "trace_within8": {
+     "ce": 0.13354809358866046,
+     "delta": -0.1805511078883966
+    },
+    "trace_within16": {
+     "ce": 0.06957812978864104,
+     "delta": -0.24452107168841603
+    },
+    "trace_within32": {
+     "ce": 0.03521465904510671,
+     "delta": -0.2788845424319503
+    },
+    "trace_reach_witness16": {
+     "ce": 0.15826598927323282,
+     "delta": -0.15583321220382423
+    },
+    "trace_reach_witness4": {
+     "ce": 0.17155335237882938,
+     "delta": -0.14254584909822768
+    }
+   }
+  },
+  {
+   "fold": 3,
+   "testSeeds": [
+    40012,
+    40015
+   ],
+   "probes": {
+    "base": {
+     "ce": 0.32228921444441866,
+     "delta": 0
+    },
+    "trace_unlimited": {
+     "ce": 0.02796893659421312,
+     "delta": -0.29432027785020554
+    },
+    "trace_reach": {
+     "ce": 0.19767698478410553,
+     "delta": -0.12461222966031313
+    },
+    "witness4": {
+     "ce": 0.2619032459234099,
+     "delta": -0.06038596852100875
+    },
+    "witness16": {
+     "ce": 0.2411431125664232,
+     "delta": -0.08114610187799545
+    },
+    "season_turn": {
+     "ce": 0.32306879083806167,
+     "delta": 0.0007795763936430111
+    },
+    "season_age": {
+     "ce": 0.32515256474357135,
+     "delta": 0.0028633502991526893
+    },
+    "group": {
+     "ce": 0.3366616299756442,
+     "delta": 0.014372415531225535
+    },
+    "finer_body": {
+     "ce": 0.335598806444779,
+     "delta": 0.01330959200036036
+    },
+    "trace_witness16": {
+     "ce": 0.036196895217016814,
+     "delta": -0.28609231922740186
+    },
+    "trace_season_age": {
+     "ce": 0.026515179717350235,
+     "delta": -0.2957740347270684
+    },
+    "table_oracle": {
+     "ce": 0.0055367046625529595,
+     "delta": -0.3167525097818657
+    },
+    "trace_within8": {
+     "ce": 0.1368779024789277,
+     "delta": -0.18541131196549096
+    },
+    "trace_within16": {
+     "ce": 0.07087370678402453,
+     "delta": -0.2514155076603941
+    },
+    "trace_within32": {
+     "ce": 0.03570084353212681,
+     "delta": -0.28658837091229183
+    },
+    "trace_reach_witness16": {
+     "ce": 0.16121811548909676,
+     "delta": -0.1610710989553219
+    },
+    "trace_reach_witness4": {
+     "ce": 0.17534415823951885,
+     "delta": -0.1469450562048998
+    }
+   }
+  },
+  {
+   "fold": 4,
+   "testSeeds": [
+    40016,
+    40019
+   ],
+   "probes": {
+    "base": {
+     "ce": 0.31759049547075474,
+     "delta": 0
+    },
+    "trace_unlimited": {
+     "ce": 0.027189954408626472,
+     "delta": -0.29040054106212826
+    },
+    "trace_reach": {
+     "ce": 0.19607262911461681,
+     "delta": -0.12151786635613793
+    },
+    "witness4": {
+     "ce": 0.2637089645077621,
+     "delta": -0.05388153096299264
+    },
+    "witness16": {
+     "ce": 0.24260427499223633,
+     "delta": -0.07498622047851841
+    },
+    "season_turn": {
+     "ce": 0.3183940248090024,
+     "delta": 0.0008035293382476771
+    },
+    "season_age": {
+     "ce": 0.3208422269305036,
+     "delta": 0.0032517314597488856
+    },
+    "group": {
+     "ce": 0.33051284488459354,
+     "delta": 0.012922349413838796
+    },
+    "finer_body": {
+     "ce": 0.33136743073002933,
+     "delta": 0.013776935259274592
+    },
+    "trace_witness16": {
+     "ce": 0.03542676784434895,
+     "delta": -0.2821637276264058
+    },
+    "trace_season_age": {
+     "ce": 0.026388829042187263,
+     "delta": -0.2912016664285675
+    },
+    "table_oracle": {
+     "ce": 0.00554390316116191,
+     "delta": -0.3120465923095928
+    },
+    "trace_within8": {
+     "ce": 0.13642701465755622,
+     "delta": -0.18116348081319852
+    },
+    "trace_within16": {
+     "ce": 0.07038909507639284,
+     "delta": -0.2472014003943619
+    },
+    "trace_within32": {
+     "ce": 0.03556677448579277,
+     "delta": -0.282023720984962
+    },
+    "trace_reach_witness16": {
+     "ce": 0.16093819396216605,
+     "delta": -0.1566523015085887
+    },
+    "trace_reach_witness4": {
+     "ce": 0.17564031676203612,
+     "delta": -0.14195017870871862
+    }
+   }
+  }
+ ],
+ "diagnostics": {
+  "witness": {
+   "eatsWithItem": 86464,
+   "shareOfEatsWhereKindShared": 0.5428270725388601,
+   "w4": {
+    "avail": 63874,
+    "match": 44880
+   },
+   "w16": {
+    "avail": 85937,
+    "match": 60393
+   },
+   "w16Shared": {
+    "avail": 46629,
+    "match": 46457
+   },
+   "w16NotShared": {
+    "avail": 39308,
+    "match": 13936
+   }
+  },
+  "collapseOnEat": {
+   "test": 2415,
+   "eatsWithItem": 86464
+  },
+  "traceStaleness": {
+   "eatsWithTrace": 86416,
+   "sameSeasonShare": 0.9822833734493612,
+   "medianAge": 6,
+   "p90Age": 21
+  },
+  "sharedEatShareByBlock": [
+   0.5818633396869405,
+   0.625539589272209,
+   0.5497104583827531,
+   0.555565780543637,
+   0.5428270725388601
+  ],
+  "turnFlagShare": 0.001922607421875,
+  "seasonAgeBinShare": [
+   0.0634765625,
+   0.18927001953125,
+   0.74725341796875
+  ],
+  "groupDownShare": [
+   0.6427230834960938,
+   0.28619384765625,
+   0.06415557861328125,
+   0.006927490234375
+  ],
+  "groupWarnedShare": [
+   0.3942413330078125,
+   0.4042816162109375,
+   0.17363739013671875,
+   0.02783966064453125
+  ],
+  "exactBodyPairsPerObsToken": {
+   "tokens": 100,
+   "meanPairs": 9
+  },
+  "witnessBesideReachTrace": {
+   "note": "held-out CE (add-0.5) on eats with an item only, split by what the trace has on that eat; counts fitted on all training records of the probe",
+   "byPart": {
+    "base": {
+     "inReach": {
+      "ce": 0.944210715827647,
+      "n": 35333
+     },
+     "outOfReach": {
+      "ce": 0.9668873205795429,
+      "n": 51083
+     },
+     "noTrace": {
+      "ce": 1.1042091490264327,
+      "n": 48
+     }
+    },
+    "witness16": {
+     "inReach": {
+      "ce": 0.7098095504360508,
+      "n": 35333
+     },
+     "outOfReach": {
+      "ce": 0.7321342297227604,
+      "n": 51083
+     },
+     "noTrace": {
+      "ce": 0.922417045297717,
+      "n": 48
+     }
+    },
+    "traceReach": {
+     "inReach": {
+      "ce": 0.03643353444603701,
+      "n": 35333
+     },
+     "outOfReach": {
+      "ce": 0.9583822635740332,
+      "n": 51083
+     },
+     "noTrace": {
+      "ce": 1.0804153098433265,
+      "n": 48
+     }
+    },
+    "traceReachWitness16": {
+     "inReach": {
+      "ce": 0.057417030316555324,
+      "n": 35333
+     },
+     "outOfReach": {
+      "ce": 0.7273951221733759,
+      "n": 51083
+     },
+     "noTrace": {
+      "ce": 0.9083710953476483,
+      "n": 48
+     }
+    },
+    "traceReachWitness4": {
+     "inReach": {
+      "ce": 0.06086383625364629,
+      "n": 35333
+     },
+     "outOfReach": {
+      "ce": 0.7921844806476718,
+      "n": 51083
+     },
+     "noTrace": {
+      "ce": 0.860400895624034,
+      "n": 48
+     }
+    },
+    "traceUnlimited": {
+     "inReach": {
+      "ce": 0.034678773693539805,
+      "n": 35333
+     },
+     "outOfReach": {
+      "ce": 0.09591499855666238,
+      "n": 51083
+     },
+     "noTrace": {
+      "ce": 1.3670511115632706,
+      "n": 48
+     }
+    }
+   }
+  },
+  "witnessBySharedKind": {
+   "note": "held-out CE (add-0.5) on eats with an item, split by whether the fruit kind's effect was shared by all valleys that season",
+   "byShare": {
+    "base": {
+     "shared": {
+      "n": 46935,
+      "ce": 0.910801942962278
+     },
+     "notShared": {
+      "n": 39529,
+      "ce": 1.0133779014324447
+     }
+    },
+    "witness16": {
+     "shared": {
+      "n": 46935,
+      "ce": 0.29432103262376547
+     },
+     "notShared": {
+      "n": 39529,
+      "ce": 1.2322505516068
+     }
+    },
+    "witness4": {
+     "shared": {
+      "n": 46935,
+      "ce": 0.4514969490684411
+     },
+     "notShared": {
+      "n": 39529,
+      "ce": 1.1833295313950667
+     }
+    },
+    "traceReach": {
+     "shared": {
+      "n": 46935,
+      "ce": 0.5490029364821736
+     },
+     "notShared": {
+      "n": 39529,
+      "ce": 0.6205255471632058
+     }
+    },
+    "traceReachWitness16": {
+     "shared": {
+      "n": 46935,
+      "ce": 0.19384131742254188
+     },
+     "notShared": {
+      "n": 39529,
+      "ce": 0.7622732813253673
+     }
+    }
+   }
+  }
+ },
+ "tableMd": "| # | probe | held-out ANSWER CE | vs base | distinct contexts (train) | distinct test contexts | test contexts unseen | test records in unseen contexts | sparse (declared rule) | smoothing-limited (added after run 1) |\n|---|---|---|---|---|---|---|---|---|---|\n| 1 | base: (OBS, ACTION) | 0.3176 | +0.0000 | 303 | 303 | 0 | 0 (0.00%) | no | no |\n| 2 | kind trace, unlimited | 0.0272 | -0.2904 | 814 | 770 | 3 | 4 (0.00%) | no | no |\n| 3 | kind trace within reach | 0.1961 | -0.1215 | 969 | 938 | 1 | 1 (0.00%) | no | no |\n| 4 | witness, 4 ticks | 0.2637 | -0.0539 | 978 | 976 | 0 | 0 (0.00%) | YES | no |\n| 5 | witness, 16 ticks | 0.2426 | -0.0750 | 951 | 910 | 2 | 2 (0.00%) | YES | no |\n| 6 | season turn flag | 0.3184 | +0.0008 | 520 | 441 | 9 | 10 (0.00%) | no | no |\n| 7 | season age (0-31, 32-127, 128+) | 0.3208 | +0.0033 | 909 | 902 | 0 | 0 (0.00%) | no | no |\n| 8 | group field (others down, others warned) | 0.3305 | +0.0129 | 2982 | 2860 | 13 | 15 (0.01%) | no | YES |\n| 9 | finer body (exact E and H) | 0.3314 | +0.0138 | 2703 | 2698 | 0 | 0 (0.00%) | no | YES |\n| 10 | kind trace + witness 16 | 0.0354 | -0.2822 | 2678 | 2302 | 28 | 41 (0.02%) | no | YES |\n| 11 | kind trace + season age | 0.0264 | -0.2912 | 2292 | 2144 | 13 | 20 (0.01%) | no | YES |\n| ref | reference ceiling: true effect of the item this season (not a sense) | 0.0055 | -0.3120 | 753 | 746 | 0 | 0 (0.00%) | no | no |\n| extra | kind trace kept up to 8 ticks old (extra) | 0.1364 | -0.1812 | 973 | 954 | 0 | 0 (0.00%) | no | no |\n| extra | kind trace kept up to 16 ticks old (extra) | 0.0704 | -0.2472 | 978 | 964 | 0 | 0 (0.00%) | no | no |\n| extra | kind trace kept up to 32 ticks old (extra) | 0.0356 | -0.2820 | 969 | 943 | 6 | 8 (0.00%) | no | no |\n| extra | kind trace within reach + witness 16 (extra, added after the report) | 0.1609 | -0.1567 | 3146 | 2734 | 59 | 68 (0.03%) | YES | YES |\n| extra | kind trace within reach + witness 4 (extra, added after the report) | 0.1756 | -0.1420 | 3445 | 3145 | 37 | 53 (0.02%) | YES | YES |",
+ "robustMd": "| # | probe | CE at add-0.5 | CE at add-0.1 | CE at add-0.01 | vs base at add-0.01 | CE from eats with an item | CE from all other ticks | held-out minus in-sample CE | 5-fold mean vs base | 5-fold range | folds below base | test records in contexts with <30 training records |\n|---|---|---|---|---|---|---|---|---|---|---|---|---|\n| 1 | base: (OBS, ACTION) | 0.3176 | 0.3161 | 0.3158 | +0.0000 | 0.3159 | 0.0017 | 0.0018 | +0.0000 | +0.0000 to +0.0000 | 0 of 5 | 0.00% |\n| 2 | kind trace, unlimited | 0.0272 | 0.0237 | 0.0230 | -0.2928 | 0.0236 | 0.0036 | 0.0000 | -0.2894 | -0.2943 to -0.2865 | 5 of 5 | 0.10% |\n| 3 | kind trace within reach | 0.1961 | 0.1918 | 0.1910 | -0.1248 | 0.1919 | 0.0042 | 0.0022 | -0.1219 | -0.1246 to -0.1205 | 5 of 5 | 0.23% |\n| 4 | witness, 4 ticks | 0.2637 | 0.2592 | 0.2583 | -0.0576 | 0.2593 | 0.0044 | 0.0133 | -0.0624 | -0.0753 to -0.0539 | 5 of 5 | 0.21% |\n| 5 | witness, 16 ticks | 0.2426 | 0.2386 | 0.2377 | -0.0781 | 0.2385 | 0.0041 | 0.0146 | -0.0844 | -0.1013 to -0.0750 | 5 of 5 | 0.23% |\n| 6 | season turn flag | 0.3184 | 0.3165 | 0.3160 | +0.0002 | 0.3161 | 0.0023 | 0.0021 | +0.0008 | +0.0007 to +0.0008 | 0 of 5 | 0.12% |\n| 7 | season age (0-31, 32-127, 128+) | 0.3208 | 0.3166 | 0.3156 | -0.0002 | 0.3163 | 0.0045 | 0.0028 | +0.0028 | +0.0026 to +0.0033 | 0 of 5 | 0.23% |\n| 8 | group field (others down, others warned) | 0.3305 | 0.3182 | 0.3153 | -0.0005 | 0.3177 | 0.0128 | 0.0038 | +0.0134 | +0.0128 to +0.0144 | 0 of 5 | 1.20% |\n| 9 | finer body (exact E and H) | 0.3314 | 0.3187 | 0.3158 | -0.0000 | 0.3187 | 0.0126 | 0.0041 | +0.0131 | +0.0126 to +0.0138 | 0 of 5 | 0.40% |\n| 10 | kind trace + witness 16 | 0.0354 | 0.0252 | 0.0229 | -0.2930 | 0.0257 | 0.0098 | 0.0022 | -0.2820 | -0.2861 to -0.2787 | 5 of 5 | 1.23% |\n| 11 | kind trace + season age | 0.0264 | 0.0166 | 0.0142 | -0.3016 | 0.0170 | 0.0094 | 0.0014 | -0.2909 | -0.2958 to -0.2883 | 5 of 5 | 0.95% |\n| ref | reference ceiling: true effect of the item this season (not a sense) | 0.0055 | 0.0019 | 0.0011 | -0.3148 | 0.0021 | 0.0035 | 0.0003 | -0.3116 | -0.3168 to -0.3088 | 5 of 5 | 0.09% |\n| extra | kind trace kept up to 8 ticks old (extra) | 0.1364 | 0.1321 | 0.1313 | -0.1846 | 0.1321 | 0.0043 | 0.0019 | -0.1814 | -0.1854 to -0.1798 | 5 of 5 | 0.21% |\n| extra | kind trace kept up to 16 ticks old (extra) | 0.0704 | 0.0660 | 0.0651 | -0.2507 | 0.0660 | 0.0044 | 0.0009 | -0.2467 | -0.2514 to -0.2438 | 5 of 5 | 0.19% |\n| extra | kind trace kept up to 32 ticks old (extra) | 0.0356 | 0.0314 | 0.0306 | -0.2852 | 0.0313 | 0.0042 | 0.0008 | -0.2815 | -0.2866 to -0.2784 | 5 of 5 | 0.18% |\n| extra | kind trace within reach + witness 16 (extra, added after the report) | 0.1609 | 0.1491 | 0.1462 | -0.1696 | 0.1496 | 0.0113 | 0.0096 | -0.1616 | -0.1711 to -0.1558 | 5 of 5 | 1.35% |\n| extra | kind trace within reach + witness 4 (extra, added after the report) | 0.1756 | 0.1618 | 0.1585 | -0.1573 | 0.1627 | 0.0129 | 0.0095 | -0.1469 | -0.1546 to -0.1420 | 5 of 5 | 1.64% |"
+}

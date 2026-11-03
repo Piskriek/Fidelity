@@ -1,0 +1,16 @@
+{
+  "name": "fidelity",
+  "description": "The Fidelity repository as a plugin marketplace.",
+  "owner": {
+    "name": "Piskriek",
+    "url": "https://github.com/Piskriek"
+  },
+  "plugins": [
+    {
+      "name": "fidelity",
+      "source": "./",
+      "description": "Fidelity's reasoning framework, the SQ Distortion Check Skill: Document-Audit Mode for plans, specs and handoffs, and Step 0.7 (the 3/6/9 check plus the plain check) for plans, designs and replies.",
+      "skills": ["./skills/sq-distortion-check"]
+    }
+  ]
+}

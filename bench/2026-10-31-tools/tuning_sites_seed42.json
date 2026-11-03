@@ -1,0 +1,390 @@
+[
+ {
+  "op": "min↔max",
+  "ctx": "{k=1}^{N_{\\star}} \\frac{\\sqrt{L_{x,k}}}{\\max(10^{-3}, |\\mathbf{q}_{\\star, k} - \\"
+ },
+ {
+  "op": "min↔max",
+  "ctx": "t{eff}}(P_{xd}, p_{\\text{atm}}) = \\left(\\max(10^{-3}, ; 0.08 \\cdot P_{xd}, ; p_{"
+ },
+ {
+  "op": "min↔max",
+  "ctx": "t{Progress}_{4\\text{D}}^{\\text{next}} = \\min(1.0, \\text{Progress}_{4\\text{D}} + "
+ },
+ {
+  "op": "min↔max",
+  "ctx": "}{\\max(1, N_{\\text{total}})} - \\frac{1}{\\max(1, K_{\\text{niches}})}\\right)\\right"
+ },
+ {
+  "op": "min↔max",
+  "ctx": "mega_0 = \\sqrt{\\frac{g_{\\text{planet}}}{\\max(10^{-3}, h_{\\text{CoM}})}}, \\quad \\"
+ },
+ {
+  "op": "min↔max",
+  "ctx": " \\frac{\\mathbf{s}_c \\cdot \\mathbf{s}_b}{\\max(10^{-9}, |\\mathbf{s}_c||\\mathbf{s}_"
+ },
+ {
+  "op": "min↔max",
+  "ctx": "text{sym}} = \\max(0, 1 - 2|m_L - m_R| / \\max(10^{-9}, m_L + m_R))$, and $S_{\\tex"
+ },
+ {
+  "op": "min↔max",
+  "ctx": "c{\\min(N_{\\text{STO}}, N_{\\text{STS}})}{\\max(1, N_{\\text{total}})} \\right)$$\n## "
+ },
+ {
+  "op": "min↔max",
+  "ctx": "$E(\\mathbf{q}) = \\sum_k L_{x,k} / (4\\pi \\max(10^{-6}, |\\mathbf{q}_{\\star,k} - \\m"
+ },
+ {
+  "op": "min↔max",
+  "ctx": "), incurring doubling recovery debt $2^{\\min(6, n-1)}$ while preserving all upst"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "le call until $E_\\psi(\\mathbf{s}^{(K)}) \\le 10^{-9}$, evaluated in float64 becau"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "ody`, `B87`) or $\\Sigma_{\\text{strain}} \\ge 2.2$, triggers **Autonomic Protectiv"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "y `@hm/wiregraph` loop with cycle gain $\\ge 1.0$.\n## 2. Unity-in-Diversity SMC C"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": " is `runaway` or $\\kappa_{\\text{stiff}} \\ge 0.85$, i.e. $\\ge 5$ ticks; reference"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "rust, **`B47`**)**: $$F_{\\text{thrust}} \\le \\min\\left(250 \\cdot m_{\\text{kg}}, ;"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "4} \\kappa_{\\text{stiff}, z}$.\n  - When $\\ge 3$ zones hit `runaway` (a zone is `r"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "$\\kappa_{\\text{stiff}} \\ge 0.85$, i.e. $\\ge 5$ ticks; reference `v2EvaluateMulti"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "ax(10^{-3}, r_{\\text{support}})}\\right) \\ge 0.50$$ Lengths in metres; floors add"
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "\\cdot (\\text{Will} \\times \\text{Faith}) \\ge I_{\\min}$ across `SPIRAL_1_HEALING` "
+ },
+ {
+  "op": "≥↔≤",
+  "ctx": "5 S_{\\text{sym}} + 0.25 S_{\\text{prop}} \\ge 0.65$.\n### 2.1 Bijective Pin-to-Part"
+ },
+ {
+  "op": ">=→>",
+  "ctx": "t) \\ge 0.50$$\n  - In planetary gravity (`safeG >= 0.05`): $$\\omega_0 = \\sqrt{\\fr"
+ },
+ {
+  "op": ">=→>",
+  "ctx": " 1 — Root Chassis & Socket Integrity**: `hasRootChassis && socketsConnected >= s"
+ },
+ {
+  "op": ">=→>",
+  "ctx": "` (`<4GB -> Tier 1`, `<16GB -> Tier 2`, `>=16GB -> Tier 3`; unknown or NaN VRAM "
+ },
+ {
+  "op": "true↔false",
+  "ctx": "esolution (`B154`) (`convergedInOnePass === true`). *Open (`B109`):* the weights"
+ },
+ {
+  "op": "true↔false",
+  "ctx": "E-802.3 CRC-32 checksum tail (`crcValid === true`; detects accidental corruption"
+ },
+ {
+  "op": "true↔false",
+  "ctx": "Mask Anonymity Law**: If `actorWoreMask === true`, grudge does not attach to `ac"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "}^{N_{\\star}} \\frac{\\sqrt{L_{x,k}}}{\\max(10^{-3}, |\\mathbf{q}_{\\star, k} - \\math"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "psilon} + \\frac{1}{2} \\sum_{i=1}^4 \\left(\\frac{\\Pi_i}{\\Pi_{0,i}} - \\ln\\frac{\\Pi_"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "mathbf{q}_{\\star, k} - \\mathbf{q})}{\\max(10^{-6}, |\\mathbf{q}_{\\star, k} - \\math"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "at burial depth $z_{\\text{burial}}(e) = (E_{\\text{max}} - e) \\cdot \\Delta z_{\\te"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "{\\text{plasma}} = T_{\\text{boil}} + 4000(1.1 - 0.5 L_x)\\text{ [K]}$$ Here $p_{\\t"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "}_{01}\\left(R_{\\text{prev}} + 0.3 \\cdot (S_{\\text{day}} - 0.5)\\right)$$\n\n- **64 "
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "mathbf{R}) \\mathbf{M}^{-1} \\right)^{-1} (\\mathbf{J} - \\mathbf{R}) \\nabla H\\left("
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "mathbf{q}) = \\sum_k L_{x,k} / (4\\pi \\max(10^{-6}, |\\mathbf{q}_{\\star,k} - \\mathb"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "_{\\text{melt}} = (50 + 3650 \\cdot P_{xd}(1 - 0.35 A_q)) \\cdot p_{\\text{eff}}\\tex"
+ },
+ {
+  "op": "swap a−b",
+  "ctx": "$: $$\\tau_{\\text{arm}} = \\begin{cases} |(\\mathbf{r}_{\\text{CoM}} - \\mathbf{r}_{\\"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "R))$, and $S_{\\text{sym}} = 0$ when $m_L + m_R = 0$: an empty craft earns no sym"
+ },
+ {
+  "op": "−↔+",
+  "ctx": " $z_{\\text{burial}}(e) = (E_{\\text{max}} - e) \\cdot \\Delta z_{\\text{epoch}} + z_"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "ed by Left/Right somatic stride gain ($1 - 0.55 \\kappa_{\\text{stiff}}$).\n- **Phy"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "th total score $T = 0.40 S_{\\text{stab}} + 0.35 S_{\\text{sym}} + 0.25 S_{\\text{p"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "(10^{-9}, |\\mathbf{s}_c||\\mathbf{s}_b|)} + 0.45 \\frac{|P_c \\cap P_b|}{\\max(1, |P"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "imilarity $s(\\mathbf{A}, \\mathbf{B}) = 1 - 2\\, d_H(\\mathbf{A}, \\mathbf{B}) / 409"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "xt{req}}, \\lceil \\text{strain}/25 \\rceil + 4, \\text{debt} + 4, 12)$, capped at 7"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "tar}} \\frac{G M_k (\\mathbf{q}_{\\star, k} - \\mathbf{q})}{\\max(10^{-6}, |\\mathbf{q"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "= \\text{clamp}_{01}\\left(R_{\\text{prev}} + 0.3 \\cdot (S_{\\text{day}} - 0.5)\\righ"
+ },
+ {
+  "op": "−↔+",
+  "ctx": "}} = 0.55 \\cdot \\text{bal}_{\\text{rays}} + 0.45 \\cdot (\\text{Will} \\times \\text{"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "}_{m, r} + \\Delta_{\\text{complement}} - 0.85 \\cdot \\frac{\\min(N_{\\text{STO}}, N_"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "0.72 (0.60 \\mathbf{s}_{\\text{Matrix}} + 0.40 \\mathbf{s}_{\\text{Potentiator}}) + "
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": " so ≥ 1, `B155`), with total score $T = 0.40 S_{\\text{stab}} + 0.35 S_{\\text{sym"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": " \\cdot \\text{Sincerity}_{01} \\cdot (1 + 0.5 \\cdot \\text{CatalystResolved}_{01}),"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "}_{\\text{child}} = \\text{clamp}_{[0.05, 0.98]}\\left(0.72 (0.60 \\mathbf{s}_{\\text"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "High Priestess` (`intuitionFlowWeight = 0.74`); Body attraction = `#8 Balanced W"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "ACHE` ($\\kappa_{\\text{stiff}} = \\min(1, 0.18 \\cdot \\text{ticks})$), `SHARP_PAIN`"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "b:soma-lucid-spore`**)**: Thins Veil (`-0.55`), multiplies ego hardness by `0.35"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "n loss to $0$ and boosting excitement `+0.35`.\n- **5 Support Crew Tiers**: `1: L"
+ },
+ {
+  "op": "coefficient ±0.1",
+  "ctx": "p_{\\text{atm}}) = \\left(\\max(10^{-3}, ; 0.08 \\cdot P_{xd}, ; p_{\\text{atm}})\\rig"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "Balanced Working** *(Homeostasis)* | **#15 Primeval Night** *(Receptive Matter)*"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "ss-Tier Skill Benchmark (first run 2026-10-31, Pass R26; `B74`, `B95`)**:\n  - **"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "ace tokens:\n\n> **Implementation note (`B96`):** the v2 reference `stepSqJepaLate"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "2StepRestAndRecoveryCycle`** — **`B56, B67`**)**: Preserves upstream `...state` "
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "er multiplier}$, capped at 10. *Open (`B101`):* every score from 3 to 10 maps to"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "rseShorthandRecordV2` recomputes the CRC32 over all preceding lines and sets `cr"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "ns · P09 4-Gate Taste & 3D Torque · P10 22 Archetypes (77.12–77.13; cross-wiring"
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "t of twenty, `B116`)\nP01 Four Floats · P02 Port-Hamiltonian Solver · P03 VFE/KL "
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "s 512\\text{ m}$ (spans $\\pm 1.28 \\times 10^8\\text{ light-years}$ — i.e. $2^{63} "
+ },
+ {
+  "op": "integer ×2",
+  "ctx": "`**, **`@hm/voice-lang`**, **`@hm/origin64`**, **`@hm/rules-litrpg`**, **`@hm/ma"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "{ kg/m}^3, ; \\rho_{\\max} = 25,000\\text{ kg/m}^3$$ $$E_{\\text{Young}}(P_{xd}) = E"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "ed to [0, 1], `B148`), and requires `45 J` (`drawnFromVitalJ + deficitToSomaticS"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "mped `[5, 100] J`), AND dissipates `-25 J` from `somaticStrainJoules` (`-> 0 J`;"
+ },
+ {
+  "op": "unit swap",
+  "ctx": " to Osmium and Diamond ($E = 1050\\text{ GPa}$) with zero clamping loss and non-z"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "ses = 0` at `debt == 0`), restores `+30 J` to `vitalReserveJoules` (clamped `[5,"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "25 J` from `somaticStrainJoules` (`-> 0 J`; range $[0, 500]$ J, the reference cl"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "span gases ($\\text{H}_2 = 0.08988\\text{ kg/m}^3$) to Osmium and Diamond ($E = 10"
+ },
+ {
+  "op": "unit swap",
+  "ctx": "4}\\text{ GPa}, ; E_{\\max} = 1,200\\text{ GPa}$$\n- **Electrons / Excitation Shell "
+ },
+ {
+  "op": "unit swap",
+  "ctx": "\\min})}, \\quad E_{\\min} = 10^{-4}\\text{ GPa}, ; E_{\\max} = 1,200\\text{ GPa}$$\n- "
+ },
+ {
+  "op": "unit swap",
+  "ctx": "nationMode` once strain drops below `20 J`.\n\n# PART 7: THE 20 DEEP COSMOLOGICAL,"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "left(1 - \\frac{\\xi_{\\text{offset}}}{2.2 \\max(10^{-3}, r_{\\text{support}})}\\right"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "{k=1}^{N_{\\star}} \\frac{\\sqrt{L_{x,k}}}{\\max(10^{-3}, |\\mathbf{q}_{\\star, k} - \\"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "mega_0 = \\sqrt{\\frac{g_{\\text{planet}}}{\\max(10^{-3}, h_{\\text{CoM}})}}, \\quad \\"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "01}\\left(1 - \\frac{\\tau_{\\text{arm}}}{2 \\max(10^{-3}, r_{\\text{RCS}})}\\right) \\g"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "t{eff}}(P_{xd}, p_{\\text{atm}}) = \\left(\\max(10^{-3}, ; 0.08 \\cdot P_{xd}, ; p_{"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "\\max\\left(0, \\frac{N_{\\text{niche}(b)}}{\\max(1, N_{\\text{total}})} - \\frac{1}{\\m"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "$E(\\mathbf{q}) = \\sum_k L_{x,k} / (4\\pi \\max(10^{-6}, |\\mathbf{q}_{\\star,k} - \\m"
+ },
+ {
+  "op": "drop guard",
+  "ctx": " \\frac{\\mathbf{s}_c \\cdot \\mathbf{s}_b}{\\max(10^{-9}, |\\mathbf{s}_c||\\mathbf{s}_"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "}{\\max(1, N_{\\text{total}})} - \\frac{1}{\\max(1, K_{\\text{niches}})}\\right)\\right"
+ },
+ {
+  "op": "drop guard",
+  "ctx": "text{sym}} = \\max(0, 1 - 2|m_L - m_R| / \\max(10^{-9}, m_L + m_R))$, and $S_{\\tex"
+ },
+ {
+  "op": "type swap",
+  "ctx": "de operates on a flat, zero-allocation `Float32Array(24)` state vector updated v"
+ },
+ {
+  "op": "type swap",
+  "ctx": "bital $\\mathbf{O}_{\\text{orbital}}$**: `Float64Array(3)` bounded in $[-65536, +6"
+ },
+ {
+  "op": "type swap",
+  "ctx": "cal $\\mathbf{x}_{\\text{localSelf}}$**: `Float32Array(3)` bounded in $(-512, +512"
+ },
+ {
+  "op": "type swap",
+  "ctx": "e(x) ? BigInt(Math.trunc(x)) : 0n`) so `Float64`'s 53-bit mantissa never swallow"
+ },
+ {
+  "op": "type swap",
+  "ctx": "niversal SI Normalizer\n- **VSA-4096 (**`Uint32Array(128)`**, 512 bytes)**: Bitwi"
+ },
+ {
+  "op": "type swap",
+  "ctx": "tities (**`60 Hz`**) + 24 Vectorized **`Float32Array`** Cohorts (**`6,000`** age"
+ },
+ {
+  "op": "exponent",
+  "ctx": "\\mathbf{q}_{\\star, k} - \\mathbf{q}|_2^2)^{3/2}}, \\quad L_{x,\\text{coherent}}(\\ma"
+ },
+ {
+  "op": "exponent",
+  "ctx": "{-6}, |\\mathbf{q}_{\\star,k} - \\mathbf{q}|^2))$, normalized by a reference irradi"
+ },
+ {
+  "op": "exponent",
+  "ctx": " k} - \\mathbf{q}|_2 + \\phi_k(t))} \\right|^2$$ with wavenumber $k_k = \\omega_k / "
+ },
+ {
+  "op": "drop enum member",
+  "ctx": "SOVEREIGN_NEMESIS> score=<0..10> temper=<HOTHEAD|PROUD|COLD|COWARD|GREEDY|LOYAL|"
+ },
+ {
+  "op": "drop enum member",
+  "ctx": ", **`B54, B63`**)**: `vs=<actorId> tier=<NONE|RESENTFUL|VENGEFUL|MURDEROUS|SOVER"
+ }
+]

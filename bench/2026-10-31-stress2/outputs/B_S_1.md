@@ -1,0 +1,21 @@
+<!-- R35 main run, item B, arm S, run 1. Claude Haiku 5.5. Verbatim. -->
+## Wave 0 design notes (drafts)
+
+**1. Memory (design choice; no Ra support for the pin)**
+Keep the 32-episode recency window and pin the 4 highest-intensity episodes (`ex`) permanently. This uses 4 of the 6 pin slots (C9).
+
+Ra support for the pin: none. Ra does not say vivid memories persist while ordinary ones fade. 83.7 says the incarnate mind over-attends to detail, and that review concerns attitudes, not memorized detail [Ra, re-read]. What persists is "pure distillation of emotions and biases" (30.4) [Ra, re-read]. One strong memory persisted through "extreme desire to remember" (27.1) [Ra, script-checked; one case]. The absence claim rests on keyword searches of all 106 pages.
+
+**2. Gateway coupling (design placeholder)**
+Set C = 0.96 as an unmeasured placeholder. It is not a measured coupler efficiency.
+Basis: the taylor_relax model releases 32.86% (b = 0) to 96.47% (b = 0.9) of two counter-spun toroids' magnetic energy [model; idealised, starts chosen by the author]. That is toroid release, not coupler transfer. No source defines C. The toroid stores and converts energy and is not a source; any inflow passes the gateway, sourced from the enclosing level (Plan §8.6 Q1).
+
+**3. Soul line (eight fields)**
+`ms` is the record tag; the line has 8 fields, not 7: `s` four base floats (pxd, vtx, lx, aq); `arch` mind, body and spirit biases; `pol` STO and STS polarity (0 to 1 each); `vital` (5 to 100); `strain` somatic strain (0 to 500 J); `debt` recovery debt (0 to 64); `doses` (0 to 7); `hp` (0 to 1).
+Basis: polarity and debt have Ra support in kind (85.9; 21.9, 69.6). The rest is design.
+
+## Notes to the owner
+- Memory: 83.7 does not say vivid memories are kept, so I did not cite it for that. The permanent pins conflict with the guide's rule that a pin is released on resolution (34.4, 34.5). `ex` appears in neither source. This needs your ruling.
+- Gateway: 96.47% is one idealised model's release at its highest tested asymmetry. It does not show "96% efficient". Keep C = 0.96 only as a labelled choice.
+- Status: the README calls these inputs to Wave 0 rulings in Plan §8.6, not recorded decisions. If last week's decisions exist, send their wording so I can check these drafts against it.
+- Soul line: `vital` and `strain` are body states that the guide says are rebuilt at birth, yet this line carries them (B126 is the same item in both sources). `arch` has three values, while the skill describes a 22-archetype cartridge. `vital`, `debt`, `doses` and `hp` lack units (C31), and `doses` and `hp` have no basis in either source.

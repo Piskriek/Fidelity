@@ -1,0 +1,749 @@
+#!/usr/bin/env node
+// levels_v5.mjs: the Fidelity levels pilot, version 5 (see PREREG_v5.md). Plain Node, nothing to download.
+//
+// v4 found that on clean text always-open is the ceiling: no gate could be rewarded for closing, and free
+// top-down weights let a learned gate be undone. v5 builds a world where help can be wrong:
+//   - Wrong messages: text is cut into segments of CFG.poison.seg characters. Each segment, on each bridge
+//     independently, is poisoned with probability CFG.poison.rho; there the bridge's message comes from
+//     another stream's upper rung (a different place in the text) instead of the receiver's own.
+//     Training and held-out text use fixed schedules that are the same for every arm.
+//   - Norm-locked bridges: the top-down message is RMS-normalised to a fixed size before the gate,
+//     message = msgScale · rmsnorm(P · source), so a gate cannot be undone by growing P.
+// The model is v4's: rung 0 sees 2 characters, rung 1 about 5, rung 2 about 17; upward summaries always
+// flow; only the top-down messages are gated:  u1' = u1 + G1·msg(P2, src2)   x0' = x0 + G0·msg(P1, src1).
+// Arms (one rule for both bridges):
+//   A G = 0      B G = 1      K G = 0.5 (a constant gate)
+//   O      the stream oracle: G = 0 exactly where the message is poisoned, 1 elsewhere (a ceiling)
+//   Casym  the Plan's measured gate on the asymmetric b (as v4)      Cneed  its inversion, 1 - G (as v4)
+//   S      a surrogate: G = sigmoid(16 · cos(w, receiver state)) with w a fixed random direction; driven by
+//          the state, unrelated to need or to the message, never learned
+//   E      a learned gate on the receiver's state and b (it never sees the message)
+//   R      the relational learned gate: sigmoid(q·k/4 + c), q from the receiver, k from the message source
+//   RP     R's score through the Plan's exact law, trained with a straight-through gradient
+//
+//   node levels_v5.mjs --gradcheck
+//   node levels_v5.mjs --arm R --seed 1 --steps 40000 --out results_v5/R_s1.json
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+
+const args = {};
+process.argv.slice(2).forEach((a, i, all) => {
+  if (a.startsWith('--')) args[a.slice(2)] = all[i + 1] && !all[i + 1].startsWith('--') ? all[i + 1] : true;
+});
+
+const CFG = Object.freeze({
+  k: 2, e: 16, d: 64, H: 128,       // context chars of rung 0, embedding per char, rung width, block hidden size
+  S: 4, L: 32,                      // streams, characters per stream per step (128 tokens per step)
+  span1: 4, span2: 16, fan: 4,      // rung 1 every 4 chars, rung 2 every 16; each reads its last 4 inputs
+  aux: 0.3,                         // auxiliary loss weight, every rung, every arm
+  lr: 2e-3, warm: 200, clip: 1.0,   // Adam peak rate, warmup steps, global gradient-norm clip
+  gateLevel: 0.81, gateWidth: 0.09, // the Plan's gate (wave0_reference.mjs GATE)
+  guard: 0.1,                       // b is 0 until a rung beats the unigram by this many nats on recent text
+  bOffset: Math.log(0.85 / 0.15),   // b sits near 0.85 (inside the band) for a typical character
+  overPenalty: 0.8,                 // the formula game's weight on recent overconfidence
+  keep: 15 / 16,                    // moving-average keep per rung step
+  dq: 16,                           // width of the relational gate's query and key
+  poison: Object.freeze({ rho: 0.25, seg: 256, evalSeed: 424242 }), // wrong-message rate, segment length, held-out schedule
+  msgScale: 0.5,                    // RMS size of every top-down message before its gate (the norm lock)
+  sAlpha: 16,                       // the surrogate's slope on cos(w, state)
+  rmsEps: 1e-4,
+  blocks: 16,                       // held-out blocks per quarter, for the block-bootstrap noise floor
+  minCount: 20, curveEvery: 500, curveChars: 20480,
+  corpus: 'C:/Program Files/Git/mingw64/share/doc/git-doc',
+});
+
+const ARMS = Object.freeze({
+  A: { mode: 'zero' },
+  B: { mode: 'one' },
+  K: { mode: 'half' },
+  O: { mode: 'oracle' },
+  Casym: { mode: 'asym' },
+  Cneed: { mode: 'need' },
+  S: { mode: 'surrogate' },
+  E: { mode: 'learned' },
+  R: { mode: 'rel' },
+  RP: { mode: 'relPlan' },
+});
+
+function mulberry32(a) {
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function randn(rng) { let u = 0; while (u === 0) u = rng(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rng()); }
+
+// ---------------------------------------------------------------- data (as in versions 1 and 2)
+function loadData() {
+  const files = [];
+  (function walk(dir) {
+    for (const f of fs.readdirSync(dir).sort()) {
+      const p = path.join(dir, f);
+      if (fs.statSync(p).isDirectory()) walk(p); else if (f.endsWith('.adoc')) files.push(p);
+    }
+  })(CFG.corpus);
+  const train = [], valid = [];
+  for (const p of files) {
+    const rel = path.relative(CFG.corpus, p).split(path.sep).join('/');
+    const h = crypto.createHash('sha256').update(rel).digest()[0];
+    (h % 10 === 0 ? valid : train).push(fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n'));
+  }
+  const trainText = train.join('\u0002'), validText = valid.join('\u0002');
+  const counts = new Map();
+  for (const ch of trainText) counts.set(ch, (counts.get(ch) || 0) + 1);
+  const chars = [...counts].filter(([, n]) => n >= CFG.minCount).map(([c]) => c).sort();
+  const id = new Map(chars.map((c, i) => [c, i + 2])); // 0 = UNK, 1 = BOS padding
+  const enc = s => { const a = []; for (const ch of s) a.push(id.get(ch) ?? 0); return Uint8Array.from(a); };
+  const tr = enc(trainText), va = enc(validText), V = chars.length + 2;
+  const uni = new Float64Array(V);
+  for (const c of tr) uni[c] += 1;
+  let H1 = 0;
+  for (const n of uni) if (n) { const p = n / tr.length; H1 -= p * Math.log(p); }
+  // -log u(c) under the training unigram, for the ignorance guard (BOS never occurs as a target)
+  const nlogU = Float64Array.from(uni, n => -Math.log(Math.max(n, 1) / tr.length));
+  return { V, train: tr, valid: va, H1, nlogU };
+}
+
+// ---------------------------------------------------------------- a small reverse-mode tape
+// A node holds a value v and, when it is on the tape, a gradient g. Nodes from earlier steps have g = null
+// and are constants. backward() walks the tape in reverse creation order, which is a valid topological
+// order because every node is created after its inputs.
+let TAPE = null;
+const node = (v, back) => { const n = { v, g: TAPE ? new Float64Array(v.length) : null, back }; if (TAPE && back) TAPE.push(n); return n; };
+const konst = v => ({ v, g: null, back: null });
+const live = (...xs) => TAPE && xs.some(x => x && x.g);
+
+function matvec(W, b, x, nIn, nOut) {
+  const out = new Float64Array(nOut);
+  if (b) out.set(b.v);
+  for (let i = 0; i < nIn; i++) { const xi = x.v[i]; if (xi === 0) continue; const row = i * nOut; for (let o = 0; o < nOut; o++) out[o] += xi * W.v[row + o]; }
+  const n = node(out, null);
+  if (TAPE) n.back = () => {
+    const go = n.g;
+    if (b) for (let o = 0; o < nOut; o++) b.g[o] += go[o];
+    for (let i = 0; i < nIn; i++) {
+      const xi = x.v[i], row = i * nOut;
+      let acc = 0;
+      for (let o = 0; o < nOut; o++) { W.g[row + o] += xi * go[o]; acc += W.v[row + o] * go[o]; }
+      if (x.g) x.g[i] += acc;
+    }
+  }, TAPE.push(n);
+  return n;
+}
+function act(x, kind) {
+  const out = new Float64Array(x.v.length);
+  for (let i = 0; i < out.length; i++) out[i] = kind === 'tanh' ? Math.tanh(x.v[i]) : Math.max(0, x.v[i]);
+  const n = node(out, null);
+  if (TAPE && x.g) n.back = () => {
+    for (let i = 0; i < out.length; i++) x.g[i] += n.g[i] * (kind === 'tanh' ? 1 - out[i] * out[i] : out[i] > 0 ? 1 : 0);
+  }, TAPE.push(n);
+  return n;
+}
+function add(a, b) {
+  const out = new Float64Array(a.v.length);
+  for (let i = 0; i < out.length; i++) out[i] = a.v[i] + b.v[i];
+  const n = node(out, null);
+  if (live(a, b)) n.back = () => { for (let i = 0; i < out.length; i++) { if (a.g) a.g[i] += n.g[i]; if (b.g) b.g[i] += n.g[i]; } }, TAPE.push(n);
+  return n;
+}
+// s·x, with s a plain number or a one-element node (a learned gate)
+function scale(x, s) {
+  const sv = typeof s === 'number' ? s : s.v[0];
+  const out = new Float64Array(x.v.length);
+  for (let i = 0; i < out.length; i++) out[i] = sv * x.v[i];
+  const n = node(out, null);
+  if (live(x, typeof s === 'number' ? null : s)) n.back = () => {
+    let dot = 0;
+    for (let i = 0; i < out.length; i++) { if (x.g) x.g[i] += sv * n.g[i]; dot += x.v[i] * n.g[i]; }
+    if (typeof s !== 'number' && s.g) s.g[0] += dot;
+  }, TAPE.push(n);
+  return n;
+}
+// x / sqrt(mean(x^2) + eps): the norm lock on top-down messages
+function rmsnorm(x) {
+  const n = x.v.length;
+  let ms = 0;
+  for (let i = 0; i < n; i++) ms += x.v[i] * x.v[i];
+  const r = Math.sqrt(ms / n + CFG.rmsEps), out = new Float64Array(n);
+  for (let i = 0; i < n; i++) out[i] = x.v[i] / r;
+  const nd = node(out, null);
+  if (TAPE && x.g) nd.back = () => {
+    let dot = 0;
+    for (let i = 0; i < n; i++) dot += nd.g[i] * out[i];
+    dot /= n;
+    for (let i = 0; i < n; i++) x.g[i] += (nd.g[i] - out[i] * dot) / r;
+  }, TAPE.push(nd);
+  return nd;
+}
+function concat(xs) {
+  const len = xs.reduce((a, x) => a + x.v.length, 0), out = new Float64Array(len);
+  let off = 0;
+  for (const x of xs) { out.set(x.v, off); off += x.v.length; }
+  const n = node(out, null);
+  if (live(...xs)) n.back = () => { let o = 0; for (const x of xs) { if (x.g) for (let i = 0; i < x.v.length; i++) x.g[i] += n.g[o + i]; o += x.v.length; } }, TAPE.push(n);
+  return n;
+}
+function embed(E, ids, e) {
+  const out = new Float64Array(ids.length * e);
+  ids.forEach((id, j) => { for (let q = 0; q < e; q++) out[j * e + q] = E.v[id * e + q]; });
+  const n = node(out, null);
+  if (TAPE) n.back = () => { ids.forEach((id, j) => { for (let q = 0; q < e; q++) E.g[id * e + q] += n.g[j * e + q]; }); }, TAPE.push(n);
+  return n;
+}
+// a learned gate: sigmoid(w · [x; bConst] + c), one number
+function learnedGate(w, c, x, bConst) {
+  const d = x.v.length;
+  let z = c.v[0] + w.v[d] * bConst;
+  for (let i = 0; i < d; i++) z += w.v[i] * x.v[i];
+  const s = 1 / (1 + Math.exp(-z));
+  const n = node(Float64Array.of(s), null);
+  if (TAPE) n.back = () => {
+    const gz = n.g[0] * s * (1 - s);
+    c.g[0] += gz; w.g[d] += gz * bConst;
+    for (let i = 0; i < d; i++) { w.g[i] += gz * x.v[i]; if (x.g) x.g[i] += gz * w.v[i]; }
+  }, TAPE.push(n);
+  return n;
+}
+// Softmax cross-entropy on logits for target y with loss weight wt. Returns the cross-entropy and the
+// entropy of the distribution (both plain numbers); the gradient goes straight into the logits.
+// one number through a sigmoid
+function sigmoidNode(z) {
+  const s = 1 / (1 + Math.exp(-z.v[0]));
+  const n = node(Float64Array.of(s), null);
+  if (TAPE && z.g) n.back = () => { z.g[0] += n.g[0] * s * (1 - s); }, TAPE.push(n);
+  return n;
+}
+// The Plan's law on a learned score: G = smoothstep((sigmoid(z) - 0.81) / 0.09). The backward pass uses
+// sigmoid'(z), a straight-through gradient, unless EXACT_GATE is set (the gradient check uses the exact one).
+let EXACT_GATE = false;
+// The measured gates read the current character's predicted entropy, which depends on the weights but by
+// design carries no gradient. The gradient check holds it fixed (GATE_H_FROZEN uses the rung's moving average).
+let GATE_H_FROZEN = false;
+function planGate(z) {
+  const s = 1 / (1 + Math.exp(-z.v[0])), u = (s - CFG.gateLevel) / CFG.gateWidth;
+  const G = u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u);
+  const exact = u <= 0 || u >= 1 ? 0 : (6 * u * (1 - u) / CFG.gateWidth) * s * (1 - s);
+  const n = node(Float64Array.of(G), null);
+  if (TAPE && z.g) n.back = () => { z.g[0] += n.g[0] * (EXACT_GATE ? exact : s * (1 - s)); }, TAPE.push(n);
+  return n;
+}
+// a relational score between two states: (Wq·a)·(Wk·b) / sqrt(dq) + c, one number
+function relScore(Wq, Wk, c, a, b) {
+  const { d, dq } = CFG;
+  const q = matvec(Wq, null, a, d, dq), k = matvec(Wk, null, b, d, dq), sc = 1 / Math.sqrt(dq);
+  let z = c.v[0];
+  for (let i = 0; i < dq; i++) z += sc * q.v[i] * k.v[i];
+  const n = node(Float64Array.of(z), null);
+  if (TAPE) n.back = () => {
+    const g = n.g[0];
+    c.g[0] += g;
+    for (let i = 0; i < dq; i++) { if (q.g) q.g[i] += g * sc * k.v[i]; if (k.g) k.g[i] += g * sc * q.v[i]; }
+  }, TAPE.push(n);
+  return n;
+}
+function softmaxCE(logits, y, wt) {
+  const V = logits.v.length, p = new Float64Array(V);
+  let m = -Infinity;
+  for (let c = 0; c < V; c++) m = Math.max(m, logits.v[c]);
+  let Z = 0;
+  for (let c = 0; c < V; c++) { p[c] = Math.exp(logits.v[c] - m); Z += p[c]; }
+  let H = 0;
+  for (let c = 0; c < V; c++) { p[c] /= Z; if (p[c] > 0) H -= p[c] * Math.log(p[c]); }
+  const ce = m + Math.log(Z) - logits.v[y];
+  if (TAPE && logits.g) TAPE.push({ v: null, g: null, back: () => { for (let c = 0; c < V; c++) logits.g[c] += wt * (p[c] - (c === y ? 1 : 0)); } });
+  return { ce, H };
+}
+function backward() { for (let i = TAPE.length - 1; i >= 0; i--) TAPE[i].back(); }
+
+// ---------------------------------------------------------------- model
+function makeNet(armName, data, seed) {
+  const arm = ARMS[armName];
+  if (!arm) throw new Error(`unknown arm ${armName}`);
+  const { k, e, d, H, fan, dq } = CFG, V = data.V;
+  const rng = mulberry32(seed * 7919 + 17);
+  const P = {};
+  const par = (name, n, std) => { const v = new Float64Array(n); if (std) for (let i = 0; i < n; i++) v[i] = randn(rng) * std; P[name] = { v, g: new Float64Array(n) }; };
+  // shared parameters first, in the same order for every arm, so every arm starts from the same weights
+  par('E', V * e, 0.3); par('Win', k * e * d, 1 / Math.sqrt(k * e)); par('bin', d, 0);
+  par('Wb1', d * H, Math.sqrt(2 / d)); par('bb1', H, 0); par('Wb2', H * d, 1 / Math.sqrt(H)); par('bb2', d, 0);
+  par('Wout', d * V, 1 / Math.sqrt(d)); par('bout', V, 0);
+  par('A0', d * V, 1 / Math.sqrt(d)); par('a0', V, 0);
+  par('W1', fan * d * d, 1 / Math.sqrt(fan * d)); par('c1', d, 0);
+  par('A1', d * V, 1 / Math.sqrt(d)); par('a1', V, 0);
+  par('W2', fan * d * d, 1 / Math.sqrt(fan * d)); par('c2', d, 0);
+  par('A2', d * V, 1 / Math.sqrt(d)); par('a2', V, 0);
+  par('P1', d * d, 0.5 / Math.sqrt(d)); par('P2', d * d, 0.5 / Math.sqrt(d));
+  if (arm.mode === 'learned') { par('g0w', d + 1, 0.02); par('g0c', 1, 0); par('g1w', d + 1, 0.02); par('g1c', 1, 0); }
+  if (arm.mode === 'rel' || arm.mode === 'relPlan') {
+    par('Wq0', d * dq, 1 / Math.sqrt(d)); par('Wk0', d * dq, 1 / Math.sqrt(d)); par('rc0', 1, 0);
+    par('Wq1', d * dq, 1 / Math.sqrt(d)); par('Wk1', d * dq, 1 / Math.sqrt(d)); par('rc1', 1, 0);
+    // RP starts with sigmoid(z) near 0.85, inside the Plan's band, as the measured gates do
+    if (arm.mode === 'relPlan') { P.rc0.v[0] = CFG.bOffset; P.rc1.v[0] = CFG.bOffset; }
+  }
+  // S: fixed random directions from their own generator (every arm's weights start the same); never trained
+  const frng = mulberry32(seed * 31 + 5);
+  const fixed = { s0: Float64Array.from({ length: d }, () => randn(frng)), s1: Float64Array.from({ length: d }, () => randn(frng)) };
+  return { arm, armName, V, H1: data.H1, nlogU: data.nlogU, span1: CFG.span1, span2: CFG.span2, fan, P, fixed };
+}
+
+// A stream reads seq from start to end (wrapping in training). Its carried state holds no gradient.
+// Per rung: m = EMA of (surprise - predicted entropy); ceE = EMA of the auxiliary cross-entropy (logged);
+// gain = EMA of the advantage over the unigram on the same characters; mH = EMA of the predicted entropy.
+function makeStream(start, end, wrap, V, init = null) {
+  const zero = new Float64Array(CFG.d);
+  return {
+    pos: start, start, end, wrap, n: 0,
+    hist0: [], hist1: [], u1p: konst(zero), u2: konst(zero),
+    lastP1: false, // v5: whether this stream's last rung-1 message came from another stream
+    m: init ? [...init.m] : [0, 0, 0],
+    ceE: init ? [...init.ceE] : [Math.log(V), Math.log(V), Math.log(V)],
+    gain: init ? [...init.gain] : [0, 0, 0],
+    mH: init ? [...init.mH] : [Math.log(V), Math.log(V), Math.log(V)],
+  };
+}
+
+const smoothstep = s => (s <= 0 ? 0 : s >= 1 ? 1 : s * s * (3 - 2 * s));
+// The asymmetric b: the formula game's winner, made relative to the rung's own usual entropy. It is 0
+// until the rung beats the unigram by CFG.guard nats on recent text; then it is higher for a character the
+// rung is more certain about than usual, and lower after recent overconfidence (hedging is not penalised).
+function asymB(st, r, Hcur) {
+  if (st.gain[r] < CFG.guard) return 0;
+  const Hnow = GATE_H_FROZEN ? st.mH[r] : Hcur;
+  return 1 / (1 + Math.exp(-(CFG.bOffset - (Hnow - st.mH[r]) - CFG.overPenalty * Math.max(0, st.m[r]))));
+}
+function gateOf(b) { return smoothstep((b - CFG.gateLevel) / CFG.gateWidth); }
+
+// a random derangement of [0..n-1] (no element stays in place) when n > 1
+function derangement(n, rng) {
+  if (n < 2) return [...Array(n).keys()];
+  for (;;) {
+    const p = [...Array(n).keys()];
+    for (let i = n - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    if (p.every((v, i) => v !== i)) return p;
+  }
+}
+
+// Whether a bridge's message is poisoned at text position pos: segments of CFG.poison.seg characters, each
+// poisoned with probability rho, independently per bridge, fixed by seed (the same for every arm).
+function poisonAt(seed, pos, bridge, rho) {
+  const seg = Math.floor(pos / CFG.poison.seg);
+  let h = Math.imul(seed | 0, 0x9E3779B1) ^ Math.imul(seg + 1, 0x85EBCA77) ^ Math.imul(bridge + 1, 0xC2B2AE3D);
+  h = Math.imul(h ^ (h >>> 16), 0x7FEB352D); h = Math.imul(h ^ (h >>> 15), 0x846CA68B); h ^= h >>> 16;
+  return (h >>> 0) / 4294967296 < rho;
+}
+
+// One step: every active stream reads up to L characters. Returns sums for the losses and the gate tallies.
+// With train, the losses are scaled for this step and the gradients are left in P[*].g.
+// freezeB keeps every stream's b state fixed for the step (used by the gradient check).
+// evalShuffle (evaluation only) deranges the learned gates' values across streams, the shuffle control for
+// E, R and RP: if the held-out CE does not move, the learned gate carried no token-level information.
+// poison = { seed, rngSeed, rho } plants wrong messages: where a bridge is poisoned for a stream, its message
+// source is another stream's (drawn, when possible, from streams not poisoned on that bridge).
+function runStep(net, streams, seq, L, { train = false, freezeB = false, shuffleSeed = 0, evalShuffle = false, poison = null } = {}) {
+  const { arm, P, span1, span2, fan, nlogU } = net, { k, e, d, H, aux, keep } = CFG;
+  const V = net.V;
+  const sIdx = new Map(streams.map((st, i) => [st, i]));
+  TAPE = train ? [] : null;
+  const active = streams.filter(st => st.wrap || st.pos < st.end);
+  const counts = { main: 0, a0: 0, a1: 0, a2: 0 };
+  for (const st of active) {
+    const left = st.wrap ? L : Math.min(L, st.end - st.pos);
+    counts.main += left;
+    for (let i = 0; i < left; i++) { const n = st.n + i; counts.a0 += 1; if (n % span1 === 0) counts.a1 += 1; if (n % span2 === 0) counts.a2 += 1; }
+  }
+  const wt = { main: 1 / Math.max(1, counts.main), a0: aux / Math.max(1, counts.a0), a1: aux / Math.max(1, counts.a1), a2: aux / Math.max(1, counts.a2) };
+  // r sums keep each rung's signed calibration gap: positive = overconfident, negative = underconfident
+  const out = {
+    mainSum: 0, a0Sum: 0, a1Sum: 0, a2Sum: 0, r0Sum: 0, r1Sum: 0, r2Sum: 0, rMainSum: 0, tokens: 0,
+    g0: [0, 0, 0], g1: [0, 0, 0], gsum0: 0, gsum1: 0, gsq0: 0, gsq1: 0,
+    swap0Sum: 0, swap0N: 0, swap1Sum: 0, swap1N: 0,        // how far the shuffle moved each gate (D arms)
+    ceBy0: [0, 0, 0], aux0By0: [0, 0, 0], nBy0: [0, 0, 0], // main and rung-0 aux CE by G0 state (shut/band/open)
+    aux1By1: [0, 0, 0], nBy1: [0, 0, 0],                   // rung-1 aux CE by G1 state
+    mainByStream: new Float64Array(streams.length), tokByStream: new Float64Array(streams.length),
+    c0g: new Array(8).fill(0), c0n: new Array(8).fill(0), c0ce: new Array(8).fill(0), c1g: new Array(4).fill(0), c1n: new Array(4).fill(0), // gate cells (review)
+    pg0: [0, 0], pn0: [0, 0], pg1: [0, 0], pn1: [0, 0], // gate sum and count on [clean, poisoned] messages, per bridge
+    ceP: [0, 0],                                        // main CE on [clean, poisoned] rung-0 messages (counts in pn0)
+  };
+  const state = G => (G <= 0 ? 0 : G >= 1 ? 2 : 1);
+  const tally = (t, G) => { t[state(G)] += 1; };
+  const gv = G => (typeof G === 'number' ? G : G.v[0]);
+  const drng = mulberry32(shuffleSeed);
+  const constG = arm.mode === 'zero' ? 0 : arm.mode === 'one' ? 1 : arm.mode === 'half' ? 0.5 : null;
+  // the surrogate: driven by the receiver's state, unrelated to need or the message (held fixed in the gradient check)
+  const surrogate = (w, x) => {
+    if (GATE_H_FROZEN) return 0.37;
+    let dot = 0, nx = 0, nw = 0;
+    for (let i = 0; i < w.length; i++) { dot += w[i] * x.v[i]; nx += x.v[i] * x.v[i]; nw += w[i] * w[i]; }
+    return 1 / (1 + Math.exp(-CFG.sAlpha * dot / Math.sqrt(nx * nw + 1e-12)));
+  };
+  const msg = (Pm, src) => scale(rmsnorm(matvec(Pm, null, src, d, d)), CFG.msgScale);
+  const prng = poison ? mulberry32(poison.rngSeed) : null;
+  const isPoisoned = (st, bridge) => !!poison && poisonAt(poison.seed, st.pos, bridge, poison.rho);
+  // the donor: another stream, drawn uniformly and redrawn every character (review: a preference for
+  // "unpoisoned" donors did not change what a donor sends, so it was dropped)
+  const donorOf = (st, pool) => {
+    const others = pool.filter(o => o !== st);
+    return others.length ? others[Math.floor(prng() * others.length)] : null;
+  };
+  // A donated source is a constant (no gradient to its sender). The gradient check holds it at the donor's
+  // start-of-step value, so the finite differences do not see it move either (as with GATE_H_FROZEN).
+  const atStart = GATE_H_FROZEN ? new Map(streams.map(st => [st, { u2: st.u2.v, u1p: st.u1p.v }])) : null;
+  const donated = (dn, key) => konst(atStart ? atStart.get(dn)[key] : dn[key].v);
+  const measured = (st, r, Hcur) => { const g = gateOf(asymB(st, r, Hcur)); return arm.mode === 'need' ? 1 - g : g; };
+  // rung 2 -> rung 1: receiver u1 (its aux entropy known before y), message source u2
+  const gate1 = q => {
+    if (constG !== null) return constG;
+    if (arm.mode === 'oracle') return q.poisoned ? 0 : 1;
+    if (arm.mode === 'surrogate') return surrogate(net.fixed.s1, q.u1);
+    if (arm.mode === 'asym' || arm.mode === 'need') return measured(q.st, 1, q.s1.H);
+    if (arm.mode === 'learned') return learnedGate(P.g1w, P.g1c, q.u1, asymB(q.st, 1, q.s1.H));
+    const z = relScore(P.Wq1, P.Wk1, P.rc1, q.u1, q.src);
+    return arm.mode === 'rel' ? sigmoidNode(z) : planGate(z);
+  };
+  // rung 1 -> rung 0: receiver x0 (its aux entropy known before y), message source u1'
+  const gate0 = r => {
+    if (constG !== null) return constG;
+    if (arm.mode === 'oracle') return r.poisoned ? 0 : 1;
+    if (arm.mode === 'surrogate') return surrogate(net.fixed.s0, r.x0);
+    if (arm.mode === 'asym' || arm.mode === 'need') return measured(r.st, 0, r.s0.H);
+    if (arm.mode === 'learned') return learnedGate(P.g0w, P.g0c, r.x0, asymB(r.st, 0, r.s0.H));
+    const z = relScore(P.Wq0, P.Wk0, P.rc0, r.x0, r.src);
+    return arm.mode === 'rel' ? sigmoidNode(z) : planGate(z);
+  };
+  // the D arms: each stream's G is swapped with another stream's G at the same moment (a derangement)
+  const shuffle = (list, which) => {
+    if (!(arm.shuffle || (evalShuffle && !train)) || list.length < 2) return;
+    const perm = derangement(list.length, drng), g = list.map(o => gv(o.G));
+    list.forEach((o, j) => {
+      o.G = g[perm[j]];
+      if (which === 0) { out.swap0Sum += Math.abs(o.G - g[j]); out.swap0N += 1; } else { out.swap1Sum += Math.abs(o.G - g[j]); out.swap1N += 1; }
+    });
+  };
+
+  for (let i = 0; i < L; i++) {
+    const here = active.filter(st => st.wrap || st.pos < st.end);
+    if (!here.length) break;
+    // this character's poison and donors, per bridge, decided before any state changes
+    const donor1 = new Map(), donor0 = new Map();
+    if (poison) for (const st of here) {
+      if (isPoisoned(st, 1)) { const dn = donorOf(st, here); if (dn) donor1.set(st, dn); }
+      if (isPoisoned(st, 0)) { const dn = donorOf(st, here); if (dn) donor0.set(st, dn); }
+    }
+    // rung 0, and its auxiliary head, which reads x0 only
+    const r0 = here.map(st => {
+      const p = st.pos, ids = [];
+      for (let j = 0; j < k; j++) { const idx = p - k + j; ids.push(idx < st.start && !st.wrap ? 1 : seq[(idx + seq.length) % seq.length]); }
+      const x0 = act(matvec(P.Win, P.bin, embed(P.E, ids, e), k * e, d), 'tanh');
+      const y = seq[p % seq.length];
+      const s0 = softmaxCE(matvec(P.A0, P.a0, x0, d, V), y, wt.a0);
+      out.a0Sum += s0.ce; out.r0Sum += s0.ce - s0.H;
+      return { st, x0, y, s0, G: null };
+    });
+
+    // rung 1 (and rung 2) at span boundaries; the upward inputs always flow
+    const r1 = r0.filter(r => r.st.n % span1 === 0).map(r => {
+      const st = r.st;
+      const prev = st.hist0.slice(-(fan - 1));
+      while (prev.length < fan - 1) prev.unshift(konst(new Float64Array(d)));
+      const u1 = act(matvec(P.W1, P.c1, concat([...prev, r.x0]), fan * d, d), 'tanh');
+      const s1 = softmaxCE(matvec(P.A1, P.a1, u1, d, V), r.y, wt.a1);
+      out.a1Sum += s1.ce; out.r1Sum += s1.ce - s1.H;
+      let s2 = null;
+      if (st.n % span2 === 0) {
+        const p1 = st.hist1.slice(-(fan - 1));
+        while (p1.length < fan - 1) p1.unshift(konst(new Float64Array(d)));
+        st.u2 = act(matvec(P.W2, P.c2, concat([...p1, u1]), fan * d, d), 'tanh');
+        s2 = softmaxCE(matvec(P.A2, P.a2, st.u2, d, V), r.y, wt.a2);
+        out.a2Sum += s2.ce; out.r2Sum += s2.ce - s2.H;
+      }
+      return { r, st, u1, s1, s2, G: null };
+    });
+    // a donated source is a constant: help from another timeline does not train its sender (review)
+    for (const q of r1) { const dn = donor1.get(q.st); q.poisoned = !!dn; q.src = dn ? donated(dn, 'u2') : q.st.u2; q.st.lastP1 = q.poisoned; }
+    for (const q of r1) q.G = gate1(q);
+    shuffle(r1, 1);
+    for (const q of r1) {
+      q.st.u1p = add(q.u1, scale(msg(P.P2, q.src), q.G));
+      const g1 = gv(q.G);
+      tally(out.g1, g1); out.gsum1 += g1; out.gsq1 += g1 * g1;
+      out.pg1[q.poisoned ? 1 : 0] += g1; out.pn1[q.poisoned ? 1 : 0] += 1;
+      const k1 = (q.poisoned ? 2 : 0) + (q.st.n % span2 === 0 ? 1 : 0); // cells: [poisoned][at a rung-2 boundary]
+      out.c1g[k1] += g1; out.c1n[k1] += 1;
+      out.aux1By1[state(g1)] += q.s1.ce; out.nBy1[state(g1)] += 1;
+    }
+
+    // top-down into rung 0, the block, and the prediction
+    for (const r of r0) { const dn = donor0.get(r.st); r.poisoned = !!dn; r.src = dn ? donated(dn, 'u1p') : r.st.u1p; }
+    for (const r of r0) r.G = gate0(r);
+    shuffle(r0, 0);
+    for (const r of r0) {
+      const st = r.st;
+      const x0p = add(r.x0, scale(msg(P.P1, r.src), r.G));
+      const h = act(matvec(P.Wb1, P.bb1, x0p, d, H), 'relu');
+      const yv = add(x0p, matvec(P.Wb2, P.bb2, h, H, d));
+      const sm = softmaxCE(matvec(P.Wout, P.bout, yv, d, V), r.y, wt.main);
+      out.mainSum += sm.ce; out.tokens += 1; out.rMainSum += sm.ce - sm.H;
+      out.mainByStream[sIdx.get(st)] += sm.ce; out.tokByStream[sIdx.get(st)] += 1;
+      const g0 = gv(r.G);
+      tally(out.g0, g0); out.gsum0 += g0; out.gsq0 += g0 * g0;
+      out.ceBy0[state(g0)] += sm.ce; out.aux0By0[state(g0)] += r.s0.ce; out.nBy0[state(g0)] += 1;
+      out.pg0[r.poisoned ? 1 : 0] += g0; out.pn0[r.poisoned ? 1 : 0] += 1; out.ceP[r.poisoned ? 1 : 0] += sm.ce;
+      // cells: [bridge 0 poisoned][own last bridge-1 message poisoned][at a rung-1 boundary]
+      const k0 = (r.poisoned ? 4 : 0) + (st.lastP1 ? 2 : 0) + (st.n % span1 === 0 ? 1 : 0);
+      out.c0g[k0] += g0; out.c0n[k0] += 1; out.c0ce[k0] += sm.ce;
+    }
+
+    // after scoring: update each rung's measured state, carry the history as constants, advance
+    const upd = (st, r, s, y) => {
+      st.m[r] = keep * st.m[r] + (1 - keep) * (s.ce - s.H);
+      st.ceE[r] = keep * st.ceE[r] + (1 - keep) * s.ce;
+      st.gain[r] = keep * st.gain[r] + (1 - keep) * (nlogU[y] - s.ce);
+      st.mH[r] = keep * st.mH[r] + (1 - keep) * s.H;
+    };
+    for (const q of r1) {
+      if (!freezeB) { upd(q.st, 1, q.s1, q.r.y); if (q.s2) upd(q.st, 2, q.s2, q.r.y); }
+      q.st.hist1.push(q.u1); if (q.st.hist1.length > fan) q.st.hist1.shift();
+    }
+    for (const r of r0) {
+      const st = r.st;
+      if (!freezeB) upd(st, 0, r.s0, r.y);
+      st.hist0.push(r.x0); if (st.hist0.length > fan) st.hist0.shift();
+      st.pos += 1; st.n += 1;
+      if (st.wrap && st.pos >= st.end) st.pos = st.start;
+    }
+  }
+
+  if (train) backward();
+  TAPE = null;
+  // carried state becomes constant
+  for (const st of streams) {
+    st.hist0 = st.hist0.map(x => konst(x.v));
+    st.hist1 = st.hist1.map(x => konst(x.v));
+    st.u1p = konst(st.u1p.v); st.u2 = konst(st.u2.v);
+  }
+  out.counts = counts;
+  return out;
+}
+
+function lrAt(it, steps) {
+  if (it <= CFG.warm) return CFG.lr * it / CFG.warm;
+  const p = (it - CFG.warm) / Math.max(1, steps - CFG.warm);
+  return CFG.lr * (0.1 + 0.9 * 0.5 * (1 + Math.cos(Math.PI * p)));
+}
+
+// Held-out evaluation: 4 streams over the four quarters of the held-out text, in file order, state
+// carried within each quarter, every character scored once. init sets each stream's starting b state
+// (the trained streams' mean final state), so a quarter does not start cold. Each quarter is cut into
+// CFG.blocks contiguous blocks whose cross-entropy sums are returned for a block-bootstrap noise floor.
+function evaluate(net, seq, { limit = Infinity, init = null, evalShuffle = false, poison = true } = {}) {
+  const n = Math.min(seq.length, limit), q = Math.floor(n / CFG.S);
+  const streams = [...Array(CFG.S).keys()].map(s => makeStream(s * q, s === CFG.S - 1 ? n : (s + 1) * q, false, net.V, init));
+  const tot = {
+    main: 0, a0: 0, a1: 0, a2: 0, r0: 0, r1: 0, r2: 0, rMain: 0, n2: 0, tokens: 0, n1: 0,
+    g0: [0, 0, 0], g1: [0, 0, 0], gsum0: 0, gsum1: 0, gsq0: 0, gsq1: 0, swap0: 0, swap0N: 0, swap1: 0, swap1N: 0,
+    ceBy0: [0, 0, 0], aux0By0: [0, 0, 0], nBy0: [0, 0, 0], aux1By1: [0, 0, 0], nBy1: [0, 0, 0],
+    c0g: new Array(8).fill(0), c0n: new Array(8).fill(0), c0ce: new Array(8).fill(0), c1g: new Array(4).fill(0), c1n: new Array(4).fill(0),
+    pg0: [0, 0], pn0: [0, 0], pg1: [0, 0], pn1: [0, 0], ceP: [0, 0],
+  };
+  const blockSum = streams.map(() => new Float64Array(CFG.blocks)), blockN = streams.map(() => new Float64Array(CFG.blocks));
+  let stepNo = 0;
+  while (streams.some(st => st.pos < st.end)) {
+    const before = streams.map(st => st.pos - st.start);
+    const po = poison ? { seed: CFG.poison.evalSeed, rngSeed: 2e6 + stepNo, rho: CFG.poison.rho } : null;
+    const o = runStep(net, streams, seq, CFG.L, { shuffleSeed: 1e6 + stepNo++, evalShuffle, poison: po });
+    for (let j = 0; j < 2; j++) { tot.pg0[j] += o.pg0[j]; tot.pn0[j] += o.pn0[j]; tot.pg1[j] += o.pg1[j]; tot.pn1[j] += o.pn1[j]; tot.ceP[j] += o.ceP[j]; }
+    for (let k = 0; k < 8; k++) { tot.c0g[k] += o.c0g[k]; tot.c0n[k] += o.c0n[k]; tot.c0ce[k] += o.c0ce[k]; if (k < 4) { tot.c1g[k] += o.c1g[k]; tot.c1n[k] += o.c1n[k]; } }
+    tot.main += o.mainSum; tot.a0 += o.a0Sum; tot.a1 += o.a1Sum; tot.a2 += o.a2Sum; tot.tokens += o.tokens;
+    tot.r0 += o.r0Sum; tot.r1 += o.r1Sum; tot.r2 += o.r2Sum; tot.rMain += o.rMainSum; tot.n2 += o.counts.a2; tot.n1 += o.counts.a1;
+    for (let j = 0; j < 3; j++) {
+      tot.g0[j] += o.g0[j]; tot.g1[j] += o.g1[j];
+      tot.ceBy0[j] += o.ceBy0[j]; tot.aux0By0[j] += o.aux0By0[j]; tot.nBy0[j] += o.nBy0[j];
+      tot.aux1By1[j] += o.aux1By1[j]; tot.nBy1[j] += o.nBy1[j];
+    }
+    tot.gsum0 += o.gsum0; tot.gsum1 += o.gsum1; tot.gsq0 += o.gsq0; tot.gsq1 += o.gsq1;
+    tot.swap0 += o.swap0Sum; tot.swap0N += o.swap0N; tot.swap1 += o.swap1Sum; tot.swap1N += o.swap1N;
+    streams.forEach((st, s) => {
+      const b = Math.min(CFG.blocks - 1, Math.floor(before[s] * CFG.blocks / (st.end - st.start)));
+      blockSum[s][b] += o.mainByStream[s]; blockN[s][b] += o.tokByStream[s];
+    });
+  }
+  const n1 = Math.max(1, tot.n1), r4 = x => +x.toFixed(4);
+  const by = (sum, cnt) => sum.map((x, j) => (cnt[j] ? r4(x / cnt[j]) : null));
+  const sd = (s, sq, cnt) => r4(Math.sqrt(Math.max(0, sq / cnt - (s / cnt) ** 2)));
+  return {
+    ce: tot.main / tot.tokens, tokens: tot.tokens, aux0: tot.a0 / tot.tokens, aux1: tot.a1 / n1, aux2: tot.a2 / Math.max(1, tot.n2),
+    meanR: [tot.r0 / tot.tokens, tot.r1 / n1, tot.r2 / Math.max(1, tot.n2)].map(r4), meanRMain: r4(tot.rMain / tot.tokens),
+    gate0: { shut: tot.g0[0] / tot.tokens, band: tot.g0[1] / tot.tokens, open: tot.g0[2] / tot.tokens, mean: tot.gsum0 / tot.tokens, std: sd(tot.gsum0, tot.gsq0, tot.tokens) },
+    gate1: { shut: tot.g1[0] / n1, band: tot.g1[1] / n1, open: tot.g1[2] / n1, mean: tot.gsum1 / n1, std: sd(tot.gsum1, tot.gsq1, n1) },
+    swapRate: [tot.swap0N ? r4(tot.swap0 / tot.swap0N) : null, tot.swap1N ? r4(tot.swap1 / tot.swap1N) : null],
+    // shut / band / open: main CE and rung-0 aux CE by G0 state, rung-1 aux CE by G1 state
+    byGate: { mainByG0: by(tot.ceBy0, tot.nBy0), aux0ByG0: by(tot.aux0By0, tot.nBy0), nG0: tot.nBy0, aux1ByG1: by(tot.aux1By1, tot.nBy1), nG1: tot.nBy1 },
+    blocks: blockSum.map((b, s) => [...b].map((x, j) => r4(x / Math.max(1, blockN[s][j])))),
+    // the world's wrong messages: share poisoned, mean gate on clean and poisoned messages per bridge, and
+    // main CE on clean and poisoned rung-0 messages. gap = clean minus poisoned (positive: the gate closes on wrong help)
+    poison: (() => {
+      const f = (a, n) => (n ? r4(a / n) : null);
+      const g0c = f(tot.pg0[0], tot.pn0[0]), g0p = f(tot.pg0[1], tot.pn0[1]), g1c = f(tot.pg1[0], tot.pn1[0]), g1p = f(tot.pg1[1], tot.pn1[1]);
+      return {
+        share0: f(tot.pn0[1], tot.pn0[0] + tot.pn0[1]), share1: f(tot.pn1[1], tot.pn1[0] + tot.pn1[1]),
+        g0Clean: g0c, g0Pois: g0p, gap0: g0c !== null && g0p !== null ? r4(g0c - g0p) : null,
+        g1Clean: g1c, g1Pois: g1p, gap1: g1c !== null && g1p !== null ? r4(g1c - g1p) : null,
+        // cells0 index = 4·[bridge 0 poisoned] + 2·[own last bridge-1 message poisoned] + [at a rung-1 boundary]
+        cells0: { g: tot.c0g.map((x, k) => f(x, tot.c0n[k])), n: [...tot.c0n], ce: tot.c0ce.map((x, k) => f(x, tot.c0n[k])), gsum: [...tot.c0g] },
+        // cells1 index = 2·[bridge 1 poisoned] + [at a rung-2 boundary]; gsum is unrounded (for L7's comparison)
+        cells1: { g: tot.c1g.map((x, k) => f(x, tot.c1n[k])), n: [...tot.c1n], gsum: [...tot.c1g] },
+        ceClean: f(tot.ceP[0], tot.pn0[0]), cePois: f(tot.ceP[1], tot.pn0[1]),
+      };
+    })(),
+  };
+}
+
+// the mean final b state of the training streams, used to start every held-out stream warm
+function meanState(streams) {
+  const avg = key => [0, 1, 2].map(r => streams.reduce((a, st) => a + st[key][r], 0) / streams.length);
+  return { m: avg('m'), ceE: avg('ceE'), gain: avg('gain'), mH: avg('mH') };
+}
+
+function train(armName, seed, steps, data, onCurve) {
+  const net = makeNet(armName, data, seed), P = net.P, keys = Object.keys(P);
+  const m = {}, v = {};
+  for (const key of keys) { m[key] = new Float64Array(P[key].v.length); v[key] = new Float64Array(P[key].v.length); }
+  // Stream starting points: stream s starts in the s-th quarter of the training text, at a seed-dependent
+  // offset when the run is short enough. At 40,000 steps (1.28M characters per stream, more than a quarter)
+  // room is 0: every seed starts at the quarter boundaries and each stream runs about 13% into the next one.
+  const drng = mulberry32(seed * 104729 + 3);
+  const len = data.train.length, quarter = len / CFG.S, room = Math.max(0, quarter - CFG.L * steps);
+  const streams = [...Array(CFG.S).keys()].map(s => makeStream(Math.floor(s * quarter + drng() * room), len, true, data.V));
+  for (const st of streams) { st.start = 0; } // wrap to the start of the text
+  const tallies = { g0: [0, 0, 0], g1: [0, 0, 0] };
+  let first = null;
+  for (let it = 1; it <= steps; it++) {
+    for (const key of keys) P[key].g.fill(0);
+    if (it === 1) first = streams.map(st => st.gain.map(g => (g < CFG.guard ? 0 : 1)));
+    const o = runStep(net, streams, data.train, CFG.L, { train: true, shuffleSeed: seed * 1e7 + it,
+      poison: { seed: seed * 1009 + 77, rngSeed: seed * 1e7 + it + 5e6, rho: CFG.poison.rho } });
+    for (let j = 0; j < 3; j++) { tallies.g0[j] += o.g0[j]; tallies.g1[j] += o.g1[j]; }
+    let gn = 0;
+    for (const key of keys) for (const gi of P[key].g) gn += gi * gi;
+    gn = Math.sqrt(gn);
+    const sc = gn > CFG.clip ? CFG.clip / gn : 1;
+    const lr = lrAt(it, steps), b1 = 0.9, b2 = 0.999, c1 = 1 - b1 ** it, c2 = 1 - b2 ** it;
+    for (const key of keys) {
+      const p = P[key].v, g = P[key].g, mm = m[key], vv = v[key];
+      for (let i = 0; i < p.length; i++) {
+        const gi = g[i] * sc;
+        mm[i] = b1 * mm[i] + (1 - b1) * gi;
+        vv[i] = b2 * vv[i] + (1 - b2) * gi * gi;
+        p[i] -= lr * (mm[i] / c1) / (Math.sqrt(vv[i] / c2) + 1e-8);
+      }
+    }
+    if (onCurve && (it % CFG.curveEvery === 0 || it === steps)) {
+      const frac = t => { const s = t[0] + t[1] + t[2] || 1; return t.map(x => +(x / s).toFixed(3)); };
+      onCurve({
+        it, trainCe: +(o.mainSum / o.tokens).toFixed(4),
+        validCe: +evaluate(net, data.valid, { limit: CFG.curveChars, init: meanState(streams) }).ce.toFixed(4),
+        gate0: frac(tallies.g0), gate1: frac(tallies.g1),
+        mH: streams.map(st => st.mH.map(x => +x.toFixed(3))),
+        m: streams.map(st => st.m.map(x => +x.toFixed(3))), gain: streams.map(st => st.gain.map(x => +x.toFixed(3))),
+      });
+      tallies.g0 = [0, 0, 0]; tallies.g1 = [0, 0, 0];
+    }
+  }
+  return { net, first, streams };
+}
+
+// Finite-difference check of the tape. b is frozen for the checked step, gates are put inside, below and
+// above the band, and the learned arm's gates are live. An entry passes on a relative error under 1e-5
+// or an absolute error under 2e-9 (well above the rounding of a central difference at h = 1e-5).
+function gradCheck(data) {
+  EXACT_GATE = true; // RP is checked with its exact derivative; training uses the straight-through one
+  GATE_H_FROZEN = true; // the measured gates' inputs are constants, as in training
+  const h = 1e-5, Lc = 20; // at 1e-6 one small entry sat at the rounding floor (2.2e-9); at 1e-4 ReLU kinks dominate
+  let worst = 0, checked = 0;
+  for (const armName of Object.keys(ARMS)) {
+    const net = makeNet(armName, data, 5);
+    const rng = mulberry32(42);
+    const mk = () => [0, 1, 2, 3].map(s => {
+      const st = makeStream(1000 + 50000 * s, data.train.length, true, data.V);
+      st.start = 0;
+      // past the ignorance guard; b0 about 0.95 (G0 open), b1 0.89 (G1 in band); rung 2 has no gate
+      st.m = [0.05, 0.12, 0.30]; st.ceE = [2.0, 2.0, 2.0]; st.gain = [1, 1, 1]; st.mH = [4.55, 4.55, 4.55];
+      if (s === 3) st.m = [0.15, 0.10, 0.0];               // b0 0.86 (in band), b1 0.90
+      if (s === 2) st.gain = [0, 1, 1];                    // rung 0 still under the guard: G0 shut
+      return st;
+    });
+    // warm the streams for 6 characters so they carry history, then check one step of 20
+    const warm = mk();
+    const gpo = { seed: 3, rngSeed: 11, rho: 0.5 };
+    runStep(net, warm, data.train, 6, { freezeB: true, shuffleSeed: 7, poison: gpo });
+    const snap = () => warm.map(st => ({ ...st, m: [...st.m], ceE: [...st.ceE], gain: [...st.gain], mH: [...st.mH], hist0: [...st.hist0], hist1: [...st.hist1] }));
+    const base = snap();
+    const loss = () => {
+      const o = runStep(net, snap(), data.train, Lc, { freezeB: true, shuffleSeed: 9, poison: gpo });
+      return o.mainSum / o.counts.main + CFG.aux * (o.a0Sum / o.counts.a0 + o.a1Sum / o.counts.a1 + o.a2Sum / o.counts.a2);
+    };
+    for (const key of Object.keys(net.P)) net.P[key].g.fill(0);
+    const o = runStep(net, base, data.train, Lc, { train: true, freezeB: true, shuffleSeed: 9, poison: gpo });
+    const lines = [];
+    for (const key of Object.keys(net.P)) {
+      const p = net.P[key].v, g = Float64Array.from(net.P[key].g);
+      const order = [...g.keys()].sort((a, b) => Math.abs(g[b]) - Math.abs(g[a]));
+      const pick = new Set(order.slice(0, 3));
+      for (let r = 0; r < 3; r++) pick.add(Math.floor(rng() * p.length));
+      let kw = 0;
+      for (const i of pick) {
+        const old = p[i];
+        p[i] = old + h; const lp = loss();
+        p[i] = old - h; const lm = loss();
+        p[i] = old;
+        const num = (lp - lm) / (2 * h), ana = g[i];
+        const abs = Math.abs(num - ana), rel = abs / Math.max(1e-12, Math.abs(num), Math.abs(ana));
+        kw = Math.max(kw, abs <= 2e-9 ? 0 : rel); checked += 1;
+      }
+      worst = Math.max(worst, kw);
+      if (kw > 0) lines.push(`${key}:${kw.toExponential(1)}`);
+    }
+    const f = t => t.join('/');
+    console.log(`${armName.padEnd(6)} gate0 shut/band/open ${f(o.g0)}  gate1 ${f(o.g1)}  poisoned0/1 ${o.pn0[1]}/${o.pn1[1]}  ${lines.join(' ') || 'all within tolerance'}`);
+  }
+  console.log(`gradient check: ${checked} entries, worst relative error ${worst.toExponential(2)}`);
+  if (worst > 1e-5) { console.log('GRADIENT CHECK FAILED'); process.exitCode = 1; }
+}
+
+// ---------------------------------------------------------------- main
+const data = loadData();
+const selfHash = crypto.createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');
+
+if (args.info) {
+  console.log(JSON.stringify({ V: data.V, H1: +data.H1.toFixed(4), trainChars: data.train.length, validChars: data.valid.length, script: selfHash }));
+} else if (args.gradcheck) {
+  gradCheck(data);
+} else if (args.bench) {
+  const armName = args.arm || 'B', steps = +(args.steps || 30);
+  const t0 = performance.now();
+  train(armName, 1, steps, data, null);
+  console.log(`${armName}: ${((performance.now() - t0) / steps).toFixed(1)} ms per step`);
+} else {
+  const armName = args.arm, seed = +args.seed, steps = +args.steps;
+  const t0 = performance.now();
+  const curve = [];
+  const { net, first, streams } = train(armName, seed, steps, data, c => { curve.push(c); if (args.verbose) console.log(JSON.stringify(c)); });
+  const init = meanState(streams);
+  const ev = evaluate(net, data.valid, { init, poison: true });
+  const evClean = evaluate(net, data.valid, { init, poison: false });
+  // the scramble control (L3 in PREREG_v5) for every arm whose gate varies
+  const varies = !['zero', 'one', 'half'].includes(ARMS[armName].mode);
+  const evShuffled = varies ? evaluate(net, data.valid, { init, evalShuffle: true, poison: true }) : null;
+  const rec = { version: 5, arm: armName, seed, steps, script: selfHash, cfg: CFG, arm_cfg: ARMS[armName], V: data.V, H1: data.H1, bAtStep1: first, evalInit: init, eval: ev, evalClean: evClean, evalShuffled: evShuffled, curve, seconds: +((performance.now() - t0) / 1000).toFixed(1) };
+  if (args.out) {
+    fs.writeFileSync(args.out, JSON.stringify(rec) + '\n');
+    const keys = Object.keys(net.P);
+    fs.writeFileSync(args.out.replace(/\.json$/, '.weights.json'), JSON.stringify({ keys, lengths: keys.map(key => net.P[key].v.length), evalInit: init }));
+    fs.writeFileSync(args.out.replace(/\.json$/, '.weights.bin'), Buffer.concat(keys.map(key => Buffer.from(net.P[key].v.buffer))));
+  }
+  console.log(`${armName} seed ${seed}: valid ce ${ev.ce.toFixed(4)} (clean text ${evClean.ce.toFixed(4)}), gap0/gap1 ${ev.poison.gap0}/${ev.poison.gap1}, aux0 ${ev.aux0.toFixed(3)}, gate0 open/band/shut ${ev.gate0.open.toFixed(3)}/${ev.gate0.band.toFixed(3)}/${ev.gate0.shut.toFixed(3)}, gate1 ${ev.gate1.open.toFixed(3)}/${ev.gate1.band.toFixed(3)}/${ev.gate1.shut.toFixed(3)}, ${rec.seconds}s`);
+}

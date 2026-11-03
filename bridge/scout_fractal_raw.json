@@ -1,0 +1,754 @@
+[
+ {
+  "facts": [
+   {
+    "topic": "Data flow: source and cadence",
+    "fact": "lens2/server.mjs runs pc_summary.mjs over ssh (user@pc-host, ConnectTimeout 8 s) against F:/fidelity-llm/bridge/mind/runs/v1a and v1b, or against a local dir with --source local:<dir>. refresh() runs every 15 s with a 60 s kill timer and no in-flight guard, so a slow call can overlap the next one.",
+    "where": "lens2/server.mjs:14, 17-21, 26, 40"
+   },
+   {
+    "topic": "Data flow: cache on failure",
+    "fact": "On success the cache is the parsed JSON plus source. On failure the previous fields are kept and an error string is added. The page shows the error only when no data has ever arrived, so a stale summary can display with no visible error.",
+    "where": "lens2/server.mjs:15, 29; lens2/index.html:366"
+   },
+   {
+    "topic": "Data flow: HTTP and page polling",
+    "fact": "/ serves lens2/index.html read from disk on every request, so index.html edits need only a reload. /data serves the cache with no-store. The page polls /data every 5 s and re-renders only when the at field changes.",
+    "where": "lens2/server.mjs:33-37; lens2/index.html:363-369, 375"
+   },
+   {
+    "topic": "Data flow: /data shape",
+    "fact": "{at, total, started, finished, failed, byArm{F,F2,L,LH,Y}: [{t, score, good, collapses, n}], playing{seed, world, arms{F..Y: {seasons: [[t,season]], chars: [4 arrays of {t, score, goodEats, nourish, toxic, collapses, awake}]} or null}}, done: [{arm, seed, world, NGE, collapses, toxic, nourish, ce, awake, k5}]}. source is added by the server on success; error only on failure.",
+    "where": "lens2/pc_summary.mjs:23-29, 32-36, 39-48, 51; lens2/server.mjs:29"
+   },
+   {
+    "topic": "Data flow: total, finished, failed",
+    "fact": "total is the sum of ': N runs, at most' from each dir's RUNLOG, falling back to a literal 192. finished counts ' exit 0:' lines, falling back to done.length. failed counts ' exit [1-9]' lines. started counts progress files.",
+    "where": "lens2/pc_summary.mjs:49-51"
+   },
+   {
+    "topic": "Data flow: writer and field definitions",
+    "fact": "The runner writes one progress line per 512-tick window per arm/seed/world, only when --progress is set, and never reads it back. score = exp(-mean of -log p(true ANSWER token)) over the window. goodEats = nourish minus toxic counts in the window. collapses = COLLAPSE answers in the window. awake = 1 - down/n.",
+    "where": "mind/live.mjs:1057, 1096, 1099, 1106, 1108"
+   },
+   {
+    "topic": "Data flow: sizes measured",
+    "fact": "Each life is 16,384 ticks (32 windows). Each progress jsonl has 32 lines and about 15.7 KB. Each done JSON is about 14.7 to 15 KB. Running pc_summary on the local copies of v1a plus v1b took 0.59 s, read about 7.33 MB, and printed 134,179 bytes: playing 70,756, done 47,995, byArm 15,314. Totals: total 240, started 240, finished 240, failed 0. Measured on local copies only; the PC copies were not read.",
+    "where": "mind/runs/v1a/progress/L_s1_w101.jsonl; mind/runs/v1b/progress/Y_s1_w101.jsonl; preset/valleys_v1.json:97; scratch output <local path>"
+   },
+   {
+    "topic": "Definitions: NGE and toxic rate",
+    "fact": "NGE per life = 100 * (nourish - toxic) / withItem. toxicEatRate = toxicEaten / toxicOffered, so the page's Toxic avoided column (1 minus the mean toxicEatRate) is a fraction of toxic fruit offered that was not eaten. The page's 'per 100 times a fruit was there' matches the PREREG definition.",
+    "where": "run/baselines.mjs:58, 63-64; lens2/index.html:145, 357; mind/PREREG_bridge_v1a.md:38"
+   },
+   {
+    "topic": "Lede claim does not trace: 192 lives",
+    "fact": "The tech lede says '192 lives running on the PC' and the lay lede says 'We are watching 192 of their lives at once'. Both are static text. The computed total is 240 (v1a RUNLOG '192 runs' plus v1b RUNLOG '48 runs'), so the same page says 192 in the lede and 'All 240 lives finished' in the finish box.",
+    "where": "lens2/index.html:94-95, 336-337; lens2/pc_summary.mjs:50; mind/runs/v1a/RUNLOG.txt:1; mind/runs/v1b/RUNLOG.txt:1"
+   },
+   {
+    "topic": "Lede claim contradicted: up-is-good",
+    "fact": "The page says 'Every number here goes up when a character does better' (tech) and 'Higher is better everywhere on this page' (lay). The faints (collapses) count in each valley card rises when a character does worse. HANDOFF requires up-is-good indicators.",
+    "where": "lens2/index.html:94, 95, 254; mind/live.mjs:1099; HANDOFF.md:74"
+   },
+   {
+    "topic": "Wording does not trace: 'guess right'",
+    "fact": "The race card is titled Prediction score, with plain label 'How often they guess right what will happen'. The plain story says learners 'guess right about X% of the time'. The value is exp(-mean CE): a geometric-mean probability on the true answer token, not a hit rate. The tech lede's 'how sure it is of what the world will answer' matches the mechanism.",
+    "where": "lens2/index.html:131, 178, 185, 94; mind/live.mjs:1096, 1106"
+   },
+   {
+    "topic": "Unlabeled number",
+    "fact": "Each valley card shows a large percent, pct(last score), with no legend. It reads as accuracy.",
+    "where": "lens2/index.html:253"
+   },
+   {
+    "topic": "Relearning stated as fact",
+    "fact": "The page says a season turn knocks predictions down 'until they relearn' (tech), 'then catch up again' (lay), and in the plain story 'Its fruit knowledge went stale'. The plain-words section says every sentence is made from the numbers. HANDOFF says relearning is an inference, not tested.",
+    "where": "lens2/index.html:123, 128, 129, 187; HANDOFF.md:25"
+   },
+   {
+    "topic": "Recoveries are page-built",
+    "fact": "'Recoveries' and 'bounced back' come from recoveries(): an open recovery starts when a season turn drops score by more than 0.08, a page constant, with the target set to the pre-turn score, and closes when the score returns to it. The PREREG says the section 6.3 recovery readout was not implemented in v1a, and the v1a and v1b RESULTS say it was not produced.",
+    "where": "lens2/index.html:197, 247-250, 309-318 (threshold at 315); mind/PREREG_bridge_v1a.md:45; mind/runs/v1a/RESULTS_bridge_v1a.md:116; mind/runs/v1b/RESULTS_bridge_v1b.md:103"
+   },
+   {
+    "topic": "Verdict logic duplicated in page",
+    "fact": "flightState re-derives the registered rule: m = max(1, 3*sd(F-F2)) over the pairs so far, and win = each model seed's mean > 0, at least 36 of 48 pairs > 0, and mean >= m. This matches score_bridge_v1a.mjs at 48 pairs (k=1), but it is a copy and can drift from the scorer.",
+    "where": "lens2/index.html:266-284; mind/score_bridge_v1a.mjs:52-53, 56-65; mind/PREREG_bridge_v1a.md:50-52"
+   },
+   {
+    "topic": "Interim calls are page-made",
+    "fact": "'heading over the line', 'heading under the line', 'too close to call' and the plain 'heading for a clear win' are computed from running bands on pairs so far. A grep of PREREG_bridge_v1a.md for interim, peek and watch found no interim-look rule. The scorer gives the verdict only at 48 pairs.",
+    "where": "lens2/index.html:278-281, 196, 288; mind/score_bridge_v1a.mjs:52-65; grep of mind/PREREG_bridge_v1a.md (no match)"
+   },
+   {
+    "topic": "Margin wording",
+    "fact": "The lay note says the dashed line is 'decided before the race began'. The margin rule is pre-registered, but the value is recomputed from the pairs so far on every render, and PREREG says m is not known before the runs.",
+    "where": "lens2/index.html:106, 266-268, 304; mind/PREREG_bridge_v1a.md:52, 97"
+   },
+   {
+    "topic": "Verdict cards data source",
+    "fact": "Both verdict cards are built from d.done (finished lives) only. Their paths change only when a life finishes, not per window. Pairs are sorted by world then seed.",
+    "where": "lens2/index.html:260-264, 286-308"
+   },
+   {
+    "topic": "Lay lede: half of minds",
+    "fact": "The lay lede says 'Half the minds never learn'. The ARMS array has five arms, and two are frozen (F and F2), so it is two of five.",
+    "where": "lens2/index.html:95, 155-159"
+   },
+   {
+    "topic": "Static text that will go stale",
+    "fact": "The finish box text 'Next: E3 ... Not started (see the handoff)' is a literal string. The lede lists arms as frozen versus learning, and omits Y and LH's neighbour and help mechanisms.",
+    "where": "lens2/index.html:94, 340"
+   },
+   {
+    "topic": "ETA and last update",
+    "fact": "The ETA is a per-viewer rate from the page's own samples over a 15-minute window, held in memory and reset on reload, and labelled '(estimate)'. 'last update' shows the summary's at (PC time of summary creation), not the page's receipt time.",
+    "where": "lens2/index.html:319-325, 330; lens2/pc_summary.mjs:51"
+   },
+   {
+    "topic": "Valley landscape: rendering method",
+    "fact": "Each character's landscape is an SVG string built by valley(c, i, seasons, color, key) and inserted with innerHTML. There is no canvas in lens2/index.html. The SVG has a 300x74 viewBox with preserveAspectRatio=none and a CSS height of 74 px. Each render replaces the whole arms block.",
+    "where": "lens2/index.html:234-255, 251, 40, 350-354"
+   },
+   {
+    "topic": "Valley landscape: data to visual",
+    "fact": "Ridge x = window t / 16384 * 300 (16384 is a literal). Ridge y = 74-6 - score*(74-18). Fill is the arm colour at 0.82 opacity, closed to the baseline. Sky bands come from season changes, cycling four gradients by season mod 4. Dashed line = open recovery target. Circles = completed recoveries, with a one-time spark class.",
+    "where": "lens2/index.html:236, 239-245, 248-250, 252, 258"
+   },
+   {
+    "topic": "Valley landscape: meta row",
+    "fact": "The meta row shows good meals = sum goodEats, faints = sum collapses, awake = mean awake, recoveries count, and tick = last t. The big percent is the last window score.",
+    "where": "lens2/index.html:246-247, 253-254"
+   },
+   {
+    "topic": "Visual defects to check in a browser",
+    "fact": "preserveAspectRatio=none with a width-dependent container stretches the circles (r=4.2) into ellipses. The CSS transition on path d (line 55) probably never runs, because each render replaces the path node. Neither was run in a browser.",
+    "where": "lens2/index.html:55, 251, 250, 352-354"
+   },
+   {
+    "topic": "Race charts and resize",
+    "fact": "Race charts use lineChart(): SVG built from byArm, with a fixed 0 to 16384 tick axis and width read from clientWidth at render time. There is no resize listener, and redraw happens only when new data arrives (up to 15 s later).",
+    "where": "lens2/index.html:212-231, 346-347, 367-368; grep for resize returns no match"
+   },
+   {
+    "topic": "Layman's bridge toggle",
+    "fact": "The toggle is #layBtn. The state LAY is read from localStorage key fv-lay inside try/catch. applyLay() sets body.lay and rewrites [data-tech] text from data-plain. CSS hides .tech-only and shows .lay-only. say(tech, plain) builds strings in render. The click flips LAY, saves, and calls render(lastData). Canvas text would need say() too, since data-tech only touches textContent.",
+    "where": "lens2/index.html:64-66, 92, 161-168, 370-374, 162-163"
+   },
+   {
+    "topic": "Plain story generation",
+    "fact": "plainStory(d) builds the lay section from the numbers in d (finished/total, byArm at the same t, playing, flight status, collapses, recoveries, and done NGE means). It is always generated, and the .lay-only CSS hides it in tech mode. Its last sentence, 'I will look at it', is a first-person promise that the page cannot keep.",
+    "where": "lens2/index.html:170-205, 120, 203"
+   },
+   {
+    "topic": "Old lens: data path",
+    "fact": "lens/server.mjs runs a world in process and steps four reference minds (Oracle, Learner, Eats all, Random) from run/baselines.mjs, not the neural live minds. It advances at tps (default 20) on a 100 ms timer and pushes the full view() JSON over SSE every 100 ms. history is sampled every 16 ticks and capped at 240.",
+    "where": "lens/server.mjs:14, 20, 26, 74, 79-102, 138-142"
+   },
+   {
+    "topic": "Old lens: landscape and canvas",
+    "fact": "The old ridge in lens/index.html is fixed decorative geometry: peaks are hard-coded, and only the season hue changes from data. Fruit shows when truth is set and not down, coloured by truth. The figure lies down when v.down > 0. The chart is a 2D canvas (900x220 intrinsic, CSS width 100%, no devicePixelRatio handling).",
+    "where": "lens/index.html:59, 105, 131-137 (peaks at 133), 171-183, 187, 190-196"
+   },
+   {
+    "topic": "Old lens: static claims",
+    "fact": "The v5 card and the 'This world's checks' card (28 of 28 leaks caught, felt pain off) are typed text. The v6 total is hard-coded at 18. The /pc panel is cached 30 s on the server and polled every 30 s by the page. The SSE error text 'Restart the lens server to reconnect' is static.",
+    "where": "lens/index.html:116-118, 207, 213, 216; lens/server.mjs:106-107, 112"
+   },
+   {
+    "topic": "Felt pain is hard-coded to zero",
+    "fact": "The old lens passes pain: 0 when feeding each mind's feel(). This is consistent with the owner ruling that felt pain is off.",
+    "where": "lens/server.mjs:56; MIND_STEP7.md:15; HANDOFF.md:69"
+   },
+   {
+    "topic": "File sizes",
+    "fact": "lens2/index.html 36,539 B (378 lines); lens2/pc_summary.mjs 3,526 B (51 lines); lens2/server.mjs 2,433 B (40 lines); lens/index.html 14,949 B (219 lines); lens/server.mjs 8,204 B (143 lines).",
+    "where": "D:/fidelity-llm/bridge/lens2/ and D:/fidelity-llm/bridge/lens/ (directory listing)"
+   },
+   {
+    "topic": "External libraries",
+    "fact": "None beyond Google Fonts CSS (lens2 at lines 7-8, lens at lines 7-9). No JS libraries, and no canvas or chart library in lens2. The server files use Node built-ins only.",
+    "where": "lens2/index.html:7-8; lens/index.html:7-9; lens2/server.mjs:5-10; lens2/pc_summary.mjs:5-6; lens/server.mjs:5-14"
+   },
+   {
+    "topic": "Launch and deploy",
+    "fact": "launch.json has four-valleys-live-board (node lens2/server.mjs, port 5178), four-valleys-board-test (same server with --source local:D:/fidelity-llm/bridge/mind/runs/board_test), and four-valleys-lens (lens/server.mjs, port 5177). The PC runs its own copy of pc_summary.mjs at F:/fidelity-llm/bridge/lens2/pc_summary.mjs, so laptop edits to it must be copied to the PC.",
+    "where": "/c/Fidelity/.claude/launch.json; lens2/server.mjs:21"
+   },
+   {
+    "topic": "Listening scope",
+    "fact": "Both servers call listen(PORT) with no host argument, so Node's default applies. That default is usually all interfaces, which would make /data and /control reachable on the LAN. This comes from Node's documented default and was not run here.",
+    "where": "lens2/server.mjs:38; lens/server.mjs:143; lens/server.mjs:128-132 (unauthenticated POST /control)"
+   },
+   {
+    "topic": "Where a fractal view plugs in: data",
+    "fact": "The data needed is already on the page with no server or writer change: d.playing.arms[arm].chars[c] (32 windows, each with t, score, goodEats, nourish, toxic, collapses, awake) and d.playing.arms[arm].seasons. Each character-life has 32 samples, so any fractal statistic has at most 32 points per life. Finer resolution would need a change to the progress writer in the locked runner, which is hash-recorded.",
+    "where": "lens2/pc_summary.mjs:33-36; mind/live.mjs:1106-1108; HANDOFF.md:31"
+   },
+   {
+    "topic": "Where a fractal view plugs in: placement",
+    "fact": "Least disruption: add a new section after the Now playing block (lens2/index.html:136-141) with its own container. Call drawFractal(d.playing) at the end of render(), after the arms innerHTML is set, as valley() is called at line 352. Size canvases from clientWidth as lineChart does, and add a resize listener, since none exists. Labels go through say(), so the existing toggle re-renders them. Server and pc_summary need no change.",
+    "where": "lens2/index.html:136-141, 213, 328-362, 370-374; lens2/server.mjs:35"
+   },
+   {
+    "topic": "Where a fractal view plugs in: alternative",
+    "fact": "The old lens has a canvas precedent (drawChart at lens/index.html:171-183) and a 100 ms SSE feed (lens/server.mjs:138-142). Its minds are scripted reference minds, not the neural live minds.",
+    "where": "lens/index.html:105, 171-183; lens/server.mjs:14, 20, 138-142"
+   },
+   {
+    "topic": "3/6/9 check: total claim",
+    "fact": "Claim: the board's total is 240, not 192. Opposite: the board really shows 192. Decider: pc_summary.mjs:50 summed from the RUNLOG lines, which read 192 and 48, and the local measured total of 240. Survives, with the caveat that the PC copies were not read.",
+    "where": "lens2/pc_summary.mjs:50; mind/runs/v1a/RUNLOG.txt:1; mind/runs/v1b/RUNLOG.txt:1"
+   },
+   {
+    "topic": "3/6/9 check: score claim",
+    "fact": "Claim: score is not a hit rate. Opposite: score is the fraction of right guesses. Decider: live.mjs:1096 (lp = -log p of the true token) and 1106 (score = exp(-mean lp)). Survives.",
+    "where": "mind/live.mjs:1096, 1106; lens2/index.html:178"
+   },
+   {
+    "topic": "3/6/9 check: up-is-good claim",
+    "fact": "Claim: the faints count can rise when a character does worse. Opposite: faints is a good-direction number. Decider: live.mjs:1099 increments collapses on each COLLAPSE answer, and index.html:254 shows it as faints. Survives.",
+    "where": "mind/live.mjs:1099; lens2/index.html:254, 94"
+   },
+   {
+    "topic": "3/6/9 check: recoveries claim",
+    "fact": "Claim: recoveries are page-built, not the registered readout. Opposite: the section 6.3 readout was produced. Decider: PREREG_bridge_v1a.md:45 and RESULTS_bridge_v1a.md:116 say it was not implemented or produced. Survives.",
+    "where": "mind/PREREG_bridge_v1a.md:45; mind/runs/v1a/RESULTS_bridge_v1a.md:116; lens2/index.html:309-318"
+   },
+   {
+    "topic": "3/6/9 check: dropped or weakened",
+    "fact": "Dropped as not established: that CSS transition or circle distortion is visible (not run in a browser, so reported as likely, not confirmed). Weakened: the server listening scope rests on Node's documented default, not a run.",
+    "where": "lens2/index.html:55, 250-251; lens2/server.mjs:38"
+   }
+  ],
+  "gaps": [
+   "Nothing was rendered in a browser. The visual claims (circle distortion, dead CSS transition, no redraw on resize) come from reading the code, not from looking at the page.",
+   "The PC copies of RUNLOG, progress, done files and pc_summary.mjs were not read or contacted. All counts and the 240 total come from the local copies under D:/fidelity-llm/bridge/mind/runs/v1a and v1b.",
+   "The scout did not start either server and did not run the server's ssh call. The Node default listen host behavior was not run.",
+   "The lens/index.html static claims ('28 of 28 leaks', 'v5 scored') were checked only as typed text. Whether they trace to RESULTS docs was not checked.",
+   "No figure or verdict value was recomputed (for example the 33.2 vs 28.6 means on the page). Only the rules and counts were compared.",
+   "No fractal method or fractal statistic was chosen. This report covers only where the data is and where a view could go."
+  ],
+  "recommendation": "Put the fractal in as a new section of lens2/index.html fed from d.playing, with no change to server.mjs, pc_summary.mjs or the locked runner. Before any new number ships, fix the untraced items: the static 192 lede (lens2/index.html:94-95) should use the computed total of 240; 'guess right' (lines 131, 178, 185) should say how sure the mind is of the true answer; the 'every number goes up' lede (lines 94-95) conflicts with faints. Mark recoveries and the interim verdict calls as page-made, not registered results. Ask the owner whether faints should become an up-is-good number, since HANDOFF.md:74 requires that. Run the fresh claim-strength read HANDOFF.md:73 requires before the page text goes out."
+ },
+ {
+  "facts": [
+   {
+    "topic": "E3 rule and status",
+    "fact": "E3 (negative control) is |mean(L_stat - F_stat)| < m; if L_stat is ahead, E1 is downgraded to 'more training helps'. Only the 'ahead' branch is written. There is no rule for L_stat behind F_stat by more than m, and no per-seed or sign conditions (the other hypotheses use the three-part rule (a)-(c)).",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:493-496, 511; D:/fidelity-llm/bridge/BRIDGE_CRITIQUE_369.md:92,100"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "E3 is not run, has no pre-registered rule and no scorer code. 'Evolved' stays unlicensed until E3 runs.",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:81; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md:61; D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:536"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "Design prediction for E3: passes, about 60%.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:529"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "Design text: 'a stationary nursery for the E3 control: one fixed table for the whole nursery, seeds 1-3, giving W0stat_s'; L_stat and F_stat run 'in the stationary world that matches their nursery'. The text does not say whether one table is shared by all three model seeds and all worlds, or one per model seed.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:400, 471"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "The table seed is tunable: section 6.7 lets smoke runs set 'the stationary nursery's table seed'. The critique asks to fix it now by a hash rule (for example hash32(nurserySeed, STAT, s)) and remove it from the tunable list.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:548; D:/fidelity-llm/bridge/BRIDGE_CRITIQUE_369.md:91,99"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "Critique reading (not measured here): one fixed table seen in training means F_stat already holds that table, so extra training cannot show up, and E3 cannot detect the alternative it is meant to guard against.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_CRITIQUE_369.md:90"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "Regime checks M1-M3 are stated for E1-E4: if one fails, E1-E4 read 'no test'. The design does not say how they apply in a stationary world, and the scorer computes the reference minds (O, T, S, RND) only on the seasonal preset.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:498-501; D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs:14, 45-48"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "m = 1.02 is v1a's margin (sd of F - F2 = 0.34). v1b reused it. No F2_stat run is in the plan, so a stationary floor cannot be computed unless one is added.",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md:46; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:45"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "Readout window: from the first season boundary to the end of life. Code starts the window at log.seasons[1] ?? 0, so a life with no season boundary is read from tick 0 (a departure from the design).",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:477; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:33; D:/fidelity-llm/bridge/run/baselines.mjs:45; D:/fidelity-llm/bridge/run/lockstep.mjs:18"
+   },
+   {
+    "topic": "E3 rule and status",
+    "fact": "Planned size: 48 F_stat and 48 L_stat life runs (model seeds 1-3 x world seeds 101-116), plus 3 stationary nursery runs at 40,000 steps. If the reference minds are recomputed in the stationary world, that adds 64 reference runs (4 minds x 16 worlds). These are counts, not timings.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:397, 475; D:/fidelity-llm/bridge/mind/run_worker_v1a.mjs:10"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "The seasonal table is drawn in seasonTable: a shared bit per kind from hash32(seed, SHARE, s, k, r); the effect from hash32(seed, EFF, s, k, shared ? valleys : v, r) % 3; redrawn with r+1 until every valley has a NOURISH kind. startSeason stores it. It is called in createWorld (line 44) and at each season end (line 149).",
+    "where": "D:/fidelity-llm/bridge/world/valleys.mjs:23-32, 48-51, 44, 149"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "Season length = P.season.minLength + hash32(seed, LEN, s) % P.season.lengthSpan. Preset values: minLength 384, lengthSpan 257. P.season is read only at valleys.mjs:21.",
+    "where": "D:/fidelity-llm/bridge/world/valleys.mjs:21; D:/fidelity-llm/bridge/preset/valleys_v1.json:22-25"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "A declared preset key alone changes nothing: valleys.mjs must read it. HANDOFF's route ('add it as a declared preset field and re-run the tests') is incomplete as written.",
+    "where": "D:/fidelity-llm/bridge/HANDOFF.md:44; D:/fidelity-llm/bridge/world/valleys.mjs:23-32"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "Any edit to preset/valleys_v1.json changes presetHash, because ledger.mjs hashes JSON.stringify of the whole preset, not the file. The locked file hash is 2314cbbb. Ledgers 201-203 carry presetHash 3ad69e25 and replay only under the unchanged preset.",
+    "where": "D:/fidelity-llm/bridge/world/ledger.mjs:13, 25; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:126; D:/fidelity-llm/bridge/run/ledgers/ledger_201.json (header)"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "Preset-only route (my reading of valleys.mjs:21, 23): minLength >= 16385 with lengthSpan = 1 gives one season per life. The table is then fixed within each life but drawn from each world seed, not one table for all. No valleys.mjs change is needed. Side effects: no season boundary (so the readout window changes, see the readout fact), and stage never rises (stage rises only at a season end).",
+    "where": "D:/fidelity-llm/bridge/world/valleys.mjs:21, 23, 148; D:/fidelity-llm/bridge/run/baselines.mjs:45"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "A single table for every world (the literal design reading) needs a code change in seasonTable and startSeason (a seed-independent table, behind a flag that defaults off). This is a valleys.mjs edit and changes its locked hash.",
+    "where": "D:/fidelity-llm/bridge/world/valleys.mjs:23-32, 48-51; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:123"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "Tokens do not carry the table or the season index (VIEW_KERNEL), so a fixed table reaches the minds only through their answers.",
+    "where": "D:/fidelity-llm/bridge/bridge/tokens.mjs:59"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "Frozen mutant anchors in valleys.mjs (each find string occurs exactly once): lines 40, 50, 65, 74, 75, 112, 123, 148, 151, 174. A stationary edit must leave these lines unchanged, or the mutant becomes INVALID or changes meaning.",
+    "where": "D:/fidelity-llm/bridge/test/mutants_round1.json (file world/valleys.mjs entries); D:/fidelity-llm/bridge/world/valleys.mjs (those lines)"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "W7 counts assignments to '.ell[...] =' in valleys.mjs and expects exactly 1. D0 bans Date, process.env, require(, and random APIs in valleys, hash, ledger, tokens and lockstep.",
+    "where": "D:/fidelity-llm/bridge/test/world.test.mjs:189-191 (W7); test/world.test.mjs:32-36 (D0)"
+   },
+   {
+    "topic": "World code: where a fixed table could go",
+    "fact": "D9 golden chain ae98c0c3... (seed 1, scripted policy, 10,000 ticks) must still match on the default path. The chain covers stateBytes.",
+    "where": "D:/fidelity-llm/bridge/test/world.test.mjs:44; D:/fidelity-llm/bridge/world/valleys.mjs:157-166"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "Nursery world data: loadWorldData reads preset/valleys_v1.json (hard-coded). It runs 20 training lives (world seeds 20000-20019) and 2 validation lives (29000-29001), each 16,384 ticks. Measured: 327,680 ticks per character.",
+    "where": "D:/fidelity-llm/bridge/mind/nursery.mjs:69-70, 165, 177-185; D:/fidelity-llm/bridge/mind/make_nursery.mjs:64; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:36"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "Token capacity guard: CFG.L x steps (32 x 40,000 = 1,280,000) must not exceed tokens per character (20 lives x 16,384 ticks x 4 tokens = 1,310,720). Keep life count and lifeTicks, or the guard throws.",
+    "where": "D:/fidelity-llm/bridge/mind/nursery.mjs:178"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "The live runner also calls loadWorldData at startup (WORLD is true with --live). The same preset file therefore sets H1 and nlogU, and nlogU enters the per-stream gain update. The trainer and the live runner must read the same preset.",
+    "where": "D:/fidelity-llm/bridge/mind/live.mjs:77, 1129; D:/fidelity-llm/bridge/mind/nursery.mjs:165, 686"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "live.mjs CLI: --live --arm (F, F2, L, LH) --seed --trunk --worlds w0,n --out --progress --ticks. The preset path is hard-coded at line 1039. The trunk must be a nursery run (line 1038). The record's script hash is the file's own sha256 (line 1130).",
+    "where": "D:/fidelity-llm/bridge/mind/live.mjs:7, 1032-1039, 1130"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "Generators pin hashes: make_nursery.mjs requires levels_v6.mjs hash fcec7505 and writes nursery.mjs. make_live.mjs requires nursery.mjs hash afaa90a8 and writes live.mjs. Changing nursery.mjs means regenerating and re-hashing make_live.mjs too.",
+    "where": "D:/fidelity-llm/bridge/mind/make_nursery.mjs:7-8, 11; D:/fidelity-llm/bridge/mind/make_live.mjs:9-13"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "run_worker_nursery.mjs writes to mind/runs/nursery (outDir, line 6), names files W0_s{seed}.json (line 12) and appends its RUNLOG there (line 22). Reusing it unchanged for a stationary run overwrites the locked trunks W0_s1-3.",
+    "where": "D:/fidelity-llm/bridge/mind/run_worker_nursery.mjs:6, 12, 22; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:127-129"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "run_worker_v1a.mjs: 192 jobs = 16 worlds x 3 seeds x 4 arms (line 10); trunk W0_s{seed}.json (line 20); at most 20 concurrent (line 7). run_worker_v1b.mjs: 48 Y jobs (line 10), runner live_y.mjs (line 20). Both hard-code F:/fidelity-llm/bridge (line 7).",
+    "where": "D:/fidelity-llm/bridge/mind/run_worker_v1a.mjs:7, 10, 20; D:/fidelity-llm/bridge/mind/run_worker_v1b.mjs:7, 10, 20"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "Scorer adaptation points in score_bridge_v1b.mjs: preset path (14); locked hashes (16-17); arm script check (34, non-Y must equal 7f814cbf); trunk-name regex (35, /W0_s(\\d)\\.json$/ rejects W0stat names); reference runs on the seasonal preset (45-48); floor and m (60-61); rule ahead() (65-73; E3 needs a |mean| < m test instead); E2 (85-87). The Y source-lane check (36-39, 50, 94-95) is not needed for E3.",
+    "where": "D:/fidelity-llm/bridge/mind/score_bridge_v1b.mjs:14, 16-18, 34-35, 36-39, 45-48, 60-61, 65-73, 85-87, 94-95"
+   },
+   {
+    "topic": "Nursery and live runners",
+    "fact": "The worker scripts contain no /tmp/worker.lock check and set no process priority. A grep of mind/run_worker_*.mjs finds neither. HANDOFF requires both by hand.",
+    "where": "D:/fidelity-llm/bridge/mind/run_worker_*.mjs (no matches); D:/fidelity-llm/bridge/HANDOFF.md:75"
+   },
+   {
+    "topic": "Locked files (current sha256, checked 2026-11-02)",
+    "fact": "Current file hashes match the locks: world/valleys.mjs 7be9f53d; world/hash.mjs 52361ef6; world/ledger.mjs 96990387; bridge/tokens.mjs d3e37b93; run/lockstep.mjs d02b6c15; run/baselines.mjs f312ad69; preset/valleys_v1.json 2314cbbb; vendor/wave0_reference.mjs fc52064a (inside codeHash).",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:122-126; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:21-22"
+   },
+   {
+    "topic": "Locked files (current sha256, checked 2026-11-02)",
+    "fact": "Current file hashes match the locks: mind/live.mjs and live_v1a.mjs 7f814cbf; live_y.mjs 1360ab19; make_live.mjs ef75e2c0 (v1b; the v1a table lists 436ac738); nursery.mjs afaa90a8; yoked_part.js 733d6585; run_worker_v1a.mjs 2a57f15c; run_worker_v1b.mjs 241abdb1; score_bridge_v1a.mjs ace75df0 and score_bridge_v1b.mjs 9a315f12 (both amended); PREREG_bridge_v1a.md 1911396b and PREREG_bridge_v1b.md b0a2d973 (amendments).",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md:76-82; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:43, 50"
+   },
+   {
+    "topic": "Locked files (current sha256, checked 2026-11-02)",
+    "fact": "Current hashes also match: W0_s1-3 weights.bin 6efe544d, 085c273c, 7eb30edc; test/world.test.mjs 166d5421; test/bridge.test.mjs 9f6ac1fe; test/lockstep.test.mjs ca753e5e; mutants_round1.json 667468a2; mutants_round1c.json f3e9ca1d.",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:127-129; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:27-33"
+   },
+   {
+    "topic": "Locked files (current sha256, checked 2026-11-02)",
+    "fact": "Stale hash tables: PREREG_bridge_v1a.md:119 lists score_bridge_v1a as 86864125 (the file is ace75df0, amended at RUNLOG line 43). PREREG_bridge_v1b.md:79 lists score_bridge_v1b as ab865cc3 (the file is 9a315f12, amended at RUNLOG line 50). The amendment hashes are the current record.",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:119; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md:79; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:43, 50"
+   },
+   {
+    "topic": "Locked files (current sha256, checked 2026-11-02)",
+    "fact": "Current codeHash 7495a55a9b2dad8f and presetHash 3ad69e253927503e (laptop, node v24.19.0) match the D2 record and the ledger headers.",
+    "where": "D:/fidelity-llm/bridge/RUNLOG_bridge.txt:20; D:/fidelity-llm/bridge/run/ledgers/ledger_201.json; D:/fidelity-llm/bridge/world/ledger.mjs:12-13"
+   },
+   {
+    "topic": "Locked files (current sha256, checked 2026-11-02)",
+    "fact": "PC copies are hash-checked when copied (PREREG_bridge_v1a.md:156). The PC was not reached in this scout, so PC file hashes are not verified here.",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:156"
+   },
+   {
+    "topic": "Tests, mutants, D2",
+    "fact": "Test suites and check names: world.test.mjs (D0, D9, D1c, D1, D1b, D8, W1, W1b, W2, W2b, W3, W3b, W4, W5, W5b, W6, W7, W7b, S1); bridge.test.mjs (B1, B6, B1b, B2, L1, B3, B4, B7, B8); lockstep.test.mjs (R1, R2, R4/R5, R6, K1).",
+    "where": "D:/fidelity-llm/bridge/test/world.test.mjs; D:/fidelity-llm/bridge/test/bridge.test.mjs; D:/fidelity-llm/bridge/test/lockstep.test.mjs (check() lines)"
+   },
+   {
+    "topic": "Tests, mutants, D2",
+    "fact": "Frozen mutant set: 28 mutants in mutants_round1.json. Round 1 caught 13. Round 1b caught 25, missed R1, and found R4 and R5 INVALID (their find text is gone from run/lockstep.mjs). Round 1c caught the three replacements (R1, R4-v2, R5-v2). The reported 28 of 28 is the combination of round 1b and round 1c.",
+    "where": "D:/fidelity-llm/bridge/test/mutants_round1_results.json; D:/fidelity-llm/bridge/test/mutants_round1b_results.json; D:/fidelity-llm/bridge/test/mutants_round1c_results.json; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:26"
+   },
+   {
+    "topic": "Tests, mutants, D2",
+    "fact": "run/mutants.mjs applies each mutant to a copy of the bridge tree and runs every test/*.test.mjs; a mutant is CAUGHT if any suite fails.",
+    "where": "D:/fidelity-llm/bridge/run/mutants.mjs:14, 25-37"
+   },
+   {
+    "topic": "Tests, mutants, D2",
+    "fact": "D2 cross-machine check: run/chain_probe.mjs prints code and preset hashes and chains for seeds 1-3 x two scripted policies x 10,000 ticks. run/ledger_replay.mjs writes or replays ledgers 201-203. The ledgers were replayed on the PC (node v22.23.2) with identical chains. The laptop runs node v24.19.0.",
+    "where": "D:/fidelity-llm/bridge/run/chain_probe.mjs; D:/fidelity-llm/bridge/run/ledger_replay.mjs; D:/fidelity-llm/bridge/RUNLOG_bridge.txt:3, 25"
+   },
+   {
+    "topic": "Tests, mutants, D2",
+    "fact": "Per-tick tests B2, W2, W3 and L1 do not run inside the live runner. This is a stated departure in v1a and v1b. G0 requires them in every scored run, so E3 needs the same departure or a runner change.",
+    "where": "D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:74-75; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1b.md:56; D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:503-506"
+   },
+   {
+    "topic": "Tests, mutants, D2",
+    "fact": "N4 (a head-learning smoke run on an unseen fixed table) is in build step 7 but was not run as a test.",
+    "where": "D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:596; D:/fidelity-llm/bridge/mind/PREREG_bridge_v1a.md:153"
+   },
+   {
+    "topic": "Measured durations (logs only)",
+    "fact": "Nursery, seasonal, model seeds 1-3, 40,000 steps, PC, three in parallel with a 1 s stagger: s3 1467.5 s, s2 1587.6 s, s1 1639.4 s (the RUNLOG and each W0 JSON 'seconds' agree). The design's 45-60 min for six runs is labelled an estimate. Six parallel runs were not measured.",
+    "where": "D:/fidelity-llm/bridge/mind/runs/nursery/RUNLOG.txt:1-3; D:/fidelity-llm/bridge/mind/runs/nursery/W0_s1.json, W0_s2.json, W0_s3.json ('seconds'); D:/fidelity-llm/bridge/BRIDGE_DESIGN.md:401; D:/fidelity-llm/bridge/mind/run_worker_nursery.mjs:11"
+   },
+   {
+    "topic": "Measured durations (logs only)",
+    "fact": "v1a lives on the PC (at most 20 at a time): F 70.3-117.9 s (mean 99.4, n 48); F2 68.7-116.7 s (mean 99.3); L 85-187 s (mean 165.2); LH 80.3-184.5 s (mean 161.9). Worker wall: 1467.4 s, from 20:05:41.750 to 20:30:09.142 UTC, for 192 runs.",
+    "where": "D:/fidelity-llm/bridge/mind/runs/v1a/RUNLOG.txt:1, 193"
+   },
+   {
+    "topic": "Measured durations (logs only)",
+    "fact": "v1b Y lives on the PC (at most 20 at a time): 179.8-400.9 s (mean 353.8, n 48). Worker wall: 1001.4 s, from 04:14:43.207 to 04:31:24.587 UTC.",
+    "where": "D:/fidelity-llm/bridge/mind/runs/v1b/RUNLOG.txt:1, 49"
+   },
+   {
+    "topic": "Measured durations (logs only)",
+    "fact": "Single-run examples from the v1a log: F_s1_w101 84 s; L_s1_w101 158.9 s.",
+    "where": "D:/fidelity-llm/bridge/mind/runs/v1a/RUNLOG.txt:2, 13"
+   },
+   {
+    "topic": "Measured durations (logs only)",
+    "fact": "The logged per-life seconds start after loadWorldData at startup (live.mjs:1129 runs before liveMain's t0 at 1042), so the startup cost is not in those figures and is not measured anywhere in the logs.",
+    "where": "D:/fidelity-llm/bridge/mind/live.mjs:1042, 1122, 1129"
+   },
+   {
+    "topic": "Measured durations (logs only)",
+    "fact": "World speed: 67k ticks/s with scripted minds (machine not stated). No test-suite durations were found in the logs read.",
+    "where": "D:/fidelity-llm/bridge/RUNLOG_bridge.txt:2"
+   },
+   {
+    "topic": "3/6/9 self-check",
+    "fact": "Checked the report's claims (claim, opposite, deciding line). Dropped: (a) HANDOFF's preset-field route as a complete plan, because the field is inert without a valleys.mjs reader (valleys.mjs:21, 23, 49); (b) any E3 duration estimate, because there is no measured basis. Kept but labelled as readings, not measurements: the critique's ceiling point (BRIDGE_CRITIQUE_369.md:90); the readout-window change under the preset-only route (baselines.mjs:45); and the claim that a per-life table lets L learn in-life (a reading of valleys.mjs:21-23, not run).",
+    "where": "D:/fidelity-llm/bridge/HANDOFF.md:44; D:/fidelity-llm/bridge/world/valleys.mjs:21, 23, 49; D:/fidelity-llm/bridge/BRIDGE_CRITIQUE_369.md:90; D:/fidelity-llm/bridge/run/baselines.mjs:45"
+   }
+  ],
+  "gaps": [
+   "Table scope is undecided: one table for every nursery and live world (the literal design reading, which needs a valleys.mjs edit) or one table per life (preset-only, no code edit). E3's outcome depends on this choice (facts on the design text, the critique, and the preset-only route).",
+   "Table seed: fix it now by a hash rule (critique) or leave it tunable by smoke runs (section 6.7). It must be fixed before the table is drawn.",
+   "The E3 rule has no branch for L_stat behind F_stat, no per-seed or sign conditions, no stated margin for the stationary world (m = 1.02 is reused from v1a) and no regime checks for the stationary world.",
+   "Season clock: whether seasons still tick in stationary worlds. This changes the readout window and the stage. The preset-only route removes season boundaries, which is a departure from the design's readout definition.",
+   "Locks: any route that edits valleys.mjs, valleys_v1.json, nursery.mjs or live.mjs in the main tree changes a locked hash. A separate copy tree keeps the main tree byte-identical, but the copy needs its own hash log, its own worker paths (the run_worker files hard-code F:/fidelity-llm/bridge), and PC copy checks.",
+   "Trainability is unmeasured. The seasonal trunk is near the memoryless count model (held-out answer CE 0.320-0.343 against 0.310; RUNLOG_bridge.txt:40). Whether a trunk learns a single fixed table, and how well, is not measured. N4 was never run.",
+   "Per-tick tests B2, W2, W3 and L1 are not inside the live runner. E3 needs the same stated departure again, or a runner change.",
+   "Mutant gate: run/lockstep.mjs changed after round 1, so mutants_round1.json now has two INVALID entries (R4, R5). Reproducing 28 of 28 needs round 1b and round 1c together.",
+   "PC: the lock check and below-normal priority are manual (HANDOFF.md:75) and not in code. The PC was not reached, so its file hashes are unverified here.",
+   "Both PREREG hash tables (v1a line 119, v1b line 79) list pre-amendment scorer hashes. The new E3 pre-registration should list the current hashes of every file it locks.",
+   "Required gates before launch and before publication: a fresh code review before launch (BRIDGE_DESIGN.md:549), a claim-strength reader before anything goes out (BRIDGE_DESIGN.md:551; HANDOFF.md:73), and the owner's budget rule of several Haiku readers with distinct lenses (HANDOFF.md:62-65).",
+   "Six parallel nursery runs (seasonal plus stationary) have not been measured. The 45-60 min figure is an estimate."
+  ],
+  "recommendation": "Decide first, before any build: (1) table scope, one table for all worlds or one per life; (2) table seed, fixed by a hash rule or tunable; (3) the E3 rule, including a 'behind' branch and the margin; (4) the regime checks and season clock for the stationary world. Then build in a copy tree so the locked files in the main tree stay byte-identical. Route A (preset-only, one season per life, no valleys.mjs edit) changes the readout window and must be disclosed. Route B (seed-independent table) adds a flag, default off, read in valleys.mjs seasonTable and startSeason (lines 23-32, 48-51); keep the frozen anchor lines (40, 50, 65, 74, 75, 112, 123, 148, 151, 174) unchanged and the W7 assignment count at 1. Steps: (a) give the stationary preset its own file in the copy and leave valleys_v1.json untouched; (b) train W0stat_s1-3 with a worker whose outDir and file names differ from run_worker_nursery.mjs lines 6 and 12, expecting roughly the measured 1467-1639 s for three parallel runs; (c) run 48 F_stat and 48 L_stat on worlds 101-116 with --trunk W0stat_s{seed}, using the stationary preset for the live runner too (live.mjs:1039, 1129); (d) regression before any counted run: test/world.test.mjs, test/bridge.test.mjs and test/lockstep.test.mjs must pass; run/mutants.mjs on mutants_round1.json plus the three round1c replacements must give 28 of 28; run chain_probe and ledger_replay on both machines, with the default path matching codeHash 7495a55a and presetHash 3ad69e25; rerun F_s1_w101 with the default configuration and compare it to the locked record (84 s measured); (e) adapt the scorer at the listed lines of score_bridge_v1b.mjs (14, 16-18, 34-35, 45-48, 60-61, 65-73, 85-87), with a new |mean| < m test, and remove the Y checks; (f) pre-register E3 with the decisions above and hashes of every locked file; (g) a fresh code review, then the run, then scoring, then a claim-strength reader before anything is published.\""
+ },
+ {
+  "facts": [
+   {
+    "topic": "Which runner file is which, and why nothing can be imported",
+    "fact": "mind/live.mjs is byte-identical to mind/live_v1a.mjs (cmp; the v1a locked runner, 7f814cbf). mind/live_y.mjs (1360ab19) is v1b: live.mjs plus a yoked arm Y and per-life collapseCauses/loopBreaks/ellEnd. mind/live_diag.mjs adds only the cause/loop-break tallies. None has an export (0 'export' lines), and the main block runs on import, so a replay tool cannot import functions from them. Per tick liveMain calls runStep 7 times: OBS, ACTION, 3 counterfactual ANSWER forwards (one per action), ANSWER for real, TICK. Every live call site throws away runStep's return value, so its per-stream tallies are never stored. Design vs build: BRIDGE_DESIGN says a 5-number sting, 13 answers, 34 tokens; the code has 3 sting numbers, 14 answers, V = 120. The code rules.",
+    "where": "mind/live.mjs:1031-1126 (liveMain), 1063, 1065, 1070, 1092, 1104 (call sites, no assignment); 1129-1164 (main runs on import); mind/live_y.mjs:1040-1179; mind/live_diag.mjs:1057,1100,1121; MIND_STEP7.md:15; tokens.mjs:16-20"
+   },
+   {
+    "topic": "Tick layout the lens must follow",
+    "fact": "One tick = 4 token slots per character at stream position 4t+slot: OBS (4t), ACTION (4t+1), ANSWER (4t+2), TICK (4t+3). Rung 0 reads the previous two tokens (k = 2): at ACTION it sees (TICK, OBS); at ANSWER it sees (OBS, ACTION); at OBS it sees (ANSWER, TICK) and so predicts the next observation. Rung 1 fires on every OBS slot (span1 4), rung 2 on every 4th tick (span2 16). Four streams = four characters = four valleys, lockstep, one shared trunk (frozen), private heads Wout/bout/A0/a0 per character.",
+    "where": "bridge/tokens.mjs:1-4; mind/live.mjs:89-90, 599-600, 610, 618, 976, 1045-1052"
+   },
+   {
+    "topic": "OBS token: what a character senses",
+    "fact": "Fields: E band (energy), H band (HEALTH, not hunger), item kind; or the single DOWN token while collapsed. E bands [0],[1],[2-4],[5-10],[11-15]; H bands [1-2],[3-4],[5-10],[11-14],[15]; item 0 none, 1..3 kinds a,b,c. Token id = 1 + (eBand*5 + hBand)*4 + item, so ids 1..100; DOWN = 101; EAT 102, PASS 103, REST 104 (action tokens); ANSWER tokens 105..118; TICK 119; V = 120 (checked by running makeTokens). Correction to the brief: there is no separate hunger field. Hunger is the E band read through the warnings (HUNGRY = E 1-4, STARVING = E 0, WEAK = H 1-4), which are exact predicates of the bands. Not in OBS: other valleys, season index or clock, stage, intensity ell, the effect table, exact E/H inside a band, the item while down. Written to run record or progress? No: log.obs is in memory only (live.mjs:1111); the record keeps only aggregates. The tokens are fully rebuildable by replaying the world from seed + action log.",
+    "where": "bridge/tokens.mjs:9, 12-14, 23-28, 50-58, 59-60; preset/valleys_v1.json:64-78, 99-145; world/valleys.mjs:171-180; mind/live.mjs:1061, 1111"
+   },
+   {
+    "topic": "Fear is not a separate mind input",
+    "fact": "snapshot() carries a 'fear' object (HUNGRY/STARVING/WEAK) but live.mjs never reads fear or warnings (no match in the file); the only STARVING mention is in the wants table. A lens can show fear as a pure function of the OBS band via warningsOf, labelled as derived from the band, not as something the net receives separately.",
+    "where": "world/valleys.mjs:54-57, 177; bridge/tokens.mjs:50-58; mind/live.mjs:1004 (only match)"
+   },
+   {
+    "topic": "Action chosen",
+    "fact": "acts[c] in {0 EAT, 1 PASS, 2 REST}, token 102/103/104, sent through K.decodeAction(K.encodeAction(a)), the only mind-to-world port. Chosen at the ACTION slot from the counterfactuals, not from the ACTION-slot output (that slot's target is masked, weight 0, never trained). On a DOWN tick the choice is still made but the world refuses every action (ERR_DOWN), so a lens should draw it as 'ignored'. Written? Only in memory (log.acts); not in the record or progress files. The record keeps what it led to (NGE, toxicEatRate, nourishEatRate, nEat, window goodEats/nourish/toxic).",
+    "where": "mind/live.mjs:489-491, 1073-1087, 1111; world/valleys.mjs:9, 110-112; run/baselines.mjs:44-66"
+   },
+   {
+    "topic": "Predicted ANSWER distribution per candidate action (counterfactuals)",
+    "fact": "pi[x][c] for x in EAT, PASS, REST = st.pMain of a cloned stream after a pure ANSWER-slot forward with the candidate action token written at pos-1 (answer target is a placeholder). pMain is a Float64Array(120), a full softmax over V from the character's own private Wout/bout head; the 14 answer tokens sit at indices 105..118 in this order: OK/0, OK/1, RESTED/0, RESTED/1, ERR_EMPTY/0, ERR_EMPTY/1, ERR_FULL/0, ERR_FULL/1, FED, PLAIN, TOXIC, ERR_SPENT/1, COLLAPSE, ERR_DOWN. Each candidate has its own x0 and so its own gates. K5: the real forward equals the chosen candidate bit for bit, counted per character per tick (k5Mismatches 0 in all 192 v1a and 48 v1b records). Written? Only consequences: ceAnswer (mean CE of the real prediction on the true answer), ceEatItem, ceEatByAge/nByAge (by ticks since the season began, 0-31, 32-127, 128+), and window series.score = exp(-mean CE). The distributions themselves are never stored.",
+    "where": "mind/live.mjs:675-677, 1067-1072, 1092-1098, 1119, 1122; bridge/tokens.mjs:16-17"
+   },
+   {
+    "topic": "Wants-weighted value U(a) and the choice rule",
+    "fact": "U(a) = sum_i pi_a[105+i]*wants[i] / sum_i pi_a[105+i] over the 14 answer tokens (renormalised, so the mass the head puts on non-answer tokens is dropped). wants (record field 'wants') = [0,-2,1,-1,-1,-3,-1,-3,3,1,-4,-3,-8,0], from the preset's gain-minus-pain table at the default intensity 2. Range of U: -8..3. Choice: argmax with ties PASS, then EAT, then REST (strict '>' reduce). U is a local variable, not stored; only the 14-number table is in the record. The wants assume ell = 2 for the whole life, but the world drops every character to ell 1 (TOXIC pain 2, not 4) and the wants never follow it. The wants are preferences, not felt (felt pain off); the engine's gain/pain/V per tick live in log.V/pain/gain in memory, feed only meanV/painPer100, and never reach the net. A lens must label engine facts and mind numbers separately.",
+    "where": "mind/live.mjs:996-1007, 1078-1083, 1112, 1122; preset/valleys_v1.json:79-96, 146-149; run/lockstep.mjs:31; BRIDGE_DESIGN.md:277; runs/diag_collapse/DIAG_COLLAPSE.md"
+   },
+   {
+    "topic": "Exploration (epsilon) flag",
+    "fact": "explore when u1 = hash32(worldSeed, modelSeed, 0xE1, ARM.stream, c, t)/2^32 < 0.1; the action is then min(2, floor(u2*3)) with u2 from tag 0xE2; U is not computed on explore ticks, but the pi are still computed (K5). ARM.stream is 1 for F, L, LH and 2 for F2. The per-tick flag is not stored; only the share (exploreShare) is. I recomputed it offline for L seed 1 world 101: 6693 of 65536 = 0.1021270751953125, equal to the record to the last bit, and F2 (stream 2) 0.1016845703125 also equal. So the flag needs no net and can be recomputed with hash32 alone.",
+    "where": "mind/live.mjs:977, 1033, 1075-1077, 1122; world/hash.mjs:13-17"
+   },
+   {
+    "topic": "Sting: surprise, relief, running relief, and when they update",
+    "fact": "st.sting = [surprise = mainCE - previous running mean of mainCE, relief = aux0 CE - main CE ('did the help help'), running relief with keep 15/16]; st.mainMean starts at 2.0 and sting at [0,0,0] (not seeded from the trunk). Updated only on ANSWER tokens (WTOK.isAnswer(r.y)), so once per tick, after the real ANSWER forward; held through TICK, OBS and ACTION, and felt from the next token on. Runs in every arm (F included) because the RC base has feelTop and feelGate. The counterfactual clones update their own copy of sting and the copy is thrown away. Felt via: u2 += Ps*sting at rung-2 boundaries, and gate score += ws*sting on gate0, gate1 and G20. Learned weights ws0 [-0.1317,0.0812,0.22], ws1 [0.0906,0.0856,-0.0401], ws20 [-0.0772,0.1083,-0.112] sit in the nursery trunk record W0_s1.json (nursery.ws); Ps (3x64) is in the weights.bin, not decoded here. Range: real numbers, both signs. NOT in any run record or progress file. v6 showed RC lowers CE, not how it uses the sting, so a lens must show the three numbers and where they enter, not claim what they do.",
+    "where": "mind/live.mjs:123, 433, 517, 555, 565, 639, 658, 693-699, 707-711, 1009; runs/nursery/W0_s1.json (nursery.ws); PREREG_bridge_v1a.md:15; MIND_STEP7.md:7-8"
+   },
+   {
+    "topic": "Gate values (G0, G1, G20, G02) and the shut/band/open bands",
+    "fact": "All four are one number per character in (0,1): sigmoid of a relational score (RC mode 'rel'). G0 = bridge 1 to 0, at every slot (4 per tick, and each of the 3 candidate forwards, so it can differ per candidate action); G1 = 2 to 1, at each OBS slot; G20 = 2 to 0, at every slot, its source being the character's own u2 in F/F2/L and a donor's published u2 when helped; G02 = 0 to 2, at every 4th tick's OBS slot. The 'bands' shut (G<=0) / band / open (G>=1) are only tallies in runStep's output, which live ignores; in nursery eval G0 was all 'band' and G1 'open' 0.311 on W0_s1, so open means float saturation, not a designed state. Not written to any live record or progress file. The nursery record has only held-out aggregates (eval.gate0, eval.gate1, eval.poison.g20Clean 0.2995, g02Mean 0.8621).",
+    "where": "mind/live.mjs:123, 512-513, 549-567, 631, 641, 646, 655, 658, 685; runs/nursery/W0_s1.json (eval.gate0, eval.gate1, eval.poison)"
+   },
+   {
+    "topic": "Help from another timeline (donor), LH arm only",
+    "fact": "Only the LH arm has a bus; F, F2 and L pass poison = null, so no one is helped and G20 gates the character's own u2. In LH, poison.seed = hash32(worldSeed, 0xB5); a character is a receiver for a whole 64-tick segment (256 token positions) with probability 0.25 via poisonAt(poison.seed + 7919*c, pos - base, 2, rho) (bridge 2 only; bridges 0 and 1 never poisoned in world mode); the donor is others[hash32(poison.seed, 0xD0, c, floor((pos-base)/256)) % 3] among the other three streams in index order; the source is the donor's u2 as published before this slot (refreshes every 4 ticks). Flag r.poisoned2. I checked the schedule offline for world 101: 262 of 1024 (character, segment) pairs are receivers (0.256) and the status is constant across all 4 slots of every segment. Donor identity is read from code only, not cross-checked against a run. Not written to any record (v1a LH records have the same fields as L plus bus: true).",
+    "where": "mind/live.mjs:466-471, 534-536, 581, 590-595, 658, 1053; mind/runs/v1a (LH records)"
+   },
+   {
+    "topic": "Collapse / faint",
+    "fact": "World: H reaching 0 gives answer COLLAPSE, down = 8 ticks, collapsesSeason += 1, cause = toxin if that tick's meal was toxic, else hunger if E was 0, else other. For the next 8 ticks OBS is the DOWN token, the world answers ERR_DOWN and H rises by 1 per tick (wakes at H 8, E unchanged). Written: per-512 window 'collapses' (count of COLLAPSE answers) and 'awake' (1 - share of ticks that began DOWN) for each character; life-level collapsesPer10k (from the first season boundary). Causes per life only in live_diag/live_y records (collapseCauses totals), never in scored v1a records, and never per tick.",
+    "where": "world/valleys.mjs:110-112, 121-127; preset/valleys_v1.json:40-43; mind/live.mjs:1099, 1106; mind/live_y.mjs:1132"
+   },
+   {
+    "topic": "Loop-break and intensity ell",
+    "fact": "ell is world state (default 2, min 1). The loop-break fires on the third collapse from one cause (toxin/hunger/other) and calls lowerIntensity(2 to 1); lowerIntensity can only lower, so each character breaks at most once. ell scales toxic health loss (2*ell) and engine pain. The mind never sees it (VIEW_KERNEL). Recorded: end-of-life loopBreaks[4] and ellEnd[4] only in live_y.mjs/live_diag.mjs records (not in the scored v1a records); all 96 such records I checked (48 Y, 48 diag) have loopBreaks = 1 and ellEnd = 1 for every character. The break TICK is not recorded anywhere (HANDOFF names it as to-do); it is in the world's chain state, so a replay can capture it.",
+    "where": "world/valleys.mjs:40, 63-68, 90, 126, 160; bridge/tokens.mjs:59-60; mind/live_y.mjs:1132, 1271; mind/live_diag.mjs:1121; HANDOFF.md:35, 43"
+   },
+   {
+    "topic": "Season id and season turn",
+    "fact": "Season index w.s and w.seasonEnd are world state, not in OBS. Season length = 384 + hash % 257 (384..640); the effect table (valley x kind: nourish/plain/toxic, with per-kind 'shared' flags) is redrawn at every turn. Season turns depend only on the world seed, not on actions. Written: progress lines carry season = w.s at each 512-tick window close; the record carries only ceEatByAge/nByAge (ticks-since-turn buckets); log.seasons/log.tables are in memory. I computed the season index at every window end for world 101 from seasonLength alone: it matched the progress file in 32 of 32 windows (turns at 387, 930, 1504, 2031, 2531, 2984...). So turn ticks and true tables are recomputable without the net.",
+    "where": "preset/valleys_v1.json:22-25; world/valleys.mjs:21, 23-32, 48-51, 146-150; mind/live.mjs:1060, 1098, 1108"
+   },
+   {
+    "topic": "Valley id",
+    "fact": "Valley id = character index c (0..3): stream cIdx (st.cIdx, st.base = c*4*ticks), the row of the effect table, a key in the explore/pick/donor hashes, and the array index inside series[c] and progress chars[c]. Not stored as a field anywhere; it is positional.",
+    "where": "mind/live.mjs:1046-1048, 1075, 1106, 1108; world/valleys.mjs:23-32"
+   },
+   {
+    "topic": "Other per-character values that exist but are discarded",
+    "fact": "The OBS-slot prediction: after the OBS runStep, st.pMain is the character's expectation of the observation it is about to see (made from the last ANSWER and TICK, before the target is read). It is overwritten by the next slot and never scored in live (only ANSWER slots enter ce). Also carried but unrecorded: per-rung moving averages st.m, st.ceE, st.gain, st.mH, st.mainMean, the 64-d states x0p, u1p, u2, and per-slot main CE (runStep's out.mainByStream, discarded). The ACTION-slot output is masked and meaningless. Y arm only: the shadow stream's loss on the neighbour's answer (character (c+1) mod 4) is computed every tick and discarded.",
+    "where": "mind/live.mjs:428-441, 489-491, 677, 683, 693-699, 1063; mind/live_y.mjs:1148-1167"
+   },
+   {
+    "topic": "Run record: what it holds",
+    "fact": "One JSON per run (arm, seed, world, one life). Top level: version, arm, armCfg {live, bus, stream}, seed, bus, ticks 16384, worlds, trunk, trunkScript, script (runner hash), live {lr 0.002, eps 0.1, tags}, wants[14], k5Mismatches, exploreShare, lives[], seconds. Life (v1a, live.mjs): worldSeed, NGE, meanV, painPer100, collapsesPer10k, toxicEatRate, nourishEatRate, NGElast4k, ceAnswer, ceEatItem, nEat, ceEatByAge[3], nByAge[3], chain (final world hash), series. v1b Y records add collapseCauses, loopBreaks, ellEnd and source {NGE, collapsesPer10k, ceAnswer, k5}. Nothing is per tick. NGE is computed in-runner from the first season boundary; NGElast4k over the last 4,096 ticks.",
+    "where": "mind/live.mjs:1119, 1122-1123; mind/live_y.mjs:1132, 1174; run/baselines.mjs:44-66; runs/v1a/L_s1_w101.json; runs/v1b/Y_s1_w101.json"
+   },
+   {
+    "topic": "The record's 'series' field",
+    "fact": "lives[0].series[c][w]: c = 0..3 (the four characters), w = 0..31 (16384/512 windows). Each cell: {t (ticks done, 512*(w+1)), score = exp(-mean ANSWER CE over the window) = geometric-mean probability given to the true answer, goodEats = nourish - toxic, nourish, toxic (eats of a fruit whose true effect, by the runner's side-channel view of the table, was nourishing/toxic), collapses (COLLAPSE answers), awake = 1 - share of ticks that began DOWN}. Chosen when 512 ticks or the life end is reached; the window counters then reset. Down ticks count in score. Floats: score and awake; the rest are integers.",
+    "where": "mind/live.mjs:1057-1058, 1099-1100, 1105-1106, 1109"
+   },
+   {
+    "topic": "Progress .jsonl files",
+    "fact": "Written only when --progress is given (the v1a and v1b workers pass it), by appendFileSync; the run never reads it back. One line per 512-tick window (plus a closing partial window if ticks is not a multiple of 512): {arm, seed, world, t, season, chars:[4 x the same cell as series]}. I audited all 240 files (192 v1a, 48 v1b): each has 32 lines, last t = 16384, identical keys, season never decreases. The live board (lens2) reads exactly these plus finished records, so it can draw only 512-tick scoreboards, seasons and recoveries, never a single tick.",
+    "where": "mind/live.mjs:1108; mind/run_worker_v1b.mjs:25; lens2/pc_summary.mjs:10-36; runs/v1a/progress, runs/v1b/progress"
+   },
+   {
+    "topic": "Which lives can be replayed, and with what",
+    "fact": "Scored lives: model seeds 1-3 (trunks mind/runs/nursery/W0_s1..3.json plus .weights.json/.bin), world seeds 101-116, arms F, F2, L, LH (v1a, 192 lives) and Y (v1b, 48 lives). A run is a pure function of (arm, model seed, trunk weights, world seed, runner code): all randomness is counter-based hash32, no Math.random or Date in live.mjs, and the random net init is overwritten by loadTrunk. Unscored worlds for development: 31000 (smoke) and the nursery's 20000-20019 / 29000-29001. Command shape: node mind/live.mjs --live --arm L --seed 1 --trunk mind/runs/nursery/W0_s1.json --worlds 101,1 --out <file> [--progress <file>] [--ticks N].",
+    "where": "PREREG_bridge_v1a.md:28-34; run/lockstep.mjs; mind/live.mjs:1033-1041, 1129; world/hash.mjs; mind/run_worker_v1b.mjs:10-20"
+   },
+   {
+    "topic": "Which hash proves a replay matches",
+    "fact": "The world chain: h_t = SHA-256(h_{t-1} || stateBytes), every tick, over t, season, E, H, down, item, stage, ell, collapses, cause counts and loop-breaks per valley, the effect table, and the 4 actions of that tick. The final chain is in each life record. Equal final chain means the same states and the same 65,536 actions, i.e. every argmax and exploration decision. NGE is a derived number and a weaker proof. It does NOT cover the mind's floats (pi, U, sting, gates). The scorers never compare chain (no match in either scorer), so the chain is stored but unused. Evidence: (1) 48 of 48 diag re-runs equal the scored v1a records in chain, NGE, ceAnswer and the full series; (2) 48 of 48 v1b Y.source blocks equal the scored L records in NGE, ceAnswer, collapsesPer10k; (3) determinism/a.json, an LH 1200-tick run, reproduced here with identical chain, NGE, ceAnswer and series.",
+    "where": "world/valleys.mjs:152, 157-166; world/hash.mjs:29-30; mind/live.mjs:1119; RUNLOG_bridge.txt:42, 48; PREREG_bridge_v1a.md:70-71; mind/runs/diag_collapse; mind/runs/v1b; mind/runs/determinism"
+   },
+   {
+    "topic": "Cross-machine replay: measured today",
+    "fact": "I replayed scored L seed 1 world 101 in full (16,384 ticks) on this laptop (Node 24.19.0), writing only to the scratchpad; the scored run came from the PC (Node 22). Result: final chain equal, NGE equal (35.58563065992895), exploreShare equal, K5 0, and all 640 integer series fields equal; but ceAnswer differs in the last digit (0.3653715704159017 vs ...019) and 58 of 128 window 'score' floats are not bit-equal (max relative difference 6.2e-16). So across machines/Node versions the discrete life replays exactly (this one life, 65,536 decisions with no flipped near-tie) while mind floats agree only to about 1e-15; on the same machine they are bit-equal. Time: 136.5 s for the full life on the laptop (single process) vs 158.9 s on the PC at up to 20 parallel. The earlier D2 cross-machine claim covers only the integer world (world/ has no Math.exp/log/tanh), not the neural half.",
+    "where": "scratchpad <local path> (and .jsonl, .log); mind/runs/v1a/L_s1_w101.json; RUNLOG_bridge.txt:3; BRIDGE_DESIGN.md:445"
+   },
+   {
+    "topic": "World ledger already exists for the world half",
+    "fact": "world/ledger.mjs records one action byte per tick plus the chain hash every 256 ticks, and replay(P, ledger) rebuilds the world from seed + actions and bisects a mismatch to its first bad checkpoint; run/ledger_replay.mjs exercises it. The live runners do not call it, so no scored life has an action log. A replay run that also writes a ledger would let the lens regenerate OBS, ANSWER, collapse, loop-break tick, ell and season facts in milliseconds with no net, leaving only the mind's own numbers to be stored.",
+    "where": "world/ledger.mjs:11, 15-34; run/ledger_replay.mjs; BRIDGE_DESIGN.md:269 (B3)"
+   },
+   {
+    "topic": "Seeds that are safe to show",
+    "fact": "Scored worlds 101-116 are under the rule 'pre-register before counted runs, never tune on scored worlds', and the project logged even a reviewer's 5,000-tick prefix of a scored life as a disclosure. Replaying a finished scored life only to draw it tunes nothing, but 31000 (used in smoke runs, disjoint from scored and nursery seeds) avoids the question. Disclosure: today I replayed scored L s1 w101 in full, used only for chain/NGE/series equality, read-only, outputs in the scratchpad.",
+    "where": "HANDOFF.md:73; RUNLOG_bridge.txt:44; PREREG_bridge_v1a.md:31"
+   }
+  ],
+  "gaps": [
+   "Not found: any per-tick or per-slot record of OBS, action, pi, U, explore flag, sting, G0/G1/G20/G02, donor, loop-break tick or season turn tick for any scored life. Every one is computed in memory and dropped; only 512-tick windows and life totals reach disk. No code or file for a 'thought record' exists (only MIND_STEP7.md:42-50 describes it).",
+   "Not found: an action log or ledger for any scored life. The record stores only the final chain, so a replay cannot be bisected to the first bad tick unless the replay tool writes the 256-tick checkpoints itself.",
+   "Not found: a per-tick check that the scorers ever use the chain. Neither score_bridge script mentions it.",
+   "Not tested: whether a cross-machine replay can flip a near-tie argmax on other lives. One full life (L s1 w101) matched on a different Node version; the other 239 lives were not replayed on the laptop. Float differences of about 1e-15 do occur there, so lens truth checks (BRIDGE_DESIGN L3 'recomputed from the logs and must match') need exact equality for discrete fields and a tolerance for floats across machines.",
+   "Not cross-checked against a run: which donor a helped character gets (read from live.mjs:594 only). The receiver schedule was checked only for arithmetic (0.256 share, constant per segment), not against an LH run's behaviour.",
+   "Not decoded: Ps (3x64) and the full trunk weights. Only ws0/ws1/ws20 are readable as JSON in the nursery records. Which sting term matters to which gate is not measured (v6 left it open).",
+   "Not examined in depth: Y-arm details beyond its record fields and the shadow loop. Its actor and source lanes share explore uniforms (stream 1), so per-tick differences between them come from the heads alone.",
+   "The wants table assumes intensity 2 for the whole life while every character is at 1 for at least 75% of it; a lens that shows 'what it wants' beside the world's real pain will disagree unless it labels both. The value table is still pending the owner's review.",
+   "The design text (5-number sting, 13 answers, 34 tokens, separate BODY and ITEM tokens) is stale against the build (3-number sting, 14 answers, V = 120, fused OBS). A lens built from the design would be wrong."
+  ],
+  "recommendation": "Add the thought record as a separate replay tool in the repo's own pattern, not as an edit to any locked file. Write mind/make_thought.mjs, modelled on make_live.mjs: it reads the locked mind/live_v1a.mjs, checks it is 7f814cbf, applies exact-once patches, and writes mind/live_thought.mjs (and a twin from live_y.mjs for Y). Do it in two tiers. Tier 1 patches only liveMain (the ~100-line driver at live.mjs:1031-1126) and needs no change inside runStep: after each tick it writes one JSONL row per character with obs token, the 3 pi vectors (14 answer probabilities each plus the mass off the answer tokens), the 3 U values, the explore flag, the action, the answer token, st.sting read after the ANSWER step, the OBS-slot expectation read from st.pMain after the OBS step, and the engine facts (gain, pain, V, cause) labelled separately; it also writes a world ledger (world/ledger.mjs) and captures the loop-break tick by comparing w.loopBreaks each tick. Tier 2 adds a read-only sink at three spots inside runStep (after live.mjs:660 for G0, G20, G1, G02, poisoned2 and donor index; after :677 for per-slot main CE; after :711 for the sting) to fill in the gates and the donor. Nothing may change a number or the call order. Add a --from/--to tick window so the file stays small (a full life is 65,536 character-ticks; the run still has to execute every tick because the carried state and L's heads depend on all earlier ones). Validate every output the way live_diag was validated (RUNLOG_bridge.txt:48): K5 = 0, final chain equal to the scored record, NGE and the integer series fields equal, and bit-equal floats when replayed on the machine that made the record (the PC, Node 22); on the laptop (about 137 s per full life, measured) expect chain equal and floats to about 1e-15. Let the lens recompute everything the world knows (OBS, answer, collapse, loop-break, ell, season turns, explore flags, receiver schedule) from the ledger and seeds, and take from the thought file only what the net knows. Build and show it first on world 31000, with F and L side by side; use scored worlds only after saying so. Draw the character's point of view as: what it senses (E band, health band, item or DOWN), what it expects of each of EAT, PASS, REST (the 14 answer probabilities), what each is worth to it by its wants (labelled 'wants at intensity 2, not felt'), what it chose and whether that was a whim, what it was surprised by (the three sting numbers, labelled as the mind's own), and how much of its own top (and, in LH, a donor's) reached its bottom (G20). The lens never says it suffers; engine pain is shown apart as a world fact."
+ },
+ {
+  "facts": [
+   {
+    "topic": "Conventions and what was and was not done",
+    "fact": "B/ = D:/fidelity-llm/bridge/, L/ = D:/fidelity-llm/law_of_one/, R/ = D:/fidelity-llm/. No project file was edited. [measured] = run by this scout with the world code (read-only import) in the scratchpad script <local path> on world seeds 40000-40015, which no prereg lists (nursery 20000-20019 and 29000-29001, smoke 31000, scored 101-116). It is a world statistic, no mind involved. [reading] = my reading. RA = Ra as paraphrased in the verified lookups, with their own labels (lookup 6 says its quote wording is approximate). The owner's two 2026-11-02 quotes came in the task text. A grep of D:/fidelity-llm for 'fit a bit better', 'inputs are so few', 'fractal engine' and 'sense the environment' found no match in any .md or .txt file, so the meaning of 'fractal engine' is not written down anywhere I could find.",
+    "where": "R/ grep (no match); B/HANDOFF.md:49-60 (durations only from records); L/RA_GROUP_DENSITY_6.md:5"
+   },
+   {
+    "topic": "What the beings sense now",
+    "fact": "One OBS token per tick: 5 energy bands ([0],[1],[2-4],[5-10],[11-15]) x 5 health bands ([1-2],[3-4],[5-10],[11-14],[15]) x 4 item values (none, a, b, c) = 100, plus DOWN = 101 OBS tokens. With 3 ACTION, 14 ANSWER, TICK and PAD the vocabulary is V = 120. Warnings (HUNGRY, STARVING, WEAK) are exact predicates of the bands. The view deliberately drops: the effect table, season index and clock, stage, exact E and H inside a band, the item while collapsed, other valleys, intensity, the fit label, the action outcome on a collapse tick. BRIDGE_DESIGN.md still describes BODY and ITEM tokens and V = 34; the code (OBS fused, V = 120) is current.",
+    "where": "B/bridge/tokens.mjs:1-5,11-21,23-28,49-60; B/preset/valleys_v1.json:99-145; B/BUILD_STATUS.md:11; B/BRIDGE_DESIGN.md:219-226; B/BRIDGE_CRITIQUE_369.md:13-37"
+   },
+   {
+    "topic": "What the world offers to sense",
+    "fact": "Four valleys, one character each, no space. The item for (valley, tick) is hash mod 4: independent across ticks and valleys, so rungs 1 and 2 have no structure in the item stream to read. Season length 384-640 ticks, same for all valleys, never announced. Per season and kind, the effect is shared by all valleys on a coin flip, else drawn per valley. [measured] over 512 seasons (16 seeds x 32): kinds shared 57.4%; two valleys' effect for a kind agree 72.5% (the design's arithmetic said about 2/3 before its redraw rule); another valley holds the same kind on the same tick on 58.1% of item ticks and within the last 4 ticks on 96.7%. Whether that other character ATE the kind is policy-dependent and was not measured. Because the item is an iid draw, ln 4 = 1.386 nats per awake tick of OBS CE is irreducible [arithmetic]; the held-out OBS CE is 1.56-1.58. NURSERY_RESULTS.md:49 credits the mind's 0.09-0.11 nat edge over the best previous-tick predictor to 'the recent run of items', which an iid draw cannot give; body bands are the likelier source [reading, untested].",
+    "where": "B/world/valleys.mjs:20-32; B/preset/valleys_v1.json:22-25; B/BRIDGE_DESIGN.md:91,96,165; B/mind/runs/nursery/NURSERY_RESULTS.md:49; scratchpad fitcheck.mjs"
+   },
+   {
+    "topic": "The mind is already a ladder with ratio 4 (the owner's fractal), and its top rung is far below a season",
+    "fact": "Rung 0 reads k = 2 tokens; rung 1 fires every 4 tokens (one tick) from the last 4 rung-0 states; rung 2 fires every 16 tokens (4 ticks); fan 4. Same cell at each scale. Extending x4 [arithmetic, my extension]: rung 3 = 16 ticks, rung 4 = 64 ticks (equal to the bus segment of 256 tokens), rung 5 = 256 ticks, rung 6 = 1,024 ticks. A season (384-640 ticks) sits between rungs 5 and 6. Only rungs 0-2 exist. 'No rung covers a season' is critique finding 5, and a season-scale node is a named nursery-v2 candidate. The owner's octave (V7 #5, L8) is the whole three-level model becoming one node of a larger model, not tested.",
+    "where": "B/mind/nursery.mjs:77-80,88; B/BRIDGE_CRITIQUE_369.md:103-109; B/HANDOFF.md:46; B/mind/runs/nursery/NURSERY_RESULTS.md:56-61,78; R/pilot/PREREG_v5_upper.md:40-45; R/pilot/V7_CANDIDATES.md:11; B/BRIDGE_DESIGN.md:239"
+   },
+   {
+    "topic": "Where a sense must land to change what a character does",
+    "fact": "The choice rule never reads the ACTION slot. It runs the ANSWER-slot forward for each candidate action and weights the predicted answers by the wants table. Rung 0 has k = 2, so at the ANSWER slot it sees only (OBS, ACTION). Critique finding 1 already forced body and item to be fused into OBS for this reason. So a new sense changes choices only if the ANSWER slot can see it. Three delivery routes: (a) fuse into OBS, so the vocabulary multiplies; (b) a new SENSE token placed BEFORE OBS with k raised from 2 to 3 and span1/span2 from 4/16 to 5/20, with the bus segment re-derived; (c) a side vector like the sting (zero-initialised weights already have a pattern), with no vocabulary change. [reading] A separate SENSE token can have its target masked like ACTION, so capacity is not spent predicting it; a fused sense cannot be masked. Sizes [arithmetic]: a 4-state sense on item-bearing states only gives 25 x (1 + 3 x 4) + 1 = 326 OBS tokens, V = 345; a 4-bin season age fused on all states gives V = 420; exact E and H gives V = 1,044; a 16-state group field is too large to fuse (about 1,600 OBS) and needs a SENSE token (V about 136).",
+    "where": "B/mind/make_live.mjs:142-160; B/BRIDGE_DESIGN.md:314-320; B/BRIDGE_CRITIQUE_369.md:13-37; B/mind/nursery.mjs:77,386-394,407-408,589-593,592; B/MIND_STEP7.md:28"
+   },
+   {
+    "topic": "What memory is worth in this world (the strongest measured gap in what the beings lack)",
+    "fact": "Held-out ANSWER CE: memoryless count model on (OBS, ACTION) 0.3097; the same plus the last outcome of eating this kind in this life 0.0251; plus the true table 0.0043; plus last outcome kept only if inside the trunk's feed-forward reach 0.1895. The trunk itself is 0.320-0.343, above the memoryless model. Median 6 ticks since the same character last ate that kind; only 40.5% of eats have it in reach. Scored NGE: O 50.53, T (per-kind running mean) 42.68, L 33.20, F 28.61, S 31.10, RND 11.13; T beats L in 48 of 48 pairs. The two existing 'help' channels were null: latent bus LH minus L = -0.13; yoked learning Y minus F = -0.11 (E2 passed: L beats Y 48 of 48). Neither tested a percept the character can choose to heed. H2 (does the gate choose what fits) and E4 were not run; E3 (stationary nursery) is not built, so 'evolved' is not licensed.",
+    "where": "B/mind/runs/nursery/NURSERY_RESULTS.md:36-40,50-62; B/HANDOFF.md:25,29,44; B/mind/runs/v1a/RESULTS_bridge_v1a.md (NGE table); B/mind/runs/v1b/RESULTS_bridge_v1b.md (NGE table); B/mind/PREREG_bridge_v1a.md:78-84"
+   },
+   {
+    "topic": "Owner rulings that bind any new sense",
+    "fact": "(1) Pain is chosen: felt pain is a higher-self choice, never a designer setting; intensity only goes down; felt pain is off and fear is information only. (2) We don't judge: describe fit, not worth, so a sense must not rank (MarbleGp review: balance meters on beings must not rank). (3) A lens never lies: every claim a token implies must be an exact predicate of the world (B1b, L1), and any dropped or noisy value must be declared in the slice. (4) One side gives permission, the other asks. (5) Compassion balanced by choice. (6) Help, calm or membership is not applied without the receiver's yes. (7) Free text from outside a character must decode back to its record. (8) Owner-facing: plain words, up-is-good indicators. Closed by these rulings, so not candidates: a designer nociception or pain sense; a sense of one's own stage (it reads as a grade); ambient calm applied unasked.",
+    "where": "B/HANDOFF.md:67-76; B/preset/valleys_v1.json:146-149; B/lockstep: B/run/lockstep.mjs:12-13,31; B/BRIDGE_DESIGN.md:137,615; B/MARBLEGP_MECHANICS_REVIEW.md:18-20,50,73,76-81; B/MIND_STEP7.md:57-62; B/test/bridge.test.mjs:46-55,65-75"
+   },
+   {
+    "topic": "What 'the scored world' pins, and what any sense forces",
+    "fact": "Checked by sha256 today and equal to the v1a lock: tokens.mjs d3e37b93, world/valleys.mjs 7be9f53d, preset 2314cbbb, run/lockstep.mjs d02b6c15, run/baselines.mjs f312ad69, nursery.mjs afaa90a8. The world code and tokens.mjs are in the 28-mutant set; baselines.mjs and live.mjs are outside it. Trunk weights are keyed to V and k, and loadTrunk throws on any shape mismatch, so the three W0 trunks cannot be reused for any change of V or k. The loader also rejects extra parameters, so a warm start into a bigger net is not built [not checked beyond that]. Three classes: A = read-only function of the existing snapshot, added in a new token table; world, preset hash, D9 golden chain, NGE and baselines unchanged. B = adds bookkeeping fields (for example the last outcome per valley and kind) to the snapshot and state bytes, because B2 compares tokens to the snapshot and cannot check history that is not in it; dynamics and NGE unchanged, but D9 golden chain, W-tests and world mutants are re-run. C = changes dynamics (items, space, actions): a new world version, new M1-M3 baselines, new mutants. Every class needs a new nursery and a new E1-E3 round for the new minds, because V or k changes the trunk's shapes. Only a lens or board sense (owner-facing, not read by the minds) needs no nursery. Measured durations of the analogous steps: nursery 1,467.5-1,639.4 s per run, three seeds on the PC; v1a 192 lives about 20:07-20:30 UTC; v1b 48 lives 04:14:43-04:31:24 UTC (180-401 s each). Checks to re-run after a nursery change: N3, N2-w, G-w, S-w and the five-reviewer pass. [reading] Add new files (tokens_v2, a v2 preset or a declared senses block, a v2 runner) instead of editing the locked ones, so the hashes the v1a and v1b records cite stay valid.",
+    "where": "B/mind/PREREG_bridge_v1a.md:121-126; B/mind/make_live.mjs:54-66; B/test/world.test.mjs:39-44; B/test/bridge.test.mjs:65-66; B/HANDOFF.md:10,44,59-60; B/mind/PREREG_bridge_v1b.md:57; B/mind/runs/nursery/NURSERY_RESULTS.md:11; B/mind/runs/v1a/RESULTS_bridge_v1a.md:17; B/mind/runs/v1b/RESULTS_bridge_v1b.md:18; B/MIND_STEP7.md:36-40"
+   },
+   {
+    "topic": "Ra lookups: what exists on perception",
+    "fact": "No verified lookup is about perception or senses as such [not found]. The nearest, all as paraphrased in the lookups: fourth density, selves are not hidden from self or others (40.12) and beings are aware of other-selves' thoughts (16.50); a social memory complex shares memory openly (11.17), all of each entity's experience is available to the whole (47.2), the whole is greater than the sum (37.7); what deepens with density is the kind of unity, and head-count growth is silent (lookup 6, partly checked); the veils that make third-density choice possible are third-density (77.14); each entity contains all densities (71.13) and creation is holographic (13.8); Ra warns against forcing one-to-one structure (78.30-78.31) and says its density-to-model tables are analogy; positive beings wait to be called (73.3); a sincere low-awareness call gets only information useful to the caller (60.27); the higher self protects when possible and guides when asked (70.11); unasked limited appearances aim at awareness of infinite possibility, not worship (7.12). Whether entities in a cycle are told the hour of a gate: not found (the gates are on a clock, 9.4 and 13.23).",
+    "where": "L/RA_DENSITIES_2.md:15,24,31-37; L/RA_DENSITIES_1.md:16,42; L/RA_GROUP_DENSITY_6.md:11-13,19-27; L/RA_PRAYER_4.md:11,13,33-37,45,61; L/RA_HARVEST_3.md:25,37; L/RA_CATALYST_5.md:23-24,28,30,32"
+   },
+   {
+    "topic": "Candidate 1: kind trace (what this fruit did to me last time)",
+    "fact": "PERCEIVES: for the kind in front of it, the outcome class of its own last eat: never / FED / PLAIN / TOXIC (optionally an age band), built only from ANSWER tokens it already received. PORT: fuse into OBS (V = 345) or a side vector; the last outcome per valley and kind must sit in the declared snapshot so B2 and L1 can check it, so class B. 3/6/9: Node = the trace (opposite: forgetting; test: ANSWER CE against the 0.0251 count model). Bridge = the ANSWER-to-trace write, the existing way back to the actor; no ask or permit is needed because it is the being's own data. Whole = none, a single being; named, not forced. BEARING: pain is chosen (store outcome class, never a pain number); we don't judge (the classes are the world's own effect names). Ra: none found; [reading] it is the opposite of the veil's forgetting, which is a third-density condition (77.14), so keeping short memory as a veil is an owner question. Honest label: it adds no information the tokens did not already carry, so the owner may count it a memory aid, not a sense. COST: new nursery (3 seeds), new live runner, token mutants re-run, E1 and E2 rerun, E3 nursery must carry it too. [reading, untested] It gives the frozen arm what T has, so E1's headroom likely shrinks and M3 may stop being a regime check; run it as its own pre-registered question. SCORED WORLD: class B.",
+    "where": "B/mind/runs/nursery/NURSERY_RESULTS.md:38,56-61; B/HANDOFF.md:25; B/run/baselines.mjs:28-44; B/test/bridge.test.mjs:65-66; L/RA_DENSITIES_2.md:24; B/preset/valleys_v1.json:146-149"
+   },
+   {
+    "topic": "Candidate 2: finer body (exact energy and health)",
+    "fact": "PERCEIVES: exact E and H (0-15) instead of 5 bands each; optionally both readings (coarse parent, exact child). PORT: fuse as 16 x 16 x 4 + DOWN = 1,025 OBS, V = 1,044, or two body tokens with k = 3. Measured payoff is small: B6 found only 8 of 904 cells where exact E or H inside a band decides the answer (REST at E 1, H 1-2). It answers 'inputs are so few' at the body, not at the environment. The vocabulary growth falls on OBS, already the largest loss term. 3/6/9: Node = the exact level (opposite: the band; test: B6 cells). Bridge = body-to-mind via OBS, which exists. Whole = none. BEARING: fear stays information only; exact H near zero must not become a felt-pain channel (felt pain off). Ra: none found. COST: new nursery, E1-E3 rerun. SCORED WORLD: class A (the snapshot already holds E and H).",
+    "where": "B/RUNLOG_bridge.txt:10; B/BUILD_STATUS.md:11; B/bridge/tokens.mjs:59-60; B/world/valleys.mjs:171-180; B/BRIDGE_DESIGN.md:137,615; B/mind/runs/nursery/NURSERY_RESULTS.md:36"
+   },
+   {
+    "topic": "Candidate 3: witness (what another valley's character just ate, and how it went)",
+    "fact": "PERCEIVES: for the kind in front of it, the most recent outcome class any other valley's character got eating that kind within a window of 4 or 16 ticks: none seen / FED / PLAIN / TOXIC. No fit label (the fit label lives only in the scorer). [measured] The evidence exists: the same kind is on show elsewhere on 58% of item ticks (97% within 4 ticks), and valleys agree on a kind 72.5% of the time. Whether the other ate it was not measured. PORT: fuse into OBS (V = 345) or a SENSE token with k = 3; the world must record the last outcome and tick per valley and kind (12 + 12 ints) so B2 can check the tokens, so class B (state bytes and D9 golden chain change; dynamics do not). 3/6/9: Node = me. Bridge = other-to-me: the other's declared public slice is the permit, my looking is the ask; the way back to the observed (it never learns it was used) is missing, and that is named (gratitude). Whole = a circle of four only if all see all; without a return it is a chain, not forced into a triangle. Choice = heeding or not sits at a trust gate that, as built, cannot see fit (finding 5; H2 predicted to fail). BEARING: one side gives permission, the other asks: owner decides default-open (like watching someone eat) against on-ask. We don't judge: report what happened, never 'doing better'. A lens never lies: the outcome is true of that valley and no claim of fit is made. Pain is chosen: a neighbour's TOXIC or collapse must stay information and not enter the observer's sting as pain by proxy (owner decision). Ra [RA]: fourth density has selves not hidden (40.12) and thought-awareness (16.50); [reading] outward facts keep the third-density veil, while sharing inner state (u2, predictions) moves toward the social-memory side (11.17, 47.2); an analogy only (78.30-78.31). COST: new nursery (data must include the sense), new runner, tokens and world-bookkeeping mutants, a new arm with a locked prediction, a fit readout (H2 has not run), E1-E3 rerun. SCORED WORLD: class B.",
+    "where": "scratchpad fitcheck.mjs; B/BRIDGE_DESIGN.md:96,246,250-255,532; B/BRIDGE_CRITIQUE_369.md:103-116,209,249; B/MIND_STEP7.md:75-80; B/MARBLEGP_MECHANICS_REVIEW.md:18,33-38,79; B/test/bridge.test.mjs:65-66; B/world/valleys.mjs:157-167; L/RA_DENSITIES_2.md:15; L/RA_GROUP_DENSITY_6.md:11; L/RA_DENSITIES_1.md:42; B/HANDOFF.md:25,29"
+   },
+   {
+    "topic": "Candidate 4: group field and open seat (the whole-scale view of the other three)",
+    "fact": "PERCEIVES: coarse exact facts about the other three as a group: how many are collapsed (0-3), how many carry a warning (0-3), and, if a seat can be empty, an occupied or open flag. About 16 states plus seat flags. PORT: a SENSE token (k = 3, span 5/20) or a side vector; fusing is too large. 3/6/9: Node = the group as one thing (opposite: four singles; test: does a group quantity predict anything the members' own bands do not). Bridge = member to group. Whole = real only if the world has groups; today it has none (no group larger than one donor and one receiver), so a count derived from four separate bodies is a summary and not yet a whole [claim kept in softened form]. Choice = membership needs each member's yes. BEARING: Ra [RA]: group memory open to all and whole greater than the sum (11.17, 47.2, 37.7), but what deepens is the kind of unity, not the head-count (lookup 6), so [reading] a head-count sense is a weak fit to Ra and a shared-memory sense is closer. The open fourth seat for a Wanderer: veiled, arriving on the group's call (lookup 3 item 9; lookup 5). Compassion balanced by choice. COST: SENSE-token patch of the nursery generator, G-w and N2-w rerun; the nursery is hard-wired to 4 valleys and 4 streams, so an empty seat (triad plus Wanderer) needs another patch. SCORED WORLD: counts are class A; an empty seat is class C. OWNER: do groups exist in the world at all?",
+    "where": "B/MIND_STEP7.md:77,89; B/mind/nursery.mjs:78,167; B/MARBLEGP_MECHANICS_REVIEW.md:18,42-45; L/RA_GROUP_DENSITY_6.md:11,19-27; L/RA_HARVEST_3.md:25; L/RA_CATALYST_5.md:23-24; B/BRIDGE_CRITIQUE_369.md:262-269"
+   },
+   {
+    "topic": "Candidate 5: season weather (the clock the world never announces)",
+    "fact": "PERCEIVES, owner picks one form: (a) a one-tick 'the season turned' flag; (b) a coarse season age, 3 or 4 bins; (c) an ambient fingerprint that changes at each turn and says nothing about the table. The table itself stays hidden. PORT: derived from tick, season index and season end, which the snapshot already holds, so no new state; fused x4 gives V = 420, or a SENSE token. 3/6/9: Node = the clock. Bridge = world to each being, the same for all four (the one thing the four valleys share: lockstep and one season length). Whole = a shared clock is common ground, but no being affects it, so it is a chain; the season-scale rung (about rung 5) is the in-ladder version of this sense. BEARING: the design makes it a truth that changes 'without warning' and a season 'never announced', and announcing it changes what E1 and M3 measure, so this is the owner's call. Ra: gates are on a clock (9.4, 13.23); that entities are told the hour is not found. Dropped claim: that a flag would shorten L's relearning dip (eat-fruit CE 2.46 against 1.11 right after a turn) cannot be read from the records, because that the heads relearn is 'an inference, not tested'. COST: new nursery, E1-E3 rerun. SCORED WORLD: class A.",
+    "where": "B/world/valleys.mjs:21,171-180; B/BRIDGE_DESIGN.md:91,165; B/BRIDGE_CRITIQUE_369.md:103-109; B/HANDOFF.md:25,46; B/mind/runs/nursery/NURSERY_RESULTS.md:56-61; L/RA_PRAYER_4.md:61"
+   },
+   {
+    "topic": "Candidate 6: multi-scale supply (a fractal fruit field)",
+    "fact": "PERCEIVES: fruit arrives in clumps at several scales, for example the kind's chance depends on hashes of the 64-tick, 16-tick and 4-tick cells as well as the tick (counter-based, so determinism and D0 hold), so 'a grove here, now' can be sensed at a scale matched to each rung. Today items are iid, so rungs 1 and 2 have nothing in the item stream to read. PORT: none, since OBS is unchanged; the structure lives in the world, and a new nursery must learn it. 3/6/9: Node = a cell at one scale. Bridge = parent to child cell, the same gate pattern as rung to rung, ratio 4, matching 1/4/16/64 ticks and the 64-tick bus segment. Whole = the nest; [reading, untested] it fits the existing rung triangle 0-1-2 (v6's 'bridge 2 closes the triangle'), while rungs 3 and up would each need their own bridges. BEARING: closest to the owner's words 'fractal beings in a fractal engine'; no pain term; the season table stays hidden. Ra [RA]: creation is holographic (13.8) and each entity contains all densities (71.13), a partial echo of 'the part holds the whole'; Ra counts in sevens (16.51), so the 4:1 ratio is my design, not Ra's. COST: a new world version (valleys v2): preset hash, item purpose, D9 golden chain, W-tests, the 28 mutants re-planted for the new code, M1-M3 baselines, nursery, E1-E3, prereg. A frozen character with 4-tick and 16-tick rungs could now exploit supply structure, which moves the 'F remembers about 4 ticks' caveat on E1. SCORED WORLD: class C.",
+    "where": "B/world/valleys.mjs:20; B/mind/nursery.mjs:17-20,77-80,88; B/BRIDGE_DESIGN.md:167,239; L/RA_DENSITIES_1.md:14,16,42; L/RA_DENSITIES_2.md:31-37; B/HANDOFF.md:10"
+   },
+   {
+    "topic": "Candidate 7: place ring (space, near fine and far coarse)",
+    "fact": "PERCEIVES: a ring of cells around the being in its own frame, with facts per cell (item kind, another body present), fine near and coarse far, no absolute coordinates. PORT: the stage-3 step (integer grid, own-frame view, origin64 rebasing, a move action; sensor_out mapped to a LiDAR ring in decision 15). 3/6/9: Node = my cell. Bridge = ring neighbours, adjacent scales. Whole = the quadtree levels; the picture changes while the world does not (the level-of-detail pattern). Choice = where to move, a new action. BEARING: MarbleGp has declared sight and reaction (#89) and vessel-bounded awareness (#51), flagged: the ceiling should be the incarnation the higher self chose, not designer-set. [reading, not a ruling] a range that only widens by the higher self's choice would mirror 'intensity only goes down'. Ra: none found. COST: the largest: a new world with space and moves, new tokens, all tests and mutants, nursery, E-series. SCORED WORLD: class C.",
+    "where": "B/BRIDGE_DESIGN.md:228,601,625; R/HARNESS_MAP.md:293-297; R/triad_audit/transcript_full_day.md:1748; B/marblegp_groups.txt:55,93; B/marblegp_mechanics_raw.json (result.merged.groups[50].conflicts)"
+   },
+   {
+    "topic": "Candidate 8: the answer from above (the inner-plane sense, after an ask)",
+    "fact": "PERCEIVES: after the being sends an ASK, a response token from the higher level, in proportion to the call and never unasked; its content must be declared (information, a cue, calm). PORT: ASK as a bridge-level channel plus a new token class; ASK is not a world action (canAct allows three), but the ledger's one byte per tick is full (4 characters x 2 bits), so a second ledger byte is needed so B3 can regenerate the tokens. 3/6/9: Node = the being. Bridge = ask up, permit and answer down: literally 'one side gives permission, the other asks'; the way back (did it land) is missing. Whole = mind-to-owner is read-only telemetry, so a chain. Choice = the being chooses to ask; the higher level chooses the answer. BEARING: Ra [RA]: the response follows the call (73.3); the first caller is the cornerstone, the second is added, from the third each doubles (10.13); lack of unity costs a little (7.5); a low-awareness call gets only information useful to that caller (60.27); the higher self guides when asked (70.11). The owner's 'aliens or gods so they start to pray' departs from Ra (lookup 4, row A). MarbleGp's Higher Self seat cues dreams and never writes within a life, so no machinery exists for in-life answers. RISK [reading]: if the answer says which kinds are good it hands the learner the oracle (O 50.53 against F 28.61), and M2 and M3 stop being regime checks unless asking costs something. COST: a stage-2 arm with its own prereg, new tokens, nursery, runner. SCORED WORLD: class A or B (the engine is untouched if answers do not act on the world).",
+    "where": "B/world/valleys.mjs:72,167; B/BRIDGE_DESIGN.md:157,255,269,679; B/MARBLEGP_MECHANICS_REVIEW.md:24-29,99; L/RA_PRAYER_4.md:11,33-37,45,122-129; L/RA_HARVEST_3.md:37; B/MIND_STEP7.md:84; B/mind/runs/v1a/RESULTS_bridge_v1a.md (NGE table)"
+   },
+   {
+    "topic": "Candidate 9: attention (a chosen look)",
+    "fact": "PERCEIVES: the being chooses each tick whether to look at others, or at which scale (near, group, whole); senses 3 to 5 arrive only when looked for. PORT: a second output port beside ACTION, masked like ACTION, recorded in a second ledger byte; if looking costs nothing, always looking dominates, so any cost (a turn, a limit per season) is an owner choice. 3/6/9: this is the fourth point (choice) made explicit. Node = the focus. Bridge = look to percept, 'the other asks' in full. Whole = not applicable. BEARING: the ruling is one side gives permission, the other asks; MarbleGp's observer ladder has a gate that reports what it dropped and why, which matches extending the view kernel per look. Ra: none found. COST: the choice rule is the designer's today (decision 5), so looking needs a declared rule or a stage-2 learned-policy arm; heavier than the passive senses. SCORED WORLD: class A.",
+    "where": "B/BRIDGE_DESIGN.md:404-411,615; B/marblegp_groups.txt:9; B/MARBLEGP_MECHANICS_REVIEW.md:74; B/HANDOFF.md:72"
+   },
+   {
+    "topic": "Each sense also needs an owner-facing side (the translation the owner asked about)",
+    "fact": "Every sense needs (1) a plain-words rendering in the seat (L4 shows a character's tokens in words), (2) a typed slot in the thought record that decodes back to the record it came from (lens truth, T3), and (3) a sentence a character can truthfully say from it. With 101 OBS states a character's thought record has little to say; a sense adds fields. The thought record today has the predicted answer per action, the action, the sting, and G20 with its donor. [reading] This is probably what 'the valley doesn't translate well' points at; the owner's sentence itself is not in any file.",
+    "where": "B/BRIDGE_DESIGN.md:277-278; B/MIND_STEP7.md:42-62; B/MARBLEGP_MECHANICS_REVIEW.md:66-67,85-87"
+   },
+   {
+    "topic": "3/6/9 check on this report: claim, opposite, deciding line, and what was dropped",
+    "fact": "KEPT: 'a sense must be visible at the ANSWER slot to change choices' (opposite: the ACTION slot sees it; decided by make_live.mjs:142-160, which never reads the ACTION slot). KEPT: 'items are iid, so rungs 1-2 have nothing to read in them' (opposite: the mind beats a previous-tick predictor on OBS; decided by valleys.mjs:20, and the edge is not shown to come from items). KEPT, softened: 'a trace likely shrinks E1's headroom' (opposite: it goes stale after a turn, so F still lags L; decided by the count model including turns, 0.0251, and by T beating L 48 of 48; untested). KEPT: 'history senses are class B' (opposite: the bridge can hold history; decided by test/bridge.test.mjs:65-66, which checks tokens only against the snapshot). DROPPED: 'a season flag shortens L's dip' (relearning is untested, HANDOFF.md:25). DROPPED: 'a witness sense helps' (Y and LH were null, and neither tested a heedable percept). DROPPED: 'a head-count group sense follows Ra' (lookup 6: head-count is silent). FLAGGED, not decided: NURSERY_RESULTS.md:49 attributes the OBS edge to the run of items. [measured] fit and co-occurrence figures are world statistics on unscored seeds, not mind results.",
+    "where": "B/mind/make_live.mjs:142-160; B/world/valleys.mjs:20; B/test/bridge.test.mjs:65-66; B/mind/runs/nursery/NURSERY_RESULTS.md:38,49; B/HANDOFF.md:25,29; L/RA_GROUP_DENSITY_6.md:19-27"
+   }
+  ],
+  "gaps": [
+   "NOT FOUND: the owner's quotes ('fit a bit better', 'inputs are so few', 'fractal engine') in any file under D:/fidelity-llm. What 'fractal engine' means is therefore the owner's to state. Three readings that change the cost class: (a) richer percepts of the current world (class A or B, candidates 1-5, 8-9); (b) a world with structure at several scales (class C, candidate 6); (c) space with coarse-to-fine view (class C, candidate 7). Candidate 4 under the octave reading (V7 #5) is a fourth.",
+   "NOT FOUND: any verified Ra lookup about perception, the veil as a limit on what a third-density being can see of another, or whether entities are told the hour of a harvest gate. A seventh lookup (Sonnet guide, then a verifier) would be needed before any Ra label beyond the density and group material can be attached to candidates 3, 4 and 5.",
+   "NOT MEASURED: whether other valleys' characters eat the shared kind inside the window (policy-dependent), so witness evidence per tick is an upper bound on what is available. No scripted-mind headroom probe exists for any sense except the trace, which T already is.",
+   "NOT TESTED: whether the trunk or heads can learn to use any percept (H2 and E4 have not run); whether a trace removes L's advantage over F; whether the dip after a season turn is detection or relearning.",
+   "NOT BUILT: E3 (the stationary nursery), so 'evolved' stays unlicensed under the current table; the world needs a declared preset field for a fixed table and the frozen world tests must be re-run.",
+   "NOT CHECKED: the patch size in mind/make_nursery.mjs for k = 3 with span1/span2 = 5/20 (it was not read), and whether a warm start from W0 into a larger net is workable (loadTrunk rejects any shape or key-count mismatch).",
+   "NOT CHECKED: whether a sense token's target should be masked in the live runner's scoreboard and K5 check; the live loop issues one runStep per token, so a fifth token adds a call.",
+   "OWNER 1: what 'fractal engine' means (readings a, b, c above), and whether a world-side change (candidate 6 or 7) is wanted now or after the percept candidates.",
+   "OWNER 2: is a memory aid (candidate 1) a sense for you? Accepting it changes what E1 and E3 can show.",
+   "OWNER 3: announce the season (candidate 5) or keep it a truth that changes without warning; and in which form (flag, age, fingerprint).",
+   "OWNER 4: sharing between beings. Default-open (a body can be watched) or on the observed one's give and the observer's ask. Whether looking costs anything (candidate 9).",
+   "OWNER 5: may another character's collapse or poisoning enter an observer's sting? Recommended no under 'pain is chosen': information only. Compassion balanced by choice.",
+   "OWNER 6: outward facts only (keeps the third-density veil) or inner state too (u2, predictions: the fourth-density, social-memory side). Ra's tables are analogy only (78.30-78.31).",
+   "OWNER 7: do groups exist in the world (triad, four-ball, open seat for a Wanderer)? Without them candidate 4 is a summary, not a whole.",
+   "OWNER 8: what an answer from above contains and what asking costs; whether the owner in the seat answers. Without a cost, an informative answer hands over the oracle.",
+   "OWNER 9: who may widen a sense. Designer-set ranges conflict with 'the ceiling should be what the higher self chose' (MarbleGp #51). Not a ruling; the owner decides whether senses can only widen by the being's own higher-self choice, as intensity can only go down.",
+   "OWNER 10: the three open value questions from the critique still sit under any new arm (what counts as better, value by need, ERR_DOWN with no pain)."
+  ],
+  "recommendation": "Order I would plan, as steps and not dates. 1. Owner rulings first (cheap, and they set the cost class): Owner 1, 2, 3, 4, 5 above. Nothing else should start before Owner 1, because it decides between class A/B percepts and a class C world. 2. In parallel, build E3 now: it is independent of every sense, it licenses or withholds 'evolved' for the current world, and its fixed-table preset field must be added before any new world version exists (B/HANDOFF.md:44). 3. Cheap headroom probes before any nursery: scripted reference minds (run/baselines.mjs is outside the mutant set and ran at 67k ticks/s) with a trace (T already is one), with a witness, and with a season flag, on unscored seeds such as 40000-40015. Label them probes, not tests; they rank candidates by information value only. 4. Build the senses as NEW files (tokens_v2, a v2 preset or declared senses block, a v2 runner), so the v1a and v1b hashes stay valid, one sense per arm with predictions locked first (V7: one change per arm). First arm: a class A sense the owner approves, chosen from candidate 5 (if the season may be announced), candidate 4 counts, or candidate 2; fused into OBS where V stays small (V 345 to 420) so the nursery patch stays small. Second arm: candidate 3 (witness), the percept half of 'help', which brings the missing ask, gratitude and groups into view; it needs the class B world bookkeeping and so a world-test re-run. Third, as its own pre-registered question: candidate 1 (trace). 5. Hold candidates 6 and 7 until Owner 1 confirms what fractal engine means; if it means a world with structure at several scales, candidate 6 (hash cells of 4, 16 and 64 ticks, matching the ratio-4 ladder and the 64-tick bus segment) is the smallest honest fractal world, and the season-scale rung is the matching mind-side change (nursery v2 list). Hold 8 and 9 for the stage-2 ask arm. 6. For every arm: a fresh pre-run review, the Haiku triad (numbers, claim strength, fit to prereg), the 28-mutant gate re-run on the new token code, N3, N2-w, G-w, a claim-strength read before release, and the owner-facing words for the seat and the thought record. Costs in steps: each nursery is 3 seeds at 1,467.5-1,639.4 s each (measured), then F, F-prime, L and any new arm over 16 worlds x 3 seeds (v1a 192 lives, v1b 48 lives; measured, not predicted)."
+ }
+]

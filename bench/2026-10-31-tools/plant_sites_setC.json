@@ -1,0 +1,42 @@
+[
+ {
+  "plant": "C1",
+  "op": "swap a−b",
+  "ctx": "}) = \\sum_{k=1}^{N_{\\star}} \\frac{G M_k (\\mathbf{q}_{\\star, k} - \\mathbf{q})}{\\m"
+ },
+ {
+  "plant": "C2",
+  "op": "min↔max",
+  "ctx": "t{Progress}_{4\\text{D}}^{\\text{next}} = \\min(1.0, \\text{Progress}_{4\\text{D}} + "
+ },
+ {
+  "plant": "C3",
+  "op": "true↔false",
+  "ctx": "Mask Anonymity Law**: If `actorWoreMask === true`, grudge does not attach to `ac"
+ },
+ {
+  "plant": "C4",
+  "op": "≥↔≤",
+  "ctx": "2 \\max(10^{-3}, r_{\\text{RCS}})}\\right) \\ge 0.50$$\n  - In planetary gravity (`sa"
+ },
+ {
+  "plant": "C5",
+  "op": "−↔+",
+  "ctx": "\\text{prev}} + 0.3 \\cdot (S_{\\text{day}} - 0.5)\\right)$$\n\n- **64 Focused Entitie"
+ },
+ {
+  "plant": "C6",
+  "op": "unit swap",
+  "ctx": "4}\\text{ GPa}, ; E_{\\max} = 1,200\\text{ GPa}$$\n- **Electrons / Excitation Shell "
+ },
+ {
+  "plant": "C8",
+  "op": "type swap",
+  "ctx": "cal $\\mathbf{x}_{\\text{localSelf}}$**: `Float32Array(3)` bounded in $(-512, +512"
+ },
+ {
+  "plant": "C10",
+  "op": "type swap",
+  "ctx": "niversal SI Normalizer\n- **VSA-4096 (**`Uint32Array(128)`**, 512 bytes)**: Bitwi"
+ }
+]

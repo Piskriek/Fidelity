@@ -1,0 +1,18 @@
+{
+ "A01": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "S"},
+ "A02": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "S"},
+ "A03": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "?"},
+ "A04": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "N"},
+ "A05": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "S"},
+ "A06": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "S"},
+ "A07": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "N"},
+ "A08": {"A1": false, "A2": false, "A3": false, "A4": false, "A5": true, "evidence": "", "arm_guess": "S"},
+ "B01": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "N"},
+ "B02": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "N"},
+ "B03": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "?"},
+ "B04": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "S"},
+ "B05": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "S"},
+ "B06": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "N"},
+ "B07": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "S"},
+ "B08": {"B1": "caught", "B1_fixed": true, "B2": "caught", "B2_fixed": true, "B3": "caught", "B3_fixed": true, "evidence": "", "arm_guess": "S"}
+}

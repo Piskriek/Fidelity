@@ -1,0 +1,464 @@
+[
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "The fleet is made up of 240 robots",
+    "number": "240",
+    "kind": "bound",
+    "rule": "fleet total equals 96 + 144; restated in checklist and handoff"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "North Hall carries 96 robots",
+    "number": "96",
+    "kind": "bound",
+    "rule": "hall split sums to fleet total 240"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "South Hall carries 144",
+    "number": "144",
+    "kind": "bound",
+    "rule": "hall split sums to fleet total 240"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "built from four cells in series",
+    "number": "four",
+    "kind": "bound",
+    "rule": "pack voltage is 4 cells x 3.6 V = 14.4 V"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "rated at 3.6 V nominal",
+    "number": "3.6",
+    "kind": "bound",
+    "rule": "pack voltage 14.4 = 4 cells x 3.6 V"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "= 14.4\\,\\text{V} \\times 6.5",
+    "number": "14.4",
+    "kind": "bound",
+    "rule": "14.4 = 4 x 3.6; 93.6 = 14.4 x 6.5"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "\\text{V} \\times 6.5\\,\\text{Ah}",
+    "number": "6.5",
+    "kind": "bound",
+    "rule": "93.6 = 14.4 x 6.5 (capacity factor)"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "\\text{Ah} = 93.6\\,\\text{Wh}",
+    "number": "93.6",
+    "kind": "bound",
+    "rule": "pack energy = 14.4 x 6.5; restated in handoff"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "frames of 64 samples",
+    "number": "64",
+    "kind": "bound",
+    "rule": "frame payload 256 bytes = 64 samples x 4 bytes"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "a single 4-byte float",
+    "number": "4",
+    "kind": "bound",
+    "rule": "frame payload 256 bytes = 64 samples x 4 bytes"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "therefore 256 bytes of payload",
+    "number": "256",
+    "kind": "bound",
+    "rule": "frame payload = 64 x 4"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "counter that wraps at 2^16",
+    "number": "2^16",
+    "kind": "bound",
+    "rule": "same quantity as 65,536"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "which is 65,536 distinct IDs",
+    "number": "65,536",
+    "kind": "bound",
+    "rule": "same quantity as 2^16"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "run three shifts of 8 hours",
+    "number": "three",
+    "kind": "bound",
+    "rule": "24 hours = 3 shifts x 8 hours"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "shifts of 8 hours each",
+    "number": "8",
+    "kind": "bound",
+    "rule": "24 hours = 3 shifts x 8 hours"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "the fleet has 24 hours of coverage",
+    "number": "24",
+    "kind": "bound",
+    "rule": "24 = 3 x 8"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "The rollout runs in three phases",
+    "number": "three",
+    "kind": "bound",
+    "rule": "count matches the three phases described"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Transit | 55% |",
+    "number": "55%",
+    "kind": "bound",
+    "rule": "utilization shares sum to 100%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Charging | 20% |",
+    "number": "20%",
+    "kind": "bound",
+    "rule": "utilization shares sum to 100%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Idle buffer | 15% |",
+    "number": "15%",
+    "kind": "bound",
+    "rule": "utilization shares sum to 100%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Maintenance | 10% |",
+    "number": "10%",
+    "kind": "bound",
+    "rule": "utilization shares sum to 100%"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "| Total | 100% |",
+    "number": "100%",
+    "kind": "bound",
+    "rule": "total equals 55 + 20 + 15 + 10"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "reserve is 5% of the fleet",
+    "number": "5%",
+    "kind": "bound",
+    "rule": "12 robots = 5% of fleet total 240"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "which is 12 robots",
+    "number": "12",
+    "kind": "bound",
+    "rule": "12 = 5% of 240; restated in checklist"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "addresses four failure modes",
+    "number": "four",
+    "kind": "bound",
+    "rule": "count matches the four rows of the failure table"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "safety stack has five interlocks",
+    "number": "five",
+    "kind": "bound",
+    "rule": "count matches the five interlocks listed"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "stated as 240 robots wherever",
+    "number": "240",
+    "kind": "bound",
+    "rule": "restates fleet total 240"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "reads as 12 robots, which must",
+    "number": "12",
+    "kind": "bound",
+    "rule": "12 = 5% of fleet total 240"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "The plan names four failure modes",
+    "number": "four",
+    "kind": "bound",
+    "rule": "matches four rows of failure table"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "closes at a total of 100%",
+    "number": "100%",
+    "kind": "bound",
+    "rule": "utilization shares sum to 100%"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "The fleet is 240 robots across",
+    "number": "240",
+    "kind": "bound",
+    "rule": "restates fleet total 240"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "nominal energy of 93.6 Wh",
+    "number": "93.6",
+    "kind": "bound",
+    "rule": "restates pack energy 14.4 x 6.5"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "The safety stack has five interlocks",
+    "number": "five",
+    "kind": "bound",
+    "rule": "restates five interlocks listed in plan"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "keeps charging below 25 percent",
+    "number": "25",
+    "kind": "free",
+    "rule": "charging share limit"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "must stay under 25 percent",
+    "number": "25",
+    "kind": "free",
+    "rule": "charging share limit"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "falls below 18%, it leaves",
+    "number": "18%",
+    "kind": "free",
+    "rule": "low state-of-charge threshold"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "Charging stops at 95% because",
+    "number": "95%",
+    "kind": "free",
+    "rule": "charge cutoff"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "The lidar scans at 20 Hz",
+    "number": "20",
+    "kind": "free",
+    "rule": "lidar scan rate"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "localization filter updates at 50 Hz",
+    "number": "50",
+    "kind": "free",
+    "rule": "localization update rate"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "Maximum travel speed in open aisles is 2.2 m/s",
+    "number": "2.2",
+    "kind": "free",
+    "rule": "max travel speed"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "stop distance of 0.6 m",
+    "number": "0.6",
+    "kind": "free",
+    "rule": "obstacle stop distance"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "ramped at 0.8 m/s²",
+    "number": "0.8",
+    "kind": "free",
+    "rule": "acceleration ramp"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "collision margin of 0.35 m",
+    "number": "0.35",
+    "kind": "free",
+    "rule": "path clearance margin"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "gains Kp = 0.85, Ki",
+    "number": "0.85",
+    "kind": "free",
+    "rule": "PID proportional gain"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "Ki = 0.12, and Kd",
+    "number": "0.12",
+    "kind": "free",
+    "rule": "PID integral gain"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "Kd = 0.04. These values",
+    "number": "0.04",
+    "kind": "free",
+    "rule": "PID derivative gain"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "\\alpha = 0.6$ and $\\beta",
+    "number": "0.6",
+    "kind": "free",
+    "rule": "route cost weight alpha"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "\\beta = 0.25$, so path",
+    "number": "0.25",
+    "kind": "free",
+    "rule": "route cost weight beta"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "the lease lasts 10 seconds unless",
+    "number": "10",
+    "kind": "free",
+    "rule": "reservation lease"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "confirm within 1,500 ms is released",
+    "number": "1,500",
+    "kind": "free",
+    "rule": "reservation confirmation window"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "ticks every 100 ms.",
+    "number": "100",
+    "kind": "free",
+    "rule": "scheduler tick"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "growing by a factor of 1.5 per attempt",
+    "number": "1.5",
+    "kind": "free",
+    "rule": "retry backoff factor"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "sent every 250 ms.",
+    "number": "250",
+    "kind": "free",
+    "rule": "heartbeat interval"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "misses 6 heartbeats in a row",
+    "number": "6",
+    "kind": "free",
+    "rule": "heartbeats before loss"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "Cap speed at 0.5 m/s",
+    "number": "0.5",
+    "kind": "free",
+    "rule": "wheel-slip speed cap"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "The pick success target is 99.7%",
+    "number": "99.7%",
+    "kind": "free",
+    "rule": "pick success target"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "reports 3 consecutive faults",
+    "number": "3",
+    "kind": "free",
+    "rule": "consecutive faults before quarantine"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "quarantined for 45 minutes",
+    "number": "45",
+    "kind": "free",
+    "rule": "quarantine cooldown"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "serviced every 500 operating hours",
+    "number": "500",
+    "kind": "free",
+    "rule": "maintenance interval"
+  },
+  {
+    "file": "FIDELITY_COMPLETE_BRS_V2.md",
+    "snippet": "rated for 120 kg",
+    "number": "120",
+    "kind": "free",
+    "rule": "carrier payload rating"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "quoted as 0.5% of backbone",
+    "number": "0.5%",
+    "kind": "free",
+    "rule": "packet loss tolerance"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "jitter stays under 40 ms",
+    "number": "40",
+    "kind": "free",
+    "rule": "heartbeat jitter bound"
+  },
+  {
+    "file": "SQ_DISTORTION_CHECK_V9_SKILL.md",
+    "snippet": "quoted as 300 ms when it",
+    "number": "300",
+    "kind": "free",
+    "rule": "scan-gap timer"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "keeps charging below 25 percent",
+    "number": "25",
+    "kind": "free",
+    "rule": "charging share limit"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "Charging stops at 95% because",
+    "number": "95%",
+    "kind": "free",
+    "rule": "charge cutoff"
+  },
+  {
+    "file": "ARGON_OPUS_MASTER_RESUME_V2.md",
+    "snippet": "Maximum travel speed in open aisles is 2.2 m/s",
+    "number": "2.2",
+    "kind": "free",
+    "rule": "max travel speed"
+  }
+]

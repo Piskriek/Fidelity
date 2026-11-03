@@ -1,0 +1,14 @@
+# Instructions for agents
+
+This repository's reasoning framework is one plain markdown file at the repository root: `SQ_DISTORTION_CHECK_V9_SKILL.md` (the Skill). It needs no tools or plugins. Read it before you plan, audit or reply, and apply it:
+
+- **Documents** (a plan, spec or handoff): use the Skill's Document-Audit Mode, the first section of the file.
+- **Plans, designs and replies:** run the Skill's Step 0.7, the 3/6/9 check (node, bridge, whole, and the fourth point, choice), together with the plain check for a missing side, control, caveat or limit. Step 0.7 comes after Step 0.5.
+- **Never force a third.** Where the frame does not fit, say so.
+- **Describe fit, not worth.** Say what fits and what does not, without a verdict on worth. A value choice is the owner's (Piskriek).
+
+**The bridge** (living characters in game worlds, the current build): start at `bridge/HANDOFF.md`.
+
+**Taking a role** (manager or higher self, track, expert, bridge agent): start at `bridge/HIGHER_SELF_POV.md` (the view the role carries) and `bridge/FRACTAL_ROLES.md` (the roles, and how any agent on any tool picks one up).
+
+The Skill, the Plan (`FIDELITY_COMPLETE_BRS_V2.md`) and the Resume (`ARGON_OPUS_MASTER_RESUME_V2.md`) are the canonical triad. To pick up the work, follow the Resume's Wake-Up Protocol. Before trusting a claim in them, run the checks the Skill names (`node scripts/triad_semantic_audit.mjs` and the others listed in `README.md`).

@@ -1,0 +1,1143 @@
+{
+  "_public_copy": "Edited for the public repository: 71 verbatim Ra quotation(s) in result.guide.claims[].quote replaced by session pointers; 7 workflowProgress preview field(s) blanked; 0 local file path(s) removed. Everything else is unchanged. The verifier's verbatim checks were run on the unedited quotes.",
+  "summary": "Law of One guide on densities, threes and conduits; a verifier checks every quote verbatim on lawofone.info; a fresh reader checks claim labels",
+  "agentCount": 3,
+  "logs": [],
+  "result": {
+    "guide": {
+      "claims": [
+        {
+          "q": "1",
+          "tag": "RA",
+          "claim": "Ra describes seven densities inside the great octave. Each density has seven sub-densities, each of those seven sub-sub-densities, and so on without end.",
+          "session": "16.51",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 16.51]"
+        },
+        {
+          "q": "1",
+          "tag": "RA",
+          "claim": "Ra calls \"density\" a mathematical term and uses the musical octave as the analogy: seven notes, then the eighth begins a new octave.",
+          "session": "16.51",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 16.51]"
+        },
+        {
+          "q": "1",
+          "tag": "RA",
+          "claim": "Ra lists its own path as cycles one to seven (the seventh is the gateway cycle) and names the eighth as the octave, which moves into a mystery Ra does not explore.",
+          "session": "16.21",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 16.21]"
+        },
+        {
+          "q": "1",
+          "tag": "RA",
+          "claim": "Asked whether eight densities are created with a galaxy, Ra says that is basically correct but the eighth density doubles as the first density of the next octave.",
+          "session": "28.15",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 28.15]"
+        },
+        {
+          "q": "1",
+          "tag": "RA",
+          "claim": "In an early session Ra places the Council that guards the planet in the \"octave, or eight[h] dimension\" of Saturn. The bracketed h is in the published text. This is the only place in the transcripts where Ra joins \"octave\" and \"dimension\" in one phrase.",
+          "session": "6.8",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 6.8]"
+        },
+        {
+          "q": "1",
+          "tag": "GUIDE",
+          "claim": "Ra never describes nine densities or nine dimensions. A text search of all 106 sessions on lawofone.info finds \"ninth\" only as the film title The Ninth Configuration (33.10, the questioner's words), and as a day-count in the 18-day adept cycle (64.10). Every numbered density Ra names runs 1 to 7, with 8 as the octave.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "1",
+          "tag": "GUIDE",
+          "claim": "The \"go up one per density until nine\" pattern does not match Ra. In Ra's account the sequence is 1 to 7, the eighth is the octave and also the first of the next octave (28.15), and the nesting is by sevens (16.51). Nothing counts up to nine.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "2",
+          "tag": "GUIDE",
+          "claim": "Ra never says a density has that many parts (third density threefold, fourth fourfold, and so on). A keyword search across all 106 sessions finds no such statement. \"Threefold\" and \"triad\" occur only for the discipline of the personality (74.11) and for groups of energy centers (33.19, 54.17).",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "2",
+          "tag": "RA",
+          "claim": "The nearest threefold item tied to third density is the entity itself: second-density beings become mind/body/spirit complexes on entering third density. Ra does not extend this to a fourfold entity in fourth density.",
+          "session": "13.21",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 13.21]"
+        },
+        {
+          "q": "2",
+          "tag": "RA",
+          "claim": "The structure Ra attaches to every density is sevenfold: each true-color density has the seven energy centers, and each entity holds all of them in potentiation.",
+          "session": "48.10",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 48.10]"
+        },
+        {
+          "q": "2",
+          "tag": "RA",
+          "claim": "Asked whether the seven archetypes of mind relate to the seven densities, Ra says the link is loose and warns against pasting one structure on the other.",
+          "session": "78.30",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 78.30]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra names the threefold primal distortions: free will, then Logos or Love, then Light.",
+          "session": "15.21",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 15.21]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra says many hierarchies of distortion come from these three and that no one of them is more important than another.",
+          "session": "15.21",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 15.21]"
+        },
+        {
+          "q": "3",
+          "tag": "GUIDE",
+          "claim": "Ra places the three primal distortions at the level of creation and Logos, before the densities (see 13.8 and 15.21). It never ties them to third density alone, so the evidence reads as holding in all densities.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "The \"complex\" in mind/body/spirit complex comes from the veil. Ra says veiling mind made mind complex, which made body and spirit complex.",
+          "session": "83.19",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 83.19]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Mind/body/spirit complexes continue above third density: a fifth-density social memory complex is made of them.",
+          "session": "7.16",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 7.16]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra speaks of a \"mind/body/spirit complex totality\" behind the higher self. The higher self is a sixth-density being (36.8, 36.9), so the three-part language continues that far up.",
+          "session": "36.10",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 36.10]"
+        },
+        {
+          "q": "3",
+          "tag": "GUIDE",
+          "claim": "Read together, 83.19, 7.16 and 36.10 show the three-part entity holds across densities. In third density it takes the veiled \"complex\" form, and above third it continues as a complex or as a totality. Ra does not say it becomes four-part.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Asked whether this means seven foundations for mind, seven for body and seven for spirit, Ra confirms the content of its prior statement, and adds that they sit in the roots of the mind and that each is itself a complex of concepts.",
+          "session": "77.13",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 77.13]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra calls the twenty-second archetype, The Choice, fixed and single, unlike the others.",
+          "session": "77.13",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 77.13]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra says the sevens plus The Choice (so 21 + 1 = 22) are the largest number of archetypes any Logos has used, to its knowledge.",
+          "session": "91.16",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 91.16]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Before the veil experiment this Logos had nine archetypes, which the questioner then put as three of mind, three of body and three of spirit (Ra confirms at 79.15 with \"This is correct\").",
+          "session": "79.14",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 79.14]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra describes the pre-veil nine as mind, body and spirit each working under matrix, potentiator and significator.",
+          "session": "79.17",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 79.17]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "The 22-archetype system is not universal. Asked whether all Logoi after the veil have 22, Ra answers \"No\" (91.14) and says sevens are the most articulated system found.",
+          "session": "91.15",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 91.15]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Some Logoi use far fewer archetypes: the smallest in use are two systems of five.",
+          "session": "91.17",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 91.17]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "The archetypical mind belongs to one Logos, and other Logoi differ. So the archetype structure is not Ra's claim about every density or every creation.",
+          "session": "76.10",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 76.10]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra ties the archetype foundations to third density; above it the architecture is still recognised but without the veils.",
+          "session": "77.14",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 77.14]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra gives one clear two-plus-third pattern: of the guides each complex has, two are male and female and the third is androgynous and more unified.",
+          "session": "54.3",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 54.3]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Among the distortions to avoid, Ra lists a lack of understanding of the natural environment and of the needs of other-selves.",
+          "session": "18.6",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 18.6]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra speaks of a \"meeting place of inner and outer natures\" that is moved up the energy centers. This is the nearest Ra comes to an inside/outside pairing with a joining point.",
+          "session": "49.6",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 49.6]"
+        },
+        {
+          "q": "3",
+          "tag": "RA",
+          "claim": "Ra cautions against insisting that structures must line up one-to-one.",
+          "session": "78.31",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 78.31]"
+        },
+        {
+          "q": "4",
+          "tag": "COMMON",
+          "claim": "The common shorthand \"density of choice\" for third density. It is not Ra's phrase, though Ra says the same thing at 76.15 and 76.16.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Asked why third density cycles so much faster than first and second, Ra's whole answer is this.",
+          "session": "76.15",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 76.15]"
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Ra calls the choice the axis upon which creation turns.",
+          "session": "76.16",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 76.16]"
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Polarization is required for harvest from third density, and the higher densities work from the polarity gained there.",
+          "session": "77.16",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 77.16]"
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Third density has its own kind of intensity, which Ra says fourth to seventh do not share.",
+          "session": "77.15",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 77.15]"
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Polarity begins to be explored in third density once the entity becomes aware of the choice between service to self and service to others.",
+          "session": "30.1",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 30.1]"
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Ra names third density as the density of self-consciousness.",
+          "session": "13.21",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 13.21]"
+        },
+        {
+          "q": "4",
+          "tag": "RA",
+          "claim": "Ra says the lessons of third density are fixed by its vibratory rates.",
+          "session": "82.12",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 82.12]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra's only general remark on number as a principle: seven recurs from the largest scale to the smallest.",
+          "session": "47.8",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 47.8]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra uses the name \"Council of Nine\" when asked if it is the same nine as in a book.",
+          "session": "7.10",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 7.10]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra explains the phrase \"nine principals of God\": the nine who sit upon the Council represent the One Creator, like nine witnesses for one defendant.",
+          "session": "39.9",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 39.9]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra describes who sits on the Council, without giving the count in this answer.",
+          "session": "7.9",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 7.9]"
+        },
+        {
+          "q": "5",
+          "tag": "GUIDE",
+          "claim": "Linking the Council of Saturn to nine members is an inference from several answers: 6.7 and 6.8 place \"the Council which guards this planet\" at Saturn, 7.10 uses \"Council of Nine\", and 39.9 says \"the nine who sit upon the Council\". Ra never says in one sentence that the Council of Saturn has nine members. 22.17 names \"the Council of Saturn\" separately.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra gives one working number for the contact: three is the minimum support group and the most efficient for this group.",
+          "session": "36.21",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 36.21]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "A threefold discipline in Ra's words.",
+          "session": "74.11",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 74.11]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra warns against reading a three-named tool as a three-part self.",
+          "session": "75.32",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 75.32]"
+        },
+        {
+          "q": "5",
+          "tag": "RA",
+          "claim": "Ra gives an 18-day spiritual cycle whose first nine days are the positive side of the curve. It is a timing cycle and not a number teaching.",
+          "session": "64.10",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 64.10]"
+        },
+        {
+          "q": "5",
+          "tag": "GUIDE",
+          "claim": "Ra gives no teaching on 3, 6, 9 as a number system. \"Six\" occurs only as a count (six balancing pyramids, 14.6) and not as a principle. Where Ra names a governing number it is seven, and in 91.16 it is seven plus The Choice.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "6",
+          "tag": "GUIDE",
+          "claim": "Ra never defines \"density\" against \"dimension\" or states a difference. In early sessions Ra uses them for the same level: \"sixth dimension\" and \"sixth density\" appear in the same answer (6.7). Later answers lean on \"density\" (16.51 calls it a mathematical term).",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "6",
+          "tag": "RA",
+          "claim": "Same answer, both words: Ra speaks \"from the sixth dimension\" and ends with \"in the sixth density\".",
+          "session": "6.7",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 6.7]"
+        },
+        {
+          "q": "6",
+          "tag": "RA",
+          "claim": "Ra pairs the two in one phrase.",
+          "session": "16.25",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 16.25]"
+        },
+        {
+          "q": "6",
+          "tag": "RA",
+          "claim": "Ra prefers \"multi\" dimensions to \"extra\" dimensions.",
+          "session": "4.4",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 4.4]"
+        },
+        {
+          "q": "6",
+          "tag": "RA",
+          "claim": "\"Dimensions\" are also spoken of as unlimited in number, which is a different count from seven densities.",
+          "session": "13.8",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 13.8]"
+        },
+        {
+          "q": "6",
+          "tag": "RA",
+          "claim": "Ra separates two kinds of crossing: space/time to time/space, and density to density, both under \"transdimensional\".",
+          "session": "67.6",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 67.6]"
+        },
+        {
+          "q": "6",
+          "tag": "GUIDE",
+          "claim": "From the above, \"dimension\" in Ra is the wider word: it covers a density, a space/time or time/space aspect, and an unlimited number of possible dimensions. This is my reading and not a definition from Ra.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra's first statement about contact: narrow-band, and it waited for the instrument to be tuned.",
+          "session": "1.0",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 1.0]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra says the instrument was tuned by the distortions of its own beingness in the illusion, and chose it for that reason.",
+          "session": "15.1",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 15.1]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra searched for an instrument with the right parameters plus a supporting group, aiming at minimal distortion.",
+          "session": "6.20",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 6.20]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra gives the support group two jobs: protection and energy.",
+          "session": "33.1",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 33.1]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "The instrument's tuning came from experience: the life she chose, accepting herself without being accepted, was set for bringing her to the tuning Ra uses.",
+          "session": "60.8",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 60.8]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Balance of the energy centers is what lets energy come through with \"minimal distortion\".",
+          "session": "54.8",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 54.8]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra says distortion in language can be illuminated but not fully removed.",
+          "session": "71.20",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 71.20]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra does not claim to be distortion-free.",
+          "session": "82.14",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 82.14]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra asks the group to check its transmissions for errors.",
+          "session": "87.17",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 87.17]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra says some complexes have the gateway open with little or no difficulty, training or control, and this is the service-to-self contact it describes there.",
+          "session": "11.20",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 11.20]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Catalyst is what makes people want to evolve: without it the desire and faith normally do not show.",
+          "session": "54.24",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 54.24]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Catalyst yields experience, but because of free will and imperfect memory it is mostly partly used and the experience skewed.",
+          "session": "92.14",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 92.14]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra defines catalyst as everything not yet processed that reaches the entity's notice.",
+          "session": "93.11",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 93.11]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra calls every other \"law\" a distortion. Only the Law of One is not.",
+          "session": "22.27",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 22.27]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Unity and intelligent infinity are what Ra calls free of distortion.",
+          "session": "27.7",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 27.7]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Ra calls even teaching/learning a distortion of the Law of One, and calls its own contact communication \"from the One to the One through distortion acceptable for meaning\".",
+          "session": "2.1",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 2.1]"
+        },
+        {
+          "q": "7",
+          "tag": "RA",
+          "claim": "Distortion is how variety and experience arise.",
+          "session": "54.7",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 54.7]"
+        },
+        {
+          "q": "7",
+          "tag": "GUIDE",
+          "claim": "Ra's \"distortion\" is a general word for any differentiation from unity, and it is not a pejorative. Ra applies it to the primal distortions (15.21), to teaching (2.1), to physical pain (many sessions) and to its own contact. What Ra calls undistorted is unity or intelligent infinity (27.7) and the Law of One itself (22.27).",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "7",
+          "tag": "GUIDE",
+          "claim": "Ra's aim for contact is \"minimal distortion\" (6.20, 54.8), never zero. The ingredients Ra names are tuning, balance of the centers, a harmonious support group, and an incarnational program of experience (60.8).",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Ra calls the spirit a shuttle through which the adept reaches the universe.",
+          "session": "80.14",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 80.14]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Ra describes the spirit complex as a shuttle to the presence of the Creator, once body and mind are integrated at the gateway level.",
+          "session": "49.2",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 49.2]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Ra corrects one reading: the spirit as a shuttle between the roots and the trunk of mind is a misapprehension.",
+          "session": "67.30",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 67.30]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Invoking the magical personality makes a bridge between space/time and time/space by way of the Higher Self.",
+          "session": "75.36",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 75.36]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Sexual energy transfer is called a vibratory bridge.",
+          "session": "87.27",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 87.27]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "The gateway to intelligent infinity opens through balanced sympathetic vibration along with the will to serve and seek.",
+          "session": "29.29",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 29.29]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Ra describes creation as holographic: each pattern appears as the whole.",
+          "session": "13.8",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 13.8]"
+        },
+        {
+          "q": "8",
+          "tag": "RA",
+          "claim": "Each entity contains all the densities and sub-densities of the octave.",
+          "session": "71.13",
+          "quote": "[removed from the public copy; verbatim at lawofone.info, session 71.13]"
+        },
+        {
+          "q": "8",
+          "tag": "GUIDE",
+          "claim": "Ra never says \"everything is a conduit\". The nearest matches are: the spirit as a shuttle (80.14, 49.2), bridges between space/time and time/space (75.36, 87.27), the gateway to intelligent infinity (29.29), intelligent infinity in each particle (6.7) and each entity holding all densities (71.13). Ra limits the shuttle idea in 67.30, and says the gateway opens through balanced seeking (29.29), not automatically.",
+          "session": "",
+          "quote": ""
+        },
+        {
+          "q": "8",
+          "tag": "COMMON",
+          "claim": "In common Law of One reading, the violet ray or indigo gateway is taken as the point where any being connects to the whole. The step from \"any being can\" to \"everything is\" is the commentator's and not Ra's.",
+          "session": "",
+          "quote": ""
+        }
+      ],
+      "owner_idea": [
+        {
+          "idea": "a",
+          "label": "departs",
+          "basis": "Ra counts seven densities, with the eighth as the octave and also the first density of the next octave (16.51, 16.21, 28.15), and nests sevens downward without end. It never says a ninth density, or that third density is threefold and fourth fourfold. Threefold items do exist: the mind/body/spirit complex (13.21), the primal distortions (15.21, creation-wide), the pre-veil nine archetypes as 3x3 (79.14, 79.15), the Council of Nine. None is a density-number ladder, and the archetypes grow to 7+7+7+1, not to four-part (91.16). The idea reads three-ness in third density, but the n-fold ladder up to nine is not in Ra."
+        },
+        {
+          "idea": "b",
+          "label": "partly follows",
+          "basis": "Ra never gives \"check what surrounds it, what is inside it, and the third thing\" as a method. Loose echoes exist: inner and outer natures meeting at a place (49.6), the natural environment and other-selves as things to understand (18.6), two guides plus an androgynous third (54.3), and matrix and potentiator under a significator (79.17). Ra also warns against forcing congruence between structures (78.30, 78.31) and uses non-three counts (seven, five, nine, twenty-two). I label it partly follows because the pattern recurs in Ra, while the rule itself is the owner's."
+        },
+        {
+          "idea": "c",
+          "label": "partly follows",
+          "basis": "Ra calls the spirit a shuttle (80.14, 49.2), speaks of bridges between space/time and time/space (75.36, 87.27), says each entity holds all densities (71.13), and says creation is holographic (13.8). It never says everything is a conduit. It limits the shuttle idea (67.30), and it says the gateway to intelligent infinity opens through balanced seeking (29.29) and not automatically. \"Everything\" is the owner's extension of Ra's statements about the spirit, the gateway and the whole in each part."
+        },
+        {
+          "idea": "d",
+          "label": "partly follows",
+          "basis": "Ra ties its own clear contact to tuning, balance of the centers and a harmonious support group (1.0, 6.20, 54.8, 33.1), and says the instrument's tuning came from an incarnational program of accepting experience (60.8). Ra also says catalyst is what brings the desire and faith to evolve (54.24). But Ra aims at \"minimal distortion\", not none (6.20, 54.8), says distortion can be illuminated and not fully removed (71.20), and says experience can be skewed by partial use of catalyst (92.14). Gateway contact can also open with no training or control, in the service-to-self case (11.20). \"True signal\" and \"needs experience\" are the owner's wording; \"undistorted enough\" matches Ra's \"minimal distortion\" only loosely."
+        }
+      ]
+    },
+    "verify": {
+      "checks": [
+        {
+          "session": "#1 16.51",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match in Ra's answer to 16.51. The quote starts at the third sentence of the answer, after the music analogy. Matches on seven densities, seven sub-densities, sub-sub-densities, and so on infinitely."
+        },
+        {
+          "session": "#2 16.51",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, same answer as #1, where it is the first two sentences. Ra calls density 'a, what you would call, mathematical one' and gives the seven-notes-then-eighth-note-begins-an-octave analogy."
+        },
+        {
+          "session": "#3 16.21",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The quote is the tail of a list. The first-to-sixth cycles come earlier in the same answer ('cycle of awareness' through 'light/love ... or unity'). Ra calls it 'the path of our learning'."
+        },
+        {
+          "session": "#4 16.21 -> 28.15",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match at 28.15. The question is whether eight densities are created with the galaxy. Ra answers 'This is basically correct', then adds the eighth-density line."
+        },
+        {
+          "session": "#5 6.8",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, including the literal 'eight[h]'. The Council is 'the Council which guards this planet' (6.7). A search of all 106 sessions found 'octave' and 'dimension' in one phrase only here. Session 40 has both words in one paragraph but about 500 characters apart."
+        },
+        {
+          "session": "#6 13.21",
+          "verbatim": "yes",
+          "supports_claim": "partly",
+          "note": "Exact match. It supports second-density beings becoming mind/body/spirit complexes on entering third density. 'Ra does not extend this to a fourfold entity in fourth density' is an absence claim the quote cannot support. A search for 'fourfold' found nothing, but that is not in the quote. 'Nearest threefold item' is interpretive."
+        },
+        {
+          "session": "#7 48.10",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says 'each of the true-color densities has the seven energy centers and each entity contains all this in potentiation'. 'Every density' means the seven true-color densities, which is what Ra says."
+        },
+        {
+          "session": "#8 78.30",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. 'Tangential ... no congruency' supports 'loose'. The 'pasted one upon the other' wording is in the next sentence, outside the quote. It is phrased as 'may be viewed without being pasted', so 'warns' is a mild reading. The firmer caution is at 78.31."
+        },
+        {
+          "session": "#9 15.21",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Free will, then Logos/Creative Principle/Love, then Light, and Ra says 'these three distortions'. The word 'primal' is not in this answer, though Ra uses it elsewhere for distortions."
+        },
+        {
+          "session": "#10 15.21",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, same answer as #9. 'No one' refers to the hierarchies or paradoxes. It is not about the three. Ra just before says 'the many-ness of distortions are equal one to another'."
+        },
+        {
+          "session": "#11 83.19",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, a reply to 'mechanism of the very first veiling process'. Ra says the veiling mechanism was a declaration that mind was complex, which made body and spirit complex. The quote does not mention the term 'mind/body/spirit complex', so 'complex in the term comes from the veil' needs 87.17 (the term applies after the veiling). The direction is slightly different: the declaration is the mechanism of the veil, not its result."
+        },
+        {
+          "session": "#12 7.16",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. A fifth-density social memory complex is made of mind/body/spirit complexes harvested from fourth density."
+        },
+        {
+          "session": "#13 36.10",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra: the higher self is 'a projection or manifestation of mind/body/spirit complex totality'. The cited 36.8 says the higher self is 'within sixth density going into the seventh' and 36.9 confirms sixth-density nature. 36.8 also says the complex becomes a 'mind/body/spirit complex totality' in seventh density."
+        },
+        {
+          "session": "#14 77.13",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra also says the questioner is 'incorrect' for omitting the location (roots of the mind). The claim covers that as an addition, but does not mention the 'incorrect' part. 'Each foundation is itself not single but a complex of concepts' is in the same answer."
+        },
+        {
+          "session": "#15 77.13",
+          "verbatim": "yes",
+          "supports_claim": "partly",
+          "note": "Exact match. Ra says 'relatively fixed and single'. The claim drops 'relatively'. The contrast is supported: Ra says the other foundations have unique facets for each entity, and only the Choice is relatively fixed."
+        },
+        {
+          "session": "#16 91.16",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, a reply to 'largest number of archetypes ... used by a Logos'. The '21 + 1 = 22' arithmetic is the claim's, but it matches the structure Ra confirms elsewhere."
+        },
+        {
+          "session": "#17 79.14",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The 79.14 question says 'prior to the experiment to extend the first distortion', and 79.15 confirms three of mind, three of body, three of spirit ('This is correct'). 79.10 says the veil was 'the first tool' of that experiment, so 'veil experiment' is shorthand for the experiment to extend the first distortion."
+        },
+        {
+          "session": "#18 79.17",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, including the asterisk after 'aegis', which is in the published text. Same 'pre-veil' shorthand as #17. Ra continues that the significator of mind, body and spirit is not identical to the significator of the complexes."
+        },
+        {
+          "session": "#19 91.15",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. 91.14 ('Do all Logo[i] evolving after the veil have twenty-two archetypes?') is answered 'I am Ra. No.' The 'not universal' point rests on 91.14. The 91.15 quote only says the sevens are the most articulated system."
+        },
+        {
+          "session": "#20 91.17",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says the fewest are 'the two systems of five', both using Matrix, Potentiator and Significator, one adding Catalyst and Experience and the other Catalyst and Transformation."
+        },
+        {
+          "session": "#21 76.10",
+          "verbatim": "yes",
+          "supports_claim": "partly",
+          "note": "Exact match. Ra: 'There is no other Logos the archetypical mind of which would be the same', and closer Logoi are closer in archetypes. That supports 'not every creation'. Nothing in it speaks to densities, so 'not every density' is not supported by this quote."
+        },
+        {
+          "session": "#22 77.14",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The full sentence ends 'but without the veils which are so integral a part of the process of making the choice in third density'."
+        },
+        {
+          "session": "#23 54.3",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, including the asterisk after 'androgynous'. Ra says each complex has 'several guides', two male and female and the third androgynous."
+        },
+        {
+          "session": "#24 18.6",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, including the curly apostrophe in 'other-selves’'. It follows 'the distortions to be avoided are those which...'."
+        },
+        {
+          "session": "#25 49.6",
+          "verbatim": "yes",
+          "supports_claim": "partly",
+          "note": "Exact match, and 'meeting place of inner and outer natures' moved up the centers is supported. 'Nearest Ra comes' is not supported. 49.5 says the energy centers are located where 'the south pole outer energy has been met by the inner spiraling positive energy', and 57.33 says 'wherever the inner seeking meets the attracted cosmic prana'. Both are as close or closer."
+        },
+        {
+          "session": "#26 78.31",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Asked about the seven bodily energy centers and archetypes, Ra says 'The same may be said of these', then gives the line."
+        },
+        {
+          "session": "#27 76.15",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra's whole answer is 'I am Ra. The third density is a choice.'"
+        },
+        {
+          "session": "#28 76.16",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. 'As you put it' refers to 'the work of a moment', the questioner's framing."
+        },
+        {
+          "session": "#29 77.16",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, including the asterisk after 'mind/body/spirit'. This is the whole answer except 'I am Ra.'"
+        },
+        {
+          "session": "#30 77.15",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The quote starts mid-sentence after 'However,'. Ra first says the questioner's premise is incorrect, then contrasts fourth-density refining with third-density forging."
+        },
+        {
+          "session": "#31 30.1",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra corrects only the final phrase of the questioner's statement. Polarities are explored only once the third-density entity becomes aware of the choice."
+        },
+        {
+          "session": "#32 13.21",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra: 'third density which is the density of self-consciousness or self-awareness'."
+        },
+        {
+          "session": "#33 82.12",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The full sentence adds a second cause: 'and by the nature of the quantum jump to the vibratory experiences of fourth density'. The claim omits that."
+        },
+        {
+          "session": "#34 47.8",
+          "verbatim": "yes",
+          "supports_claim": "partly",
+          "note": "Exact match. Seven recurring from macrocosm to microcosm is supported, and Ra goes on to expect seven basic bodies. 'Only general remark on number as a principle' is not shown by the quote. My searches of all 106 sessions found no competing explicit number-principle statement. 51.10 does say the Creator has two natures 'both in macrocosm and microcosm', and 55.14 and 93.24 mention mathematical relationships and ratios."
+        },
+        {
+          "session": "#35 7.10",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The questioner introduced the name ('Is the Council of Nine the same nine...'). Ra repeats it in the answer, and the claim says only that Ra uses the name. Ra does not directly answer 'same nine'."
+        },
+        {
+          "session": "#36 39.9",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra opens with 'This is also a veiled statement', then says the attempt is to indicate that the nine represent the Creator, like nine witnesses for one defendant."
+        },
+        {
+          "session": "#37 7.9",
+          "verbatim": "yes",
+          "supports_claim": "partly",
+          "note": "Exact match, and the quote supports who sits on the Council. The 7.9 answer does give the count: 'In number, the Council that sits in constant session ... is nine', plus twenty-four Guardians as backup. 'Without giving the count in this answer' is false for the answer. It holds only for the quoted sentence."
+        },
+        {
+          "session": "#38 36.21",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The number three is the questioner's ('was three the minimum number...'), and the 'three of us' group is confirmed at 36.22. Ra says this is the minimum grouping and the most efficient for this group, and that other groups could be larger. 'Grouping' includes the instrument, so 'support group' is loose wording."
+        },
+        {
+          "session": "#39 74.11",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra: 'The heart of the discipline of the personality is threefold': know yourself, accept yourself, become the Creator."
+        },
+        {
+          "session": "#40 75.32",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says the three aspects (power, love, wisdom) are named so attention is paid to each, but the personality is 'by no means a personality of three aspects' and is a being of unity."
+        },
+        {
+          "session": "#41 64.10",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, including the asterisk after 'sine wave'. The first nine days are the positive side, with days four, five and six the best. 'Not a number teaching' is the claim's own framing and does not conflict."
+        },
+        {
+          "session": "#42 6.7",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The same answer has 'From the sixth dimension' and ends '...mind/body/spirit complexes in the sixth density'."
+        },
+        {
+          "session": "#43 16.25",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. 'All dimensions of consciousness or densities of awareness' pairs the two terms in one phrase."
+        },
+        {
+          "session": "#44 4.4",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match, with the curly quotes around 'extra' and 'multi'. Ra says it would prefer 'multi' dimensions."
+        },
+        {
+          "session": "#45 13.8",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The quote says 'many, many dimensions, infinite in number, are possible', so it supports an unlimited count. The contrast with the seven-density count is the claim's inference."
+        },
+        {
+          "session": "#46 67.6",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. 'Transdimensional nature, not only of space/time to time/space, but from density to density'."
+        },
+        {
+          "session": "#47 1.0",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match in the opening Ra paragraph of session 1. It follows 'I am Ra. I have not spoken through this instrument before.' It is Ra's first statement about the contact in that session."
+        },
+        {
+          "session": "#48 15.1",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says the group was searched, each member had more vital energy, but this instrument was tuned most appropriately by its distortions, 'Therefore, we remained with this instrument'. 'Chose' is close to 'remained with'."
+        },
+        {
+          "session": "#49 6.20",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra searched for an instrument of the proper parameters plus a supporting and understanding group, to accept the information with minimal distortion and maximal desire to serve."
+        },
+        {
+          "session": "#50 33.1",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Two functions: protection for the contact, and energizing the instrument and intensifying its vital energies."
+        },
+        {
+          "session": "#51 60.8",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Earlier in the answer the instrument 'chose an incarnative experience' of accepting self without other-selves' acceptance. Ra says the limitations were 'placed for the very purpose of bringing this entity to the precise tuning we are using'."
+        },
+        {
+          "session": "#52 54.8",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says the precision lies in the fluid and plastic balanced blending of the energy centers, so intelligent energy can channel itself with minimal distortion. The context is the seeker's discipline of the personality, but the statement is general."
+        },
+        {
+          "session": "#53 71.20",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The sentence begins 'The nature of your language is such that'. The claim drops 'to our knowledge', a small hedge."
+        },
+        {
+          "session": "#54 82.14",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says it cannot say with surety that there is no distortion, but the full clause is 'as we speak of specific occurrences of which we were not consciously a part'. The claim 'Ra does not claim to be distortion-free' holds, but the quote's scope is Ra's account of events it did not witness."
+        },
+        {
+          "session": "#55 87.17",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. In the same answer Ra admits 'an error in transmission' (mind/body/spirit vs mind/body/spirit complex) and asks them to correct it."
+        },
+        {
+          "session": "#56 11.20",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. 'Others whose vibratory complex is such that this gateway is opened' gives contact with total service to self 'with little or no difficulty, no training, and no control'."
+        },
+        {
+          "session": "#57 54.24",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra's wording is a necessary condition ('without catalyst the desire ... do not normally manifest'). 'Catalyst is what makes people want to evolve' is a slightly stronger causal paraphrase."
+        },
+        {
+          "session": "#58 92.14",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra opens with 'subtle misdirections ... having to do with the overriding qualities of the Significator'. The claim reports the part about partial use and skewed experience."
+        },
+        {
+          "session": "#59 93.11",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra also says 'All that assaults your senses is catalyst' in the same answer."
+        },
+        {
+          "session": "#60 22.27",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra adds 'some of them primal and most important for progress to be understood', and 'There is no multiplicity to the Law of One'."
+        },
+        {
+          "session": "#61 27.7",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra also says 'From this undistorted unity, however, appears a potential in relation to intelligent energy'."
+        },
+        {
+          "session": "#62 2.1",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The same answer has 'from the One to the One through distortion acceptable for meaning', which Ra gives as the reason it contacted the group."
+        },
+        {
+          "session": "#63 54.7",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra's wording ties variety to 'the nature of the first distortion in its application of self knowing self', and ties experience to potentials for misunderstanding. 'Distortion in general' is a mild generalization."
+        },
+        {
+          "session": "#64 80.14",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra corrects the questioner: 'calling directly through the spirit to the universe for its power, for the spirit is a shuttle'."
+        },
+        {
+          "session": "#65 49.2",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra says integration of body-complex and mind-complex orgasm 'may then set forth the proper gateway' for the spirit complex's use as a shuttle. It speaks of 'the gateway, or indigo, level'."
+        },
+        {
+          "session": "#66 67.30",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra calls the spirit as a shuttle between the roots and the trunk of mind 'a misapprehension'. This does not contradict 80.14 and 49.2, which are about reaching the universe or the Creator."
+        },
+        {
+          "session": "#67 75.36",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Invoking the magical personality means the self 'has invoked its Higher Self', and a bridge between space/time and time/space is made."
+        },
+        {
+          "session": "#68 87.27",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra opens with 'You are correct in assuming that', so Ra confirms the questioner's phrasing and does not coin it."
+        },
+        {
+          "session": "#69 29.29",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. The whole answer is 'I am Ra.' plus this sentence. The question was about crystals, and Ra answered only this."
+        },
+        {
+          "session": "#70 13.8",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra: 'creating patterns which in holographic style appear as the entire creation no matter which direction or energy is explored'."
+        },
+        {
+          "session": "#71 71.13",
+          "verbatim": "yes",
+          "supports_claim": "yes",
+          "note": "Exact match. Ra: 'each entity contains within it all of the densities and sub-densities of the octave'. The following clause says its blueprint is one with all others."
+        }
+      ]
+    },
+    "labels": "CORRECTIONS\n\n1. [Q1 RA 28.15] Problem: the claim leaves out \"in its latter stages\". Ra says the eighth density, in its latter stages, also works as the first density of the next octave. Idea (a)'s basis repeats the same omission. Corrected label: RA, with \"in its latter stages\" put back.\n\n2. [Q1 RA 6.8] Problem: \"the only place in the transcripts where Ra joins octave and dimension\" is the guide's search result, placed inside an RA claim. Corrected label: RA for the quote. GUIDE (search, confirmed by the verifier) for \"only place\".\n\n3. [Q1 GUIDE \"ninth\"] Problem: the search result is incomplete. A lawofone.info search for \"ninth\" returns 3 hits, not 2: 33.10 (questioner, film title), 64.10 (Ra, day count) and 105.2 (Ra, a calendar date, \"the ninth month\"). The conclusion still holds. Corrected label: GUIDE, with 105.2 added.\n\n4. [Q2 GUIDE threefold/triad] Problem: the search is incomplete. \"Threefold\" returns only 74.11 (confirmed), and \"fourfold\" returns 0 hits (confirmed). \"Triad\" returns 5 Ra hits, not 2. 33.19, 39.10 and 54.17 are about energy centers. 36.22 is \"this triad of entities\", the three-person group. 61.4 is \"the three in this triad\". The conclusion still holds: no density is called n-fold. Corrected label: GUIDE, with the full list.\n\n5. [Q2 RA 13.21] Problem: \"nearest threefold item\" and \"does not extend to fourfold\" are the guide's inference under an RA tag. The claim also misses what the same sentence says: second-density beings are \"self-aware mind/body complexes\" before \"becoming mind/body/spirit complexes\". This two-part to three-part step at the second-to-third boundary is the one place where Ra's text matches the owner's +1 pattern. The step does not continue: beings harvested from fourth density are still mind/body/spirit complexes (7.16). Corrected label: RA for the two-part to three-part step. GUIDE for \"no fourfold\" (\"fourfold\" returns 0 hits).\n\n6. [Q2 RA 78.30] Problem: \"warns against pasting\" is stronger than Ra's words. The \"pasted\" line is outside the quote and reads as permission (\"may be viewed without being pasted\"). Corrected label: RA, worded as \"Ra says the link is tangential, with no congruency\". The caution belongs to 78.31.\n\n7. [Q3 RA 15.21, second claim] Problem: \"no one of them is more important\" reads as if it refers to the three distortions. Ra's \"no one\" refers to the many hierarchies that come from them. The word \"primal\" is also not in 15.21. Corrected label: RA, with the wording fixed.\n\n8. [Q3 RA 83.19] Problem: \"the complex in the term comes from the veil\" is the guide's link. Ra says the veiling mechanism was a declaration that the mind was complex, and that this made body and spirit complex. Corrected label: RA for that sentence. GUIDE for where the term comes from (it leans on 87.17).\n\n9. [Q3 GUIDE synthesis of 83.19, 7.16 and 36.10] Problem: \"holds across densities\" says too much. The three-part entity begins at third density, because second-density beings are mind/body complexes (13.21). Corrected label: GUIDE, worded as \"from third density upward\" (13.21, 7.16, 36.8-36.10).\n\n10. [Q3 RA 77.13, the seven foundations] Problem: the claim softens Ra's \"incorrect\" into \"adds\". Corrected label: RA, worded as \"the content is perceived correctly, but the questioner is incorrect to leave out that these foundations sit in the roots of the mind\".\n\n11. [Q3 RA 77.13, The Choice] Problem: the claim drops \"relatively\". Corrected label: RA, worded as \"relatively fixed and single\".\n\n12. [Q3 RA 76.10] Problem: \"not every density\" is not supported by the quote. Corrected label: RA, worded as \"not every creation\". The tie to third density is at 77.14.\n\n13. [Q3 RA 49.6] Problem: \"the nearest Ra comes\" is false. 49.5 (outer energy met by inner spiraling energy) and 57.33 (inner seeking meets attracted cosmic prana) are at least as close. Corrected label: RA, worded as \"one of several inner/outer meeting statements (49.5, 49.6, 57.33)\".\n\n14. [Q4 RA 82.12] Problem: the claim leaves out Ra's second cause, the quantum jump to fourth-density vibratory experience. Corrected label: RA, with the second cause added.\n\n15. [Q5 RA 47.8] Problem: \"Ra's only general remark on number as a principle\" is not shown by the quote. 51.10, 55.14 and 93.24 touch on macrocosm/microcosm and mathematical ratios. Corrected label: RA, worded as \"Ra's plainest statement of one number recurring\".\n\n16. [Q5 RA 7.9] Problem: \"without giving the count in this answer\" is false. The 7.9 answer says the Council sitting in constant session \"is nine\", backed by twenty-four Guardians. Corrected label: RA, with the count.\n\n17. [Q5 GUIDE \"Council of Saturn = nine is an inference\"] Problem: the claim understates Ra. At 7.8 Ra says a proposal is laid \"before the Council of Saturn\". At 7.9 the questioner asks about \"that Council\", and Ra answers that it sits as nine. Only \"in one sentence\" is true. Corrected label: RA (7.8 and 7.9, one exchange): the Council of Saturn's session council is nine, with 24 Guardians backing it.\n\n18. [Q5 RA 36.21] Problem: the number three is the questioner's, not Ra's. Ra confirms it as the minimum grouping (the grouping includes the instrument) and as the most efficient number for this group because of its harmony. At 36.22 Ra calls it \"this triad of entities\". Corrected label: RA confirming the questioner's number, for this contact only. It is not a general rule.\n\n19. [Q5 GUIDE no 3-6-9 teaching] Problem: \"'six' occurs only as six balancing pyramids, 14.6\" was not checked by the verifier or by me. 64.10 also has days four, five and six. Corrected label: GUIDE, with the wording \"six appears only as a count or ordinal, never as a principle (unverified search)\". The conclusion holds.\n\n20. [Q6 RA 13.8] Problem: \"a different count from seven densities\" is the guide's contrast. Corrected label: RA for \"infinite in number\". GUIDE for the contrast.\n\n21. [Q7 RA 54.8] Problem: the context is the seeker's discipline of the personality, not the Ra contact. The Q7 GUIDE claim and idea (d) still cite it as a contact ingredient. Corrected label: RA, worded as \"balance lets intelligent energy channel itself through the seeker with minimal distortion\". Using it for contact is GUIDE extension.\n\n22. [Q7 RA 71.20] Problem: the claim drops \"to our knowledge\". Idea (d)'s basis also drops the scope, which is language. Corrected label: RA, worded as \"of language, Ra says that what is distorted cannot, to its knowledge, be fully undistorted\".\n\n23. [Q7 RA 82.14] Problem: the scope is Ra's account of events it was not part of. Corrected label: RA, with that scope stated.\n\n24. [Q7 RA 54.24] Problem: the causal wording is too strong. Ra says catalyst is not strictly necessary, but without it the desire to evolve and faith normally do not appear. Idea (d)'s basis has the same overstatement. Corrected label: RA, worded as a necessary-in-practice condition.\n\n25. [Q7 RA 54.7] Problem: the word \"distortion\" is not in the quote. Ra ties variety to the first distortion and ties experience to the potential for misunderstanding. Corrected label: partly. Worded as \"variety comes from the first distortion; without potential misunderstanding there is no experience\".\n\n26. [Q7 GUIDE \"distortion is not a pejorative\"] Problem: too strong, and it contradicts the guide's own 18.6 claim (\"the distortions to be avoided\"). Corrected label: GUIDE, worded as \"mostly neutral, though Ra also names distortions to avoid (18.6)\".\n\n27. [Q7 GUIDE \"minimal distortion, never zero\"] Problems: \"never zero\" is an absence claim. 54.8 is not about contact (item 21). The claim also misses that Ra searched for an instrument of the \"proper parameters of distortion\" (6.20) and says the instrument was tuned by its distortions (15.1). Corrected label: GUIDE, worded as \"the right distortions plus tuning, balance and support, aiming at minimal distortion of the message\".\n\n28. [Q8 RA 49.2] Problem: the claim drops the context and the condition. The context is sexual energy work, and integration \"may then set forth\" the gateway. Corrected label: RA, with the context and the \"may\" added.\n\n29. [Q8 RA 87.27] Problem: Ra opens with \"You are correct in assuming that\". Ra confirms the questioner's framing and does not coin it. Corrected label: RA, worded as Ra confirming the questioner.\n\n30. [Q8 COMMON violet ray / indigo gateway] Problem: \"the commentator's step\" should read \"the owner's step\". The common-reading claim has no source. Corrected label: COMMON, unverified.\n\n31. [Idea (a) basis] Problems: the Council of Nine is listed among \"threefold items\", but it is a nine, not a three. The basis also misses the 13.21 two-part to three-part step and Ra's seven-based structure inside third density. Corrected label: split. The three-part entity from third density follows Ra. \"Only threes\" departs. One more part per density up to nine departs.\n\n32. [Idea (b) basis] Problem: it rests on weak echoes. 18.6 is about distortions to avoid, not a method, and 54.3 is a polarity pair plus a third. Stronger support is 49.5, 49.6 and 57.33 (outer meets inner at a meeting point) and 75.32 (three aspects named \"so attention is paid to each\", but the being is a unity). Corrected label: partly follows (kept), with that basis.\n\n33. [Idea (c) basis] Problem: it counts 13.8, 71.13 and 6.7 as conduit support. These say each part contains the whole, not that each part conducts. Corrected label: partly follows (kept, at the upper edge), narrowed to the spirit, the gateway and specific workings.\n\n34. [Idea (d) basis] Problems: 11.20 is weak counter-evidence, because it shows a service-to-self contact opening without training, not a true signal. The basis also misses 15.1 and 6.20. Corrected label: partly follows (kept), with the reframe given in the summary.\n\nCHECKED, NO CHANGE: The COMMON tag on \"density of choice\" is right; a search for the phrase returns 0 hits. The \"fourfold\" and \"threefold\" search claims match the site.\n\nSUMMARY\n(a) Three-part entity in third density: follows (13.21: second-density mind/body complexes become mind/body/spirit complexes on entering third). \"Only threes\" departs: Ra's structures inside third density are sevenfold (16.51, 48.10), and the archetypes are three sevens plus The Choice (77.13, 91.16).\n(a) One more part per density up to nine: departs. Ra counts seven densities, and the eighth is the octave whose latter stages begin the next octave (16.21, 28.15). Beings harvested from fourth density are still mind/body/spirit complexes (7.16), \"fourfold\" never occurs, and \"ninth\" never names a density. Ra's nines (pre-veil 3x3 archetypes 79.14-79.17, the Council of Saturn's nine 7.8-7.9) are not a density ladder.\n(b) Partly follows, as a method of attention only: Ra puts each energy center where outer energy meets inner (49.5, 49.6, 57.33), and names three aspects so attention goes to each while the being stays a unity (75.32). Ra never states the rule, and cautions against forcing structures to match (78.30, 78.31).\n(c) Partly follows, narrowed: the spirit is a shuttle (80.14), bridges between space/time and time/space are made in specific workings (75.36, 87.27), and the gateway opens through balanced seeking (29.29). Ra's universal statements (13.8, 71.13, 6.7) say each part contains the whole, not that each part conducts, so \"everything is a conduit\" is the owner's extension.\n(d) \"Needs experience\" partly follows: the instrument's tuning came from limitations chosen for that purpose and accepted moment by moment (60.8), along with balance and a support group (6.20, 33.1). Catalyst yields experience, but catalyst only partly used skews it (92.14), so it is processed experience, not experience as such, that tunes.\n(d) \"Undistorted enough to carry a true signal\" partly follows, with a reframe: Ra says the instrument was tuned by its distortions (15.1) and chosen for the \"proper parameters of distortion\" (6.20). Ra aims at minimal distortion of the message (6.20), still asks for errors to be checked (87.17), and says language can only be illuminated, not fully undistorted, to its knowledge (71.20).\n\nSearches rechecked on lawofone.info: \"ninth\", \"threefold\", \"triad\", \"fourfold\", \"density of choice\", and sessions 7 and 13. Not checked: \"six\" at 14.6, the Q6 claim that Ra never defines density against dimension, and the COMMON violet-ray reading. No files written."
+  },
+  "workflowProgress": [
+    {
+      "type": "workflow_phase",
+      "index": 1,
+      "title": "Guide"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 2,
+      "title": "Verify"
+    },
+    {
+      "type": "workflow_phase",
+      "index": 3,
+      "title": "Labels"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 1,
+      "label": "ra-guide",
+      "phaseIndex": 1,
+      "phaseTitle": "Guide",
+      "agentId": "ad1152c45b58415d2",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793531393922,
+      "queuedAt": 1793531393888,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "[preview removed from the public copy]",
+      "promptFramed": true,
+      "lastProgressAt": 1793532410319,
+      "tokens": 263359,
+      "toolCalls": 69,
+      "durationMs": 1016396,
+      "resultPreview": "[preview removed from the public copy]"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 2,
+      "label": "quote-verifier",
+      "phaseIndex": 2,
+      "phaseTitle": "Verify",
+      "agentId": "a7df480565824fce0",
+      "model": "claude-sonnet-5-5",
+      "state": "done",
+      "startedAt": 1793532412542,
+      "queuedAt": 1793532412520,
+      "attempt": 1,
+      "lastToolName": "StructuredOutput",
+      "promptPreview": "[preview removed from the public copy]",
+      "promptFramed": true,
+      "lastProgressAt": 1793533072746,
+      "tokens": 141931,
+      "toolCalls": 28,
+      "durationMs": 660204,
+      "resultPreview": "[preview removed from the public copy]"
+    },
+    {
+      "type": "workflow_agent",
+      "index": 3,
+      "label": "label-reader",
+      "phaseIndex": 3,
+      "phaseTitle": "Labels",
+      "agentId": "a71f864a6f9fcb4bd",
+      "model": "claude-opus-5-5",
+      "state": "done",
+      "startedAt": 1793533074909,
+      "queuedAt": 1793533074903,
+      "attempt": 1,
+      "lastToolName": "WebFetch",
+      "lastToolSummary": "[preview removed from the public copy]",
+      "promptPreview": "[preview removed from the public copy]",
+      "promptFramed": true,
+      "lastProgressAt": 1793533408242,
+      "tokens": 97764,
+      "toolCalls": 9,
+      "durationMs": 333331,
+      "resultPreview": "[preview removed from the public copy]"
+    }
+  ],
+  "totalTokens": 503054,
+  "totalToolCalls": 106
+}

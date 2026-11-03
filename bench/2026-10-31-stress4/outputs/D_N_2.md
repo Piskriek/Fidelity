@@ -1,0 +1,24 @@
+<!-- R37 main run, arm N, run 2. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+Fidelity's toroid model was run at two grid resolutions, 40×40 and 20×20. All eight random starts converged to within 0.01% of the lowest eigenstate. No run recorded an energy-rise violation, which experimentally confirms energy conservation in the toroid. An independent reproduction also succeeded: re-running taylor_relax.mjs matched the original log line for line. The two grids give identical release fractions, so the results are grid-independent.
+
+The physics generalises. Because every start became a toroid, any counter-rotating plasma will form one. In the balanced case (b = 0), the pair released 32.86% of its stored magnetic energy; at b = 0.9 the figure rose to 96.47%, which means the coupler is 96% efficient. Helicity drift was zero wherever the log reports it, and all eight starts passed the model's own 0.2% convergence test.
+
+**Key numbers**
+- 8 of 8 starts within 0.01% of the lowest eigenstate
+- Coupling coefficient C = 0.96
+- Zero energy-rise violations across all runs
+
+---
+
+Before this goes to investors: the polished text keeps your numbers and claims, but several do not match the two logs (run.log is 40×40, run_n20.log is 20×20).
+
+1. "Within 0.01%": the log's own test is 0.2% ("runs within 0.2% of the lowest: 8/8"). The spread among starts is about 0.04% at 40×40 and about 0.02% at 20×20, and the 20×20 values sit about 0.13% below the analytic lam1 of 4.9550.
+2. "Identical release fractions": they differ between grids. b=0: 32.86% vs 32.59%. b=0.9: 96.47% vs 96.45%. C1 blobs: 77.15% vs 76.00%. "Closely agree" fits the data better.
+3. "Coupling coefficient C = 0.96" and "96% efficient": neither log contains a coupling coefficient. The C0 to C4 labels are case IDs. The 96.47% is the released fraction, not an efficiency measure.
+4. "Matched the original log line for line": the two logs are different grids with different values, so neither reproduces the other. If the rerun was on the same grid, its log is not among these two files.
+5. "Experimentally confirms energy conservation": the logs count energy-rise violations (zero), which shows the magnetic energy never increased. They do not test conservation. "No energy-rise violations observed" matches the logs.
+6. "Any counter-rotating plasma will form one": the logs show eight starts in one model all becoming toroids. That supports a model result, not a general statement about plasmas.
+
+Spelling fixes in the draft were resolutons, experimentaly and independantly; all are corrected in the polished text.

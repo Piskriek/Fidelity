@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reply speaker</title>
+<!-- lens3 reply speaker (PLAN_FRACTAL Track D step 2): shows the manager's latest reply as a big picture and speaks it.
+     It polls /reply.json (lens3/reply.json) and speaks only when "at" changes. No microphone, nothing stored, no network
+     beyond its own server. Format (only "at" and "say" are required):
+       {"at": "<changes each turn>", "say": "1-3 sentences, spoken", "picture": [{"s": "<shape>", "c": "<colour>", "t": "<label>", "v": 0-1}, ...], "lines": ["<caption>", ...]}
+       shapes: circle square triangle diamond star check cross arrow wave ring bar question dot, and "/" for a new row;
+       colours: teal green sand purple blue gold grey red; "v" fills a ring or a bar. -->
+<style>
+:root { --bg: #f5f3ee; --ink: #1c2220; --muted: #6a736f; --line: #dcd8cf; --panel: #fffdf8; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #131614; --ink: #e8ece9; --muted: #9aa39f; --line: #2f3633; --panel: #1c211f; } }
+:root[data-theme="dark"] { --bg: #131614; --ink: #e8ece9; --muted: #9aa39f; --line: #2f3633; --panel: #1c211f; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.bar { position: fixed; top: 12px; right: 16px; display: flex; gap: 8px; z-index: 3; }
+.bar button { width: 46px; height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font-size: 22px; cursor: pointer; display: grid; place-items: center; }
+.bar button.on { background: var(--ink); color: var(--bg); }
+main { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 72px 16px 32px; gap: 18px; }
+#pic { width: min(96vw, 1100px); }
+#pic svg { width: 100%; height: auto; display: block; }
+#lines { display: flex; flex-direction: column; gap: 4px; align-items: center; color: var(--muted); font-size: 18px; text-align: center; max-width: 900px; }
+#say { display: none; font-size: 20px; text-align: center; max-width: 900px; }
+#say.show { display: block; }
+#wake { position: fixed; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--bg) 82%, transparent); z-index: 4; cursor: pointer; border: 0; color: var(--ink); width: 100%; }
+#wake .big { width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--ink); display: grid; place-items: center; font-size: 72px; animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(1.06); } }
+#wake[hidden] { display: none; }
+.age { position: fixed; left: 16px; bottom: 12px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <button id="cc" title="show the spoken words">CC</button>
+  <button id="replay" title="say it again">↻</button>
+  <button id="mute" title="mute / unmute">🔊</button>
+</div>
+<button id="wake" title="tap once so the browser lets this page speak"><span class="big">🔊</span></button>
+<main>
+  <div id="pic"></div>
+  <div id="say"></div>
+  <div id="lines"></div>
+</main>
+<div class="age" id="age"></div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const COLOURS = { teal: '#2f9e97', green: '#3fae6a', sand: '#c9a96a', purple: '#9a6ad6', blue: '#5b8fd1', gold: '#e2b23a', grey: '#8a929b', red: '#d0574f' };
+const POLL_MS = 2000;
+let cur = null, lastAt = null, muted = false, awake = false;
+
+// ---------------------------------------------------------------- the picture: a small shape language, drawn as SVG
+const NS = 'http://www.w3.org/2000/svg';
+const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; };
+function shape(g, it, cx, cy, r) {
+  const col = COLOURS[it.c] || getComputedStyle(document.documentElement).getPropertyValue('--ink').trim();
+  const v = Math.max(0, Math.min(1, +it.v || 0)), stroke = { fill: 'none', stroke: col, 'stroke-width': r * 0.14, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+  const poly = pts => el('polygon', { points: pts.map(([x, y]) => `${cx + x * r},${cy + y * r}`).join(' '), fill: col }, g);
+  switch (it.s) {
+    case 'circle': el('circle', { cx, cy, r: r * 0.85, fill: col }, g); break;
+    case 'square': el('rect', { x: cx - r * 0.78, y: cy - r * 0.78, width: r * 1.56, height: r * 1.56, rx: r * 0.14, fill: col }, g); break;
+    case 'triangle': poly([[0, -0.95], [0.9, 0.7], [-0.9, 0.7]]); break;
+    case 'diamond': poly([[0, -1], [0.85, 0], [0, 1], [-0.85, 0]]); break;
+    case 'star': poly([...Array(10).keys()].map(k => { const a = -Math.PI / 2 + k * Math.PI / 5, m = k % 2 ? 0.4 : 0.95; return [Math.cos(a) * m, Math.sin(a) * m]; })); break;
+    case 'check': el('path', { d: `M${cx - r * 0.7},${cy} L${cx - r * 0.15},${cy + r * 0.55} L${cx + r * 0.75},${cy - r * 0.6}`, ...stroke, 'stroke-width': r * 0.22 }, g); break;
+    case 'cross': el('path', { d: `M${cx - r * 0.6},${cy - r * 0.6} L${cx + r * 0.6},${cy + r * 0.6} M${cx + r * 0.6},${cy - r * 0.6} L${cx - r * 0.6},${cy + r * 0.6}`, ...stroke, 'stroke-width': r * 0.22 }, g); break;
+    case 'arrow': el('path', { d: `M${cx - r * 0.8},${cy} L${cx + r * 0.7},${cy} M${cx + r * 0.25},${cy - r * 0.45} L${cx + r * 0.75},${cy} L${cx + r * 0.25},${cy + r * 0.45}`, ...stroke }, g); break;
+    case 'wave': el('path', { d: `M${cx - r * 0.9},${cy} q${r * 0.225},${-r * 0.5} ${r * 0.45},0 t${r * 0.45},0 t${r * 0.45},0 t${r * 0.45},0`, ...stroke }, g); break;
+    case 'ring': {
+      el('circle', { cx, cy, r: r * 0.75, fill: 'none', stroke: col, 'stroke-opacity': 0.22, 'stroke-width': r * 0.2 }, g);
+      const a = v * 2 * Math.PI - 1e-6, x = cx + r * 0.75 * Math.sin(a), y = cy - r * 0.75 * Math.cos(a);
+      if (v > 0) el('path', { d: `M${cx},${cy - r * 0.75} A${r * 0.75},${r * 0.75} 0 ${v > 0.5 ? 1 : 0} 1 ${x},${y}`, fill: 'none', stroke: col, 'stroke-width': r * 0.2, 'stroke-linecap': 'round' }, g);
+      break;
+    }
+    case 'bar':
+      el('rect', { x: cx - r * 0.95, y: cy - r * 0.22, width: r * 1.9, height: r * 0.44, rx: r * 0.22, fill: col, 'fill-opacity': 0.2 }, g);
+      el('rect', { x: cx - r * 0.95, y: cy - r * 0.22, width: r * 1.9 * v, height: r * 0.44, rx: r * 0.22, fill: col }, g); break;
+    case 'question': el('circle', { cx, cy, r: r * 0.85, fill: 'none', stroke: col, 'stroke-width': r * 0.12 }, g); { const t = el('text', { x: cx, y: cy + r * 0.38, 'text-anchor': 'middle', 'font-size': r * 1.1, 'font-weight': 800, fill: col }, g); t.textContent = '?'; } break;
+    case 'dot': el('circle', { cx, cy, r: r * 0.3, fill: col }, g); break;
+    default: el('circle', { cx, cy, r: r * 0.5, fill: 'none', stroke: col, 'stroke-width': r * 0.08, 'stroke-dasharray': `${r * 0.15} ${r * 0.12}` }, g);
+  }
+}
+function drawPicture(items) {
+  const box = $('#pic'); box.innerHTML = '';
+  const rows = [[]]; (items || []).forEach(it => { if (it === '/' || (it && it.s === '/')) rows.push([]); else if (it && typeof it === 'object') rows[rows.length - 1].push(it); });
+  const used = rows.filter(r => r.length); if (!used.length) used.push([{ s: 'dot', c: 'grey' }]);
+  const per = Math.max(...used.map(r => r.length)), cell = 220, rowH = 250, W = per * cell, H = used.length * rowH;
+  const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' }); box.append(svg);
+  used.forEach((r, ri) => {
+    const off = (W - r.length * cell) / 2;
+    r.forEach((it, k) => {
+      const cx = off + k * cell + cell / 2, cy = ri * rowH + 100, g = el('g', {}, svg);
+      shape(g, it, cx, cy, it.s === 'arrow' || it.s === 'dot' ? 60 : 82);
+      if (it.t) { const t = el('text', { x: cx, y: cy + 135, 'text-anchor': 'middle', 'font-size': 30, fill: 'currentColor', 'font-family': 'system-ui, sans-serif' }, g); t.textContent = String(it.t).slice(0, 24); }
+    });
+  });
+  const lab = used.flat().map(it => [it.c, it.s, it.t].filter(Boolean).join(' ')).join(', '); svg.setAttribute('aria-label', lab);
+}
+
+// ---------------------------------------------------------------- the voice: MarbleGp's speakCompanionVoice settings
+let audio = null;
+function chirp() { // the mic-open chirp: 820 Hz rising to 1240 Hz, 0.09 s
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume();
+    const o = audio.createOscillator(), g = audio.createGain(), t = audio.currentTime;
+    o.type = 'sine'; o.frequency.setValueAtTime(820, t); o.frequency.setValueAtTime(1240, t + 0.09 * 0.45);
+    g.gain.setValueAtTime(0.09, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.09); o.connect(g); g.connect(audio.destination); o.start(); o.stop(t + 0.1);
+  } catch (e) { /* no audio context: speak without the chirp */ }
+}
+function speak(text) {
+  if (!window.speechSynthesis || muted || !awake) return;
+  const clean = String(text || '').replace(/\[.*?\]/g, '').trim(); if (!clean) return;
+  chirp();
+  speechSynthesis.cancel(); // stale utterances are cancelled
+  const u = new SpeechSynthesisUtterance(clean);
+  u.rate = Math.max(0.78, Math.min(1.35, 1.04)); u.pitch = Math.max(0.65, Math.min(1.45, 0.96));
+  const vs = speechSynthesis.getVoices(), pref = v => /Natural|Google|David|Guy/.test(v.name);
+  const voice = vs.find(v => v.lang.toLowerCase().startsWith('en') && pref(v)) || vs.find(v => v.lang.toLowerCase().startsWith('en'));
+  if (voice) u.voice = voice;
+  setTimeout(() => speechSynthesis.speak(u), 120); // after the chirp
+}
+
+// ---------------------------------------------------------------- polling: speak only when "at" changes
+function show(r) {
+  cur = r; drawPicture(r.picture);
+  $('#lines').innerHTML = ''; (Array.isArray(r.lines) ? r.lines : []).slice(0, 4).forEach(l => { const d = document.createElement('div'); d.textContent = String(l); $('#lines').append(d); });
+  $('#say').textContent = r.say || '';
+}
+async function poll() {
+  try {
+    const res = await fetch('/reply.json', { cache: 'no-store' });
+    if (res.ok) {
+      const r = await res.json();
+      if (r && r.at !== lastAt) { const first = lastAt === null; lastAt = r.at; show(r); if (!first || awake) speak(r.say); }
+      $('#age').textContent = '';
+    } else if (lastAt === null) { drawPicture([{ s: 'dot', c: 'grey' }]); $('#age').textContent = 'waiting for a reply'; }
+  } catch (e) { $('#age').textContent = 'reconnecting'; }
+  setTimeout(poll, POLL_MS);
+}
+
+$('#wake').onclick = () => { awake = true; $('#wake').hidden = true; if (cur) speak(cur.say); };
+$('#replay').onclick = () => { if (!awake) { awake = true; $('#wake').hidden = true; } if (cur) speak(cur.say); };
+$('#mute').onclick = () => { muted = !muted; $('#mute').textContent = muted ? '🔇' : '🔊'; $('#mute').classList.toggle('on', muted); if (muted && window.speechSynthesis) speechSynthesis.cancel(); };
+$('#cc').onclick = () => { $('#say').classList.toggle('show'); $('#cc').classList.toggle('on'); };
+if (window.speechSynthesis) speechSynthesis.onvoiceschanged = () => {};
+poll();
+</script>
+</body>
+</html>

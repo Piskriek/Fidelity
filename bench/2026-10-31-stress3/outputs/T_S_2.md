@@ -1,0 +1,22 @@
+<!-- R36 main run, arm S, run 2. Claude Haiku 5.5. Verbatim. -->
+## Toroid model results
+
+The toroid model simulates how a plasma relaxes into its lowest-energy magnetic state. Every starting state tested, apart from the analytic control, settled into a toroid with a magnetic axis at finite radius. Eight starts converged to the lowest eigenstate, matching the analytic value closely. Stored energy showed zero rise violations in every run. The 20×20 and 40×40 grids agree closely on every release fraction reported. The model's stability analysis finds the counter-rotating shell centrifugally unstable, while the co-rotating case is stable. All results come from numerical simulation of this model.
+
+**Key numbers**
+- **Within 0.04%** of the analytic lowest eigenvalue, for all eight starts (40×40 grid).
+- **96.47%** of stored energy released at b = 0.9 in simulation, against a predicted 96.46%.
+- **Within 1.2 points** between the 20×20 and 40×40 grids on every release fraction reported.
+
+## Notes to the owner
+
+Points 2, 3, 5 and 6 are not supported by the logs and should not go to investors as written. Point 4 overstates the agreement. I wrote the narrower versions the logs do support. If the agreed wording came from a source I have not seen, send it and I will redo the section.
+
+- **Point 1 (within 0.01%).** Not in either log. The eight starts range from 4.9533 to 4.9551 against an analytic 4.9550, so the worst deviation is 0.034% on the 40×40 grid and 0.13% on the 20×20 grid. The log's own threshold is 0.2%.
+- **Point 2 (experimentally confirms energy conservation).** These are numerical runs, not experiments. "Zero rise violations" shows stored energy did not rise, which tests dissipation, not conservation. The conservation quantity in the log is K (magnetic helicity, the quantity Taylor relaxation conserves), with drift 0.00000000. It is reported only for the first two cases in each run. If you want a conservation claim, cite that and name the quantity.
+- **Point 3 (line-for-line reproduction).** Not in the sources. The two logs are different runs: 40×40 with tau 0.00004 for 200,000 steps, and 20×20 with tau 0.00016 for 50,000 steps. Their numbers differ, for example the generic-start release is 77.15% and 76.00%. If you have a re-run log with the same settings, send it and I will cite it.
+- **Point 4 (identical release fractions).** Gaps reach 1.15 points, and the grids also differ in time step, so this is not a pure grid test. Two grids is thin support for "grid-independent." The text says "within 1.2 points."
+- **Point 5 (any counter-rotating plasma).** The logs cover one model and one parameter set, all numerical. I limited the text to this model. The log's "toroid" is the analytic spheromak (overlap 1.00000 in the generic-start case). Investors may picture another shape, so define the term or use "spheromak (compact toroid)."
+- **Point 6 (coupler 96% efficient, C = 0.96).** The logs have no coupler, no efficiency term and no C. The 96.47% is the released fraction of stored energy in the relaxation, matching the 96.46% prediction. Calling it coupler efficiency would be a new claim with no source here. The log also does not define b, so investors will ask what b = 0.9 means. The 47.0 W jet power is a separate calculation with no link to the toroid in these logs, so I left it out.
+- **Scope words.** I kept "simulation" and "in this model" in the text. Without them, the results read as claims about real plasmas. They describe the work; they are not hedges.
+- **Eight starts.** The log lists eight starts but does not call them random, so the text says "eight starts."

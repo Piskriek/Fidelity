@@ -1,6 +1,60 @@
 # Fidelity
 The Fidelity Simulated Universe incl. Harness/Universe Translator
 
+## Install
+
+The `fidelity` plugin installs a copy of this repository and adds one skill, `sq-distortion-check`. That skill tells the agent to read `SQ_DISTORTION_CHECK_V9_SKILL.md` (the Skill) and apply it.
+
+Claude Code:
+
+```bash
+claude plugin marketplace add Piskriek/Fidelity
+claude plugin install fidelity@fidelity
+```
+
+Codex:
+
+```bash
+codex plugin marketplace add Piskriek/Fidelity
+codex plugin add fidelity@fidelity
+```
+
+The agent can load the skill when you plan, design, audit a document or check your own reply before sending it. In Claude Code you can also call it with `/fidelity:sq-distortion-check`. Each use has the agent read the Skill, a 47 KB file of about 6,600 words.
+
+In Claude Code, no version is pinned, so each commit counts as a new version, and this marketplace does not auto-update by default. To update there, run `claude plugin marketplace update fidelity`, then `claude plugin update fidelity@fidelity`. For Codex, see its plugin documentation.
+
+For other agents, have them read `AGENTS.md` in this repository.
+
+## Repository map
+
+| Path | What it is |
+|---|---|
+| `SQ_DISTORTION_CHECK_V9_SKILL.md` | Artifact 1, THE SKILL: reasoning harness v9.5 (Checks C1–C35; start with Document-Audit Mode when auditing prose) |
+| `FIDELITY_COMPLETE_BRS_V2.md` | Artifact 2, THE PLAN: clean-slate constitution, Parts 1–9, defect ledger and open-item register (§8.1) |
+| `ARGON_OPUS_MASTER_RESUME_V2.md` | Artifact 3, THE RESUME: checkpoint, shorthand memory, wake-up prompt |
+| `AGENTS.md`, `CLAUDE.md`, `.claude/skills/sq-distortion-check/` | Pointers that send any agent to THE SKILL: Document-Audit Mode for documents, Step 0.7 (the 3/6/9 check) on plans, designs and replies |
+| `.claude-plugin/`, `.codex-plugin/`, `.agents/plugins/`, `skills/sq-distortion-check/` | Plugin packaging for Claude Code and Codex (see Install): the marketplace and plugin manifests, and the pointer skill they install |
+| `scripts/triad_semantic_audit.mjs` | Semantic gate S1–S15: recounts, sums, identities, caps, cross-artifact constants |
+| `scripts/adversarial_red_team_v9_audit.mjs` | v9 operator fuzz + token gates (Argon) |
+| `scripts/mutation_test_audits.mjs` | Plants known defects and checks that the gates fail |
+| `scripts/fractal_gap_map.mjs` + `spine/` | Fractal Gap Map: the plan as a point cloud on the framework's own axes; lists missing links (`spine/GAP_MAP.md`) |
+| `scripts/count_identity_audit.mjs` | Advisory: flags stated numbers that disagree (arithmetic chains, derived numbers, table totals, partitions, restated counts, array sizes, percentages); mark checked lines `<!-- counts:ok -->` |
+| `scripts/formula_spine.mjs` | 47 key formulas read from the Plan and tested by behaviour (signs, round-trips, units, boundaries) |
+| `scripts/mutant_generator.mjs` | Mutation testing of the default gates (semantic, gap map, formula spine): sampled by default, every Plan site with `--all-sites`; rates by exposure; lists the blind spots |
+| `scripts/method_mirror.mjs` | Which defect classes have no mechanical detector |
+| `scripts/wave0_reference.mjs` + `scripts/wave0_reference_test.mjs` | Wave 0 reference implementation (Plan §8.6, `B178`; partial, see the register): discrete-gradient step with energy ledger and declared ports, the gateway, `me` pinning, the `ms` soul line and its two scopes; tests are the physics brief's invariants T1–T6 plus the memory and soul-line rules. R39 adds a Bridge section that composes the gateway across levels (an optional enclosing-level source on the draw, helicity ledgers, a tower check, a phased port, harvest by merge and the D2 options), every option off unless passed, with a test that the default path matches a frozen copy of the R38 module bit for bit on a fixed grid of inputs |
+| `skills/reduce/` | Reduce → Check → Blind Regrow → Diff skill |
+| `skills/sq-audit-card/` | Compact document-audit card for Sonnet/Haiku subagents |
+| `bench/2026-10-31/` | Skill benchmark: inputs, answer keys, every agent output, scoring tools, `REPORT.md` |
+
+The GitHub `.md` files are canonical. Google Drive/Docs copies drop LaTeX `_` subscripts, frontmatter and code fences (Check C30).
+
+```bash
+node scripts/triad_semantic_audit.mjs && node scripts/formula_spine.mjs && node scripts/count_identity_audit.mjs && node scripts/fractal_gap_map.mjs --strict && node scripts/adversarial_red_team_v9_audit.mjs && node scripts/wave0_reference_test.mjs && node scripts/mutation_test_audits.mjs
+```
+
+---
+
 MANDATORY ALWAYS-ON REASONING HARNESS (v7 — Apex Predictive Holon & Zero-Tool Edition). Always load and apply this 4D University SQ Distortion Check, Convergent Unasked-Question Probe, Predictive Loss & Mimetic Polarity Engine, Fractal Completeness Detector (Inside/Around), Universal Tool & Research Dose Governor, Zero-Tool Mental Simulation Fallback, and 15-Point Recursive Reiteration Bug-Crawler across all 5 AI reasoning phases.
 
 # SQ Distortion Check, Predictive Holon & Recursive Reiteration Harness (v7)

@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-31",
+  "note": "n = 1 run per arm. Tokens and durations are the subagent totals reported by the harness. Planted recall verified by hand from keyword candidates (tools/score.mjs --show).",
+  "setA": { "plan": "inputs/PLAN_A_seeded.md", "plants": 9, "plantsDetectableWithoutSkillText": 8, "skillOnlyPlant": "P9" },
+  "setB": { "plan": "inputs/PLAN_B_holdout.md", "plants": 9 },
+  "arms": [
+    { "arm": "sonnet_noskill", "model": "sonnet", "method": "none",     "set": "A", "findings": 46, "plantsCaught": "8/8 (+P9 n/a)", "tokens": 135719, "seconds": 359, "passNew": [36, 8, 2] },
+    { "arm": "sonnet_skill",   "model": "sonnet", "method": "SQ v9",    "set": "A", "findings": 52, "plantsCaught": "9/9",           "tokens": 180333, "seconds": 583, "passNew": [28, 16, 8] },
+    { "arm": "sonnet_reduce",  "model": "sonnet", "method": "Reduce v1","set": "A", "findings": 45, "plantsCaught": "8/8 (+P9 n/a)", "tokens": 157687, "seconds": 511, "passNew": [26, 17, 2] },
+    { "arm": "haiku_noskill",  "model": "haiku",  "method": "none",     "set": "A", "findings": 44, "plantsCaught": "8/8 (+P9 n/a)", "tokens": 193655, "seconds": 477, "passNew": [36, 8, 0] },
+    { "arm": "haiku_skill",    "model": "haiku",  "method": "SQ v9",    "set": "A", "findings": 50, "plantsCaught": "9/9",           "tokens": 233526, "seconds": 587, "passNew": [31, 10, 9] },
+    { "arm": "haiku_reduce",   "model": "haiku",  "method": "Reduce v1","set": "A", "findings": 36, "plantsCaught": "7/8 (missed P4 KL sign; +P9 n/a)", "tokens": 202107, "seconds": 502, "passNew": [32, 4, 0] },
+    { "arm": "B_haiku_noskill","model": "haiku",  "method": "none",     "set": "B", "findings": 45, "plantsCaught": "8/9 (missed H2)", "tokens": 186421, "seconds": 431, "passNew": [31, 10, 4] },
+    { "arm": "B_haiku_skill",  "model": "haiku",  "method": "SQ v9",    "set": "B", "findings": 38, "plantsCaught": "8/9 (missed H2)", "tokens": 209033, "seconds": 473, "passNew": [35, 3, 0] },
+    { "arm": "B_haiku_reduce", "model": "haiku",  "method": "Reduce v1","set": "B", "findings": 47, "plantsCaught": "9/9",             "tokens": 200993, "seconds": 495, "passNew": [19, 19, 9], "note": "H2 caught in sweep 1 (Step 2 numbers/boundaries), not by regrowth" }
+  ],
+  "argonModeledPrediction": { "source": "v2EvaluateCrossTierModelDistillation (hardcoded)", "haikuRaw": 0.34, "haikuSkill": 0.915, "sonnetRaw": 0.56, "sonnetSkill": 0.965, "tokenReduction": "95-97%", "passes": "11 -> 2 (Haiku), 8 -> 2 (Sonnet)" },
+  "auditGates": { "v9SuiteCaughtMutants": "1/10", "semanticAuditCaughtMutants": "10/10", "script": "scripts/mutation_test_audits.mjs" }
+}

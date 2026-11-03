@@ -1,0 +1,540 @@
+[
+ {
+  "viewpoint": "Game designer: the owner wants familiar mechanics (the proxy idea: learn from games people know), so this lens uses a HUD, fog of war, hot/cold feedback, and juice at only two moments. It must run light in a browser: the page draws one tick at a time from a series computed once from the sample file, with no simulation in the page.",
+  "name": "Hot-Cold Fog",
+  "whatTheViewerSees": "Four valley cards side by side under a season banner (season, and ticks since the turn). Each card has a top band that is the being's own: energy and health pips, the fruit it sees, the fruit it expected, and a red flash only when its surprise is 1.0 or more. The middle band is its belief: three rows, EAT, PASS and REST, each showing its most likely answer and how sure it is, with the chosen row outlined. The bottom strip is the world's, labelled as the world's: exact energy and health, the fruit's true class, intensity, engine numbers, and a poison tag on faints. It is shown ahead of the being's own learning, which is the gap the owner wants seen. Across each card runs the gap meter: how sure the EAT row is of the answer the world's class gives, with a line at 50 percent. It gives one short burst the first time it crosses after the turn. The viewer watches the gap close. There is no score, no ranking across valleys, and no pain display.",
+  "mapping": [
+   {
+    "visual": "energy pips (5) in the top band",
+    "field": "sees.eBand"
+   },
+   {
+    "visual": "health pips (5) in the top band",
+    "field": "sees.hBand"
+   },
+   {
+    "visual": "fruit icon a, b, c or empty in the top band",
+    "field": "sees.item"
+   },
+   {
+    "visual": "'seen as expected: X%' line",
+    "field": "pSeen"
+   },
+   {
+    "visual": "ghost fruit icon with 'it expected: X%'",
+    "field": "expected.item, pExpected"
+   },
+   {
+    "visual": "red flash on the top band, only when surprise is 1.0 or more (pre-set level)",
+    "field": "sting[0] (surprise)"
+   },
+   {
+    "visual": "'down' banner over the card",
+    "field": "sees.down"
+   },
+   {
+    "visual": "EAT, PASS and REST rows, each showing its most likely answer label and a bar of that probability",
+    "field": "guess[k].p with header.answers (argmax label and its probability)"
+   },
+   {
+    "visual": "'weighs N' number on each row, labelled 'what its choices weigh, not felt'",
+    "field": "guess[k].value (from header.wants)"
+   },
+   {
+    "visual": "outline on the chosen row",
+    "field": "act"
+   },
+   {
+    "visual": "dice icon on a row",
+    "field": "explore"
+   },
+   {
+    "visual": "answer label, with 'it had been X% sure' beside it",
+    "field": "answer, pAnswer"
+   },
+   {
+    "visual": "season banner and 'N ticks since the turn'",
+    "field": "season, sinceTurn"
+   },
+   {
+    "visual": "energy and health bars (0 to 15) in the world strip",
+    "field": "world.E, world.H"
+   },
+   {
+    "visual": "fruit class label NOURISH, PLAIN or TOXIC in the world strip",
+    "field": "world.kindClass"
+   },
+   {
+    "visual": "intensity dial (2, then 1)",
+    "field": "world.ellAfter"
+   },
+   {
+    "visual": "loop-break count",
+    "field": "world.loopBreaksAfter"
+   },
+   {
+    "visual": "engine numbers gain, pain, V, labelled 'engine, world's, not felt'",
+    "field": "world.gain, world.pain, world.V"
+   },
+   {
+    "visual": "'world: poison' tag on faint ticks",
+    "field": "world.cause"
+   },
+   {
+    "visual": "gap meter bar: how sure the EAT row is of the answer the world's class gives (hidden when no fruit)",
+    "field": "derived from guess[0].p at FED, PLAIN or TOXIC matching world.kindClass (NOURISH to FED, PLAIN to PLAIN, TOXIC to TOXIC)"
+   },
+   {
+    "visual": "50 percent line on the gap meter",
+    "field": "constant 0.5, pre-set; the owner's value choice, not a field"
+   },
+   {
+    "visual": "short burst on the gap meter at the first crossing after the turn, once per fruit per turn",
+    "field": "derived from the gap meter and sinceTurn"
+   },
+   {
+    "visual": "footer: one life, model seed and world",
+    "field": "header.seed, header.worldSeed"
+   }
+  ],
+  "boldMove": "The gap meter. It shows the being's belief about the fruit it faces as a hot/cold distance to the answer the world's class will give, drawn on the viewer's own HUD beside the world's truth. Players know hot/cold and fog of war, but not an NPC's wrong belief shown as a live distance bar. It rests on the crossing level (the 50 percent line), which is the fourth point and the owner's to set.",
+  "guessLoop": "Before each answer is shown, the viewer writes down the being's next choice (EAT, PASS or REST), reading only the top and middle bands with the world strip covered. A hit counts only on an exact match. Pass rule, set before any run: the hit rate must beat always guessing the most common choice in the sample (that count has not been made). Then the world strip is uncovered, and the viewer watches the gap meter move toward the 50 percent line. Not run: no observer is available in this subagent round.",
+  "compassionWithoutClaim": "The viewer feels for the being by watching its belief lag behind the world. On valley 4's fruit a, the gap meter stayed between 1 and 7 percent from tick 556 to 574, and reached 50 percent only at 596, about 40 ticks after the turn. The red flash marks prediction error (its sting), and the burst marks its belief reaching the world's answer. Neither shows pain, mood or a score, and the burst fires on the being's crossing, never on the viewer's guess.",
+  "check369": "Node: the thing is the being's belief about the fruit it faces (guess). Its opposite is the world's class for that fruit (kindClass). The test is the answer that comes, read with pAnswer and sting. The container is the valley card under the season banner. Bridge: the handshake is act to answer (the being asks by eating, the world answers). The way back is sting reshaping the next guess, checked in the sample: fruit a in valley 4 went from 1.3 percent at tick 556 to 6.6 percent at 574 and 50 percent at 596, so the next message changes. Whole: three nodes (the being, the world, the viewer) and six directed links. Four are filled: being to world, world to being, world to viewer, and being to viewer. Two are empty by design: viewer to world and viewer to being, because the lens is watch-only. That is a named gap for the owner to confirm, not a failure. Fourth point: the crossing rule (0.5 against the argmax rule) is invariant as checked, since both gave the same tick on all five flipped fruits in the sample (596, 597, 618, 707, and one that never closed under either). The level itself is choice-sensitive: at 0.1 the crossings fall between 570 and 637, and at 0.9 three of the five never cross in the window. The level decides when the burst fires, so it is a value choice for the owner. Plain check: the caveat (one life, one seed) is carried in the footer.",
+  "risks": [
+   "Value choice for the owner: the 50 percent level decides when the celebration fires, so it is what the move rewards. It is sensitive to level (see check369). Set it before any run.",
+   "Watch-only: the viewer cannot act back, so two cells are empty (viewer to world, viewer to being). The owner must confirm this is deliberate. Opening a control would make it a game and change the simulation, which the owner has not asked for.",
+   "Juice may be read as feeling. The flash is labelled as prediction error and the burst as belief crossing, with no pain animation. The 1.0 surprise threshold is clean on this sample (no valley-tick before the turn exceeds 0.36; 101 valley-ticks after it do), but that is one sample.",
+   "Cut or unmapped: 'starving' (true on 5 sample ticks, but absent from LENS_FACTS, so it stays cut until that file lists it), sting relief (sting[1] and sting[2]), expected.eBand and expected.hBand, and the 13 non-top answers in each guess spread.",
+   "Evidence limits: one life, one seed (model seed 1, world 31000). Only five fruits flipped in the window, and one never closed. Beings relearning in general is untested. The footer carries this caveat.",
+   "Not run: the observer test (no observer in this round) and the mirror step (no stand-in reader in this round). The guess pass rule still needs its baseline counted.",
+   "Rung cadence not checked: the facts file does not say which rung updates a guess. If a slower rung controls it, the card could jump between ticks. This needs checking before build.",
+   "Dropped candidates: an intent telegraph (the guess is belief, not plan, so the label would lie, failing 'a lens never lies'); damage numbers on the being (would show felt pain, failing 'pain is chosen'); a follow-the-hero camera (no field maps to it, failing the mapping rule)."
+  ]
+ },
+ {
+  "viewpoint": "Cognitive scientist: the view must show prediction error, belief update and uncertainty faithfully, must not imply more than the data, and must show each choice's counterfactual bet (what the being expected from each choice).",
+  "name": "The Wager Ledger",
+  "whatTheViewerSees": "One board per valley, four side by side, with a tick scrubber from 480 to 719. Top layer, labelled \"it senses and bets\": its sensed energy and health bands, the fruit it sees (faded by how expected it was), a ghost of the fruit it expected, and three bet rows (EAT, PASS, REST). Each row is a stacked bar of the 14 answers, with the row's value at the end. The row it took is outlined, a dice badge marks explore ticks, a white tick marks the answer that came with the probability it had on that answer, and a signed sting bar sits underneath. A trail of its FED and TOXIC bets on EAT is drawn per fruit and breaks whenever the sensed fruit changes. Below a rule, labelled \"the world; the being does not sense this\": exact E and H, the fruit's kind, world gain, pain and V, the faint cause, intensity and loop-break marks, and a season-turn marker at tick 553 that appears only in this layer. A faint greys the bet rows and reads \"no bets while down\". A footer states the caveat: one life, one seed.",
+  "mapping": [
+   {
+    "visual": "Bet row for EAT, PASS, REST as a stacked bar of 14 segments",
+    "field": "guess[choice].p, one value per answer"
+   },
+   {
+    "visual": "Segment order and labels",
+    "field": "answers header (14 names)"
+   },
+   {
+    "visual": "Number at the end of each bet row",
+    "field": "guess[choice].value (checked on the file as sum of p times wants)"
+   },
+   {
+    "visual": "Weights legend, captioned 'what its choices weigh, not felt'",
+    "field": "wants header (14 weights)"
+   },
+   {
+    "visual": "Outline on the bet row it took",
+    "field": "act"
+   },
+   {
+    "visual": "Dice badge on a tick",
+    "field": "explore"
+   },
+   {
+    "visual": "White answer tick on a bet row, at the answer's place in answers",
+    "field": "answer"
+   },
+   {
+    "visual": "Label beside the answer tick, captioned 'it had X on this'",
+    "field": "pAnswer"
+   },
+   {
+    "visual": "Signed sting bar under the rows, captioned 'sting, recorder units, signed'",
+    "field": "sting[0]"
+   },
+   {
+    "visual": "Energy and health bars, 0 to 4",
+    "field": "sees.eBand, sees.hBand"
+   },
+   {
+    "visual": "Sensed fruit glyph and its colour",
+    "field": "sees.item (0 none, 1 a, 2 b, 3 c)"
+   },
+   {
+    "visual": "Opacity of the sensed glyph, captioned 'how expected what it saw'",
+    "field": "pSeen"
+   },
+   {
+    "visual": "Ghost fruit glyph with its confidence label",
+    "field": "expected.item and pExpected"
+   },
+   {
+    "visual": "Grey panel reading 'no bets while down'",
+    "field": "sees.down"
+   },
+   {
+    "visual": "Belief trail for FED and TOXIC on the EAT row, broken whenever sees.item changes",
+    "field": "guess[EAT].p at answers index 8 (FED) and 10 (TOXIC); sees.item for the break"
+   },
+   {
+    "visual": "Light on the trail marking a crossing",
+    "field": "guess[EAT].p for the answer the trail follows, first passing 0.5 after sinceTurn 0 (threshold written before the run)"
+   },
+   {
+    "visual": "World panel: exact E and H with bars 0 to 15",
+    "field": "world.E, world.H"
+   },
+   {
+    "visual": "Fruit kind chip in the world layer",
+    "field": "world.kindClass"
+   },
+   {
+    "visual": "World harm number, captioned 'world harm, engine pain'",
+    "field": "world.pain"
+   },
+   {
+    "visual": "World gain and V numbers",
+    "field": "world.gain, world.V"
+   },
+   {
+    "visual": "Faint cause chip",
+    "field": "world.cause"
+   },
+   {
+    "visual": "Intensity chip, captioned 'intensity, not pain'; loop-break marks",
+    "field": "world.ellAfter, world.loopBreaksAfter"
+   },
+   {
+    "visual": "Season-turn marker, world layer only, at tick 553",
+    "field": "season and sinceTurn on the tick line"
+   },
+   {
+    "visual": "Viewer's wager, shown before the bet rows open",
+    "field": "the viewer's own input, scored against answer on the pre-registered set (not a being field)"
+   }
+  ],
+  "boldMove": "Before the bet rows and the answer open, the viewer writes a wager on what eating the fruit they sense would return (FED, PLAIN, TOXIC or COLLAPSE). The viewer sees only the sensed layer and the answers the being has already had, never the world layer. Pass rule, fixed before any run: over the first 30 scored post-turn eat ticks in the sample (eat, not explore, not down, tick 553 or later), the viewer's hits must exceed the hits of always wagering FED on those same ticks. The being's own top-guess hits on the same ticks are shown beside it. The rule tests the view and the viewer, and never grades the being. Not run: there is no observer here.",
+  "guessLoop": "Sensed state, then the viewer's wager, then the bet rows and the answer, then the sting, then the trail moves, then the next sensed state. The wager is always written before the bet rows open, so the viewer can be wrong in the way the being was. Celebration rule, written before the run: the first tick after the season turn at which the EAT bet on the answer the trail follows (FED for a fruit that fed, TOXIC for one that poisoned) passes 0.5 for that fruit gets a light on the trail. LENS_FACTS puts valley 4's fruit-a trail past 50% at about its 53% step; that was not re-checked tick by tick. The light marks a crossing and never grades the being.",
+  "compassionWithoutClaim": "The world layer shows the viewer that the season turned; the being can find out only through the sting. At tick 558 fruit b poisons valley 3. At tick 559 its FED bet on that same fruit is 0.96, and its sensed health has fallen from 3 bands to 2. There is no face and no word of feeling, and the harm appears only as the world's engine numbers. The pull comes from the gap between what the viewer knows and what the being bet.",
+  "check369": "Node (three points, all found in the sample, none forced): thing = the being's bet spread per choice (guess p over 14 answers); opposite = the answer that came; test = pAnswer and the sting between them. Around: the tick and the world layer. Inside: three bet rows of 14 answers. Bridge: the chosen row carries the bet into the world, and the answer carries back as the sting. Bridge (handshake, way back, choosing not judging): handshake = act to answer; way back = sting; the viewer's way back is the wager written before reveal; the view describes and does not rank. Whole (closes): belief, act, answer, sting, belief update. Checked on the file: every non-empty bet row sums to 1 within 0.001, and value equals sum of p times wants across all 960 character-ticks (largest gap 0.0004). Choice (fourth point): show the full 14-answer spread, not the top guess. This is choice-sensitive, not invariant: a top guess hides the spread, and on the sample the post-turn top guess hits 63.9% against 73.1% for always-FED. The owner should confirm this choice. Value choices for the owner: whether a running viewer hit rate is shown, and the 50% celebration threshold. Plain check: a missing caveat (one life, one seed, 240 of 2048 ticks) is carried by the footer; a missing limit (explore, 10% of ticks, random act) is marked by the dice; a missing side (what the being cannot sense) is the lower layer. Dropped, with the test each failed: a face or mood glyph (fails the pain ruling: felt pain is never shown); a bits scale on the sting (fails the sign and formula checks); a learning arc (fails the post-turn hit-rate check); a trail joining different fruits (fails the one-belief-per-thing rule); a season marker in the being's layer (fails the two-layer rule); off and starving (fail the naming rule, since LENS_FACTS does not name them).",
+  "risks": [
+   "The sting is signed in the sample: 689 of 960 character-ticks are negative (mean -0.49) and 271 are positive (mean 1.33, max 10.78). It is not -ln of pAnswer: tick 559 gives 3.59 against sting 2.68, and tick 561 gives 11.51 against 10.19. Label it 'sting, recorder units, signed' until the recorder's formula is read.",
+   "The post-turn top guess does worse than always-FED on the same ticks: 250 of 391 (63.9%) against 286 of 391 (73.1%). Pre-turn it hit 194 of 194. The view must not draw a learning arc the sample does not show.",
+   "After a TOXIC answer at tick 558, the FED bet on fruit b went from 0.19 (tick 558) to 0.96 (tick 559). The trail must show that raw. The facts file's sequence (0, 2, 3, 14, 41%) was not checked against these ticks.",
+   "Explore is 96 of 960 character-ticks, with a random act. Outside explore and faint ticks, act equals the argmax of value in every case. The 29 non-explore mismatches are all faint ticks, where every value is zero and the act is forced to REST/ERR_DOWN. Faint bet rows must be greyed, not drawn as zero bets.",
+   "off (inside each guess) and starving (per character) appear in the file but are not named in LENS_FACTS. Cut them until they are named.",
+   "The per-fruit break rule assumes the bet depends only on the sensed fruit. If the recorder's guess uses more state, the trail misleads. Check the recorder's definition before shipping.",
+   "One life, one seed, 240 ticks of a 2048-tick file. Relearning across beings is untested.",
+   "Observer test not run: no observer is available here. The pass rule is written but not executed.",
+   "Value choices for the owner: whether a viewer's running hit rate is shown (it scores the viewer, not the being), and whether the celebration threshold is 50%."
+  ]
+ },
+ {
+  "viewpoint": "A lay viewer who has never heard of the project and follows nature documentaries and sports broadcasts. Needs ten seconds to learn who the creature is, what it wants, and what just happened to it.",
+  "name": "Play-by-Play",
+  "whatTheViewerSees": "One creature stands in its valley, labelled 'creature, valley N'. Three fruit, a, b and c, sit in a row, and the one it is looking at is lit. A banner across the top says whether the seasons have turned, marked as the world's. Three bars show the creature's own expected points for eating, passing or resting, with the eat bar outlined as its pick. Before each meal the viewer calls one word (fed, nothing, poisoned or fainted), and the call locks. The reveal then shows the result in plain words, the creature's own chance ('it was 99% sure'), a burst sized by how surprised it was, and the world's truth for that fruit this season, which the creature cannot see. A trail under the scene shows how close its chance for the true answer has come, and a small burst marks the first upward crossing of half.",
+  "mapping": [
+   {
+    "visual": "Banner: seasons turned or as before, with a 'N ticks since the turn' caption, labelled as the world's",
+    "field": "season, sinceTurn"
+   },
+   {
+    "visual": "Creature lying flat with small stars",
+    "field": "sees.down (true while fainted)"
+   },
+   {
+    "visual": "Health bar, five segments, labelled 'its sense of its health'",
+    "field": "sees.hBand (0 to 4)"
+   },
+   {
+    "visual": "Energy bar, five segments, labelled 'its sense of its energy'",
+    "field": "sees.eBand (0 to 4)"
+   },
+   {
+    "visual": "Three fruit in a row, the one in view lit",
+    "field": "sees.item (0 none, 1 a, 2 b, 3 c)"
+   },
+   {
+    "visual": "Each fruit's stacked bar: green food, red poison, grey other, with 'last looked at tick N'",
+    "field": "guess[EAT].p: green = p[FED], red = p[TOXIC] + p[COLLAPSE], grey = remainder; held per fruit from the last tick that fruit was in view"
+   },
+   {
+    "visual": "Three choice bars labelled 'expected points by its own guess'",
+    "field": "guess[EAT|PASS|REST].value"
+   },
+   {
+    "visual": "Outline on the bar it picked",
+    "field": "act"
+   },
+   {
+    "visual": "'Wild card' tag on a choice bar",
+    "field": "explore (true on the random 1-in-10 pick)"
+   },
+   {
+    "visual": "Caption 'it was 99% sure: fed'",
+    "field": "pAnswer and answer"
+   },
+   {
+    "visual": "Result word: fed, nothing, poisoned, fainted; other answers shown under their engine names, with a legend listing all 14",
+    "field": "answer"
+   },
+   {
+    "visual": "Upset burst, size grows with surprise; legend 'upset = surprise, normally near 0'",
+    "field": "sting[0]"
+   },
+   {
+    "visual": "Fruit truth tag, shown at reveal only: food (green), nothing (grey), poison (red), labelled 'the world's class this season'",
+    "field": "world.kindClass (NOURISH, PLAIN, TOXIC)"
+   },
+   {
+    "visual": "Health number at reveal, for example '15 to 11', labelled 'the world's count, not its sense'",
+    "field": "world.H"
+   },
+   {
+    "visual": "'Poisoned by the world' tag on a faint",
+    "field": "world.cause (toxin)"
+   },
+   {
+    "visual": "Points key under the choice bars: fed +3, nothing +1, poisoned -4, fainted -8, labelled 'what its choices weigh, not feelings', at full intensity",
+    "field": "wants (header table, intensity 2)"
+   },
+   {
+    "visual": "Trail under the scene: one line per fruit showing its chance for the world's class of that fruit, 50% line marked, gaps labelled 'not looked at'",
+    "field": "guess[EAT] per fruit; class chosen by world.kindClass (food: p[FED]; nothing: p[PLAIN]; poison: p[TOXIC] + p[COLLAPSE])"
+   },
+   {
+    "visual": "Small burst on the first upward crossing of 50% on that trail after the turn, labelled 'its chance for the true answer passed half'",
+    "field": "the trail above, with the crossing rule written before the run; marks a crossing and grades no outcome"
+   },
+   {
+    "visual": "Clock 'tick N'",
+    "field": "t"
+   }
+  ],
+  "boldMove": "Show the creature's own chance as its own number, drawn the way a sports broadcast draws a team's chance, and reveal the world's truth only after the result. The sports viewer already reads 'how likely'. What the viewer does not have is a number for an animal's expectation, labelled as its belief, next to the world's truth. That is the one move; everything else stays quiet. Fourth point (choice-sensitive): the reveal order, which is call, then its chance, then the result, then the world's truth. Showing the world's truth first turns the upset into hindsight. The owner confirms this order.",
+  "guessLoop": "Before each reveal on a meal with a fruit in view, the viewer calls one of four words (fed, nothing, poisoned, fainted), and the call locks before anything else shows. A hit is a call equal to the result word. Only EAT ticks with a fruit in view and one of the four results are scored; PASS and REST ticks are not scored. Pass rule, written before any run: over ticks 553 to 612 there are 11 change-point calls (calls where repeat-last fails: valley 1 has 2, valley 2 has 1, valley 3 has 7, valley 4 has 1). The viewer passes if it hits at least 7 of 11. A uniform four-way guess would land there about 0.8% of the time. The test has little room, because repeat-last already scores 95 to 98% in valleys 1, 2 and 4 (37/39, 34/35, 41/42); only valley 3 has room (18/25). Watch: at 10 asked ticks the viewer says whether the trail is nearer to or farther from the world's truth, and passes at 8 or more correct. In valley 3 the fruit b trail climbs from about 0% (tick 554) to 41% (580) and 68% (597). Celebrate: the burst fires on the first upward crossing of 50% after the turn, which in the sample is valley 2 fruit a at 570, valley 3 fruit a at 581, valley 4 fruit a at 596, valley 3 fruit b at 597 and valley 2 fruit b at 618. It never fires on an outcome. Not run: no real viewer took part, so this is the design and its pass rules only.",
+  "compassionWithoutClaim": "The page shows the creature's own health band falling and its sprite lying flat when it faints (sees.down). The poison is tagged as the world's (world.cause). The words are 'fainted' and 'poisoned by the world', never 'hurt' or 'afraid'. The burst is labelled surprise, not pain, and the points key says 'not feelings'. Down stretches (68 ticks in the sample) compress to one plain 'down' card that skips ahead, so the page does not dwell on a still sprite. The viewer's care comes from watching the health band fall and the chance climb, not from claims the page makes about the creature's inner life.",
+  "check369": "Node (the thing, its opposite, the test): the thing is the creature's chance for the true answer about a fruit; the opposite is the world's class for that fruit this season, which it cannot see. Test: does the chance move toward the truth after results arrive? The data says yes: valley 4 fruit a goes from 1.3% (tick 556) to 53% (tick 596), and valley 3 fruit b goes from about 0% (tick 554) to 68% (tick 597). PASS. Bridge (the viewer acts back): the viewer calls before each reveal and can jump to the season turn at tick 553 with a control. PASS. Whole (the parts close into one view): one card per tick (banner, creature, fruit row, call, reveal, trail) carries one story: call, chance, result, upset, truth. PASS. Choice (fourth point): the reveal order, choice-sensitive, which the owner confirms. Plain check (missing sides): the other three valleys (one creature per view, with a switch control), exact energy, the loop-break (its intensity change), and relief (sting[1] and sting[2]) are cut. The 14 answers collapse to four words plus engine names, with a legend. Dropped candidates: narrator captions failed the node test, since they assert feelings the data does not carry. Four creatures on one map failed the ten-second test, because the viewer cannot tell who is who. A health and energy HUD with no change marks failed the whole test, because it shows state and no story. The words 'bet' and 'win or lose' were dropped on the we-don't-judge rule, since the creature has no stake and win or lose ranks it. Mirror (item 5) not run: no separate reader was spawned, and the lay playback here is my own stand-in.",
+  "risks": [
+   "Per-fruit keying: the chance is computed only for the fruit in view. Valley 4's fruit-fed chance reads 99.5% at tick 572 (fruit c), 0% at tick 576 (no fruit) and 10% at tick 580 (fruit a). A per-tick trail with no key would look like the creature forgetting. The trail must be per fruit, with gaps labelled 'not looked at'. LENS_FACTS does not state this; the owner should add it to the rules.",
+   "Thin test room: repeat-last scores 95 to 98% in valleys 1, 2 and 4 over ticks 553 to 612, so the guess test only has room in valley 3 (72%). The 11 change-point calls are a small sample, so a pass is weak evidence.",
+   "'Upset' is a sports word and implies a favourite lost. The legend must say it means surprise (sting[0]), normally near 0. The naming is a value choice for the owner.",
+   "Points key: FED +3, PLAIN +1, TOXIC -4, COLLAPSE -8, from the header table at intensity 2. It may read as grades on the creature. It is labelled 'what its choices weigh, not feelings', and it is exact only before any loop-break, because intensity drops to 1 after one.",
+   "Celebration on crossing is the owner's value choice. It rewards 'its chance matched the season', not survival. The owner should confirm this before the burst ships.",
+   "One life, one seed: 'it learns' describes what this life did, not a claim about beings in general.",
+   "The reveal's crossing burst is derived from world.kindClass, which picks which chance is plotted. That is a god-view number, and the legend must say so, or it misleads.",
+   "No narration in this version. A narrator would have to say what the creature thinks or feels, which breaks the lens-never-lies and pain rules. The ten-second story therefore rests on the banner, the call and the reveal."
+  ]
+ },
+ {
+  "viewpoint": "The owner (not a programmer): wants compassion from a good translation, up-is-good indicators, the grenade in flight (vectors converging, then a celebration), fractals and 3/6/9, and beings seen as entities under construction, not judged.",
+  "name": "Grenade Flight",
+  "whatTheViewerSees": "Four identical panels, one per valley, side by side (stacked on a phone). Each panel has three lanes, one per fruit (a, b, c). In a lane, each dot is the being's guess for the world's answer for that fruit, drawn only on ticks when the being sees that fruit, so no line crosses ticks it did not see. The top line is the world's answer for that fruit (its class this season). A dashed vector runs from each dot up to the top line and shortens as the guess converges. A vertical line marks the season turn at tick 553. Beside each lane run the being's own energy and health bands (0 to 4), its fruit sight and its act. A grey band marks a faint. Each dot has a surprise ring from sting[0]: it grows on a spike and dips inward when the answer was more expected than usual. Each lane fires one burst, once per season, at its first dot at or above 0.5 after the turn (a value choice, the owner's ruling). Below the panels, a world strip shows exact E and H, the loop-break step (intensity 2 to 1, only downward) and any faint cause. The current tick's world layer stays hidden until the viewer's guess is in. No lane ends in a grade: the last dot reads \"in flight at tick N\". Sample: one life, seed 1, ticks 480 to 719.",
+  "mapping": [
+   {
+    "visual": "Four identical panels, one per valley (the same panel repeated)",
+    "field": "chars[0] to chars[3] (valley index)"
+   },
+   {
+    "visual": "Three lanes per panel, one per fruit (a, b, c)",
+    "field": "sees.item (1 a, 2 b, 3 c) and world.item"
+   },
+   {
+    "visual": "Dot height on a lane, from 0 at the bottom to 1 at the top line",
+    "field": "guess[EAT].p[target]; target index 8 (FED) when world.kindClass is NOURISH, 9 (PLAIN) when PLAIN, 10 (TOXIC) when TOXIC"
+   },
+   {
+    "visual": "Top line and its label (the world's answer for that fruit)",
+    "field": "world.kindClass, which sets the lane target"
+   },
+   {
+    "visual": "Dashed vector from dot to top line, shortening as the guess converges",
+    "field": "1 minus guess[EAT].p[target]"
+   },
+   {
+    "visual": "Lane target re-labelled at the season turn, with a 're-aimed by the world' tag",
+    "field": "world.kindClass changing across season (0 to 1) and sinceTurn"
+   },
+   {
+    "visual": "Time axis with a line at the turn",
+    "field": "sinceTurn (x axis) and season (0 before, 1 after)"
+   },
+   {
+    "visual": "Dots only, on ticks when the being sees that fruit (no line across unseen ticks)",
+    "field": "sees.item"
+   },
+   {
+    "visual": "Burst, once per lane, at the first dot at or above 0.5 after the turn",
+    "field": "guess[EAT].p[target] crossing 0.5 with sinceTurn at or above 0 (value choice, owner's ruling)"
+   },
+   {
+    "visual": "Surprise ring on each dot: grows on a spike, dips inward when more expected than usual, clamped at 4 with a clipped mark",
+    "field": "sting[0] (signed; the clamp is a display choice)"
+   },
+   {
+    "visual": "Energy band bars (0 to 4) beside each lane",
+    "field": "sees.eBand"
+   },
+   {
+    "visual": "Health band bars (0 to 4) beside each lane",
+    "field": "sees.hBand"
+   },
+   {
+    "visual": "Act label on each tick (EAT, PASS, REST)",
+    "field": "act"
+   },
+   {
+    "visual": "Grey band across the panel while fainted",
+    "field": "sees.down"
+   },
+   {
+    "visual": "Explore die on random ticks",
+    "field": "explore"
+   },
+   {
+    "visual": "Answer label with its certainty, shown at reveal only",
+    "field": "answer and pAnswer"
+   },
+   {
+    "visual": "Small bar labelled 'what its choices weigh' (up = weighs more toward gain; not felt)",
+    "field": "guess[EAT].value (weights from the header wants table)"
+   },
+   {
+    "visual": "Guess spread bar after reveal, grouped FED, PLAIN, TOXIC, other",
+    "field": "guess[EAT].p at indexes 8, 9 and 10, and all other indexes"
+   },
+   {
+    "visual": "World strip: exact E and H numbers, after the viewer's guess",
+    "field": "world.E and world.H"
+   },
+   {
+    "visual": "Loop-break step (intensity 2 to 1, steps down only)",
+    "field": "world.ellAfter and world.loopBreaksAfter"
+   },
+   {
+    "visual": "Faint mark with its cause label",
+    "field": "world.cause, with answer COLLAPSE"
+   },
+   {
+    "visual": "Viewer's guess buttons (FED, PLAIN, TOXIC, other) before reveal",
+    "field": "not a being field: viewer input for the guess test only"
+   },
+   {
+    "visual": "'In flight at tick N' label on each lane's last dot",
+    "field": "t (last tick shown)"
+   }
+  ],
+  "boldMove": "Before each reveal, the viewer guesses the being's next EAT answer (FED, PLAIN, TOXIC or other) from the being's own layer only: its bands, its sight, its last surprise ring and its act. Then the world strip and the grenade appear. No score is shown on screen; the designer counts hits privately. Fourth point (choice): the reveal order is choice-sensitive. If the world strip shows first, the viewer's surprise is removed, which is the point of the move.",
+  "guessLoop": "Each EAT tick after the turn, before the reveal, the viewer writes FED, PLAIN, TOXIC or other from the being's layer only. Pass rule, written before the run: over at least 30 such guesses, hits must beat always guessing the window's most common answer (FED overall in the sample: 438 of 960 valley-ticks; the window's own count is to be computed before the run). Not run: no observer was available in this round. Watch: applies only to lanes that climb. Valley 4, fruit a: the dashed vector shrinks from tick 556 to 598 (checked in the file). Celebrate: applies at the 0.5 crossing, valley 4 fruit a at tick 596 (dot 0.530, first at or above 0.5 after the turn). The burst marks the crossing and never grades the viewer or the being.",
+  "compassionWithoutClaim": "The viewer sees the gap between what the being leans toward and what the world gives, then sees the surprise ring shrink as the lane rises. The way back is visible: the next guess moves. Valley 4, fruit a: the dot goes from 0.013 to 0.637 between ticks 556 and 598, the surprise from 4.37 to -0.12, with its bands at 4 and 4 throughout (checked in the file). Feeling comes from that gap and that movement, not from the page. There is no face, no mood word and no felt-pain channel. Every label is a field name (sting, guess, sight, bands), and a dip reads 'the guess went down here', never 'wrong'.",
+  "check369": "Node (3): thing = the being's guess for the world's answer on one fruit (the lane dot); its polar opposite = what the world does (the top line); test = the surprise ring sting[0] and the gap between them. The test varies, since it changes what is seen, so it stays. Around: the season and the fruit. Inside: the 14-answer spread. Bridge: handshake = the viewer asks for the next reveal and it comes; way back = the surprise falls as the lane rises (checked above); choosing, not judging = a dip is labelled, never graded. Whole (9): three nodes (being, world, viewer) and six directed links. Five are filled. The viewer-to-being link is empty on purpose, since the lens must not steer the run; a deliberate open cell for the owner to confirm (Plan 8.3). It is not a ladder. The three lanes are the three fruits, a real count, not a forced 3. Fourth point (choice): fit is judged against the world's answer for each fruit, not the being's own sure answer. Invariant as checked: valley 4's climb holds with bands fixed at 4 and 4. Choice-sensitive, found in the file: valley 2, fruit a, stays PLAIN after the turn, and its dot falls from 0.987 (tick 554) to 0.078 (tick 575) while bands drop to 3 and 2 and the world does not change, so lanes must carry the bands. Choice-sensitive, by definition, not run: plotting pAnswer instead mixes answers, and PASS ticks sit at 1.0, which hides the climb. Value choices for the owner: the 0.5 crossing, the window, and the guess pass rule. Plain check: caveats are one life, one seed and 240 ticks; no non-learning control, so a climb is not shown to be learning in general; relearning generality is untested (LENS_FACTS). Dropped: (a) one pAnswer chart across all valleys, failed the node test (the thing differs by answer); (b) face or mood avatars, failed the pain rule and the lens-never-lies rule; (c) a four-tick rollup as a zoom, failed the no-invented-rung rule (the data has no rung mapping); (d) a viewer score, failed we-don't-judge; (e) letting the viewer steer the being, changes the run. Cut fields: off, pSeen, pExpected, expected, gain, pain, V, sting[1], sting[2], chain, script.",
+  "risks": [
+   "Lanes can move with no world change. Valley 2, fruit a (PLAIN throughout) falls from 0.987 to 0.078 as the being's bands drop to 3 and 2 (ticks 554 to 575). A viewer may read that as learning or as the world. Mitigation: bands beside every lane, and a caption that says the guess also reads the being's own state.",
+   "The lane aims at poison, not at the faint. Valley 3, fruit b, tick 561: dot 0.013 on TOXIC, answer COLLAPSE, cause toxin, surprise 10.19. The faint needs its own mark or the lane reads as a near miss.",
+   "LENS_FACTS says surprise is about 0 normally. The file shows sting[0] is signed: about -1.65 during faints (tick 562) and about -0.87 on certain PASS ticks (valley 4, tick 576). The facts file should say signed.",
+   "Re-aim jumps: valley 4, fruit a, switches its target from PLAIN to FED at the turn, so its dashed vector jumps. A viewer may read the jump as the being's guess moving. Label the re-aim.",
+   "Fit can be read as worth. 'Up is good' here means fit to the world's answer, not the being's worth. Label it 'fit'; no grade or rank on screen.",
+   "Thin data: TOXIC answers occur on 31 valley-ticks and COLLAPSE on 4 across the sample; valley 4's fruit-a climb is about 16 dots. The guess test's baseline needs computing before the run, and the test is not run.",
+   "The owner's 'rout for the little guy' can slide into a verdict on falls. The burst fires only on a crossing, never on a fall.",
+   "Watch passes only for lanes that climb. Valley 2, fruit a, does not converge in the sample, so 'the distance closes' must name its lanes."
+  ]
+ },
+ {
+  "viewpoint": "The being itself, as its own record. It speaks only from what it can sense: the energy and health bands, the fruit it sees, its expectations and guesses, its answers, and its surprise. The view never shows it knowing the season or the table, and its blind spots appear as blind spots.",
+  "name": "Its Own Ledger",
+  "whatTheViewerSees": "One valley at a time (four tabs), as a live ledger with one row per tick and the newest row at the bottom. Each row shows: the energy and health bands it sensed, as five-segment bars; the fruit letter it sensed (a, b, c, or empty), faded by how expected that observation was; a ghost of what it expected to see; three 14-cell guess strips (EAT, PASS, REST), shaded by how likely each answer was to it, each with the weight that choice carries for it; the chosen act outlined; the answer it got, with how sure it had been; surprise, relief and running relief as bars; and a small sparkline per fruit-and-act pair showing how sure it has been of what came, with a line at 0.5. Where it has no sense of something, the row has a hatched blank labelled 'not sensed', with no number. A legend lists those blanks in the being's terms. Example, tick 561 (valley 3): it senses fruit b and a health band of 1, it chooses EAT (weight 2.90 for EAT), it gets COLLAPSE, which it had been about 0.001% sure of, with surprise 10.2. The cause cell is a blank. The page does not say the fruit was poison.",
+  "mapping": [
+   {
+    "visual": "Five-segment energy bar, lit to the band",
+    "field": "sees.eBand (0 to 4). Exact energy is not shown."
+   },
+   {
+    "visual": "Five-segment health bar, lit to the band",
+    "field": "sees.hBand (0 to 4). Exact health is not shown."
+   },
+   {
+    "visual": "Fruit letter in the sensed cell (a, b, c, or empty)",
+    "field": "sees.item (0 none, 1 a, 2 b, 3 c). Labelled by id only, with no kind colour."
+   },
+   {
+    "visual": "Opacity of the sensed cell",
+    "field": "pSeen (how expected the observation was)"
+   },
+   {
+    "visual": "Grey column marked 'down', with no bands or fruit in it",
+    "field": "sees.down = true. No cause is shown."
+   },
+   {
+    "visual": "Ghost outline of the expected observation, and its opacity",
+    "field": "expected (item, eBand, hBand); opacity from pExpected"
+   },
+   {
+    "visual": "Three 14-cell strips (EAT, PASS, REST), shaded",
+    "field": "guess[choice].p, one cell per answer in the header's answers order"
+   },
+   {
+    "visual": "Number at the end of each strip",
+    "field": "guess[choice].value, labelled 'weight for it'. The wants table is never shown."
+   },
+   {
+    "visual": "Outline on the chosen row",
+    "field": "act"
+   },
+   {
+    "visual": "Dot on the row",
+    "field": "explore (true on the random tick)"
+   },
+   {
+    "visual": "Answer word in the outcome cell, and its opacity",
+    "field": "answer; opacity from pAnswer (how sure it had been)"
+   },
+   {
+    "visual": "Red bar",
+    "field": "sting[0] (surprise)"
+   },
+   {
+    "visual": "Green bar",
+    "field": "sting[1] (the 'relief' term; see risks on the word)"
+   },
+   {
+    "visual": "Thin line through the bars",
+    "field": "sting[2] (running relief)"
+   },
+   {
+    "visual": "Sparkline per fruit-and-act pair, with a line at 0.5",
+    "field": "pAnswer at that pair's earlier ticks. The 0.5 line is a rule, not a field."
+   },
+   {
+    "visual": "Light on the sparkline and answer cell at a crossing",
+    "field": "Rule: first tick after a surprise of at least 1 for that fruit and act on which pAnswer is at least 0.5. Uses sting[0], pAnswer, act, item."
+   },
+   {
+    "visual": "Hatched blank tiles labelled 'not sensed'",
+    "field": "Absence only, no value: energy and health exact, fruit kind, season and turn, intensity, cause of a faint (world-only fields), and the two links the world carries."
+   },
+   {
+    "visual": "Viewer's locked guess and the reveal button",
+    "field": "Page input, not a being field. Recorded and never graded on the page."
+   }
+  ],
+  "boldMove": "Where its senses end, the record leaves a hatched blank labelled 'not sensed', in the same grid as everything else, with no number and no guess. A dashboard fills every cell; this one keeps the gaps part of the record. The blank says only 'not sensed'. The legend lists the gaps in the being's terms and gives no values.",
+  "guessLoop": "Each tick runs in four steps. (1) Show only what it sensed, plus its earlier ticks with the same fruit and act. (2) The viewer locks an act (EAT, PASS or REST) and may lock one answer from the 14; the viewer requests the reveal. (3) Show the being's guess strips and weights, then the act and answer. (4) Only then update the sting and the sparkline. The strips stay hidden until the lock, so reading the highest weight cannot pass the test. Pass rule, written before any run and not yet run: over ticks 554 to 600 in the valley on view, the viewer's act-lock hit rate must beat the rule 'same act as its last tick with the same fruit' on the same ticks, by a margin the owner sets before the run. Hits are recorded and never shown as a score. The celebration marks the being's crossing only, never a viewer hit. Not run: no observer in this round.",
+  "compassionWithoutClaim": "The page never says the being feels pain, fear or relief beyond its named fields, and it has no felt-pain channel. The viewer feels for it through what the record shows: a guess that was confident and wrong (EAT near 98.6% for FED, then COLLAPSE), a surprise bar spiking on a tick that looked routine, a blank where the cause of a faint would be, and a sparkline that climbs slowly over many ticks before the being's expectation catches up with what came. The being is shown acting on the best guess it has, with its gaps shown as gaps.",
+  "check369": "Node. Thing: the being's own sensed record (sees, guesses, act, answer, sting). Opposite: the blanks, which are what its senses cannot reach. Test: surprise (sting, first term), where its expectation meets what came. Around: one valley and one tick. Inside: bands, fruit, the three strips. Bridge: the act and the answer.\nBridge. Handshake: the viewer locks a guess before the reveal, and the page reveals only on the viewer's request, so no help arrives unasked. Way back: the surprise and the next tick's strips show whether the jolt reached its guesses (test: the next guess changes). Choosing, not judging: a miss is shown without grade, and surprise means 'did not fit here', not blame.\nWhole. Three nodes: sense, guess, outcome. Six directed links. Four are the being's own: sense to guess; guess to sense (through expected); guess to outcome (through act); outcome to guess (through sting). Two run through the world: sense to outcome (the valley's fruit rule) and outcome to sense (what the act changes next). Those two are left as blanks, not drawn. Seven of nine cells are filled, and no dead end among the four. The two blanks are a candidate deliberate gap for the owner to confirm.\nFourth point (choice). Frame: the being's own fields only. Choice-sensitive: adding the world closes the whole to nine of nine and removes the blanks. That is a value choice (what the viewer may see that the being cannot), so it goes to the owner. The thresholds (surprise at least 1 to start a crossing, pAnswer at least 0.5) are design choices, not yet tested under alternatives.\nPlain check. Missing side or control: none beyond the two world links. Missing caveat: one life, one seed, one turn, and the crossing rule was applied to that one life after the fact.\nDropped candidates. (a) Surprise-only spine: a chain, not a whole, since each tick shows one link; fails the Whole test. (b) Per-fruit tally across valleys: no opposite or test, and in this sample the same fruit id carries different kinds in different valleys at tick 561 (a is PLAIN in valley 2 and NOURISH in valley 4), so a shared legend would misstate. (c) Two-layer split screen with the world beside the being: puts the turn in the same frame, so the being would appear to know it; fails the viewpoint. The world layer belongs on its own page and is not designed here.\nNot run: the observer test, and the separate mirror-and-translate reader. No file was edited.",
+  "risks": [
+   "Blank tiles can read as broken data. The legend must say they are the being's blind spots, in its terms, with no values.",
+   "Fruit kind looks per valley in this sample (tick 561: a is PLAIN in valley 2, NOURISH in valley 4). LENS_FACTS says 'this fruit's class this season'; read it per valley before any shared legend is built.",
+   "A 'starving' flag is in the data (true on 5 of 960 valley-ticks, first at line 185, tick 663) but not in LENS_FACTS, and the header note does not classify it. This lens cuts it until the owner rules whether it is the being's own field.",
+   "Surprise is not a function of pAnswer in the sample (tick 589: surprise 0.31 at pAnswer 0.33; tick 596: surprise 0.02 at pAnswer 0.53). Show it as its own number, never as derived from the probability.",
+   "The crossing uses thresholds I chose (surprise at least 1, pAnswer at least 0.5). Applied after the fact to valley 4's fruit a with EAT, it fires at tick 596 (pAnswer 0.530; its last surprise of at least 1 was at tick 581, value 1.26). One life, post hoc, untested.",
+   "sinceTurn reads 553 on the turn tick (tick 553, season 1) and 0 on the next (tick 554). This lens does not use it, but any world view built from this file needs that corrected or labelled.",
+   "'Relief' is a feeling word on a field name. The page may use 'relief term' instead; the owner decides.",
+   "The viewer's guess becomes trivial if the strips show before the lock, since the highest weight is readable. The design hides them until after the lock; changing that order breaks the test.",
+   "Phone width: three 14-cell strips and five bars per row do not fit a 16px gutter with no horizontal page scroll. The ledger needs its own inner scroller or a stacked mode.",
+   "Two-layer rule: this page is the being's layer alone. The world page, with the turn, needs its own page; it is not designed here.",
+   "Value numbers can make the being look foolish (tick 561, EAT weight 2.90 while the fruit was poison). The page describes weights and does not rank them.",
+   "The sample is one life, one seed and one turn. Nothing here is measured on other lives, and the pass rule margin is not yet set."
+  ]
+ }
+]
