@@ -11,6 +11,7 @@
     "start": "node src/triad_369_process.mjs",
     "api": "node src/api.mjs",
     "serve": "node src/serve.mjs",
+    "arena": "node src/arena_node.mjs",
     "bridge": "node src/density_bridge.mjs",
     "bootstrap": "node src/bootstrap.mjs",
     "query": "node src/query_triad_369.mjs"

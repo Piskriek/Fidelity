@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { exec } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { getBridgeRoot } from './bridge_paths.mjs';
 import { startQueryBridge } from './query_bridge.mjs';
 
@@ -29,6 +30,9 @@ const LOG_FILE = path.join(LOOP_DIR, 'triad_369.log');
 
 const QUERY_IN_FILE = path.join(LOOP_DIR, 'triad_query_in.json');
 const QUERY_OUT_FILE = path.join(LOOP_DIR, 'triad_query_out.json');
+const SOURCE_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SYNC_DIR = process.env.TRIAD_SYNC_DIR ? path.resolve(process.env.TRIAD_SYNC_DIR) : path.resolve(SOURCE_DIR, '../../../bridge/sync');
+const ARENA_TELEMETRY_FILE = path.join(SYNC_DIR, 'arena_telemetry.json');
 
 // Remote Node 2 (Sol / Compute Worker)
 const REMOTE_HOST = process.env.REMOTE_HOST || 'RAMPAGE@192.168.0.5';
@@ -353,6 +357,16 @@ export async function handleQueryCascade(query) {
     ear: sol?.ear ?? null,
     latestThought: sol?.latestThought ?? null
   };
+  // A Git-backed file is a snapshot, not a live Node 4 connection. Do not
+  // expose the previous inquiry or answer in an unrelated query response.
+  const arenaSnapshot = readJson(ARENA_TELEMETRY_FILE, null);
+  const arenaInfo = {
+    host: 'Node 4 (Arena reasoning handoff)',
+    reported_status: typeof arenaSnapshot?.node?.status === 'string' ? arenaSnapshot.node.status : null,
+    snapshot_at: typeof arenaSnapshot?.at === 'string' ? arenaSnapshot.at : null,
+    up: null,
+    independently_verified: false
+  };
 
   // The seed currently routes by keywords. A match is not a verified rung traversal.
   const rungMatches = [
@@ -412,6 +426,7 @@ export async function handleQueryCascade(query) {
       ingress: { node: 'Node 3 (Triad Apex)', at: iso(now) },
       flow_31_down: { target: 'Node 1 (Fidelity Local)', status: density ? 'file_read' : 'unavailable', data: fidelityInfo },
       flow_32_down: { target: 'Node 2 (Sol Remote)', status: remoteStatus, data: solInfo },
+      flow_34_down: { target: 'Node 4 (Arena handoff)', status: arenaSnapshot ? 'file_read' : 'unavailable', data: arenaInfo },
       rungs_traversed: [],
       keyword_matches: matchedRungs.map(r => ({ density: r.density, domain: r.domain })),
       primary_domain: primaryRung ? `${primaryRung.density} (${primaryRung.domain})` : null

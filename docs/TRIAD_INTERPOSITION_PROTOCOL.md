@@ -1,4 +1,6 @@
 # TRIAD FRACTAL INTERPOSITION PROTOCOL
+
+> **Implementation note:** This document describes an intended protocol. The current Arena workflow relays messages only after receipt and does not prove bias elimination, live node connections, an executed Teacher handshake, or loop closure. See [TRIAD_CLI.md](TRIAD_CLI.md) and [ARENA_NODE_BUS.md](ARENA_NODE_BUS.md) for implemented behavior.
 > **Contract**: The Undistorted Reasoning Crucible Between Sovereign Asker & Architect Agent
 > **Origin**: Piskriek (Sovereign Asker)
 > **Conduit**: The Triad 3/6/9 Fractal Architecture (Nodes 1, 2, 3 across Laptop & 3080 PC)

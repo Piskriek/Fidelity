@@ -22,6 +22,7 @@ function testEnvironment(root) {
   return {
     ...process.env,
     BRIDGE_ROOT: root,
+    TRIAD_SYNC_DIR: path.join(root, 'sync'),
     SSH_KEY: path.join(root, 'no-remote-key'),
     TRIAD_REMOTE_QUERY_LOG: '0',
     TRIAD_SENDER: 'test-client',
@@ -114,6 +115,20 @@ test('bootstrap, daemon, CLI and bridge work together', async t => {
     const otherEnv = { ...env, BRIDGE_ROOT: path.join(root, 'different-root') };
     const explicit = await run([cli, 'status', '--bridge-root', root, '--json'], otherEnv);
     assert.equal(JSON.parse(explicit.stdout).pid, child.pid);
+  });
+
+  await t.test('Node 4 is reported as an unverified snapshot without exposing prior queries', async () => {
+    fs.mkdirSync(env.TRIAD_SYNC_DIR, { recursive: true });
+    fs.writeFileSync(path.join(env.TRIAD_SYNC_DIR, 'arena_telemetry.json'), JSON.stringify({
+      at: '2026-11-03T00:00:00Z', node: { status: 'completed', up: true },
+      lastQueryResponse: { query: 'PRIVATE_PREVIOUS_QUERY', answer: 'PRIVATE_PREVIOUS_ANSWER' },
+    }));
+    const result = JSON.parse((await run([cli, 'ask', 'Status', '--json'], env)).stdout);
+    assert.equal(result.cascade_trace.flow_34_down.status, 'file_read');
+    assert.equal(result.cascade_trace.flow_34_down.data.reported_status, 'completed');
+    assert.equal(result.cascade_trace.flow_34_down.data.up, null);
+    assert.equal(result.cascade_trace.flow_34_down.data.independently_verified, false);
+    assert.doesNotMatch(JSON.stringify(result), /PRIVATE_PREVIOUS/);
   });
 
   await t.test('parallel requests have distinct IDs and matching answers', async () => {

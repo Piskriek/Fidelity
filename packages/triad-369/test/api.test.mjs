@@ -21,6 +21,7 @@ function testEnvironment(root) {
   return {
     ...process.env,
     BRIDGE_ROOT: root,
+    TRIAD_SYNC_DIR: path.join(root, 'sync'),
     SSH_KEY: path.join(root, 'no-remote-key'),
     TRIAD_REMOTE_QUERY_LOG: '0',
   };
