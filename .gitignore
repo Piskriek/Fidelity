@@ -5,3 +5,5 @@ dist
 .env*
 .claude/
 .gemini/
+.venv-headtrack/
+tools/headtrack/head.json

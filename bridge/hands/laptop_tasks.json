@@ -1,7 +1,7 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T18:37:26Z",
+  "updated_at": "2026-11-03T18:45:36Z",
   "note": "Live copy: F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2. This repo file is a snapshot. Protocol: bridge/hands/LAPTOP-HANDS.md.",
   "tasks": [
     {
@@ -24,6 +24,29 @@
         "The AddOns folder listing",
         "After the owner check: the /fide diag SetLight form line, whether the slide/turn went the right way (and any /fide calibrate used), how the lens lattice and walls look, anaglyph result, any [Fidelity EMatrix Error] lines verbatim; for check 7 (/fide world on): the /fide world status actor count, whether the overlay models line up with the real units, and how the red/cyan pairs look near vs far; for check 8 (/fide terrain on): the /fide terrain status line, whether tree copies stand on the real trees, and which way they are off if not",
         "The complete /fide status and /fide diag output, verbatim, plus what /fide overlay on showed"
+      ],
+      "status": "requested"
+    },
+    {
+      "id": "H006",
+      "requested_at": "2026-11-03T18:45:36Z",
+      "priority": 0,
+      "title": "Laptop: set up webcam head tracking for FidelityEMatrix v1.6.0 (virtual gamepad)",
+      "steps": [
+        "git -C D:\\fidelity-repo fetch origin && git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth (then redeploy the addon folder as in H005; the addon is v1.6.0)",
+        "Read D:\\fidelity-repo\\tools\\headtrack\\README.md",
+        "BLOCKED ON OWNER until done: install the ViGEmBus driver (administrator) from https://github.com/nefarius/ViGEmBus/releases (the latest ViGEmBus_*_x64.exe). Do not install it yourself; set status blocked with blocked_on \"owner: install ViGEmBus\" and continue only after the owner says it is installed.",
+        "python -m venv D:\\fidelity-repo\\.venv-headtrack ; D:\\fidelity-repo\\.venv-headtrack\\Scripts\\pip install -r D:\\fidelity-repo\\tools\\headtrack\\requirements.txt",
+        "D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\check_pad.py (must print PASS; if XInput sees no device, the driver is missing or needs a reboot)",
+        "Find out which process holds the webcam (the fractal daemons): if the camera is free, run the tracker with --source 0; if a daemon owns it, find what it exposes (a folder of frames or an MJPEG stream) and use --source frames:<dir> or --source <url>. Report which.",
+        "Start the tracker and keep it running: D:\\fidelity-repo\\.venv-headtrack\\Scripts\\python D:\\fidelity-repo\\tools\\headtrack\\headtrack.py --show (sit normally for the 2 s calibration). Report its first console lines and the contents of tools\\headtrack\\head.json after 10 s.",
+        "Hand to the owner for the in-game part: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0, /fide eye probe while moving the head, /fide eye calibrate sitting normally, /fide eye source gamepad; then lean left/right and report whether the scene follows the head (and /fide eye output)."
+      ],
+      "report": [
+        "check_pad.py output",
+        "which source the tracker uses and why",
+        "head.json after 10 s",
+        "the /fide eye probe line and whether the scene follows the head"
       ],
       "status": "requested"
     },

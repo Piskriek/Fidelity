@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.5.1"
+local VERSION = "1.6.0"
 local CONFIG_VERSION = 2 -- bumped when saved defaults must change for existing installs
 
 -- Configuration & Constants
@@ -71,6 +71,14 @@ local DEFAULTS = {
     terrainOverlay = true,    -- EMatrix_Terrain: map placements re-rendered with depth (the default experience)
     boxHidden = true,         -- the scoreboard window is a side show: /fide box shows it
     configVersion = 0,
+    -- Eye source. "gamepad": the webcam head tracker (tools/headtrack) feeds a virtual gamepad;
+    -- the addon reads one stick for left/right + up/down and one axis for distance.
+    eyeSource = "cursor",     -- "cursor" | "gamepad" (falls back to the cursor when no pad answers)
+    eyeStick = 2,             -- index into GetDeviceMappedState().sticks (1 = left, 2 = right on an Xbox pad)
+    eyeDepthAxis = 0,         -- index into .axes for head distance, 0 = off (/fide eye probe shows the axes)
+    eyeGain = 1.0,            -- stick units -> eye units
+    eyeInvertX = false,       -- flip left/right if the head goes the wrong way
+    eyeCalX = 0, eyeCalY = 0, eyeCalZ = 0, -- rest position, set by /fide eye calibrate
 }
 FidelityEMatrix_Config = FidelityEMatrix_Config or {}
 
@@ -120,7 +128,8 @@ local openAmount = 0.0        -- 0 closed .. 1 open, drives walls / glass / reti
 -- Parallax & Animation State
 local animTime = 0.0
 local currentFacing = 0.0
-local smoothEyeX, smoothEyeY = 0.0, 0.0
+local smoothEyeX, smoothEyeY, smoothEyeZ = 0.0, 0.0, 0.0
+local lastPad, padSeen = nil, false -- the last mapped gamepad state, for /fide eye probe
 local appliedEyeX, appliedEyeY, appliedOpen = nil, nil, nil
 local lastClickTime = 0.0
 
@@ -691,6 +700,26 @@ function ApplyDepthPlanes(eyeX, eyeY)
 end
 
 -- ============================================================================
+-- 3b. Eye from a gamepad (the head tracker's virtual pad)
+-- ============================================================================
+local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
+
+--- Returns stickX, stickY, depthAxis from the active gamepad, or nil when there is none.
+local function ReadGamepadEye()
+    if not (C_GamePad and C_GamePad.GetDeviceMappedState) then return nil end
+    local id = C_GamePad.GetActiveDeviceID and C_GamePad.GetActiveDeviceID() or nil
+    local ok, st = pcall(C_GamePad.GetDeviceMappedState, id)
+    if not ok or type(st) ~= "table" or type(st.sticks) ~= "table" then return nil end
+    local s = st.sticks[Cfg("eyeStick")]
+    if not s or type(s.x) ~= "number" or type(s.y) ~= "number" then return nil end
+    local z = 0
+    local da = Cfg("eyeDepthAxis")
+    if da and da > 0 and type(st.axes) == "table" and type(st.axes[da]) == "number" then z = st.axes[da] end
+    lastPad, padSeen = st, true
+    return s.x, s.y, z
+end
+
+-- ============================================================================
 -- 4. Zero-GC Scoreboard Wave & Motion Driver
 -- ============================================================================
 local function OnUpdateDriver(self, dt)
@@ -773,7 +802,18 @@ local function OnUpdateDriver(self, dt)
 
     -- 3. Eye from the cursor (raw pixels on both sides of the comparison)
     local pStr = Cfg("parallaxStrength")
-    if pStr > 0.0 and GetCursorPosition then
+    local padX, padY, padZ
+    if pStr > 0.0 and Cfg("eyeSource") == "gamepad" then padX, padY, padZ = ReadGamepadEye() end
+    if padX then
+        local gain = Cfg("eyeGain")
+        local tx = Clamp((padX - Cfg("eyeCalX")) * gain * (Cfg("eyeInvertX") and -1 or 1), -1, 1) * pStr
+        local ty = Clamp((padY - Cfg("eyeCalY")) * gain, -1, 1) * pStr
+        local tz = Clamp((padZ - Cfg("eyeCalZ")) * gain, -1, 1)
+        local k = math.min(dt * 10.0, 1.0)
+        smoothEyeX = smoothEyeX + (tx - smoothEyeX) * k
+        smoothEyeY = smoothEyeY + (ty - smoothEyeY) * k
+        smoothEyeZ = smoothEyeZ + (tz - smoothEyeZ) * k
+    elseif pStr > 0.0 and GetCursorPosition then
         local mx, my = GetCursorPosition()
         local es = masterFrame:GetEffectiveScale() or 1.0
         local cx, cy = masterFrame:GetCenter()
@@ -1010,6 +1050,44 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 Say("EMatrix_World.lua did not load.")
             end
 
+        elseif cmd == "eye" then
+            local sub = args[2] or "status"
+            local v = tonumber(args[3])
+            if sub == "source" and (args[3] == "cursor" or args[3] == "gamepad") then
+                FidelityEMatrix_Config.eyeSource = args[3]
+                Say("Eye source: %s", args[3])
+            elseif sub == "stick" and v and v >= 1 and v <= 4 then
+                FidelityEMatrix_Config.eyeStick = math.floor(v); Say("Eye stick: %d", FidelityEMatrix_Config.eyeStick)
+            elseif sub == "depth" and (v or args[3] == "off") then
+                FidelityEMatrix_Config.eyeDepthAxis = v and math.floor(v) or 0; Say("Eye depth axis: %s", v and tostring(math.floor(v)) or "off")
+            elseif sub == "gain" and v and v > 0 and v <= 10 then
+                FidelityEMatrix_Config.eyeGain = v; Say("Eye gain: %.2f", v)
+            elseif sub == "invert" then
+                FidelityEMatrix_Config.eyeInvertX = not Cfg("eyeInvertX"); Say("Eye left/right %s", Cfg("eyeInvertX") and "inverted" or "normal")
+            elseif sub == "calibrate" then
+                local x, y, z = ReadGamepadEye()
+                if x then
+                    FidelityEMatrix_Config.eyeCalX, FidelityEMatrix_Config.eyeCalY, FidelityEMatrix_Config.eyeCalZ = x, y, z
+                    Say("Eye rest position set to %.3f, %.3f, %.3f: sit normally when you run this.", x, y, z)
+                else
+                    Say("No gamepad state to calibrate from. Is the tracker running and GamePadEnable 1 set? (/fide eye setup)")
+                end
+            elseif sub == "probe" then
+                local x, y, z = ReadGamepadEye()
+                if not lastPad then Say("No gamepad state: C_GamePad %s, GamePadEnable must be 1 (/fide eye setup).", C_GamePad and "present" or "MISSING"); return end
+                local parts = {}
+                for i, s in ipairs(lastPad.sticks or {}) do parts[#parts + 1] = string.format("stick%d=(%.2f, %.2f)", i, s.x or 0, s.y or 0) end
+                for i, a in ipairs(lastPad.axes or {}) do parts[#parts + 1] = string.format("axis%d=%.2f", i, a) end
+                Say("Pad %s: %s | eye from stick %d = %s", tostring(lastPad.name), table.concat(parts, " "), Cfg("eyeStick"), x and string.format("%.2f, %.2f, z %.2f", x, y, z) or "nil")
+            elseif sub == "setup" then
+                Say("Head tracking setup: 1) run tools/headtrack/headtrack.py on the laptop (it creates a virtual Xbox pad). 2) /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0 (so the right stick does not swing the camera). 3) /fide eye probe, move your head, note which stick/axis moves; /fide eye stick <n>, /fide eye depth <axis>. 4) /fide eye calibrate while sitting normally, then /fide eye source gamepad.")
+            else
+                Say("Eye: source %s | stick %d | depth axis %s | gain %.2f | invert %s | rest %.2f, %.2f, %.2f | now %.2f, %.2f, z %.2f | pad seen %s",
+                    Cfg("eyeSource"), Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")),
+                    Cfg("eyeCalX"), Cfg("eyeCalY"), Cfg("eyeCalZ"), smoothEyeX, smoothEyeY, smoothEyeZ, padSeen and "yes" or "no")
+                Say("Usage: /fide eye <source cursor|gamepad | stick <1-4> | depth <axis|off> | gain <0.1-10> | invert | calibrate | probe | setup>")
+            end
+
         elseif cmd == "box" then
             local sub = args[2] or "toggle"
             local show = (sub == "show") or (sub == "toggle" and not masterFrame:IsShown())
@@ -1118,6 +1196,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
             print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene (default): world + terrain overlays")
             print("  |cffffcc00/fide box <show|hide>|r              - The old scoreboard window (click it to ripple it open)")
+            print("  |cffffcc00/fide eye <setup|probe|calibrate|source ...>|r - Head tracking through the virtual gamepad (webcam tracker)")
             print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
@@ -1168,7 +1247,7 @@ ns.UpdateStereoDisplay = UpdateStereoDisplay
 ns.ApplyDepthPlanes = ApplyDepthPlanes
 ns.cells = cells
 ns.DiagTable = DiagTable
-ns.GetEye = function() return smoothEyeX, smoothEyeY, currentFacing end
+ns.GetEye = function() return smoothEyeX, smoothEyeY, currentFacing, smoothEyeZ end
 ns.State = function()
     return {
         open = waveTargetState, openAmount = openAmount, waveActive = waveActive,

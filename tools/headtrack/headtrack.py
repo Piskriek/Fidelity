@@ -1,0 +1,264 @@
+#!/usr/bin/env python3
+"""Webcam head tracker -> virtual gamepad (+ head.json) for FidelityEMatrix's head-coupled parallax.
+
+The game addon cannot read a camera, but it can read a gamepad (C_GamePad). This script finds your
+face in the webcam, turns its position and size into left/right, up/down and distance, and feeds
+them to a virtual Xbox 360 pad through the ViGEm driver (right stick = x/y, left trigger = depth).
+It also writes head.json next to itself for the other Fidelity daemons.
+
+    python headtrack.py                      # default camera 0, right stick + left trigger
+    python headtrack.py --source 1           # another camera index
+    python headtrack.py --source frames:D:\\path\\to\\dir   # newest .jpg/.png written by another daemon
+    python headtrack.py --source http://127.0.0.1:8080/stream.mjpg   # an MJPEG stream
+    python headtrack.py --source synthetic --duration 5    # no camera: a moving fake face (for tests)
+    python headtrack.py --show               # preview window; press c to calibrate rest, q to quit
+    python headtrack.py --no-gamepad         # head.json only
+
+In the game: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console
+GamePadCameraPitchSpeed 0, then /fide eye setup. Requirements: requirements.txt (OpenCV with its
+bundled Haar face cascade, vgamepad + the ViGEmBus driver).
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import math
+import os
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from headmath import Smoother, face_to_axes, pick_largest, to_trigger  # noqa: E402
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+# ---------------------------------------------------------------------------------------------
+# Frame sources
+# ---------------------------------------------------------------------------------------------
+class CameraSource:
+    def __init__(self, spec: str, width: int, height: int):
+        import cv2  # lazy: not needed for synthetic runs or tests
+        self.cv2 = cv2
+        index = int(spec) if spec.isdigit() else spec
+        self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW) if isinstance(index, int) and os.name == "nt" else cv2.VideoCapture(index)
+        if isinstance(index, int):
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        if not self.cap.isOpened():
+            raise RuntimeError(f"could not open camera/stream {spec!r} (is another program holding it? try --source frames:<dir>)")
+
+    def read(self):
+        ok, frame = self.cap.read()
+        return frame if ok else None
+
+    def close(self):
+        self.cap.release()
+
+
+class FramesDirSource:
+    """Newest image file in a directory (what a vision daemon that owns the camera can write)."""
+
+    def __init__(self, directory: str):
+        import cv2
+        self.cv2 = cv2
+        self.directory = directory
+        self.last = None
+        if not os.path.isdir(directory):
+            raise RuntimeError(f"frames directory not found: {directory}")
+
+    def read(self):
+        files = glob.glob(os.path.join(self.directory, "*.jpg")) + glob.glob(os.path.join(self.directory, "*.png"))
+        if not files:
+            return None
+        newest = max(files, key=os.path.getmtime)
+        if newest == self.last:
+            time.sleep(0.01)
+            return None
+        self.last = newest
+        return self.cv2.imread(newest)
+
+    def close(self):
+        pass
+
+
+class SyntheticSource:
+    """A grey frame with a dark 'face' box swaying left-right and in-out: tests without a camera."""
+
+    def __init__(self, width: int = 640, height: int = 480):
+        self.w, self.h, self.t0 = width, height, time.time()
+
+    def read(self):
+        import numpy as np
+        t = time.time() - self.t0
+        frame = np.full((self.h, self.w, 3), 160, dtype=np.uint8)
+        fw = int(100 * (1.0 + 0.3 * math.sin(t * 0.7)))
+        cx = int(self.w * 0.5 + self.w * 0.25 * math.sin(t * 1.3))
+        cy = int(self.h * 0.5)
+        frame[max(0, cy - fw // 2):cy + fw // 2, max(0, cx - fw // 2):cx + fw // 2] = 40
+        self._box = (cx - fw // 2, cy - fw // 2, fw, fw)
+        return frame
+
+    def synthetic_face(self):
+        return self._box
+
+    def close(self):
+        pass
+
+
+def open_source(spec: str, width: int, height: int):
+    if spec == "synthetic":
+        return SyntheticSource(width, height)
+    if spec.startswith("frames:"):
+        return FramesDirSource(spec[len("frames:"):])
+    return CameraSource(spec, width, height)
+
+
+# ---------------------------------------------------------------------------------------------
+# Face detection (OpenCV's bundled Haar cascade: no model download)
+# ---------------------------------------------------------------------------------------------
+class HaarDetector:
+    def __init__(self, scale_width: int = 320):
+        import cv2
+        self.cv2 = cv2
+        path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
+        self.cascade = cv2.CascadeClassifier(path)
+        if self.cascade.empty():
+            raise RuntimeError(f"Haar cascade not found at {path}")
+        self.scale_width = scale_width
+
+    def detect(self, frame):
+        h, w = frame.shape[:2]
+        s = self.scale_width / float(w) if w > self.scale_width else 1.0
+        small = self.cv2.resize(frame, (int(w * s), int(h * s))) if s != 1.0 else frame
+        gray = self.cv2.cvtColor(small, self.cv2.COLOR_BGR2GRAY)
+        faces = self.cascade.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=4, minSize=(30, 30))
+        return [(x / s, y / s, fw / s, fh / s) for (x, y, fw, fh) in faces]
+
+
+# ---------------------------------------------------------------------------------------------
+# Outputs
+# ---------------------------------------------------------------------------------------------
+class PadOutput:
+    def __init__(self, mapping: str):
+        import vgamepad as vg  # lazy: needs the ViGEmBus driver
+        self.vg = vg
+        self.pad = vg.VX360Gamepad()
+        self.mapping = mapping
+
+    def write(self, x: float, y: float, z: float):
+        if self.mapping == "leftstick":
+            self.pad.left_joystick_float(x_value_float=x, y_value_float=y)
+        elif self.mapping == "triggers":
+            self.pad.left_trigger_float(value_float=to_trigger(x))
+            self.pad.right_trigger_float(value_float=to_trigger(y))
+        else:  # rightstick (default): x/y on the right stick, depth on the left trigger
+            self.pad.right_joystick_float(x_value_float=x, y_value_float=y)
+            self.pad.left_trigger_float(value_float=to_trigger(z))
+        self.pad.update()
+
+    def close(self):
+        try:
+            self.pad.reset()
+            self.pad.update()
+        except Exception:
+            pass
+
+
+def write_json_atomic(path: str, payload: dict):
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump(payload, f)
+    os.replace(tmp, path)
+
+
+# ---------------------------------------------------------------------------------------------
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--source", default="0", help="camera index, MJPEG url, frames:<dir>, or synthetic")
+    ap.add_argument("--width", type=int, default=640)
+    ap.add_argument("--height", type=int, default=480)
+    ap.add_argument("--fps", type=float, default=30.0)
+    ap.add_argument("--gain", type=float, default=1.0)
+    ap.add_argument("--deadzone", type=float, default=0.02)
+    ap.add_argument("--map", default="rightstick", choices=["rightstick", "leftstick", "triggers"])
+    ap.add_argument("--no-mirror", action="store_true", help="do not mirror left/right")
+    ap.add_argument("--no-gamepad", action="store_true", help="write head.json only")
+    ap.add_argument("--out", default=os.path.join(HERE, "head.json"))
+    ap.add_argument("--show", action="store_true", help="preview window (c = calibrate rest width, q = quit)")
+    ap.add_argument("--calibrate-seconds", type=float, default=2.0, help="average the face width over this long at start")
+    ap.add_argument("--duration", type=float, default=0.0, help="stop after this many seconds (0 = run until quit)")
+    args = ap.parse_args(argv)
+
+    source = open_source(args.source, args.width, args.height)
+    synthetic = isinstance(source, SyntheticSource)
+    detector = None if synthetic else HaarDetector()
+    pad = None if args.no_gamepad else PadOutput(args.map)
+    smoother = Smoother()
+    rest_width, cal_samples, cal_until = 0.0, [], time.time() + args.calibrate_seconds
+    frame_interval = 1.0 / max(1.0, args.fps)
+    started, last, frames, lost = time.time(), time.time(), 0, 0
+    cv2 = None
+    if args.show:
+        import cv2 as _cv2
+        cv2 = _cv2
+    print(f"headtrack: source={args.source} map={args.map} gamepad={'off' if pad is None else 'on'} out={args.out}", flush=True)
+    try:
+        while True:
+            now = time.time()
+            dt, last = now - last, now
+            frame = source.read()
+            if frame is None:
+                axes = smoother.update(dt, None)
+                lost += 1
+            else:
+                h, w = frame.shape[:2]
+                face = source.synthetic_face() if synthetic else pick_largest(detector.detect(frame))
+                if face is not None and (now < cal_until or rest_width <= 0):
+                    cal_samples.append(face[2])
+                    if now >= cal_until or len(cal_samples) >= 60:
+                        rest_width = sum(cal_samples) / len(cal_samples)
+                        print(f"headtrack: rest face width {rest_width:.1f}px", flush=True)
+                target = face_to_axes(face, w, h, rest_width if rest_width > 0 else (face[2] if face else 1.0),
+                                      args.gain, args.deadzone, mirror=not args.no_mirror)
+                axes = smoother.update(dt, target)
+                if target is None:
+                    lost += 1
+                if cv2 is not None:
+                    if face is not None:
+                        x, y, fw, fh = (int(v) for v in face)
+                        cv2.rectangle(frame, (x, y), (x + fw, y + fh), (0, 255, 200), 2)
+                    cv2.putText(frame, f"x {axes[0]:+.2f} y {axes[1]:+.2f} z {axes[2]:+.2f}", (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 200), 2)
+                    cv2.imshow("Fidelity head tracker (c = calibrate, q = quit)", frame)
+                    key = cv2.waitKey(1) & 0xFF
+                    if key == ord("q"):
+                        break
+                    if key == ord("c"):
+                        rest_width, cal_samples, cal_until = 0.0, [], time.time() + args.calibrate_seconds
+            frames += 1
+            if pad is not None:
+                pad.write(*axes)
+            if frames % 3 == 0:
+                write_json_atomic(args.out, {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4),
+                                             "z": round(axes[2], 4), "restWidth": round(rest_width, 1), "frames": frames, "lost": lost,
+                                             "fps": round(frames / max(1e-6, time.time() - started), 1), "source": args.source, "map": args.map})
+            if args.duration and time.time() - started >= args.duration:
+                break
+            sleep = frame_interval - (time.time() - now)
+            if sleep > 0:
+                time.sleep(sleep)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        source.close()
+        if pad is not None:
+            pad.close()
+        if cv2 is not None:
+            cv2.destroyAllWindows()
+    print(f"headtrack: {frames} frames, {lost} without a face, {frames / max(1e-6, time.time() - started):.1f} fps", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

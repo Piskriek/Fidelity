@@ -110,6 +110,16 @@ end
 _G.UnitExists = function(unit) if unit == "player" then return true end for _, p in ipairs(plates) do if p.namePlateUnitToken == unit then return true end end return false end
 _G.UnitIsUnit = function(a, b) return a == b end
 
+-- A gamepad the tests can drive (the head tracker's virtual pad): nil until plugged in
+local padState = nil
+_G.C_GamePad = {
+    GetActiveDeviceID = function() return padState and 1 or nil end,
+    GetDeviceMappedState = function(id) return padState end,
+}
+local function plugPad(rx, ry, lt)
+    padState = { name = "Virtual Xbox pad", sticks = { { x = 0, y = 0, len = 0 }, { x = rx, y = ry, len = math.sqrt(rx * rx + ry * ry) } }, axes = { 0, 0, rx, ry, lt or 0, 0 } }
+end
+
 -- Player world state for the terrain overlay (UnitPosition returns y first, then x)
 local playerPos = { x = -8897.0, y = -178.3, instance = 0 } -- at the Northshire Abbey door
 local playerFacing, cameraZoom = 0.0, 10.0
@@ -565,6 +575,48 @@ test("/fide overlay on turns both overlays on and hides the box; off restores it
     slash("spin 0.5"); slash("parallax 0.5")
 end)
 
+test("gamepad eye: a stick drives the eye, calibrate zeroes it, no pad falls back to the cursor", function()
+    slash("parallax 0.5")
+    slash("eye source gamepad")
+    cursorX, cursorY = 960, 540
+    padState = nil
+    step(1.0)
+    local st = ns.State()
+    check(near(st.eyeX, 0, 1e-3), "with no pad and the cursor centred the eye must rest at 0")
+    cursorX = 1440
+    step(1.5)
+    check(ns.State().eyeX > 0.2, "with no pad the cursor must still drive the eye (fallback)")
+    cursorX = 960
+    plugPad(0.8, -0.4, 0.3)
+    step(1.5)
+    st = ns.State()
+    check(near(st.eyeX, 0.8 * 0.5, 0.02), "right stick x must drive the eye: " .. st.eyeX)
+    check(near(st.eyeY, -0.4 * 0.5, 0.02), "right stick y must drive the eye: " .. st.eyeY)
+    local _, _, _, ez = ns.GetEye()
+    check(near(ez, 0, 1e-6), "depth axis off must leave z at 0")
+    slash("eye depth 5")
+    step(1.0)
+    _, _, _, ez = ns.GetEye()
+    check(near(ez, 0.3, 0.02), "depth axis 5 must drive z: " .. ez)
+    slash("eye calibrate")
+    step(1.5)
+    st = ns.State()
+    _, _, _, ez = ns.GetEye()
+    check(near(st.eyeX, 0, 0.02) and near(st.eyeY, 0, 0.02) and near(ez, 0, 0.02), "calibrate must make the current pose the rest pose")
+    plugPad(0.8, -0.4, 0.3)
+    slash("eye invert")
+    plugPad(0.3, -0.4, 0.3) -- rest 0.8 -> delta -0.5, inverted -> +0.5 * gain 1 * pStr 0.5
+    step(1.5)
+    check(near(ns.State().eyeX, 0.25, 0.02), "invert must flip left/right: " .. ns.State().eyeX)
+    slash("eye invert")
+    slash("eye probe"); slash("eye setup"); slash("eye")
+    slash("eye source cursor")
+    padState = nil
+    FidelityEMatrix_Config.eyeCalX, FidelityEMatrix_Config.eyeCalY, FidelityEMatrix_Config.eyeCalZ = 0, 0, 0
+    FidelityEMatrix_Config.eyeDepthAxis = 0
+    step(1.0)
+end)
+
 test("every slash command runs without an addon error", function()
     printed = {}
     for _, cmd in ipairs({ "help", "diag", "status", "scene target", "scene player", "spin 1", "parallax 0.5",
@@ -574,7 +626,8 @@ test("every slash command runs without an addon error", function()
         "world", "world status", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
         "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
-        "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide", "bogus" }) do
+        "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide",
+        "eye", "eye setup", "eye probe", "eye stick 2", "eye depth off", "eye gain 1.5", "eye gain 1", "eye calibrate", "eye source gamepad", "eye source cursor", "bogus" }) do
         slash(cmd)
         step(0.05)
     end
