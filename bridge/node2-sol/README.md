@@ -35,7 +35,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File F:\fidelity-llm\bridge\frien
 powershell -NoProfile -ExecutionPolicy Bypass -File F:\fidelity-llm\bridge\friend\start_friend.ps1 -Stop
 ```
 
-**Hazard (ticket T2):** `start_friend.ps1` decides "already running" by matching the process command line. Run
-unelevated, it cannot see the hidden process's command line, reports "not running", and starts a second
-`friend.mjs` writing the same `friend.json` and `friend.log`. Until the script also keys on a pid file, start it only
-from an elevated prompt, and check `friend.log` first.
+**Hazard (ticket T2, guarded):** the command-line match alone cannot see the hidden process when run unelevated, so
+on its own it would report "not running" and start a second `friend.mjs` writing the same `friend.json` and
+`friend.log`. `start_friend.ps1` therefore writes `friend.pid` next to itself after `Win32_Process.Create` and, on
+start and `-Stop`, checks that first: a `node.exe` with that pid that started before the file was written (and whose
+command line, where visible, is `friend.mjs`) counts as running; a pid file that fails this is stale and is removed,
+and only then does the command-line match decide. When neither can tell, a `friend.log` written under 2 minutes ago
+counts as running: start refuses, and `-Stop` reports that the pid is unknown. Stopping or restarting therefore still
+works best from an elevated prompt, where the command line is visible. The deployed copy on F: has the guard only
+once this version is copied over; a daemon started before that has no `friend.pid`, so the log-age rule covers it.

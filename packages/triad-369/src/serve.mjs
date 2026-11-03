@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // One-process entry point for hosts that can launch only one command. It owns
 // one Apex child and an HTTP API, and shuts both down together.
+import net from 'node:net';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -15,11 +16,19 @@ async function main() {
   let apex;
   let server;
   let shuttingDown = false;
+  // Signals are not the only way to ask for shutdown: on Windows child.kill() is
+  // TerminateProcess, so no handler runs and the Apex would be orphaned. A host
+  // can instead send the IPC message {type:'shutdown'} or close our stdin. Both
+  // work on every platform. Only a pipe or socket stdin is watched: a terminal,
+  // a file or the null device would end at once or never.
+  const stdinLifeline = process.stdin instanceof net.Socket && !process.stdin.isTTY;
 
   function shutdown(code) {
     if (shuttingDown) return;
     shuttingDown = true;
     process.exitCode = code;
+    if (process.connected) process.disconnect();
+    if (stdinLifeline) process.stdin.destroy();
     if (server?.listening) server.close();
     if (apex && apex.exitCode === null && apex.signalCode === null) apex.kill('SIGTERM');
     const timer = setTimeout(() => {
@@ -30,6 +39,12 @@ async function main() {
   }
   process.once('SIGTERM', () => shutdown(0));
   process.once('SIGINT', () => shutdown(0));
+  if (process.send) process.on('message', message => { if (message && message.type === 'shutdown') shutdown(0); });
+  if (stdinLifeline) {
+    process.stdin.once('end', () => shutdown(0));
+    process.stdin.once('error', () => shutdown(0));
+    process.stdin.resume();
+  }
 
   try {
     const { token, host, port, allowedOrigins } = configFromEnv();
@@ -44,6 +59,7 @@ async function main() {
     if (shuttingDown) return;
     const bootstrap = spawnSync(process.execPath, [path.join(sourceDir, 'bootstrap.mjs')], { stdio: 'inherit', env: process.env });
     if (bootstrap.error || bootstrap.status !== 0) throw new Error('Triad bootstrap failed.');
+    if (shuttingDown) return; // a request that arrived during the bootstrap must not leave an Apex behind
 
     apex = spawn(process.execPath, [path.join(sourceDir, 'triad_369_process.mjs')], { stdio: 'inherit', env: process.env });
     apex.once('error', () => { console.error('Triad Apex failed to start.'); shutdown(1); });
