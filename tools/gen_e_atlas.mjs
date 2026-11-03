@@ -2,8 +2,9 @@
 // tools/gen_e_atlas.mjs
 // Zero-dependency Node ESM script to generate uncompressed 32-bit BGRA .tga texture assets
 // for the FidelityEMatrix WoW AddOn prototype:
-//   1. FidelityEMatrix/Media/Marshmallow_E_Closed.tga (128x128 RGBA, twice-folded puffy golden E cube, alpha=255)
+//   1. FidelityEMatrix/Media/Marshmallow_E_Closed.tga (128x128 RGBA, twice-folded puffy golden E-cube, alpha=255)
 //   2. FidelityEMatrix/Media/Marshmallow_E_Window.tga (128x128 RGBA, outer golden bezel + punched alpha=0 window with CRT scanlines)
+//   3. FidelityEMatrix/Media/Backplate_Nebula.tga (256x256 RGBA, deep cosmic nebula starfield for 3D depth chamber)
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,32 +19,26 @@ if (!fs.existsSync(mediaDir)) {
   fs.mkdirSync(mediaDir, { recursive: true });
 }
 
-const WIDTH = 128;
-const HEIGHT = 128;
-const BPP = 32;
-
 /**
  * Creates an uncompressed 32-bit Truevision TGA buffer (BGRA).
- * Header size: 18 bytes.
- * Image data: WIDTH * HEIGHT * 4 bytes.
- * Total size: 65,554 bytes.
+ * Header: 18 bytes.
+ * Width x Height x 4 bytes.
  */
-function createTgaBuffer(pixelData) {
+function createTgaBuffer(pixelData, width, height) {
   const header = Buffer.alloc(18);
-  header[0] = 0;          // ID length
-  header[1] = 0;          // Color map type
-  header[2] = 2;          // Image type: uncompressed true-color
-  // Color map spec (bytes 3-7): 0
-  header[8] = 0;          // X-origin (LE)
+  header[0] = 0;                     // ID length
+  header[1] = 0;                     // Color map type
+  header[2] = 2;                     // Image type: uncompressed true-color
+  header[8] = 0;                     // X-origin (LE)
   header[9] = 0;
-  header[10] = 0;         // Y-origin (LE)
+  header[10] = 0;                    // Y-origin (LE)
   header[11] = 0;
-  header[12] = WIDTH & 0xff;        // Width LE (128)
-  header[13] = (WIDTH >> 8) & 0xff;
-  header[14] = HEIGHT & 0xff;       // Height LE (128)
-  header[15] = (HEIGHT >> 8) & 0xff;
-  header[16] = BPP;       // 32 bits per pixel
-  header[17] = 0x28;      // 0x20 = top-to-bottom raster order, 0x08 = 8 alpha bits (0x28 total)
+  header[12] = width & 0xff;         // Width LE
+  header[13] = (width >> 8) & 0xff;
+  header[14] = height & 0xff;        // Height LE
+  header[15] = (height >> 8) & 0xff;
+  header[16] = 32;                   // 32 bits per pixel
+  header[17] = 0x28;                 // 0x20 = top-to-bottom raster order, 0x08 = 8 alpha bits (0x28 total)
 
   return Buffer.concat([header, pixelData]);
 }
@@ -63,250 +58,301 @@ function sdRoundBox(px, py, cx, cy, hx, hy, r) {
 }
 
 /**
- * Outer marshmallow cube boundary.
- * Spans full [0, 128] cell bounds (half-extent 63.5, subtle corner bevel radius 4)
- * so adjacent cells in the 15x9 grid touch 100% seamlessly with zero gaps or seams.
+ * Deterministic pseudo-random number generator (Mulberry32).
  */
-function sdCubeBoundary(x, y) {
-  return sdRoundBox(x, y, 64, 64, 63.5, 63.5, 4);
+function createPrng(seed = 1337) {
+  let s = seed >>> 0;
+  return function next() {
+    s = (s + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
 }
 
-/**
- * Height field of the twice-folded "E" marshmallow cube.
- * Produces pillowing curves, distinct horizontal lobes, and vertical spine relief.
- */
-function getCubeHeightAndNormal(x, y) {
-  const dCube = sdCubeBoundary(x, y);
+// ============================================================================
+// 1. Marshmallow_E_Closed.tga (128x128 32-bit BGRA)
+// Full-bleed cushion tile (0px black border) with bold 3D twice-folded "E"
+// ============================================================================
+function getMarshmallowEHeight(u, v) {
+  // u, v in [-1, 1]
+  // Outer cushion boundary: fills [-1, 1] with soft 0.08 edge bevel
+  const dOuter = sdRoundBox(u, v, 0, 0, 0.98, 0.98, 0.08);
+  if (dOuter > 0) return 0.0;
 
-  if (dCube > 2.0) {
-    return { inside: false, h: 0, nx: 0, ny: 0, nz: 1, alpha: 0 };
-  }
+  // Base pillow height field
+  const cushionH = Math.sqrt(Math.max(0, 1.0 - Math.pow(Math.max(dOuter + 0.12, 0) / 0.12, 2.0)));
 
-  // Base pillow height across the entire cube surface
-  const edgeDist = Math.max(-dCube, 0);
-  const baseH = Math.min(edgeDist / 12.0, 1.0);
-  let h = Math.sqrt(Math.max(0, 1.0 - Math.pow(1.0 - baseH, 2.0)));
+  // "E" Anatomy in [-1, 1]:
+  // 1. Vertical Spine: x in [-0.85, -0.32], y in [-0.85, 0.85]
+  const dSpine = sdRoundBox(u, v, -0.58, 0.0, 0.27, 0.85, 0.12);
+  // 2. Top Horizontal Lobe: x in [-0.85, 0.85], y in [-0.85, -0.38]
+  const dTop = sdRoundBox(u, v, 0.0, -0.62, 0.85, 0.23, 0.12);
+  // 3. Middle Horizontal Lobe: x in [-0.85, 0.65], y in [-0.20, 0.20]
+  const dMid = sdRoundBox(u, v, -0.10, 0.0, 0.75, 0.20, 0.12);
+  // 4. Bottom Horizontal Lobe: x in [-0.85, 0.85], y in [0.38, 0.85]
+  const dBot = sdRoundBox(u, v, 0.0, 0.62, 0.85, 0.23, 0.12);
 
-  // Twice-folded "E" embossing relief:
-  // 1. Spine (x from 22 to 46, y from 22 to 106)
-  const dSpine = sdRoundBox(x, y, 34, 64, 12, 42, 6);
-  // 2. Top bar (y from 22 to 44, x from 22 to 106)
-  const dTop = sdRoundBox(x, y, 64, 33, 42, 11, 6);
-  // 3. Middle bar (y from 53 to 75, x from 22 to 94)
-  const dMid = sdRoundBox(x, y, 58, 64, 36, 11, 6);
-  // 4. Bottom bar (y from 84 to 106, x from 22 to 106)
-  const dBot = sdRoundBox(x, y, 64, 95, 42, 11, 6);
+  const dLobeUnion = Math.min(dSpine, dTop, dMid, dBot);
 
-  // Union distance to E relief skeleton
-  const dE = Math.min(dSpine, dTop, dMid, dBot);
+  // Fold Channel 1 (between top and middle bar): y in [-0.48, -0.25], x > -0.35
+  const dFold1 = sdRoundBox(u, v, 0.25, -0.35, 0.60, 0.10, 0.06);
+  // Fold Channel 2 (between middle and bottom bar): y in [0.25, 0.48], x > -0.35
+  const dFold2 = sdRoundBox(u, v, 0.25, 0.35, 0.60, 0.10, 0.06);
 
-  // E fold pillow bump: peaks along the bars of the E
-  if (dE < 4.0) {
-    const eBump = Math.max(0, (4.0 - dE) / 4.0);
-    h = h * 0.7 + eBump * 0.45;
-  } else {
-    // Cavities/folds between the E bars: slightly recessed crevice folds
-    h = h * 0.65;
-  }
+  // Height embossing
+  let lobeH = Math.max(0, 1.0 - Math.max(dLobeUnion, 0) / 0.28);
+  lobeH = Math.sin(lobeH * Math.PI * 0.5);
 
-  // Normal approximation via central differences
-  const eps = 1.0;
-  const dX = sdCubeBoundary(x + eps, y) - sdCubeBoundary(x - eps, y);
-  const dY = sdCubeBoundary(x, y + eps) - sdCubeBoundary(x, y - eps);
+  // Deep crease in the two fold channels
+  let creaseDepth = 0.0;
+  if (dFold1 < 0.05) creaseDepth = Math.max(creaseDepth, (0.05 - dFold1) / 0.10);
+  if (dFold2 < 0.05) creaseDepth = Math.max(creaseDepth, (0.05 - dFold2) / 0.10);
+  creaseDepth = Math.min(creaseDepth, 1.0);
 
-  let nx = -dX * (1.2 - h);
-  let ny = -dY * (1.2 - h);
-
-  // Add E lobe micro-normals
-  const dEx = (Math.min(sdRoundBox(x + eps, y, 34, 64, 12, 42, 6), sdRoundBox(x + eps, y, 64, 33, 42, 11, 6), sdRoundBox(x + eps, y, 58, 64, 36, 11, 6), sdRoundBox(x + eps, y, 64, 95, 42, 11, 6)) -
-               Math.min(sdRoundBox(x - eps, y, 34, 64, 12, 42, 6), sdRoundBox(x - eps, y, 64, 33, 42, 11, 6), sdRoundBox(x - eps, y, 58, 64, 36, 11, 6), sdRoundBox(x - eps, y, 64, 95, 42, 11, 6))) / (2 * eps);
-  const dEy = (Math.min(sdRoundBox(x, y + eps, 34, 64, 12, 42, 6), sdRoundBox(x, y + eps, 64, 33, 42, 11, 6), sdRoundBox(x, y + eps, 58, 64, 36, 11, 6), sdRoundBox(x, y + eps, 64, 95, 42, 11, 6)) -
-               Math.min(sdRoundBox(x, y - eps, 34, 64, 12, 42, 6), sdRoundBox(x, y - eps, 64, 33, 42, 11, 6), sdRoundBox(x, y - eps, 58, 64, 36, 11, 6), sdRoundBox(x, y - eps, 64, 95, 42, 11, 6))) / (2 * eps);
-
-  nx += -dEx * 0.35;
-  ny += -dEy * 0.35;
-
-  let nz = Math.max(0.3, 1.0 - Math.hypot(nx, ny));
-  const len = Math.hypot(nx, ny, nz) || 1.0;
-  nx /= len;
-  ny /= len;
-  nz /= len;
-
-  const alpha = Math.min(Math.max(1.0 - (dCube / 1.5), 0.0), 1.0);
-  return { inside: true, h, nx, ny, nz, alpha };
+  const h = Math.max(0.04, cushionH * 0.55 + lobeH * 0.45 - creaseDepth * 0.42);
+  return Math.min(Math.max(h, 0.0), 1.0);
 }
 
-/**
- * Shading helper: computes warm golden specular + pastel rainbow iridescence.
- */
-function shadeMarshmallow(x, y, surf) {
-  const { nx, ny, nz } = surf;
-
-  // Key light from upper-left-front
-  const lx = -0.42;
-  const ly = -0.56;
-  const lz = 0.71;
-  const nDotL = Math.max(nx * lx + ny * ly + nz * lz, 0.0);
-
-  // Half-vector for golden specular highlight
-  const hx = lx;
-  const hy = ly;
-  const hz = lz + 1.0;
-  const hLen = Math.hypot(hx, hy, hz) || 1.0;
-  const nDotH = Math.max(nx * (hx / hLen) + ny * (hy / hLen) + nz * (hz / hLen), 0.0);
-  const spec = Math.pow(nDotH, 20.0);
-
-  // Pastel iridescent rainbow ramp based on surface normal orientation
-  const angle = Math.atan2(ny, nx) + Math.PI;
-  const hue = ((angle / (2 * Math.PI)) + (surf.h * 0.35) + 0.15) % 1.0;
-
-  // Soft pastel HSV to RGB
-  const sat = 0.35;
-  const val = 0.88;
-  const c = val * sat;
-  const xHue = c * (1.0 - Math.abs(((hue * 6.0) % 2.0) - 1.0));
-  const m = val - c;
-  let rP = 0, gP = 0, bP = 0;
-
-  const hSector = Math.floor(hue * 6.0);
-  if (hSector === 0) { rP = c; gP = xHue; bP = 0; }
-  else if (hSector === 1) { rP = xHue; gP = c; bP = 0; }
-  else if (hSector === 2) { rP = 0; gP = c; bP = xHue; }
-  else if (hSector === 3) { rP = 0; gP = xHue; bP = c; }
-  else if (hSector === 4) { rP = xHue; gP = 0; bP = c; }
-  else { rP = c; gP = 0; bP = xHue; }
-
-  rP += m; gP += m; bP += m;
-
-  // Base warm golden marshmallow tone
-  const baseR = 0.94;
-  const baseG = 0.82;
-  const baseB = 0.52;
-
-  // Blend golden base with pastel iridescent tint
-  const diffuseR = (baseR * 0.65 + rP * 0.35) * (0.35 + 0.65 * nDotL);
-  const diffuseG = (baseG * 0.65 + gP * 0.35) * (0.35 + 0.65 * nDotL);
-  const diffuseB = (baseB * 0.65 + bP * 0.35) * (0.35 + 0.65 * nDotL);
-
-  // Golden-white specular flash
-  const specR = 1.00 * spec * 1.5;
-  const specG = 0.92 * spec * 1.5;
-  const specB = 0.60 * spec * 1.5;
-
-  // Ambient rim glow on top edges
-  const rim = Math.pow(1.0 - nz, 2.5) * 0.28;
-
-  const finalR = Math.min(Math.max(diffuseR + specR + rim * 1.0, 0.0), 1.0);
-  const finalG = Math.min(Math.max(diffuseG + specG + rim * 0.9, 0.0), 1.0);
-  const finalB = Math.min(Math.max(diffuseB + specB + rim * 0.6, 0.0), 1.0);
-
-  return { r: Math.round(finalR * 255), g: Math.round(finalG * 255), b: Math.round(finalB * 255) };
-}
-
-/**
- * Generates Marshmallow_E_Closed.tga (128x128 32-bit BGRA)
- * Full marshmallow E cube filling the rounded square with alpha = 255.
- */
 function generateClosedTexture() {
-  const pixelData = Buffer.alloc(WIDTH * HEIGHT * 4);
+  const W = 128;
+  const H = 128;
+  const pixelData = Buffer.alloc(W * H * 4);
 
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      const idx = (y * WIDTH + x) * 4;
-      const surf = getCubeHeightAndNormal(x, y);
+  // Key light direction (top-left angled towards viewer)
+  const lx = -0.45;
+  const ly = -0.55;
+  const lz = 0.70;
+  const lLen = Math.hypot(lx, ly, lz);
+  const nlx = lx / lLen;
+  const nly = ly / lLen;
+  const nlz = lz / lLen;
 
-      if (!surf.inside || surf.alpha <= 0.01) {
-        // Outside rounded cube boundary
-        pixelData[idx + 0] = 12; // B
-        pixelData[idx + 1] = 10; // G
-        pixelData[idx + 2] = 15; // R
-        pixelData[idx + 3] = 0;  // A
-        continue;
-      }
+  for (let y = 0; y < H; y++) {
+    const v = (y / (H - 1)) * 2 - 1; // [-1, 1]
+    for (let x = 0; x < W; x++) {
+      const u = (x / (W - 1)) * 2 - 1; // [-1, 1]
+      const idx = (y * W + x) * 4;
 
-      const color = shadeMarshmallow(x, y, surf);
-      const a = Math.round(surf.alpha * 255);
+      const h = getMarshmallowEHeight(u, v);
 
-      pixelData[idx + 0] = color.b; // B
-      pixelData[idx + 1] = color.g; // G
-      pixelData[idx + 2] = color.r; // R
-      pixelData[idx + 3] = a;       // A (255 across body)
+      // Compute normal via central differences
+      const eps = 2.0 / 128.0;
+      const hR = getMarshmallowEHeight(u + eps, v);
+      const hL = getMarshmallowEHeight(u - eps, v);
+      const hD = getMarshmallowEHeight(u, v + eps);
+      const hU = getMarshmallowEHeight(u, v - eps);
+
+      const dx = (hR - hL) * 2.5;
+      const dy = (hD - hU) * 2.5;
+      const dz = 1.0;
+      const nLen = Math.hypot(dx, dy, dz);
+      const nx = -dx / nLen;
+      const ny = -dy / nLen;
+      const nz = dz / nLen;
+
+      // Diffuse lighting
+      const ndotl = Math.max(nx * nlx + ny * nly + nz * nlz, 0.0);
+
+      // Specular highlight (Blinn-Phong)
+      const vx = 0.0, vy = 0.0, vz = 1.0;
+      const hx = nlx + vx, hy = nly + vy, hz = nlz + vz;
+      const hLen = Math.hypot(hx, hy, hz);
+      const nhx = hx / hLen, nhy = hy / hLen, nhz = hz / hLen;
+      const ndoth = Math.max(nx * nhx + ny * nhy + nz * nhz, 0.0);
+      const spec = Math.pow(ndoth, 24.0);
+
+      // Pastel-rainbow iridescent ramp based on surface normal angle
+      const iridPhase = (nx * 0.35 + ny * 0.35 + (1.0 - nz) * 0.30) + 0.15;
+      const iridR = 0.5 + 0.5 * Math.cos(6.28318 * (iridPhase + 0.00));
+      const iridG = 0.5 + 0.5 * Math.cos(6.28318 * (iridPhase + 0.33));
+      const iridB = 0.5 + 0.5 * Math.cos(6.28318 * (iridPhase + 0.67));
+
+      // 24k Warm Gold Diffuse Base
+      const goldR = 255;
+      const goldG = 212;
+      const goldB = 115;
+
+      // Fold ambient occlusion: creased regions receive deep warm bronze shadow
+      const ao = Math.pow(h, 0.55);
+
+      // Color composition
+      const ambientR = goldR * 0.28 * ao;
+      const ambientG = goldG * 0.26 * ao;
+      const ambientB = goldB * 0.20 * ao;
+
+      const diffFactor = 0.45 * ndotl;
+      const iridMixR = (goldR * 0.75 + iridR * 255 * 0.25) * diffFactor;
+      const iridMixG = (goldG * 0.75 + iridG * 255 * 0.25) * diffFactor;
+      const iridMixB = (goldB * 0.75 + iridB * 255 * 0.25) * diffFactor;
+
+      // Specular highlight: gleaming warm platinum-gold
+      const specR = 255 * spec * 0.85;
+      const specG = 248 * spec * 0.85;
+      const specB = 210 * spec * 0.85;
+
+      // Cushion outer rim bevel glint
+      const rim = Math.pow(1.0 - Math.max(nz, 0), 2.5) * 45;
+
+      const finalR = Math.min(255, Math.round(ambientR + iridMixR + specR + rim));
+      const finalG = Math.min(255, Math.round(ambientG + iridMixG + specG + rim));
+      const finalB = Math.min(255, Math.round(ambientB + iridMixB + specB + rim));
+
+      // Full-bleed alpha: 255 across body, soft 1px contact fade at the very perimeter
+      const distFromCenter = Math.max(Math.abs(u), Math.abs(v));
+      const alphaVal = distFromCenter > 0.99 ? Math.round((1.0 - distFromCenter) / 0.01 * 255) : 255;
+
+      pixelData[idx + 0] = finalB; // B
+      pixelData[idx + 1] = finalG; // G
+      pixelData[idx + 2] = finalR; // R
+      pixelData[idx + 3] = Math.max(alphaVal, 220); // Always opaque
     }
   }
 
-  return createTgaBuffer(pixelData);
+  return createTgaBuffer(pixelData, W, H);
 }
 
-/**
- * Generates Marshmallow_E_Window.tga (128x128 32-bit BGRA)
- * Features outer puffy golden-iridescent cube rim (4px soft bezel, alpha = 255),
- * with the inner face (120x120) punched transparent (alpha = 0)
- * and subtle CRT scanlines (alpha = 28 on even lines) for the 3D ModelScene underneath.
- */
+// ============================================================================
+// 2. Marshmallow_E_Window.tga (128x128 32-bit BGRA)
+// Puffy golden bezel rim (4px soft bezel, alpha=255) + inner transparent aperture
+// with subtle CRT scanlines (alpha=24 max)
+// ============================================================================
 function generateWindowTexture() {
-  const pixelData = Buffer.alloc(WIDTH * HEIGHT * 4);
+  const W = 128;
+  const H = 128;
+  const pixelData = Buffer.alloc(W * H * 4);
 
-  // The inner window spans [8, 119] in X and Y (centered at 64,64 with half-extent 56, radius 6)
-  const BEZEL_INSET = 8.0;
+  // Bezel rim width: 4 pixels on 128px tile
+  const BEZEL_WIDTH = 4.0;
 
-  for (let y = 0; y < HEIGHT; y++) {
-    for (let x = 0; x < WIDTH; x++) {
-      const idx = (y * WIDTH + x) * 4;
+  for (let y = 0; y < H; y++) {
+    const v = (y / (H - 1)) * 2 - 1;
+    for (let x = 0; x < W; x++) {
+      const u = (x / (W - 1)) * 2 - 1;
+      const idx = (y * W + x) * 4;
 
-      const surf = getCubeHeightAndNormal(x, y);
-      const dInnerWindow = sdRoundBox(x, y, 64, 64, 63.5 - BEZEL_INSET, 63.5 - BEZEL_INSET, 4);
+      // Distance from inner window edge
+      const pxDist = Math.min(x, W - 1 - x, y, H - 1 - y);
 
-      if (dInnerWindow <= 0) {
-        // INSIDE THE PUNCHED WINDOW (Inner Face):
-        // Alpha = 0 transparent to let live ModelScene stream through seamlessly!
-        // Subtle CRT scanline grid alpha on alternating rows (alpha = 28)
+      if (pxDist < BEZEL_WIDTH) {
+        // Outer Puffy Golden Bezel Rim
+        const t = pxDist / BEZEL_WIDTH; // 0 at outer edge, 1 at inner aperture
+        const goldR = 255;
+        const goldG = 215;
+        const goldB = 120;
+
+        // Soft iridescent bevel highlight
+        const glint = Math.sin(t * Math.PI) * 40;
+
+        pixelData[idx + 0] = Math.min(255, goldB + glint);
+        pixelData[idx + 1] = Math.min(255, goldG + glint);
+        pixelData[idx + 2] = Math.min(255, goldR + glint);
+        pixelData[idx + 3] = 255; // Fully opaque golden bezel
+      } else {
+        // Inner Transparent Aperture (alpha = 0)
+        // Subtle CRT scanline micro-grid for futuristic depth feel
         const isScanline = (y % 2 === 0);
-        const scanlineAlpha = isScanline ? 28 : 0;
+        const scanlineAlpha = isScanline ? 24 : 0;
 
         pixelData[idx + 0] = 30; // B
-        pixelData[idx + 1] = 18; // G
-        pixelData[idx + 2] = 12; // R
-        pixelData[idx + 3] = scanlineAlpha; // CRT pixel grid alpha
-      } else if (dInnerWindow < 2.0) {
-        // Smooth 2px transition between window opening and bezel rim
-        const t = dInnerWindow / 2.0;
-        const color = surf.inside ? shadeMarshmallow(x, y, surf) : { r: 180, g: 150, b: 80 };
-        const a = Math.round(t * (surf.alpha * 255));
-
-        pixelData[idx + 0] = color.b;
-        pixelData[idx + 1] = color.g;
-        pixelData[idx + 2] = color.r;
-        pixelData[idx + 3] = a;
-      } else {
-        // OUTER BEZEL RIM:
-        if (!surf.inside || surf.alpha <= 0.01) {
-          pixelData[idx + 0] = 12;
-          pixelData[idx + 1] = 10;
-          pixelData[idx + 2] = 15;
-          pixelData[idx + 3] = 0;
-        } else {
-          const color = shadeMarshmallow(x, y, surf);
-          pixelData[idx + 0] = color.b;
-          pixelData[idx + 1] = color.g;
-          pixelData[idx + 2] = color.r;
-          pixelData[idx + 3] = Math.round(surf.alpha * 255);
-        }
+        pixelData[idx + 1] = 20; // G
+        pixelData[idx + 2] = 15; // R
+        pixelData[idx + 3] = scanlineAlpha; // Transparent aperture
       }
     }
   }
 
-  return createTgaBuffer(pixelData);
+  return createTgaBuffer(pixelData, W, H);
 }
 
-// Generate both textures
+// ============================================================================
+// 3. Backplate_Nebula.tga (256x256 32-bit BGRA)
+// Deep cosmic nebula starfield for 3D multi-plane depth chamber
+// ============================================================================
+function generateNebulaBackplate() {
+  const W = 256;
+  const H = 256;
+  const pixelData = Buffer.alloc(W * H * 4);
+  const prng = createPrng(4242);
+
+  // Pre-generate 120 deterministic stars
+  const stars = [];
+  for (let i = 0; i < 120; i++) {
+    stars.push({
+      x: Math.floor(prng() * W),
+      y: Math.floor(prng() * H),
+      brightness: 0.4 + prng() * 0.6,
+      radius: prng() < 0.2 ? 1.5 : 0.8
+    });
+  }
+
+  for (let y = 0; y < H; y++) {
+    const ny = y / (H - 1);
+    for (let x = 0; x < W; x++) {
+      const nx = x / (W - 1);
+      const idx = (y * W + x) * 4;
+
+      // Base navy-to-violet cosmic gradient
+      const gradR = 8 + ny * 22;   // 8..30
+      const gradG = 10 + ny * 14;  // 10..24
+      const gradB = 28 + ny * 45;  // 28..73
+
+      // Procedural nebula cloud noise (harmonic sine waves)
+      const n1 = Math.sin(nx * 6.28 + Math.cos(ny * 5.0) * 1.5) * 0.5 + 0.5;
+      const n2 = Math.cos(nx * 12.0 - ny * 8.0) * 0.5 + 0.5;
+      const nebula = Math.pow((n1 * 0.6 + n2 * 0.4), 2.2);
+
+      const nebR = nebula * 55;
+      const nebG = nebula * 25;
+      const nebB = nebula * 75;
+
+      // Radial vignette (darker towards perimeter)
+      const cx = nx - 0.5;
+      const cy = ny - 0.5;
+      const distFromCenter = Math.hypot(cx, cy) / 0.707;
+      const vignette = Math.max(0, 1.0 - Math.pow(distFromCenter, 2.0) * 0.55);
+
+      let r = (gradR + nebR) * vignette;
+      let g = (gradG + nebG) * vignette;
+      let b = (gradB + nebB) * vignette;
+
+      // Starfield contribution
+      for (let s = 0; s < stars.length; s++) {
+        const star = stars[s];
+        const dx = x - star.x;
+        const dy = y - star.y;
+        const d = Math.hypot(dx, dy);
+        if (d < star.radius * 2.0) {
+          const starGlint = Math.max(0, 1.0 - d / (star.radius * 2.0)) * star.brightness * 255;
+          r += starGlint * 0.9;
+          g += starGlint * 0.95;
+          b += starGlint * 1.0;
+        }
+      }
+
+      pixelData[idx + 0] = Math.min(255, Math.round(b)); // B
+      pixelData[idx + 1] = Math.min(255, Math.round(g)); // G
+      pixelData[idx + 2] = Math.min(255, Math.round(r)); // R
+      pixelData[idx + 3] = 255; // Opaque cosmic backdrop
+    }
+  }
+
+  return createTgaBuffer(pixelData, W, H);
+}
+
+// Generate all textures
 const closedTga = generateClosedTexture();
 const windowTga = generateWindowTexture();
+const nebulaTga = generateNebulaBackplate();
 
 const closedPath = path.join(mediaDir, 'Marshmallow_E_Closed.tga');
 const windowPath = path.join(mediaDir, 'Marshmallow_E_Window.tga');
+const nebulaPath = path.join(mediaDir, 'Backplate_Nebula.tga');
 
 fs.writeFileSync(closedPath, closedTga);
 fs.writeFileSync(windowPath, windowTga);
+fs.writeFileSync(nebulaPath, nebulaTga);
 
 console.log(`[gen_e_atlas] Generated: ${closedPath} (${closedTga.length} bytes)`);
 console.log(`[gen_e_atlas] Generated: ${windowPath} (${windowTga.length} bytes)`);
+console.log(`[gen_e_atlas] Generated: ${nebulaPath} (${nebulaTga.length} bytes)`);

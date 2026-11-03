@@ -110,9 +110,12 @@ function EMatrix_Math.GetFlipVisuals(u)
     local s = math.sin(u * math.pi)
     local specAlpha = s * s
 
+    -- Dark crevice alpha: peaks mid-flip (0.65), zero at u=0 and u=1
+    local creviceAlpha = s * 0.65
+
     local isFlipped = (u >= 0.5)
 
-    return scaleY, specAlpha, isFlipped
+    return scaleY, specAlpha, isFlipped, creviceAlpha
 end
 
 EMatrix_Math.EvaluateFlipVisuals = EMatrix_Math.GetFlipVisuals

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // tools/test_ematrix_math.mjs
 // Verification suite for FidelityEMatrix:
-//   1. Ring sequence metrics (Ring 0 == 1 cell, Ring 1 == 8 cells, monotonic Euclidean transition)
-//   2. 8-corner SetTexCoord rotation table invariants
-//   3. Scoreboard flip visual math (scaleY squash, golden specular alpha peak)
-//   4. TGA texture assets header, byte-size, and alpha punch verification
-//   5. Zero-GC idle script detachment verification
+//   1. Ring sequence metrics (Ring 0 == 1 cell, Ring 1 == 8 cells, monotonic Chebyshev wavefront distance)
+//   2. 8-corner SetTexCoord rotation table invariants & deterministic PRNG
+//   3. Scoreboard flip visual math (scaleY squash, specular glint peak, temporary crevice alpha)
+//   4. TGA texture assets header, byte-size, and alpha punch verification (Closed, Window, Nebula Backplate)
+//   5. Zero-GC idle script detachment verification in EMatrix_Core.lua
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -78,13 +78,14 @@ function calculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration) {
 }
 
 function getFlipVisuals(u) {
-  if (u <= 0.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: false };
-  if (u >= 1.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: true };
+  if (u <= 0.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: false, creviceAlpha: 0.0 };
+  if (u >= 1.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: true, creviceAlpha: 0.0 };
   const scaleY = Math.max(Math.abs(Math.cos(u * Math.PI)), 0.04);
   const s = Math.sin(u * Math.PI);
   const specAlpha = s * s;
+  const creviceAlpha = s * 0.65;
   const isFlipped = (u >= 0.5);
-  return { scaleY, specAlpha, isFlipped };
+  return { scaleY, specAlpha, isFlipped, creviceAlpha };
 }
 
 // ============================================================================
@@ -135,6 +136,36 @@ runTest('Rings 2+ transition smoothly to Euclidean circular ripple without disco
   assert.ok(Math.abs(dDiag3 - Math.hypot(3, 3)) < 1e-5);
 });
 
+runTest('Wavefront distance monotonicity: min(ringDist(R)) >= min(ringDist(R-1)) across all Chebyshev rings', () => {
+  const ox = 8;
+  const oy = 5;
+  const COLS = 15;
+  const ROWS = 9;
+
+  // Compute minimum ring distance per Chebyshev distance tier R in [0..7]
+  const minDistPerTier = {};
+  for (let r = 1; r <= ROWS; r++) {
+    for (let c = 1; c <= COLS; c++) {
+      const dx = Math.abs(c - ox);
+      const dy = Math.abs(r - oy);
+      const tier = Math.max(dx, dy);
+      const dist = calculateRingDistance(c, r, ox, oy);
+
+      if (minDistPerTier[tier] === undefined || dist < minDistPerTier[tier]) {
+        minDistPerTier[tier] = dist;
+      }
+    }
+  }
+
+  // Monotonicity assertion: every successive tier's minimum distance must be strictly >= previous tier
+  for (let t = 1; t <= 7; t++) {
+    assert.ok(
+      minDistPerTier[t] >= minDistPerTier[t - 1],
+      `Tier ${t} minDist (${minDistPerTier[t]}) must be >= Tier ${t - 1} minDist (${minDistPerTier[t - 1]})`
+    );
+  }
+});
+
 runTest('CalculateRingDistance handles non-finite inputs cleanly with 0 NaNs', () => {
   assert.equal(calculateRingDistance(NaN, 5, 8, 5), 0.0);
   assert.equal(calculateRingDistance(8, Infinity, 8, 5), 0.0);
@@ -172,30 +203,33 @@ runTest('Deterministic PRNG distribution across 135 cells', () => {
 });
 
 // ============================================================================
-// TEST 3: Scoreboard Vertical Flip Visual Transforms
+// TEST 3: Scoreboard Vertical Flip Visual Transforms & Crevice Alpha
 // ============================================================================
-runTest('Flip visual math produces vertical squash and specular flash peak at u=0.5', () => {
-  // At u = 0.0 (unflipped):
+runTest('Flip visual math produces vertical squash, specular flash peak at u=0.5, and zero settled crevice', () => {
+  // At u = 0.0 (unflipped / Closed):
   const v0 = getFlipVisuals(0.0);
   assert.equal(v0.scaleY, 1.0);
   assert.equal(v0.specAlpha, 0.0);
+  assert.equal(v0.creviceAlpha, 0.0);
   assert.equal(v0.isFlipped, false);
 
   // At u = 0.5 (exact 90° flip midpoint):
   const vMid = getFlipVisuals(0.5);
   assert.equal(vMid.scaleY, 0.04); // Clamped minimum height, never 0
   assert.ok(Math.abs(vMid.specAlpha - 1.0) < 1e-5); // Golden flash glint peaks at 1.0!
+  assert.ok(Math.abs(vMid.creviceAlpha - 0.65) < 1e-5); // Crevice peaks at 0.65!
   assert.equal(vMid.isFlipped, true); // Swapped to target texture!
 
-  // At u = 1.0 (flip completed):
+  // At u = 1.0 (flip completed / Open or Closed):
   const v1 = getFlipVisuals(1.0);
   assert.equal(v1.scaleY, 1.0);
   assert.equal(v1.specAlpha, 0.0);
+  assert.equal(v1.creviceAlpha, 0.0); // Zero settled crevice!
   assert.equal(v1.isFlipped, true);
 });
 
 // ============================================================================
-// TEST 4: TGA Texture Asset Verification
+// TEST 4: TGA Texture Asset Verification (Closed, Window, Backplate_Nebula)
 // ============================================================================
 runTest('Marshmallow_E_Closed.tga exists, has exact size (65554 bytes) and valid header', () => {
   const p = path.join(mediaDir, 'Marshmallow_E_Closed.tga');
@@ -203,7 +237,6 @@ runTest('Marshmallow_E_Closed.tga exists, has exact size (65554 bytes) and valid
   const buf = fs.readFileSync(p);
   assert.equal(buf.length, 65554, `Exact 32-bit TGA size must be 65,554 bytes`);
 
-  // Parse header
   const imageType = buf[2];
   const width = buf.readUInt16LE(12);
   const height = buf.readUInt16LE(14);
@@ -214,13 +247,13 @@ runTest('Marshmallow_E_Closed.tga exists, has exact size (65554 bytes) and valid
   assert.equal(height, 128, 'Height must be 128');
   assert.equal(bpp, 32, 'BPP must be 32');
 
-  // Closed texture body has high alpha across the cube face
+  // Closed texture body is fully opaque across face
   let alphaSum = 0;
   for (let i = 18 + 3; i < buf.length; i += 4) {
     alphaSum += buf[i];
   }
   const meanAlpha = alphaSum / (128 * 128);
-  assert.ok(meanAlpha > 200, `Closed texture mean alpha must be > 200 (got ${meanAlpha.toFixed(1)})`);
+  assert.ok(meanAlpha > 240, `Closed texture mean alpha must be > 240 (got ${meanAlpha.toFixed(1)})`);
 });
 
 runTest('Marshmallow_E_Window.tga has punched alpha=0 window with subtle CRT scanlines', () => {
@@ -230,20 +263,35 @@ runTest('Marshmallow_E_Window.tga has punched alpha=0 window with subtle CRT sca
   assert.equal(buf.length, 65554, `Exact 32-bit TGA size must be 65,554 bytes`);
 
   // Check center pixel (x=64, y=64):
-  // Line 64 is even (y % 2 === 0), so it holds subtle CRT scanline alpha (28)
   const idxEven = 18 + (64 * 128 + 64) * 4;
   const alphaEven = buf[idxEven + 3];
-  assert.equal(alphaEven, 28, `Even CRT scanline pixel alpha must be 28 (got ${alphaEven})`);
+  assert.equal(alphaEven, 24, `Even CRT scanline pixel alpha must be 24 (got ${alphaEven})`);
 
-  // Line 65 is odd (y % 2 === 1), so it holds pure punched alpha (0)
   const idxOdd = 18 + (65 * 128 + 64) * 4;
   const alphaOdd = buf[idxOdd + 3];
   assert.equal(alphaOdd, 0, `Odd punched window pixel alpha must be 0 (got ${alphaOdd})`);
 
-  // Outer bezel border pixel at (x=6, y=64) should have solid outer marshmallow alpha (255)
-  const idxBezel = 18 + (64 * 128 + 6) * 4;
+  // Outer bezel border pixel at (x=2, y=64) should have solid golden alpha (255)
+  const idxBezel = 18 + (64 * 128 + 2) * 4;
   const alphaBezel = buf[idxBezel + 3];
-  assert.ok(alphaBezel > 220, `Outer bezel alpha must be > 220 (got ${alphaBezel})`);
+  assert.equal(alphaBezel, 255, `Outer bezel alpha must be 255 (got ${alphaBezel})`);
+});
+
+runTest('Backplate_Nebula.tga exists, has exact size (262162 bytes), power of two (256x256), and valid header', () => {
+  const p = path.join(mediaDir, 'Backplate_Nebula.tga');
+  assert.ok(fs.existsSync(p), `Missing ${p}`);
+  const buf = fs.readFileSync(p);
+  assert.equal(buf.length, 262162, `Exact 32-bit 256x256 TGA size must be 262,162 bytes`);
+
+  const imageType = buf[2];
+  const width = buf.readUInt16LE(12);
+  const height = buf.readUInt16LE(14);
+  const bpp = buf[16];
+
+  assert.equal(imageType, 2, 'Must be uncompressed truecolor (type 2)');
+  assert.equal(width, 256, 'Width must be 256 (power of two)');
+  assert.equal(height, 256, 'Height must be 256 (power of two)');
+  assert.equal(bpp, 32, 'BPP must be 32');
 });
 
 // ============================================================================
@@ -253,15 +301,15 @@ runTest('EMatrix_Core.lua contains SetScript("OnUpdate", nil) for zero idle CPU'
   assert.ok(fs.existsSync(coreLuaPath), `Missing ${coreLuaPath}`);
   const coreSrc = fs.readFileSync(coreLuaPath, 'utf8');
 
-  // Verify explicit script detachment
+  // Verify explicit script detachment when idle
   assert.ok(
     coreSrc.includes('masterFrame:SetScript("OnUpdate", nil)'),
-    'Core must explicitly detach OnUpdate via SetScript("OnUpdate", nil) when wave finishes'
+    'Core must explicitly detach OnUpdate via SetScript("OnUpdate", nil) when idle'
   );
 
-  // Verify no per-frame table instantiations inside OnUpdateWaveDriver
-  const driverMatch = coreSrc.match(/local function OnUpdateWaveDriver[\s\S]*?end\nend/);
-  assert.ok(driverMatch, 'OnUpdateWaveDriver function must be defined');
+  // Verify no per-frame table instantiations inside OnUpdateDriver
+  const driverMatch = coreSrc.match(/local function OnUpdateDriver[\s\S]*?end\n/);
+  assert.ok(driverMatch, 'OnUpdateDriver function must be defined');
   const driverBody = driverMatch[0];
   assert.ok(!driverBody.includes('C_Timer.After'), 'Zero-GC invariant: no C_Timer.After allowed in driver');
 });
