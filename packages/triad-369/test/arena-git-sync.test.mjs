@@ -14,19 +14,22 @@ const BRANCH = 'arena/dfcfb02d-fidelity';
 const query = { id: 'new-query-1', from: 'Laptop', question: 'Are the nodes connected?' };
 const sha = text => createHash('sha256').update(text).digest('hex');
 
-function fixture(t, { oldOutput, gitStatus = '', branch = BRANCH, remoteChange = false, branchChange = false, pushFail = false, reasoner = false, growthState = null, growthStatus = '', localMode = false, agentSnapshot = null, agentGrowth = null } = {}) {
+function fixture(t, { oldOutput, gitStatus = '', branch = BRANCH, remoteChange = false, branchChange = false, pushFail = false, reasoner = false, growthState = null, growthStatus = '', localMode = false, agentSnapshot = null, agentGrowth = null, mirror = null } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'arena-git-test-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const src = path.join(root, 'packages/triad-369/src');
   const sync = path.join(root, 'bridge/sync');
   const remote = path.join(root, 'remote');
   const remoteAgent = path.join(root, 'remote-agent');
+  const mirrorDir = path.join(root, 'mirror');
   const bin = path.join(root, 'bin');
-  for (const dir of [src, sync, remote, remoteAgent, bin]) fs.mkdirSync(dir, { recursive: true });
+  for (const dir of [src, sync, remote, remoteAgent, mirrorDir, bin]) fs.mkdirSync(dir, { recursive: true });
   for (const file of ['arena_git_sync.mjs', 'arena_node.mjs']) fs.copyFileSync(path.join(SOURCE, file), path.join(src, file));
   const previous = oldOutput ?? { schema: 'arena-telemetry-v2', lastQueryResponse: { id: 'older-query', query_sha256: sha('older') } };
   const output = path.join(sync, 'arena_telemetry.json');
   fs.writeFileSync(output, JSON.stringify(previous, null, 2) + '\n');
+  if (mirror === 'same') fs.copyFileSync(output, path.join(mirrorDir, 'arena_telemetry.json'));
+  if (mirror === 'independent') fs.writeFileSync(path.join(mirrorDir, 'arena_telemetry.json'), 'independent local content');
   if (growthState) fs.writeFileSync(path.join(sync, 'arena_growth_state.json'), JSON.stringify(growthState, null, 2) + '\n');
   if (localMode) fs.writeFileSync(path.join(sync, 'triad_telemetry.json'), JSON.stringify({ query }, null, 2) + '\n');
   if (agentSnapshot) fs.writeFileSync(path.join(remoteAgent, 'arena_telemetry.json'), JSON.stringify(agentSnapshot, null, 2) + '\n');
@@ -90,6 +93,7 @@ if (args[0] === 'symbolic-ref') {
     MOCK_BRANCH_CHANGE: branchChange ? '1' : '0',
     MOCK_PUSH_FAIL: pushFail ? '1' : '0',
     ARENA_SYNC_BRANCH: localMode ? BRANCH : branch,
+    ARENA_SYNC_MIRROR_DIRS: JSON.stringify(mirror ? [mirrorDir] : []),
     ARENA_REASONER_EXEC: '',
     ARENA_REASONER_ARGS: '[]',
   };
@@ -101,6 +105,7 @@ if (args[0] === 'symbolic-ref') {
   }
   return {
     output,
+    mirrorDir,
     run: () => spawnSync(process.execPath, [path.join(src, 'arena_git_sync.mjs'), ...(localMode ? [] : ['--agent']), '--once'], { cwd: root, env, encoding: 'utf8', timeout: 10000 }),
     commands: () => fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse) : [],
   };
@@ -196,6 +201,19 @@ test('local mode discovers the selected agent branch and imports matching snapsh
   assert.ok(commits[0].includes('--only'));
   assert.ok(commits[0].includes('bridge/sync/arena_telemetry.json'));
   assert.ok(commits[0].includes('bridge/sync/arena_growth_state.json'));
+});
+
+test('local mode mirrors synchronized files without overwriting independent mirror edits', t => {
+  const agentSnapshot = { schema: 'arena-telemetry-v2', lastQueryResponse: { id: query.id, query_sha256: sha(query.question), status: 'awaiting_reasoner', answer: null } };
+  for (const mirror of ['same', 'independent']) {
+    const f = fixture(t, { localMode: true, branch: 'main', agentSnapshot, mirror });
+    const target = path.join(f.mirrorDir, 'arena_telemetry.json');
+    const before = fs.readFileSync(target, 'utf8');
+    const result = f.run();
+    assert.equal(result.status, 0, result.stderr);
+    if (mirror === 'same') assert.equal(JSON.parse(fs.readFileSync(target, 'utf8')).lastQueryResponse.id, query.id);
+    else assert.equal(fs.readFileSync(target, 'utf8'), before);
+  }
 });
 
 test('local mode skips mismatched or locally modified agent responses', t => {

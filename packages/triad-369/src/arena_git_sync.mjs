@@ -231,6 +231,35 @@ export async function syncArenaAgent({ branch, state }) {
 
 // Local-host mode retains the main-branch bus workflow for operators on their
 // own machines. It discovers an agent branch but will not overwrite local edits.
+function mirrorSnapshot(filename, incoming, previous) {
+  let roots = process.platform === 'win32' ? ['D:/fidelity-llm/bridge/sync', 'C:/MarbleGp/bridge/sync'] : [];
+  if (process.env.ARENA_SYNC_MIRROR_DIRS) {
+    let configured;
+    try { configured = JSON.parse(process.env.ARENA_SYNC_MIRROR_DIRS); }
+    catch { console.warn('[LOCAL SYNC] Ignoring invalid ARENA_SYNC_MIRROR_DIRS.'); return; }
+    if (!Array.isArray(configured) || configured.length > 8 || configured.some(dir => typeof dir !== 'string' || !path.isAbsolute(dir))) {
+      console.warn('[LOCAL SYNC] Ignoring invalid ARENA_SYNC_MIRROR_DIRS.');
+      return;
+    }
+    roots = configured;
+  }
+  for (const root of new Set(roots)) {
+    try {
+      const target = path.join(root, filename);
+      const current = readBytesOptional(target);
+      if (sameBytes(current, incoming)) continue;
+      if (current !== null && !sameBytes(current, previous)) {
+        console.warn(`[LOCAL SYNC] A mirror of ${filename} has independent changes; it was left untouched.`);
+        continue;
+      }
+      fs.mkdirSync(root, { recursive: true });
+      writeAtomic(target, incoming);
+    } catch (error) {
+      console.warn(`[LOCAL SYNC] Could not update a mirror of ${filename}: ${error.message}`);
+    }
+  }
+}
+
 let lastLocalQueryId = null;
 let localPushPending = false;
 async function importAgentSnapshots(triad, triadBytes) {
@@ -253,6 +282,7 @@ async function importAgentSnapshots(triad, triadBytes) {
   if (!sameBytes(triadBytes, readBytesOptional(path.join(REPO_ROOT, TRIAD_FILE)))) throw new Error('The local inquiry changed during branch discovery.');
 
   const changed = [];
+  const mirrors = [];
   for (const file of [ARENA_FILE, GROWTH_FILE]) {
     const incoming = file === ARENA_FILE ? rawResponse : (await readSnapshot(sha, file))?.replace(/^\uFEFF/, '') ?? null;
     if (incoming === null) continue;
@@ -269,6 +299,7 @@ async function importAgentSnapshots(triad, triadBytes) {
     }
     if (!sameBytes(before, readBytesOptional(destination))) throw new Error(`Local ${path.basename(file)} changed during synchronization.`);
     writeAtomic(destination, bytes);
+    mirrors.push({ filename: path.basename(file), incoming: bytes, previous: before });
     changed.push(file);
   }
   if (changed.length) {
@@ -277,6 +308,7 @@ async function importAgentSnapshots(triad, triadBytes) {
     for (const file of changed) if ((await trackedFileState(file)).staged) throw new Error(`Local ${path.basename(file)} was staged during synchronization.`);
     await git(['commit', '--only', '-m', `sync: integrate Arena snapshot from ${ref.slice('refs/remotes/origin/'.length)}`, '--', ...changed]);
     localPushPending = true;
+    for (const mirror of mirrors) mirrorSnapshot(mirror.filename, mirror.incoming, mirror.previous);
     console.log(`[LOCAL SYNC] Committed matching Arena snapshots from ${ref.slice('refs/remotes/origin/'.length)}.`);
   }
 }
