@@ -71,6 +71,8 @@ local function SetUnitOn(model, unit)
         ns.PlaceModel(model, 0, 0)
         ns.FaceModel(model, 0)
     end)
+    -- idle animation (0) so the copy breathes like the original
+    pcall(function() if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end end)
     return ok
 end
 

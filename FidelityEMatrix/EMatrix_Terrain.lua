@@ -64,7 +64,7 @@ local pool = {}                -- { frameMono, frameL, frameR, key, used }
 local enabled = false
 local scanAge = 0
 local candidates = {}          -- reused scratch of { entry, dist, isWmo }
-local DEFAULTS = { terrainOverlay = true, terrainFovY = 1.0, terrainHead = 2.0, terrainPitch = 0.35, terrainBackdrop = "none", terrainPitchFromPlate = true }
+local DEFAULTS = { terrainOverlay = true, terrainLoader = "path", terrainFovY = 1.0, terrainHead = 2.0, terrainPitch = 0.35, terrainBackdrop = "none", terrainPitchFromPlate = true }
 
 local function Cfg(k)
     local v = FidelityEMatrix_Config and FidelityEMatrix_Config[k]
@@ -167,20 +167,41 @@ local function GetSlot(i)
     return s
 end
 
--- Classic takes a path; newer engines also take a FileDataID. Try id, path.m2, path.mdx.
+-- Classic takes a path; newer engines also take a FileDataID. A SetModel call can succeed
+-- without loading anything, so each attempt is checked with GetModelFileID where the client has
+-- it; the order is path.m2, id, path.mdx (/fide terrain loader id puts the id first).
+local loadStats = { ok = 0, failed = 0, lastFailure = nil, lastWin = nil }
+Terrain.loadStats = loadStats
+
+local function Loaded(model)
+    if type(model.GetModelFileID) ~= "function" then return true end -- no way to check: trust the call
+    local ok, id = pcall(model.GetModelFileID, model)
+    return ok and type(id) == "number" and id > 0
+end
+
 local function LoadModel(model, fdid, path)
     if not model then return false end
-    local winPath = path and path:gsub("/", "\\") or nil
+    local winPath = path and path ~= "" and path:gsub("/", "\\") or nil
     local tries = {}
-    if fdid and fdid > 0 then tries[#tries + 1] = fdid end
-    if winPath then tries[#tries + 1] = winPath; tries[#tries + 1] = (winPath:gsub("%.m2$", ".mdx")) end
+    local idFirst = Cfg("terrainLoader") == "id"
+    if idFirst and fdid and fdid > 0 then tries[#tries + 1] = fdid end
+    if winPath then tries[#tries + 1] = winPath end
+    if not idFirst and fdid and fdid > 0 then tries[#tries + 1] = fdid end
+    if winPath then tries[#tries + 1] = (winPath:gsub("%.m2$", ".mdx")) end
     for _, asset in ipairs(tries) do
         local ok = pcall(model.SetModel, model, asset)
-        if ok then
-            pcall(function() if model.SetCamera then model:SetCamera(0) end end)
+        if ok and Loaded(model) then
+            pcall(function()
+                if model.SetCamera then model:SetCamera(0) end
+                if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end
+            end)
+            loadStats.ok = loadStats.ok + 1
+            loadStats.lastWin = type(asset) == "number" and ("id " .. asset) or asset
             return true
         end
     end
+    loadStats.failed = loadStats.failed + 1
+    loadStats.lastFailure = winPath or tostring(fdid)
     return false
 end
 
@@ -374,16 +395,41 @@ function Terrain.Command(args, say)
     elseif sub == "head" and v then FidelityEMatrix_Config.terrainHead = math.min(math.max(v, 0.5), 4); say("Look-at height: %.2f yd (restart the overlay to apply)", v); return
     elseif sub == "pitch" and v then FidelityEMatrix_Config.terrainPitch = math.rad(math.min(math.max(v, 3), 80)); FidelityEMatrix_Config.terrainPitchFromPlate = false; say("Pitch fixed at %.0f degrees (nameplate solve off)", v); return
     elseif sub == "autopitch" then FidelityEMatrix_Config.terrainPitchFromPlate = true; say("Pitch solved from the player nameplate again"); return
+    elseif sub == "loader" and (args[3] == "path" or args[3] == "id") then FidelityEMatrix_Config.terrainLoader = args[3]; say("Model loader tries the %s first (restart the overlay to reload)", args[3]); return
+    elseif sub == "probe" then
+        -- everything the laptop needs to say why nothing is drawn
+        local ps = Terrain.PlayerState()
+        if not ps then say("probe: UnitPosition gave nothing (instance, or the API is restricted here)"); return end
+        local col, row, tile = Terrain.TileFor(ps.mapName, ps.x, ps.y)
+        local groundZ = Terrain.GroundHeight(tile, ps.x, ps.y)
+        say("probe: pos %.1f, %.1f (%s) facing %.2f zoom %.1f | tile %s:%d:%d %s | ground %s | plateY %s",
+            ps.x, ps.y, ps.mapName, ps.facing, ps.zoom, ps.mapName, col, row, tile and "FOUND" or "MISSING in " .. Terrain.BuildLabel(),
+            groundZ and string.format("%.1f", groundZ) or "nil", tostring(PlateScreenY()))
+        if not tile then return end
+        local cam, pitch = Terrain.BuildCamera(ps, groundZ or 0)
+        cam.yaw = ps.facing
+        local found = Scan(ps, tile, groundZ or 0)
+        say("probe: %d placements within %d yd; camera pitch %.1f deg, focal %.0f px, screen %dx%d", #found, RADIUS, math.deg(pitch), cam.focal, cam.w, cam.h)
+        for i = 1, math.min(6, #found) do
+            local e = found[i].e
+            local sx, sy, depth = Math.ProjectPoint(cam, e[3], e[4], e[5])
+            local hPx = depth and (cam.focal * NominalHeight(e[2], found[i].isWmo) * e[7] / depth) or 0
+            say("  %d. %s at %.1f,%.1f,%.1f dist %.1f -> %s", i, (e[2]:match("([^/]+)$") or e[2]), e[3], e[4], e[5], math.sqrt(found[i].d2),
+                sx and string.format("screen %.0f,%.0f depth %.1f height %.0f px%s", sx, sy, depth, hPx, hPx < MIN_PX and " (too small)" or "") or "behind the camera")
+        end
+        say("probe: models loaded %d, failed %d%s%s", loadStats.ok, loadStats.failed,
+            loadStats.lastWin and (", last loaded via " .. loadStats.lastWin) or "", loadStats.lastFailure and (", last failure " .. loadStats.lastFailure) or "")
+        return
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
     elseif sub == "status" then
         local ps = Terrain.PlayerState()
-        say("Terrain overlay: %s | client %s | tile %s | ground %s | pitch %s | props drawn %d | pos %s",
+        say("Terrain overlay: %s | client %s | tile %s | ground %s | pitch %s | props drawn %d | models loaded %d failed %d | pos %s",
             enabled and "ON" or "off", Terrain.BuildLabel(), tostring(lastInfo.tile), lastInfo.groundZ and string.format("%.1f", lastInfo.groundZ) or "?",
-            lastInfo.pitch and string.format("%.1f deg", math.deg(lastInfo.pitch)) or "?", lastInfo.props or 0,
+            lastInfo.pitch and string.format("%.1f deg", math.deg(lastInfo.pitch)) or "?", lastInfo.props or 0, loadStats.ok, loadStats.failed,
             ps and string.format("%.1f, %.1f (%s)", ps.x, ps.y, ps.mapName) or "unknown (no UnitPosition here)")
         return
     else
-        say("Usage: /fide terrain <on|off|status|fov <deg>|head <yd>|pitch <deg>|autopitch|backdrop <none|dim|black>>")
+        say("Usage: /fide terrain <on|off|status|probe|loader <path|id>|fov <deg>|head <yd>|pitch <deg>|autopitch|backdrop <none|dim|black>>")
         return
     end
     say("Terrain overlay %s: map placements near you drawn as depth props (client %s).", enabled and "ON" or "OFF", Terrain.BuildLabel())

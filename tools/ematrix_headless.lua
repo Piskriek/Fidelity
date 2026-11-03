@@ -117,6 +117,8 @@ _G.UnitPosition = function(unit) if unit == "player" then return playerPos.y, pl
 _G.GetPlayerFacing = function() return playerFacing end
 _G.GetCameraZoom = function() return cameraZoom end
 function Region:SetModel(asset) if asset == nil then error("Usage: SetModel(asset)") end self.model = asset end
+function Region:GetModelFileID() if type(self.model) == "string" then return 424242 end return nil end
+function Region:SetAnimation(a) self.animation = a end
 function Region:SetModelScale(s) self.modelScale = s end
 function Region:SetCamera(i) self.camera = i end
 if PROFILE == "table" then
@@ -493,7 +495,9 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     local bush = byPath["world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"]
     check(tree and bush, "tree and bush must be in the pool")
     check(not byPath["world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2"], "the 150 yd tree must be outside the radius")
-    check(tree.mono.model == "World\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy03.m2" or tree.mono.model == 189929, "model must be loaded by id or path, got " .. tostring(tree.mono.model))
+    check(tree.mono.model == "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy03.m2", "model must be loaded by its path (verified), got " .. tostring(tree.mono.model))
+    check(tree.mono.animation == 0, "a loaded prop must start its idle animation")
+    check(ns.Terrain.loadStats.ok >= 3 and ns.Terrain.loadStats.failed == 0, string.format("load stats ok %d failed %d", ns.Terrain.loadStats.ok, ns.Terrain.loadStats.failed))
     -- facing 0 = looking north: the tree 20 yd ahead sits on the centre line, above the bush
     check(near(tree.mono.points.BOTTOM.x, 960, 1.0), "tree ahead must be on the centre line, x=" .. tostring(tree.mono.points.BOTTOM.x))
     check(tree.mono.points.BOTTOM.y > bush.mono.points.BOTTOM.y, "the far tree's foot must be higher on screen than the near bush's")
@@ -569,7 +573,7 @@ test("every slash command runs without an addon error", function()
         "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
         "world", "world status", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
-        "terrain backdrop dim", "terrain backdrop none", "terrain off", "terrain bogus",
+        "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
         "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide", "bogus" }) do
         slash(cmd)
         step(0.05)
