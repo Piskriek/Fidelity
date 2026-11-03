@@ -415,8 +415,14 @@ function UpdateStereoDisplay()
                 sceneMain:SetLight(true, false, -0.45, -0.55, 0.70, 1.0, 0.95, 0.75, 0.7, 0.20, 0.15, 0.35)
             end
         end
-        if sceneLeft then sceneLeft:Hide() end
-        if sceneRight then sceneRight:Hide() end
+        if sceneLeft then
+            sceneLeft:Hide()
+            sceneLeft:SetAlpha(0.0)
+        end
+        if sceneRight then
+            sceneRight:Hide()
+            sceneRight:SetAlpha(0.0)
+        end
     end
 end
 
