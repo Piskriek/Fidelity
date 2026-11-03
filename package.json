@@ -8,10 +8,11 @@
     "apps/*"
   ],
   "scripts": {
+    "test": "node --test packages/triad-369/test/*.test.mjs",
     "triad": "node packages/triad-369/src/cli.mjs",
     "triad:legacy": "node packages/triad-369/src/triad_cli.mjs",
     "triad:status": "node packages/triad-369/src/cli.mjs status",
-    "triad:test": "node --test packages/triad-369/test/cli-bridge.test.mjs packages/triad-369/test/api.test.mjs packages/triad-369/test/serve.test.mjs packages/triad-369/test/arena-node.test.mjs",
+    "triad:test": "node --test packages/triad-369/test/*.test.mjs",
     "triad:arena": "node packages/triad-369/src/arena_node.mjs",
     "triad:api": "node packages/triad-369/src/api.mjs",
     "triad:serve": "node packages/triad-369/src/serve.mjs",
