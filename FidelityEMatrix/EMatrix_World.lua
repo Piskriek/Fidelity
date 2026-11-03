@@ -79,15 +79,24 @@ end
 -- ---------------------------------------------------------------------------
 local scratch = {} -- reused: { unit, x, y, z }
 
+--- A frame's centre in UIParent coordinates (nameplates are not children of UIParent).
+local function CenterInUI(frame)
+    if not frame or not frame.GetCenter then return nil end
+    local x, y = frame:GetCenter()
+    if not x or not y then return nil end
+    local fs = frame.GetEffectiveScale and frame:GetEffectiveScale() or 1
+    local us = UIParent and UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
+    if not fs or fs == 0 or not us or us == 0 then return x, y end
+    return x * fs / us, y * fs / us
+end
+World.CenterInUI = CenterInUI
+
 local function PlayerScreenY()
     -- The player's own nameplate when the client shows one, else the usual third-person spot
     local h = (GetScreenHeight() or 1080)
     if C_NamePlate and C_NamePlate.GetNamePlateForUnit then
-        local p = C_NamePlate.GetNamePlateForUnit("player")
-        if p and p.GetCenter then
-            local _, y = p:GetCenter()
-            if y then return y end
-        end
+        local _, y = CenterInUI(C_NamePlate.GetNamePlateForUnit("player"))
+        if y then return y end
     end
     return h * 0.40
 end
@@ -103,7 +112,7 @@ function World.Scan()
     for _, plate in ipairs(plates) do
         local unit = plate.namePlateUnitToken or (plate.UnitFrame and plate.UnitFrame.unit)
         if unit and UnitExists and UnitExists(unit) and not (UnitIsUnit and UnitIsUnit(unit, "player")) and plate.GetCenter then
-            local x, y = plate:GetCenter()
+            local x, y = CenterInUI(plate)
             if x and y and x >= 0 and x <= sw and y >= 0 and y <= sh then
                 scratch[#scratch + 1] = { unit = unit, x = x, y = y, z = Math.DepthFromScreenY(y, playerY, horizonY) }
             end

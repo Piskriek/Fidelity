@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.4.1"
+local VERSION = "1.4.2"
 
 -- Configuration & Constants
 local COLS = 15
@@ -67,6 +67,7 @@ local DEFAULTS = {
     sideSign = 1,
     turnSign = 1,
     worldOverlay = false,     -- EMatrix_World: live actors re-rendered over the game (restored at load)
+    boxHidden = false,        -- the scoreboard window stays hidden (set by /fide overlay on)
 }
 FidelityEMatrix_Config = FidelityEMatrix_Config or {}
 
@@ -202,6 +203,7 @@ end
 local function PlaceModel(model, side, up)
     if model and type(model.SetPosition) == "function" then
         model:SetPosition(0, side, up)
+        model.__ematrixPos = { 0, side, up }
     end
 end
 
@@ -303,12 +305,13 @@ function CreateMatrixGrid()
             dm:SetPoint(point, frameScene, relPoint, x, y)
             dm:SetFrameLevel(26)
             dm:EnableMouse(false)
-            pcall(function()
+            local okUnit = pcall(function()
                 dm:SetUnit("player")
                 if dm.SetDefaultModelPosition then dm:SetDefaultModelPosition() end
                 PlaceModel(dm, 0, 0)
                 FaceModel(dm, 0)
             end)
+            dm.__ematrixUnit = okUnit and "player" or "SetUnit failed"
             ApplyLight(dm, LIGHT_MONO)
             return dm
         end
@@ -983,6 +986,22 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 Say("EMatrix_World.lua did not load.")
             end
 
+        elseif cmd == "overlay" or cmd == "full" then
+            local sub = args[2] or "toggle"
+            local anyOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
+            local on = (sub == "on") or (sub == "toggle" and not anyOn)
+            if sub == "off" then on = false end
+            if ns.World then ns.World.SetEnabled(on) end
+            if ns.Terrain then ns.Terrain.SetEnabled(on) end
+            FidelityEMatrix_Config.boxHidden = on
+            if masterFrame then if on then masterFrame:Hide() else masterFrame:Show() end end
+            CheckIdleCondition()
+            if on then
+                Say("Full-screen depth scene ON: units with nameplates and the map's trees, props and buildings near you are re-rendered with depth (box hidden). Put on red/cyan glasses and type /fide stereo anaglyph. /fide overlay off brings the box back.")
+            else
+                Say("Full-screen depth scene OFF; the box is back. Click it to ripple it open.")
+            end
+
         elseif cmd == "terrain" then
             if ns.Terrain then
                 ns.Terrain.Command(args, Say)
@@ -1035,6 +1054,15 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print(string.format("  State: %s | open %.2f", waveTargetState and "|cff00ff00OPEN (lens window)|r" or "|cffffcc00CLOSED (E-cubes)|r", openAmount))
             print(string.format("  Stereo: %s | Backdrop: %s | Lens: %.2f", StereoMode():upper(), Cfg("backdrop"), Cfg("lensAlpha")))
             print(string.format("  3D Model Engine: %s | Light form: %s", sceneMain and sceneMain:GetObjectType() or "None", DiagTable.lightForm))
+            for _, pair in ipairs({ { "main", sceneMain }, { "left", sceneLeft }, { "right", sceneRight } }) do
+                local m = pair[2]
+                if m then
+                    local p = m.__ematrixPos or {}
+                    print(string.format("  Scene %s: %s, alpha %.2f, %dx%d, unit %s, pos (%.2f, %.3f, %.3f), level %s",
+                        pair[1], m:IsShown() and "shown" or "HIDDEN", m:GetAlpha() or -1, m:GetWidth() or 0, m:GetHeight() or 0,
+                        tostring(m.__ematrixUnit), p[1] or 0, p[2] or 0, p[3] or 0, tostring(m.GetFrameLevel and m:GetFrameLevel() or "?")))
+                end
+            end
             print(string.format("  Spin: %.2f | Parallax: %.2f | Eye: %.2f, %.2f", Cfg("spinSpeed"), Cfg("parallaxStrength"), smoothEyeX, smoothEyeY))
             print(string.format("  OnUpdate Hook: %s", (masterFrame and masterFrame:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r"))
             if ns.World then
@@ -1055,6 +1083,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide lens <0..1>|r                 - Open microlens bezel alpha (0 = seamless)")
             print("  |cffffcc00/fide backdrop <nebula|world|black>|r - Deep background")
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
+            print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene: world + terrain overlays on, box hidden")
             print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
@@ -1078,7 +1107,8 @@ loader:SetScript("OnEvent", function(self, event, addon)
     if event == "ADDON_LOADED" then
         if addon == "FidelityEMatrix" or addon == ADDON_NAME then
             CreateMatrixGrid()
-            Say("v%s initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide help|r.", VERSION)
+            Say("v%s ready. |cffffcc00/fide overlay on|r = full-screen depth scene (then /fide stereo anaglyph with glasses). Click the box to ripple it open. |cffffcc00/fide status|r if something is missing.", VERSION)
+            if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
             if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true); CheckIdleCondition() end
             if ns.Terrain and FidelityEMatrix_Config.terrainOverlay then ns.Terrain.SetEnabled(true); CheckIdleCondition() end
             self:UnregisterEvent("ADDON_LOADED")
@@ -1086,7 +1116,7 @@ loader:SetScript("OnEvent", function(self, event, addon)
     elseif event == "PLAYER_ENTERING_WORLD" then
         if not masterFrame then
             CreateMatrixGrid()
-            Say("v%s initialized (Closed E-Cubes). Click any cell to ripple open, or type |cffffcc00/fide help|r.", VERSION)
+            Say("v%s ready. |cffffcc00/fide overlay on|r = full-screen depth scene. Click the box to ripple it open.", VERSION)
         end
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end

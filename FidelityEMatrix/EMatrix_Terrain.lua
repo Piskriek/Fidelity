@@ -120,8 +120,8 @@ end
 local function PlateScreenY()
     if not (Cfg("terrainPitchFromPlate") and C_NamePlate and C_NamePlate.GetNamePlateForUnit) then return nil end
     local p = C_NamePlate.GetNamePlateForUnit("player")
-    if not p or not p.GetCenter then return nil end
-    local _, y = p:GetCenter()
+    if not p then return nil end
+    local _, y = ns.World and ns.World.CenterInUI and ns.World.CenterInUI(p) or nil
     return y
 end
 

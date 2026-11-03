@@ -533,6 +533,21 @@ test("terrain overlay: anaglyph pairs, facing follows the player, off releases e
     slash("spin 0.5"); slash("parallax 0.5")
 end)
 
+test("/fide overlay on turns both overlays on and hides the box; off restores it", function()
+    addPlate("nameplate7", 1100, 600)
+    slash("overlay on")
+    step(0.6)
+    check(ns.World.IsEnabled() and ns.Terrain.IsEnabled(), "both overlays must be on")
+    check(not _G.FidelityEMatrixFrame.shown, "the box must be hidden")
+    check(FidelityEMatrix_Config.boxHidden == true, "box state must be saved")
+    check(ns.World.ActorCount() >= 1 and ns.Terrain.Info().props >= 1, "overlays must draw something")
+    slash("overlay off")
+    step(0.3)
+    check(not ns.World.IsEnabled() and not ns.Terrain.IsEnabled() and _G.FidelityEMatrixFrame.shown, "off must restore the box")
+    for i = #plates, 1, -1 do plates[i] = nil end
+    slash("spin 0.5"); slash("parallax 0.5")
+end)
+
 test("every slash command runs without an addon error", function()
     printed = {}
     for _, cmd in ipairs({ "help", "diag", "status", "scene target", "scene player", "spin 1", "parallax 0.5",
@@ -541,7 +556,8 @@ test("every slash command runs without an addon error", function()
         "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
         "world", "world status", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
-        "terrain backdrop dim", "terrain backdrop none", "terrain off", "terrain bogus", "bogus" }) do
+        "terrain backdrop dim", "terrain backdrop none", "terrain off", "terrain bogus",
+        "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "bogus" }) do
         slash(cmd)
         step(0.05)
     end
