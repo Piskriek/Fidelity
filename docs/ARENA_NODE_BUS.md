@@ -112,6 +112,10 @@ Run `npm run arena:grow` from the repository root to start the 15-second growth 
 
 At most one template inquiry can be prepared as an undelivered draft in the growth state. The draft is not proof of a message or acknowledgment. To run Node 4 against local input without the Git sync daemon, use `node packages/triad-369/src/arena_growth.mjs --process-local`; do not run this mode concurrently with another writer of `arena_telemetry.json`. A model answer still requires an explicitly configured trusted reasoner or an interactive reflection.
 
+## Upstream mesh experiment
+
+The upstream `triad_mesh.mjs` and `triad_mesh.json` are included as an experimental snapshot; the agent and growth daemons do not run that script automatically. Its latency-derived value is clamped to `0.010` and is not a validated FTLE measurement. Its delivery code can mark an inquiry delivered without a recipient acknowledgment, and its snapshot contains unverified live-status claims. Review and validate those behaviors before using the mesh as evidence or enabling local SSH/delivery operations.
+
 ## Invariants and limits
 
 The code preserves the requested principles as guidance: be truthful, avoid increasing intensity, never set felt pain, respect consent, and return a compassionate answer. It does not control a physical system or prove those properties. FTLE, if provided in the snapshot, is only compared numerically with `0.010` and labelled unverified; it does not measure confirmation bias or establish truth. The file handoff cannot determine whether the recipient used or felt the answer, so `loop_closed` remains false and `landed` remains `not_evaluated`.
