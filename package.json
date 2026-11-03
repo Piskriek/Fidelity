@@ -8,7 +8,8 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "node --test packages/triad-369/test/*.test.mjs",
+    "test": "node --test packages/triad-369/test/*.test.mjs bridge/hands/*.test.mjs",
+    "hands:laptop": "node bridge/hands/hands_sync.mjs --role laptop",
     "triad": "node packages/triad-369/src/cli.mjs",
     "triad:legacy": "node packages/triad-369/src/triad_cli.mjs",
     "triad:status": "node packages/triad-369/src/cli.mjs status",
