@@ -1,5 +1,27 @@
 # RESUME: start here (fresh session)
 
+## 03 Nov Checkpoint 9 — SIV Anti-Cheat Remediation (FIX-P1-01..FIX-P2-09) & World of Warcraft Holon Integration
+> **STATUS**: 23/23 Tests 100% Green. All 9 Arena Review Findings Resolved. Addon Tracked & Pre-Installed.  
+> **Director Briefing**: [`CLAUDE.md`](../CLAUDE.md)  
+> **Master Outbox**: [`flash_outbox_cp9.json`](../flash_outbox_cp9.json)  
+> **Packages**: [`packages/triad-369`](../packages/triad-369/) & [`packages/wow-syntropic`](../packages/wow-syntropic/)  
+> **Invariants Enforced**: *Zero Architectural Lies* // *Zero False Certainty on Missing Data* // *Strict Epistemic Consent* // *Do Not Stop At 3* // *Compassion Return Loop*
+
+### Key Accomplishments (Checkpoint 9)
+1. **Universal SIV Anti-Cheat Remediation (All 9 Gates Passed)**:
+   - `universal_anticheat.mjs`: Empty sessions fail closed (`INSUFFICIENT_EVIDENCE`, `confidence: 0.0`). Shortest-arc modular yaw wrap eliminates false 358° aimbot snaps. Vehicle Hamiltonian flags unpowered energy gains (+93,000 J with throttle 0) violating conservation.
+   - `wow_anticheat.mjs`: Scorer requires positive evaluated statuses; skips dt <= 0; zero NaNs. D1, D5, D6 honesty pipelines default to `unverified` and D7 to `untested`. Active rotation window [200ms, 3500ms] clamps long pauses; lag-1 conditional entropy H(X_t | X_{t-1}) flags cyclic loops. Min/quantile reaction latency preservation prevents 200ms from masking 80ms spikes.
+   - `wow_adapter.mjs`: Lua tokenizer and table parser isolates positions from movement state events. Converts normalized [0..1] map coords to yards via scale metadata or marks `insufficient_scale_metadata`.
+2. **Addon Hardening & Client Distribution**:
+   - `FidelityWoW` addon tracked at `packages/wow-syntropic/` and mirrored under `packages/triad-369/wow-syntropic/`.
+   - Pre-installed directly into client folder `D:/World of Warcraft/_forever_/Interface/AddOns/FidelityWoW/`.
+   - Epistemic consent gate: `optIn = false` by default. `/fidelity optout` halts sampling and wipes all export ring buffers.
+3. **4-Node Cybernetic Holon Active**:
+   - Node 1 (Laptop Ground on :5179), Node 2 (Sol 3080 PC at tick 12,241+), Node 3 (Apex Middle Pillar on :8787), Node 4 (Arena Container on session branch).
+
+---
+
+
 ## 03 Nov Checkpoint 8 — Triad 3/6/9 Fractal Architecture, Rung 7 Gateway & Seed Bootstrap
 > **STATUS**: Seed ready for autonomous agent onboarding and multi-machine cybernetic synchronization.  
 > **Master Guide**: [`docs/TRIAD_369_SEED_BOOTSTRAP.md`](file:///c:/MarbleGp/docs/TRIAD_369_SEED_BOOTSTRAP.md)  
