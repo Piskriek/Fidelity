@@ -64,11 +64,11 @@ function sdRoundBox(px, py, cx, cy, hx, hy, r) {
 
 /**
  * Outer marshmallow cube boundary.
- * Spans [3, 124] (half-extent 61, corner radius 10) so adjacent 32px cells
- * in the 15x9 grid touch seamlessly with a soft 1px border.
+ * Spans full [0, 128] cell bounds (half-extent 63.5, subtle corner bevel radius 4)
+ * so adjacent cells in the 15x9 grid touch 100% seamlessly with zero gaps or seams.
  */
 function sdCubeBoundary(x, y) {
-  return sdRoundBox(x, y, 64, 64, 61, 61, 10);
+  return sdRoundBox(x, y, 64, 64, 63.5, 63.5, 4);
 }
 
 /**
@@ -254,7 +254,7 @@ function generateWindowTexture() {
       const idx = (y * WIDTH + x) * 4;
 
       const surf = getCubeHeightAndNormal(x, y);
-      const dInnerWindow = sdRoundBox(x, y, 64, 64, 61 - BEZEL_INSET, 61 - BEZEL_INSET, 6);
+      const dInnerWindow = sdRoundBox(x, y, 64, 64, 63.5 - BEZEL_INSET, 63.5 - BEZEL_INSET, 4);
 
       if (dInnerWindow <= 0) {
         // INSIDE THE PUNCHED WINDOW (Inner Face):

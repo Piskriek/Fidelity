@@ -57,13 +57,13 @@ local function CreateMatrixGrid()
     Math = Math or (ns and ns.Math) or _G.EMatrix_Math
     if not Math then return end
 
-    -- Master Frame
+    -- Master Frame (Forefront layer for cells and click picking)
     masterFrame = CreateFrame("Frame", "FidelityEMatrixFrame", UIParent)
     masterFrame:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
     masterFrame:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
     masterFrame:SetScale(FidelityEMatrix_Config.scale or 1.0)
     masterFrame:SetFrameStrata("MEDIUM")
-    masterFrame:SetFrameLevel(50) -- Keep well above background containers
+    masterFrame:SetFrameLevel(50) -- Well above background 3D layer
     masterFrame:SetMovable(true)
     masterFrame:EnableMouse(true)
     masterFrame:SetClampedToScreen(true)
@@ -73,7 +73,13 @@ local function CreateMatrixGrid()
     end)
     masterFrame:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
+        if sceneContainer then
+            sceneContainer:ClearAllPoints()
+            sceneContainer:SetPoint("CENTER", self, "CENTER", 0, 0)
+        end
     end)
+    masterFrame:HookScript("OnShow", function() if sceneContainer then sceneContainer:Show() end end)
+    masterFrame:HookScript("OnHide", function() if sceneContainer then sceneContainer:Hide() end end)
 
     -- Flat Pre-allocated Cell Array (Created FIRST so UI is always 100% resilient)
     for r = 1, ROWS do
@@ -98,7 +104,7 @@ local function CreateMatrixGrid()
             }
 
             -- Texture 1: slotBg (BACKGROUND, sublevel 1)
-            -- Static dark crevice frame where the cube sits (never moves)
+            -- Static dark crevice frame where the cube sits (visible only when closed)
             local slotBg = masterFrame:CreateTexture(nil, "BACKGROUND", nil, 1)
             slotBg:SetSize(CELL_SIZE, CELL_SIZE)
             slotBg:SetPoint("CENTER", masterFrame, "TOPLEFT", cx, cy)
@@ -159,12 +165,20 @@ local function CreateMatrixGrid()
     masterFrame:SetScript("OnMouseDown", HandleMatrixClick)
     masterFrame:SetScript("OnMouseUp", HandleMatrixClick)
 
-    -- 3D ModelScene / PlayerModel Container (Behind cells, non-blocking)
+    -- 3D ModelScene / PlayerModel Container (Parented to UIParent, sits directly behind masterFrame)
     pcall(function()
-        sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", masterFrame)
-        sceneContainer:SetAllPoints(masterFrame)
+        sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", UIParent)
+        sceneContainer:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
+        sceneContainer:SetPoint("CENTER", masterFrame, "CENTER", 0, 0)
+        sceneContainer:SetFrameStrata("MEDIUM")
+        sceneContainer:SetFrameLevel(45) -- Directly behind masterFrame (50)
         sceneContainer:EnableMouse(false)
-        sceneContainer:SetFrameLevel(1)
+
+        -- Deep space cosmic background behind the 3D model
+        local spaceBg = sceneContainer:CreateTexture(nil, "BACKGROUND", nil, -5)
+        spaceBg:SetAllPoints(sceneContainer)
+        spaceBg:SetColorTexture(0.04, 0.05, 0.10, 0.95)
+
         CreateStereoModelScenes()
     end)
 end
@@ -184,6 +198,7 @@ function CreateStereoModelScenes()
             scene = ms
             scene:SetSize(w, h)
             scene:SetPoint(point, sceneContainer, relPoint, x, y)
+            scene:SetFrameLevel(46)
             scene:EnableMouse(false)
 
             pcall(function()
@@ -215,11 +230,15 @@ function CreateStereoModelScenes()
             scene = pm
             scene:SetSize(w, h)
             scene:SetPoint(point, sceneContainer, relPoint, x, y)
+            scene:SetFrameLevel(46)
             scene:EnableMouse(false)
             pcall(function()
+                pm:ClearModel()
                 pm:SetUnit("player")
-                if pm.SetRotation then pm:SetRotation(0) end
                 if pm.SetCamera then pm:SetCamera(0) end
+                if pm.SetPortraitZoom then pm:SetPortraitZoom(0.0) end
+                if pm.SetPosition then pm:SetPosition(0, 0, 0) end
+                if pm.SetRotation then pm:SetRotation(0) end
             end)
             return scene, nil
         end
@@ -337,16 +356,19 @@ local function OnUpdateWaveDriver(self, dt)
                 -- Golden specular bar flash peak at u=0.5
                 cell.specBar:SetAlpha(specAlpha)
 
-                -- Swap texture at midpoint
+                -- Swap texture and backplate at midpoint
                 if isFlipped then
                     if cell.isWindow ~= waveTargetState then
                         cell.flapTex:SetTexture(targetTex)
                         cell.isWindow = waveTargetState
+                        -- In window mode: backplate is transparent so 3D scene shows!
+                        cell.slotBg:SetAlpha(waveTargetState and 0.0 or 0.95)
                     end
                 else
                     local oldTex = waveTargetState and TEX_CLOSED or TEX_WINDOW
                     if cell.flapTex:GetTexture() ~= oldTex then
                         cell.flapTex:SetTexture(oldTex)
+                        cell.slotBg:SetAlpha(waveTargetState and 0.95 or 0.0)
                     end
                 end
 
@@ -356,6 +378,8 @@ local function OnUpdateWaveDriver(self, dt)
                 cell.flapTex:SetTexture(targetTex)
                 cell.specBar:SetAlpha(0.0)
                 cell.isWindow = waveTargetState
+                -- Cleanly settle backplate alpha
+                cell.slotBg:SetAlpha(waveTargetState and 0.0 or 0.95)
                 cell.settled = true
             end
         end
@@ -371,8 +395,7 @@ local function OnUpdateWaveDriver(self, dt)
                 cam:SetPosition(orbitX, -3.2, 1.1)
             end
         elseif sceneMain.SetRotation then
-            local facing = (GetPlayerFacing and GetPlayerFacing()) or 0.0
-            sceneMain:SetRotation(facing + math.sin(parallaxTime * 0.5) * 0.1)
+            sceneMain:SetRotation(parallaxTime * 0.5)
         end
     end
 
