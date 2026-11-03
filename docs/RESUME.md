@@ -42,6 +42,7 @@
 - **`triad -- status`** prints flows n/6, the degraded list and one evidence line per flow (`--json` for the full object). Density bridge: records `last_push` in `density.json`, coherence floor 0.85 → 0, FTLE `null` / `not_measured`.
 - **T1 diagnosed from the code**: under the old rules 4/6 is reachable only when the Apex judges Node 1 down while Sol is up, i.e. its `density.json` was absent or stale at the Apex's bridge root. The density bridge always writes `status: "synchronized"`, so the laptop's Apex is most likely reading a different bridge root than the bridge writes to. The new state names the root and each file's path and age, so `triad -- status` on the laptop now says which. **Deploy**: pull main on the laptop and restart the Apex, and the density bridge too (without it F12 reads "not measured").
 - Tests on Node 2: 74 total, 72 pass, 1 fail (the known Windows serve shutdown, T3), 1 skipped.
+- **Laptop hands** (`bridge/hands/LAPTOP-HANDS.md`): Claude writes tasks to `F:\fidelity-llm\bridge\hands\laptop_tasks.json` on Node 2; `hands_sync.mjs --role laptop` on the laptop mirrors them into its bridge root and pushes `laptop_results.json` back over SSH. First tasks H001–H004: deploy main and restart the Apex and density bridge, the T1 bridge-root check, a read-only inventory, and a loop check.
 
 ---
 
