@@ -197,6 +197,38 @@ test("math: parallax keeps the screen plane fixed and splits signs by depth", fu
     check(M.Approach(0, 1, 2, 0.25) == 0.5 and M.Approach(0.9, 1, 2, 0.25) == 1, "Approach overshoots")
 end)
 
+test("camera: projection and pitch solver (world -> screen for the terrain rebuild)", function()
+    local px, py, pz, facing, zoom, fov = 1000, -500, 50, 0.7, 10, 1.0
+    local cam = M.BuildCamera(px, py, pz, facing, zoom, 0.35, fov, 1920, 1080)
+    check(cam, "camera not built")
+    -- the look-at point (the head) sits at the screen centre
+    local sx, sy, d = M.ProjectPoint(cam, px, py, pz + 2.0)
+    check(near(sx, 960, 1e-6) and near(sy, 540, 1e-6) and near(d, zoom, 1e-6), string.format("head at %.1f,%.1f d=%.2f", sx, sy, d))
+    -- a point 20 yd ahead along the facing, on the ground: further, higher on screen than the feet, smaller
+    local ax, ay = px + 20 * math.cos(facing), py + 20 * math.sin(facing)
+    local fsx, fsy, fd = M.ProjectPoint(cam, px, py, pz)
+    local asx, asy, ad = M.ProjectPoint(cam, ax, ay, pz)
+    check(ad > fd and asy > fsy, "a ground point ahead must be deeper and higher on screen than the feet")
+    check(near(asx, 960, 1e-6), "a point straight ahead stays on the centre line")
+    -- a point to the player's right (world: facing rotated clockwise) lands right of centre
+    local rx, ry = px + 5 * math.sin(facing), py - 5 * math.cos(facing)
+    local rsx = M.ProjectPoint(cam, rx, ry, pz + 2)
+    check(rsx > 960, "a point to the right must project right of centre")
+    -- behind the camera: nil
+    local bx, by = px - 30 * math.cos(facing), py - 30 * math.sin(facing)
+    check(M.ProjectPoint(cam, bx, by, pz) == nil, "a point behind the camera must not project")
+    -- the solver recovers a known pitch from the plate height it produces
+    for _, truePitch in ipairs({ 0.1, 0.35, 0.8 }) do
+        local c = M.BuildCamera(px, py, pz, facing, zoom, truePitch, fov, 1920, 1080)
+        local _, plateY = M.ProjectPoint(c, px, py, pz + 2.6)
+        local got = M.SolvePitch(px, py, pz, facing, zoom, fov, 1920, 1080, plateY)
+        check(got and near(got, truePitch, 1e-4), string.format("pitch %.2f solved as %s", truePitch, tostring(got)))
+    end
+    check(M.SolvePitch(px, py, pz, facing, zoom, fov, 1920, 1080, 0 / 0) == nil, "NaN plate height must give nil")
+    check(M.BuildCamera(0 / 0, 0, 0, 0, 10, 0.3, 1, 1920, 1080) == nil, "NaN position must give nil")
+    check(near(M.DepthFromDistance(zoom, zoom), 0.15) and near(M.DepthFromDistance(4 * zoom, zoom), 1.0), "DepthFromDistance anchors")
+end)
+
 test("light form matches the client profile", function()
     local st = ns.State()
     check(ns.DiagTable.lightForm == PROFILE, "lightForm " .. tostring(ns.DiagTable.lightForm) .. " for profile " .. PROFILE)

@@ -197,6 +197,89 @@ function EMatrix_Math.DepthFromScreenY(plateY, playerY, horizonY)
     return 0.15 + 1.85 * t * t
 end
 
+-- ============================================================================
+-- GUARDRAIL E: Third-person camera model and world -> screen projection
+-- The game exposes the player's world position (UnitPosition, outdoors), facing
+-- (GetPlayerFacing) and camera distance (GetCameraZoom) but NOT the camera pitch.
+-- The player's own nameplate is one known screen point: with the zoom it fixes the pitch.
+-- World axes follow UnitPosition: x north, y west, z up. The camera sits behind the player
+-- at `zoom` yards, pitched `pitch` radians above the horizontal, looking at the head.
+-- ============================================================================
+local HEAD_HEIGHT = 2.0 -- yards above the feet, where the camera aims and the nameplate sits
+
+--- Builds a camera from the player's state. fovY in radians; screen size in pixels.
+function EMatrix_Math.BuildCamera(px, py, pz, facing, zoom, pitch, fovY, screenW, screenH)
+    if not (finite(px) and finite(py) and finite(pz) and finite(facing)) then return nil end
+    zoom = (finite(zoom) and zoom > 0.1) and zoom or 8.0
+    pitch = finite(pitch) and clamp(pitch, -1.2, 1.4) or 0.35
+    fovY = (finite(fovY) and fovY > 0.1 and fovY < 3.0) and fovY or 1.0
+    screenW = (finite(screenW) and screenW > 0) and screenW or 1920
+    screenH = (finite(screenH) and screenH > 0) and screenH or 1080
+    local cf, sf, cp, sp = math.cos(facing), math.sin(facing), math.cos(pitch), math.sin(pitch)
+    -- forward (camera -> target): the facing direction, tilted down by pitch
+    local fx, fy, fz = cf * cp, sf * cp, -sp
+    -- right: facing rotated 90 degrees clockwise seen from above (x north, y west => right is -y of facing)
+    local rx, ry, rz = sf, -cf, 0
+    -- up = right x forward
+    local ux, uy, uz = ry * fz - rz * fy, rz * fx - rx * fz, rx * fy - ry * fx
+    local tx, ty, tz = px, py, pz + HEAD_HEIGHT
+    return {
+        cx = tx - fx * zoom, cy = ty - fy * zoom, cz = tz - fz * zoom,
+        fx = fx, fy = fy, fz = fz, rx = rx, ry = ry, rz = rz, ux = ux, uy = uy, uz = uz,
+        focal = (screenH * 0.5) / math.tan(fovY * 0.5), w = screenW, h = screenH, zoom = zoom,
+    }
+end
+
+--- Projects a world point. Returns screenX, screenY (pixels, origin bottom-left like WoW),
+--- distance along the view axis (yards), or nil when the point is behind the camera.
+function EMatrix_Math.ProjectPoint(cam, wx, wy, wz)
+    if not cam or not (finite(wx) and finite(wy) and finite(wz)) then return nil end
+    local dx, dy, dz = wx - cam.cx, wy - cam.cy, wz - cam.cz
+    local depth = dx * cam.fx + dy * cam.fy + dz * cam.fz
+    if depth <= 0.05 then return nil end
+    local sx = cam.w * 0.5 + (dx * cam.rx + dy * cam.ry + dz * cam.rz) / depth * cam.focal
+    local sy = cam.h * 0.5 + (dx * cam.ux + dy * cam.uy + dz * cam.uz) / depth * cam.focal
+    return sx, sy, depth
+end
+
+--- Finds the pitch at which the player's head projects to `headScreenY` (bisection, monotonic).
+--- Returns the pitch in radians, or nil when no pitch in range reaches that height.
+function EMatrix_Math.SolvePitch(px, py, pz, facing, zoom, fovY, screenW, screenH, headScreenY)
+    if not finite(headScreenY) then return nil end
+    -- A point above the look-at point projects the same for +pitch and -pitch, so the solve is
+    -- only unique on one side. Its screen height is cos(pitch) / (zoom - 0.6 sin(pitch)), which
+    -- peaks at pitch = atan(0.6 / zoom) (about 3 degrees) and falls monotonically beyond it. In
+    -- play the camera is above the ground looking down, steeper than that, so search [peak, steep].
+    zoom = (finite(zoom) and zoom > 0.1) and zoom or 8.0
+    local lo, hi = math.atan(0.6 / zoom), 1.4
+    -- the head is the look-at point: it always projects to the exact screen centre. The nameplate
+    -- hangs a fixed world height above it, so solve for the plate height instead.
+    local function plateY(pitch)
+        local cam = EMatrix_Math.BuildCamera(px, py, pz, facing, zoom, pitch, fovY, screenW, screenH)
+        local _, sy = EMatrix_Math.ProjectPoint(cam, px, py, pz + HEAD_HEIGHT + 0.6)
+        return sy
+    end
+    local yLo, yHi = plateY(lo), plateY(hi)
+    if not yLo or not yHi then return nil end
+    if (headScreenY - yLo) * (headScreenY - yHi) > 0 then return nil end
+    for _ = 1, 40 do
+        local mid = (lo + hi) * 0.5
+        local y = plateY(mid)
+        if not y then return nil end
+        if (y - headScreenY) * (yLo - headScreenY) > 0 then lo, yLo = mid, y else hi, yHi = mid, y end
+    end
+    return (lo + hi) * 0.5
+end
+
+--- Parallax depth for an object `distance` yards down the view axis: 0.15 at the player,
+--- growing without bound, 1.0 at four times the camera distance. Same scale as the overlay.
+function EMatrix_Math.DepthFromDistance(distance, zoom)
+    if not finite(distance) or distance < 0 then return 0.5 end
+    zoom = (finite(zoom) and zoom > 0.1) and zoom or 8.0
+    local ahead = math.max(0, distance - zoom)
+    return 0.15 + 0.85 * ahead / (3.0 * zoom)
+end
+
 --- Moves `current` toward `target` at `rate` per second without overshoot.
 function EMatrix_Math.Approach(current, target, rate, dt)
     if not finite(current) then current = 0 end
