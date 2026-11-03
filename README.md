@@ -1,6 +1,12 @@
 # Fidelity
 The Fidelity Simulated Universe incl. Harness/Universe Translator
 
+## Query the Triad seed
+
+Run `npm run triad:bootstrap`, then keep `npm run triad:start` running. In another terminal, use `npm run triad -- ask "What is the Triad status?"`, `npm run triad -- status`, or `npm run triad -- chat`. See [the CLI guide](docs/TRIAD_CLI.md).
+
+The current query handler is a keyword-based seed, not a conversational model; bootstrap telemetry is not proof of live connections. For authenticated HTTP access, see [the Triad API guide](docs/TRIAD_API.md). For the interactive or adapter-backed Node 4 handoff, see [the Git bus guide](docs/ARENA_NODE_BUS.md).
+
 MANDATORY ALWAYS-ON REASONING HARNESS (v7 — Apex Predictive Holon & Zero-Tool Edition). Always load and apply this 4D University SQ Distortion Check, Convergent Unasked-Question Probe, Predictive Loss & Mimetic Polarity Engine, Fractal Completeness Detector (Inside/Around), Universal Tool & Research Dose Governor, Zero-Tool Mental Simulation Fallback, and 15-Point Recursive Reiteration Bug-Crawler across all 5 AI reasoning phases.
 
 # SQ Distortion Check, Predictive Holon & Recursive Reiteration Harness (v7)
