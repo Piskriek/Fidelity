@@ -1,0 +1,174 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { processInboundQuery } from '../src/arena_node.mjs';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const SOURCE = path.resolve(HERE, '../src');
+const BRANCH = 'arena/dfcfb02d-fidelity';
+const query = { id: 'new-query-1', from: 'Laptop', question: 'Are the nodes connected?' };
+const sha = text => createHash('sha256').update(text).digest('hex');
+
+function fixture(t, { oldOutput, gitStatus = '', branch = BRANCH, remoteChange = false, branchChange = false, pushFail = false, reasoner = false } = {}) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'arena-git-test-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const src = path.join(root, 'packages/triad-369/src');
+  const sync = path.join(root, 'bridge/sync');
+  const remote = path.join(root, 'remote');
+  const bin = path.join(root, 'bin');
+  for (const dir of [src, sync, remote, bin]) fs.mkdirSync(dir, { recursive: true });
+  for (const file of ['arena_git_sync.mjs', 'arena_node.mjs']) fs.copyFileSync(path.join(SOURCE, file), path.join(src, file));
+  const previous = oldOutput ?? { schema: 'arena-telemetry-v2', lastQueryResponse: { id: 'older-query', query_sha256: sha('older') } };
+  const output = path.join(sync, 'arena_telemetry.json');
+  fs.writeFileSync(output, JSON.stringify(previous, null, 2) + '\n');
+  fs.writeFileSync(path.join(remote, 'triad_telemetry.json'), JSON.stringify({ query, lyapunovFTLE: 0.012 }));
+  const fakeGit = `#!/usr/bin/env node
+const fs = require('node:fs');
+const path = require('node:path');
+const args = process.argv.slice(2);
+fs.appendFileSync(process.env.MOCK_LOG, JSON.stringify(args) + '\\n');
+const bump = file => { let n = 0; try { n = Number(fs.readFileSync(file, 'utf8')); } catch {} fs.writeFileSync(file, String(++n)); return n; };
+if (args[0] === 'symbolic-ref') {
+  const n = bump(process.env.MOCK_BRANCH_COUNT);
+  console.log(process.env.MOCK_BRANCH_CHANGE === '1' && n > 1 ? 'unexpected-branch' : process.env.MOCK_BRANCH);
+} else if (args[0] === 'fetch') {
+  bump(process.env.MOCK_FETCH_COUNT);
+} else if (args[0] === 'rev-parse') {
+  let n = 0; try { n = Number(fs.readFileSync(process.env.MOCK_FETCH_COUNT, 'utf8')); } catch {}
+  console.log(process.env.MOCK_REMOTE_CHANGE === '1' && n > 1 ? 'b'.repeat(40) : 'a'.repeat(40));
+} else if (args[0] === 'show') {
+  const file = args[1].split(':')[1];
+  const target = path.join(process.env.MOCK_REMOTE, path.basename(file));
+  if (!fs.existsSync(target)) process.exit(128);
+  process.stdout.write(fs.readFileSync(target));
+} else if (args[0] === 'status') {
+  if (process.env.MOCK_STATUS) console.log(process.env.MOCK_STATUS);
+} else if (args[0] === 'commit') {
+  console.log('committed');
+} else if (args[0] === 'push') {
+  if (process.env.MOCK_PUSH_FAIL === '1') { console.error('push rejected'); process.exit(1); }
+} else {
+  console.error('unexpected git command: ' + args[0]); process.exit(2);
+}
+`;
+  const gitPath = path.join(bin, 'git');
+  fs.writeFileSync(gitPath, fakeGit, { mode: 0o755 });
+  const log = path.join(root, 'git.log');
+  const env = {
+    ...process.env,
+    PATH: `${bin}${path.delimiter}${process.env.PATH}`,
+    MOCK_LOG: log,
+    MOCK_REMOTE: remote,
+    MOCK_BRANCH: branch,
+    MOCK_STATUS: gitStatus,
+    MOCK_FETCH_COUNT: path.join(root, 'fetch.count'),
+    MOCK_BRANCH_COUNT: path.join(root, 'branch.count'),
+    MOCK_REMOTE_CHANGE: remoteChange ? '1' : '0',
+    MOCK_BRANCH_CHANGE: branchChange ? '1' : '0',
+    MOCK_PUSH_FAIL: pushFail ? '1' : '0',
+    ARENA_SYNC_BRANCH: branch,
+    ARENA_REASONER_EXEC: '',
+    ARENA_REASONER_ARGS: '[]',
+  };
+  if (reasoner) {
+    const adapter = path.join(root, 'reasoner.mjs');
+    fs.writeFileSync(adapter, `let input = ''; for await (const c of process.stdin) input += c; const r = JSON.parse(input); process.stdout.write(JSON.stringify({query_id:r.query.id, query_sha256:r.query.sha256, answer:'Grounded answer', density_review:[1,2,3,4,5,6,7].map(n=>({rung:'D'+n, assessment:'Reviewed'})), four_floats:{Pxd:null,Vtx:null,Lx:null,Aq:null}, four_floats_basis:'Unknown'}));`);
+    env.ARENA_REASONER_EXEC = process.execPath;
+    env.ARENA_REASONER_ARGS = JSON.stringify([adapter]);
+  }
+  return {
+    output,
+    run: () => spawnSync(process.execPath, [path.join(src, 'arena_git_sync.mjs'), '--agent', '--once'], { cwd: root, env, encoding: 'utf8', timeout: 10000 }),
+    commands: () => fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).map(JSON.parse) : [],
+  };
+}
+
+function publishedCommands(commands) { return commands.filter(args => args[0] === 'push'); }
+
+test('agent fetches main and publishes only an awaiting response to the session branch', t => {
+  const f = fixture(t);
+  const result = f.run();
+  assert.equal(result.status, 0, result.stderr);
+  const output = JSON.parse(fs.readFileSync(f.output, 'utf8'));
+  assert.equal(output.lastQueryResponse.id, query.id);
+  assert.equal(output.lastQueryResponse.status, 'awaiting_reasoner');
+  assert.equal(output.lastQueryResponse.answer, null);
+  assert.equal(output.telemetry.reported_lyapunov_ftle, 0.012);
+  assert.equal(output.telemetry.reported_ftle_within_limit, false);
+  const commands = f.commands();
+  assert.deepEqual(publishedCommands(commands), [['push', 'origin', `HEAD:refs/heads/${BRANCH}`]]);
+  assert.ok(commands.some(args => args[0] === 'commit' && args.includes('--only') && args.at(-1) === 'bridge/sync/arena_telemetry.json'));
+  assert.ok(commands.every(args => !['checkout', 'switch', 'pull'].includes(args[0])));
+  assert.match(result.stdout, /No reasoner configured/);
+});
+
+test('agent may use an explicitly configured reasoner instead of the bundled canned response', t => {
+  const f = fixture(t, { reasoner: true });
+  const result = f.run();
+  assert.equal(result.status, 0, result.stderr);
+  const output = JSON.parse(fs.readFileSync(f.output, 'utf8'));
+  assert.equal(output.lastQueryResponse.status, 'completed');
+  assert.equal(output.lastQueryResponse.answer, 'Grounded answer');
+  assert.equal(output.lastQueryResponse.provenance.type, 'configured_reasoner_adapter');
+  assert.equal(publishedCommands(f.commands()).length, 1);
+});
+
+test('a valid interactive reflection can be published without an adapter', t => {
+  const reflection = {
+    query_id: query.id, query_sha256: sha(query.question), answer: 'An honest response.',
+    density_review: [1, 2, 3, 4, 5, 6, 7].map(n => ({ rung: `D${n}`, assessment: 'Reviewed.' })),
+    four_floats: { Pxd: null, Vtx: null, Lx: null, Aq: null }, four_floats_basis: 'Unknown.',
+  };
+  const response = processInboundQuery(query, { reflection, provenance: 'interactive_agent_submission' });
+  const f = fixture(t, { oldOutput: { schema: 'arena-telemetry-v2', lastQueryResponse: response }, gitStatus: ' M bridge/sync/arena_telemetry.json' });
+  const before = fs.readFileSync(f.output, 'utf8');
+  const result = f.run();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.readFileSync(f.output, 'utf8'), before);
+  assert.equal(publishedCommands(f.commands()).length, 1);
+});
+
+test('agent refuses to overwrite a different uncommitted or staged response', t => {
+  for (const status of [' M bridge/sync/arena_telemetry.json', 'M  bridge/sync/arena_telemetry.json']) {
+    const f = fixture(t, { gitStatus: status });
+    const before = fs.readFileSync(f.output, 'utf8');
+    const result = f.run();
+    assert.equal(result.status, 1);
+    assert.equal(fs.readFileSync(f.output, 'utf8'), before);
+    assert.equal(publishedCommands(f.commands()).length, 0);
+    assert.equal(f.commands().filter(args => args[0] === 'commit').length, 0);
+  }
+});
+
+test('agent does not publish a result if main changes during processing', t => {
+  const f = fixture(t, { remoteChange: true });
+  const before = fs.readFileSync(f.output, 'utf8');
+  const result = f.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /origin\/main changed/);
+  assert.equal(fs.readFileSync(f.output, 'utf8'), before);
+  assert.equal(publishedCommands(f.commands()).length, 0);
+});
+
+test('agent refuses main or a changed branch', t => {
+  for (const options of [{ branch: 'main' }, { branchChange: true }]) {
+    const f = fixture(t, options);
+    const result = f.run();
+    assert.equal(result.status, 1);
+    assert.equal(publishedCommands(f.commands()).length, 0);
+    assert.equal(f.commands().filter(args => args[0] === 'commit').length, 0);
+  }
+});
+
+test('failed push is reported instead of claimed successful', t => {
+  const f = fixture(t, { pushFail: true });
+  const result = f.run();
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /git push failed/);
+  assert.doesNotMatch(result.stdout, /Published to origin/);
+});

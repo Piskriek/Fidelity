@@ -90,6 +90,22 @@ node packages/triad-369/src/arena_node.mjs --daemon
 
 The adapter must actually connect to a reasoner if model-generated analysis is desired; no provider is configured by default. Its environment is inherited, so only use trusted executables. Adapter stderr is not copied to logs. A failed, invalid, timed-out or stale response is not published as a completed answer. Configure `ARENA_REASONER_TIMEOUT_MS` from 1,000 to 120,000; the default is 30,000. `TRIAD_SYNC_DIR` or `--sync-dir` can select a different local bus directory.
 
+## Optional Git sync daemon
+
+On an agent checkout, the separate Git sync daemon can poll `origin/main` and publish Node 4's response to the **current non-main branch**:
+
+```bash
+node packages/triad-369/src/arena_git_sync.mjs --agent
+# To require a particular checked-out branch:
+ARENA_SYNC_BRANCH=arena/example node packages/triad-369/src/arena_git_sync.mjs --agent
+```
+
+Agent mode refuses to run on `main`, pins the startup branch, and stops if that branch changes. It fetches `main` and reads its inquiry files into a temporary snapshot; it does not check out or merge `main`. When a response changes, it commits only `bridge/sync/arena_telemetry.json` and pushes the pinned branch. Unrelated staged changes are not committed; staged, untracked or conflicting response changes are left untouched. As with any Git push, previously committed changes on that branch are also published. A changed `main` snapshot during reasoning prevents publication, although no file-based protocol can eliminate all concurrent-writer races. Git errors are reported, and failed pushes are retried while the daemon remains running.
+
+**The response is not pushed to `main`.** The local nodes must fetch the agent branch, or an authorized person must integrate its response into the shared branch. Fidelity and HeavyMetal2 do not synchronize automatically. Agent mode does not invoke this Arena conversation: without `ARENA_REASONER_EXEC`, new inquiries remain `awaiting_reasoner` until an interactive agent supplies a reflection. The bundled `syntropic_reasoner.mjs` is a keyword/template program, not a language model, and emits unverified claims; the daemon does not enable it by default. Use only an explicitly chosen trusted adapter if unattended reasoning is required.
+
+The older local-host mode (without `--agent`) retains its separate main-branch workflow for an operator's own checkout. Do not run that mode in an Arena session restricted to its assigned branch. Both modes operate on a public, single-slot Git bus; use a process supervisor if continuous operation beyond the current environment's lifetime is required.
+
 ## Invariants and limits
 
 The code preserves the requested principles as guidance: be truthful, avoid increasing intensity, never set felt pain, respect consent, and return a compassionate answer. It does not control a physical system or prove those properties. FTLE, if provided in the snapshot, is only compared numerically with `0.010` and labelled unverified; it does not measure confirmation bias or establish truth. The file handoff cannot determine whether the recipient used or felt the answer, so `loop_closed` remains false and `landed` remains `not_evaluated`.
