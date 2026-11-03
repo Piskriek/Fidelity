@@ -1,0 +1,27 @@
+{
+  "name": "fidelity",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "triad:bootstrap": "node packages/triad-369/src/bootstrap.mjs",
+    "triad:start": "node packages/triad-369/src/triad_369_process.mjs",
+    "triad:bridge": "node packages/triad-369/src/density_bridge.mjs",
+    "triad:query": "node packages/triad-369/src/query_triad_369.mjs",
+    "fractal-engine": "npm run dev -w @hm/fractal-engine",
+    "build": "npm run build -w @hm/fractal-engine"
+  },
+  "dependencies": {
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.17",
+    "@types/three": "^0.186.0",
+    "typescript": "5.9.3",
+    "vite": "^7.3.2"
+  }
+}
