@@ -3,7 +3,7 @@
 -- Visual Target: 15x9 (135 cells) static twice-folded puffy marshmallow E-cubes with flip-scoreboard transition.
 
 local ADDON_NAME, ns = ...
-local Math = ns.Math or _G.EMatrix_Math
+local Math = (ns and ns.Math) or _G.EMatrix_Math
 
 -- Configuration & Constants
 local COLS = 15
@@ -42,11 +42,19 @@ local waveTargetState = false -- false = Closed, true = Window
 -- Parallax State
 local parallaxTime = 0.0
 
+-- Forward declarations
+local TriggerScoreboardWave
+local CreateStereoModelScenes
+local UpdateStereoDisplay
+
 -- ============================================================================
 -- 1. Master Frame & Pre-allocated Texture Pool
 -- ============================================================================
 local function CreateMatrixGrid()
     if masterFrame then return end
+
+    Math = Math or (ns and ns.Math) or _G.EMatrix_Math
+    if not Math then return end
 
     -- Master Frame
     masterFrame = CreateFrame("Frame", "FidelityEMatrixFrame", UIParent)
@@ -63,15 +71,7 @@ local function CreateMatrixGrid()
         self:StopMovingOrSizing()
     end)
 
-    -- 3D ModelScene Container (Lower frame level, sits behind the cells)
-    sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", masterFrame)
-    sceneContainer:SetAllPoints(masterFrame)
-    sceneContainer:SetFrameLevel(math.max(masterFrame:GetFrameLevel() - 1, 1))
-
-    -- Create 3D ModelScenes
-    CreateStereoModelScenes()
-
-    -- Flat Pre-allocated Cell Array
+    -- Flat Pre-allocated Cell Array (Created FIRST so UI is always 100% resilient)
     for r = 1, ROWS do
         for c = 1, COLS do
             local idx = (r - 1) * COLS + c
@@ -142,36 +142,70 @@ local function CreateMatrixGrid()
             end
         end
     end)
+
+    -- 3D ModelScene / PlayerModel Container (Behind cells)
+    pcall(function()
+        sceneContainer = CreateFrame("Frame", "FidelityEMatrix_SceneContainer", masterFrame)
+        sceneContainer:SetAllPoints(masterFrame)
+        sceneContainer:SetFrameLevel(math.max(masterFrame:GetFrameLevel() - 1, 1))
+        CreateStereoModelScenes()
+    end)
 end
 
 -- ============================================================================
--- 2. Guardrail D: 3D ModelScene Rig (Mono Parallax + True Stereo Dual-Eye)
+-- 2. Guardrail D: 3D ModelScene Rig (Retail ModelScene + Classic PlayerModel Fallback)
 -- ============================================================================
 function CreateStereoModelScenes()
     if not sceneContainer then return end
 
     local function SetupScene(name, w, h, point, relPoint, x, y)
-        local scene = CreateFrame("ModelScene", name, sceneContainer)
-        scene:SetSize(w, h)
-        scene:SetPoint(point, sceneContainer, relPoint, x, y)
+        local scene, actor
 
-        local actor = scene:CreateActor()
-        if actor then
-            actor:SetModelByUnit("player")
-            actor:SetPosition(0, 0, 0)
-            actor:SetAnimation(0) -- Idle stance
+        -- 1. Try Retail ModelScene
+        local okMS, ms = pcall(CreateFrame, "ModelScene", name, sceneContainer)
+        if okMS and ms and ms.CreateActor then
+            scene = ms
+            scene:SetSize(w, h)
+            scene:SetPoint(point, sceneContainer, relPoint, x, y)
+
+            pcall(function()
+                actor = scene:CreateActor()
+                if actor and actor.SetModelByUnit then
+                    actor:SetModelByUnit("player")
+                    actor:SetPosition(0, 0, 0)
+                    if actor.SetAnimation then actor:SetAnimation(0) end
+                end
+            end)
+
+            pcall(function()
+                local camera = scene:GetActiveCamera()
+                if not camera and CreateModelSceneCamera then
+                    camera = CreateModelSceneCamera("OrbitCamera")
+                    if camera and scene.AddCamera then
+                        scene:AddCamera(camera)
+                        scene:SetActiveCamera(camera)
+                    end
+                end
+            end)
+
+            return scene, actor
         end
 
-        local camera = scene:GetActiveCamera()
-        if not camera and CreateModelSceneCamera then
-            camera = CreateModelSceneCamera("OrbitCamera")
-            if camera then
-                scene:AddCamera(camera)
-                scene:SetActiveCamera(camera)
-            end
+        -- 2. Fallback to Classic / TBC PlayerModel
+        local okPM, pm = pcall(CreateFrame, "PlayerModel", name, sceneContainer)
+        if okPM and pm then
+            scene = pm
+            scene:SetSize(w, h)
+            scene:SetPoint(point, sceneContainer, relPoint, x, y)
+            pcall(function()
+                pm:SetUnit("player")
+                if pm.SetRotation then pm:SetRotation(0) end
+                if pm.SetCamera then pm:SetCamera(0) end
+            end)
+            return scene, nil
         end
 
-        return scene, actor
+        return nil, nil
     end
 
     -- 1. Main Scene (Mono Parallax - Default)
@@ -191,69 +225,59 @@ function UpdateStereoDisplay()
     local eyeOffset = 0.065 -- Interpupillary lateral offset
 
     if mode == "sbs" then
-        -- Side-by-Side: Left scene on left half, Right scene on right half
-        sceneMain:Hide()
-        sceneLeft:Show()
-        sceneRight:Show()
-
-        sceneLeft:ClearAllPoints()
-        sceneLeft:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
-        sceneLeft:SetPoint("LEFT", sceneContainer, "LEFT", 0, 0)
-
-        sceneRight:ClearAllPoints()
-        sceneRight:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
-        sceneRight:SetPoint("RIGHT", sceneContainer, "RIGHT", 0, 0)
-
-        local camL = sceneLeft:GetActiveCamera()
-        if camL and camL.SetPosition then
-            camL:SetPosition(-eyeOffset * 0.5, -3.2, 1.1)
-            if camL.SetTarget then camL:SetTarget(0, 0, 1.1) end
+        if sceneMain then sceneMain:Hide() end
+        if sceneLeft then
+            sceneLeft:Show()
+            sceneLeft:ClearAllPoints()
+            sceneLeft:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
+            sceneLeft:SetPoint("LEFT", sceneContainer, "LEFT", 0, 0)
+            local camL = sceneLeft.GetActiveCamera and sceneLeft:GetActiveCamera()
+            if camL and camL.SetPosition then
+                camL:SetPosition(-eyeOffset * 0.5, -3.2, 1.1)
+                if camL.SetTarget then camL:SetTarget(0, 0, 1.1) end
+            end
         end
-
-        local camR = sceneRight:GetActiveCamera()
-        if camR and camR.SetPosition then
-            camR:SetPosition(eyeOffset * 0.5, -3.2, 1.1)
-            if camR.SetTarget then camR:SetTarget(0, 0, 1.1) end
+        if sceneRight then
+            sceneRight:Show()
+            sceneRight:ClearAllPoints()
+            sceneRight:SetSize(MATRIX_WIDTH * 0.5, MATRIX_HEIGHT)
+            sceneRight:SetPoint("RIGHT", sceneContainer, "RIGHT", 0, 0)
+            local camR = sceneRight.GetActiveCamera and sceneRight:GetActiveCamera()
+            if camR and camR.SetPosition then
+                camR:SetPosition(eyeOffset * 0.5, -3.2, 1.1)
+                if camR.SetTarget then camR:SetTarget(0, 0, 1.1) end
+            end
         end
 
     elseif mode == "anaglyph" then
-        -- Red/Cyan Anaglyph: Both scenes full size, overlapping, with color tint
-        sceneMain:Hide()
-        sceneLeft:Show()
-        sceneRight:Show()
-
-        sceneLeft:ClearAllPoints()
-        sceneLeft:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
-        sceneLeft:SetPoint("CENTER", sceneContainer, "CENTER", 0, 0)
-        sceneLeft:SetAlpha(0.65)
-
-        sceneRight:ClearAllPoints()
-        sceneRight:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
-        sceneRight:SetPoint("CENTER", sceneContainer, "CENTER", 0, 0)
-        sceneRight:SetAlpha(0.65)
-
-        local camL = sceneLeft:GetActiveCamera()
-        if camL and camL.SetPosition then
-            camL:SetPosition(-eyeOffset * 0.5, -3.2, 1.1)
-            if camL.SetTarget then camL:SetTarget(0, 0, 1.1) end
+        if sceneMain then sceneMain:Hide() end
+        if sceneLeft then
+            sceneLeft:Show()
+            sceneLeft:ClearAllPoints()
+            sceneLeft:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
+            sceneLeft:SetPoint("CENTER", sceneContainer, "CENTER", 0, 0)
+            sceneLeft:SetAlpha(0.65)
         end
-
-        local camR = sceneRight:GetActiveCamera()
-        if camR and camR.SetPosition then
-            camR:SetPosition(eyeOffset * 0.5, -3.2, 1.1)
-            if camR.SetTarget then camR:SetTarget(0, 0, 1.1) end
+        if sceneRight then
+            sceneRight:Show()
+            sceneRight:ClearAllPoints()
+            sceneRight:SetSize(MATRIX_WIDTH, MATRIX_HEIGHT)
+            sceneRight:SetPoint("CENTER", sceneContainer, "CENTER", 0, 0)
+            sceneRight:SetAlpha(0.65)
         end
 
     else
-        -- Mono Parallax (Default): Single ModelScene spanning full matrix
-        sceneMain:Show()
-        sceneLeft:Hide()
-        sceneRight:Hide()
+        -- Mono Parallax: sceneMain full size
+        if sceneMain then sceneMain:Show() end
+        if sceneLeft then sceneLeft:Hide() end
+        if sceneRight then sceneRight:Hide() end
 
-        local cam = sceneMain:GetActiveCamera()
-        if cam and cam.SetPosition then
-            cam:SetPosition(0, -3.2, 1.1)
-            if cam.SetTarget then cam:SetTarget(0, 0, 1.1) end
+        if sceneMain and sceneMain.GetActiveCamera then
+            local cam = sceneMain:GetActiveCamera()
+            if cam and cam.SetPosition then
+                cam:SetPosition(0.0, -3.2, 1.1)
+                if cam.SetTarget then cam:SetTarget(0, 0, 1.1) end
+            end
         end
     end
 end
@@ -261,44 +285,49 @@ end
 -- ============================================================================
 -- 3. Guardrail C: Zero-GC OnUpdate Scoreboard Wave Driver
 -- ============================================================================
-local function OnUpdateWaveDriver(self, elapsed)
-    waveAge = waveAge + elapsed
-    parallaxTime = parallaxTime + elapsed
+local function OnUpdateWaveDriver(self, dt)
+    if not waveActive then return end
 
     local speed = FidelityEMatrix_Config.waveSpeed or 16.0
-    local duration = FidelityEMatrix_Config.flipDuration or 0.26
-    local targetTex = waveTargetState and TEX_WINDOW or TEX_CLOSED
-    local prevTex = waveTargetState and TEX_CLOSED or TEX_WINDOW
+    local dur = FidelityEMatrix_Config.flipDuration or 0.26
+
+    waveAge = waveAge + dt
+    parallaxTime = parallaxTime + dt
 
     local allDone = true
+    local targetTex = waveTargetState and TEX_WINDOW or TEX_CLOSED
 
-    -- Zero allocations: reuse local cell pointer and math functions
     for i = 1, TOTAL_CELLS do
         local cell = cells[i]
-        local u = Math.CalculateFlipProgress(waveAge, speed, cell.ringDist, duration)
+        local u = Math.CalculateFlipProgress(waveAge, cell.ringDist, speed, dur)
 
-        if u < 1.0 then
+        if u > 0.0 and u < 1.0 then
             allDone = false
             cell.settled = false
 
-            local scaleY, specAlpha, isPastMid = Math.GetFlipVisuals(u)
+            local scaleY, specAlpha, isFlipped = Math.EvaluateFlipVisuals(u)
 
             -- Vertical squash anchored at cell center
             cell.flapTex:SetHeight(CELL_SIZE * scaleY)
 
-            -- Texture swap at the 90-degree midpoint (u >= 0.5)
-            if isPastMid then
-                cell.flapTex:SetTexture(targetTex)
-                cell.isWindow = waveTargetState
-            else
-                cell.flapTex:SetTexture(prevTex)
-            end
-
-            -- Specular flash glint bar (alpha peaks at u=0.5)
+            -- Golden specular bar flash peak at u=0.5
             cell.specBar:SetAlpha(specAlpha)
 
-        elseif not cell.settled then
-            -- Settle cell once flip completes
+            -- Swap texture at midpoint
+            if isFlipped then
+                if cell.isWindow ~= waveTargetState then
+                    cell.flapTex:SetTexture(targetTex)
+                    cell.isWindow = waveTargetState
+                end
+            else
+                local oldTex = waveTargetState and TEX_CLOSED or TEX_WINDOW
+                if cell.flapTex:GetTexture() ~= oldTex then
+                    cell.flapTex:SetTexture(oldTex)
+                end
+            end
+
+        elseif u >= 1.0 and not cell.settled then
+            -- Settle cell into target state
             cell.flapTex:SetHeight(CELL_SIZE)
             cell.flapTex:SetTexture(targetTex)
             cell.specBar:SetAlpha(0.0)
@@ -309,11 +338,16 @@ local function OnUpdateWaveDriver(self, elapsed)
 
     -- Camera Parallax Update (subtle head/orbit motion behind the static grid)
     if sceneMain and sceneMain:IsShown() then
-        local cam = sceneMain:GetActiveCamera()
-        if cam and cam.SetPosition then
+        if sceneMain.GetActiveCamera then
+            local cam = sceneMain:GetActiveCamera()
+            if cam and cam.SetPosition then
+                local facing = (GetPlayerFacing and GetPlayerFacing()) or 0.0
+                local orbitX = math.sin(parallaxTime * 0.5) * 0.15 + (facing * 0.1)
+                cam:SetPosition(orbitX, -3.2, 1.1)
+            end
+        elseif sceneMain.SetRotation then
             local facing = (GetPlayerFacing and GetPlayerFacing()) or 0.0
-            local orbitX = math.sin(parallaxTime * 0.5) * 0.15 + (facing * 0.1)
-            cam:SetPosition(orbitX, -3.2, 1.1)
+            sceneMain:SetRotation(facing + math.sin(parallaxTime * 0.5) * 0.1)
         end
     end
 
@@ -329,6 +363,10 @@ end
 --- @param oy number Origin row [1..9]
 function TriggerScoreboardWave(ox, oy)
     if not masterFrame then CreateMatrixGrid() end
+    if not masterFrame then return end
+
+    Math = Math or (ns and ns.Math) or _G.EMatrix_Math
+    if not Math then return end
 
     ox = ox or 8
     oy = oy or 5
@@ -369,6 +407,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
 
     if cmd == "toggle" or cmd == "show" or cmd == "hide" then
         if not masterFrame then CreateMatrixGrid() end
+        if not masterFrame then return end
         if cmd == "show" then
             masterFrame:Show()
         elseif cmd == "hide" then
@@ -431,15 +470,24 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
 end
 
 -- ============================================================================
--- 5. AddOn Loaded Event
+-- 5. AddOn Loaded Event & Cross-Client Lifecycle
 -- ============================================================================
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
+loader:RegisterEvent("PLAYER_ENTERING_WORLD")
 loader:SetScript("OnEvent", function(self, event, addon)
-    if addon == "FidelityEMatrix" or addon == ADDON_NAME then
-        CreateMatrixGrid()
-        print("|cff00ffcc[Fidelity EMatrix]|r v1.0.0 initialized. Type |cffffcc00/fide|r for options, or click any cell to ripple.")
-        self:UnregisterEvent("ADDON_LOADED")
+    if event == "ADDON_LOADED" then
+        if addon == "FidelityEMatrix" or addon == ADDON_NAME then
+            CreateMatrixGrid()
+            print("|cff00ffcc[Fidelity EMatrix]|r v1.0.0 initialized. Type |cffffcc00/fide|r for options, or click any cell to ripple.")
+            self:UnregisterEvent("ADDON_LOADED")
+        end
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        if not masterFrame then
+            CreateMatrixGrid()
+            print("|cff00ffcc[Fidelity EMatrix]|r v1.0.0 initialized. Type |cffffcc00/fide|r for options, or click any cell to ripple.")
+        end
+        self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 end)
 
@@ -447,4 +495,3 @@ end)
 ns.TriggerScoreboardWave = TriggerScoreboardWave
 ns.CreateMatrixGrid = CreateMatrixGrid
 ns.cells = cells
-
