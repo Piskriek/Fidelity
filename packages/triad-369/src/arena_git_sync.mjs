@@ -16,6 +16,8 @@ const SYNC_DIR = path.join(REPO_ROOT, 'bridge', 'sync');
 const TRIAD_FILE = 'bridge/sync/triad_telemetry.json';
 const PENDING_FILE = 'bridge/sync/pending_query.json';
 const ARENA_FILE = 'bridge/sync/arena_telemetry.json';
+const GROWTH_FILE = 'bridge/sync/arena_growth_state.json';
+const DEFAULT_GROWTH_PUBLISH_MS = 5 * 60 * 1000;
 const MAX_GIT_OUTPUT = 1024 * 1024;
 
 function git(args, { allowFailure = false } = {}) {
@@ -38,7 +40,7 @@ function git(args, { allowFailure = false } = {}) {
 }
 
 function readJsonOptional(file) {
-  try { return JSON.parse(fs.readFileSync(file, 'utf8')); }
+  try { return JSON.parse(fs.readFileSync(file, 'utf8').replace(/^\uFEFF/, '')); }
   catch (error) { if (error.code === 'ENOENT') return null; throw error; }
 }
 
@@ -96,8 +98,8 @@ async function readSnapshot(sha, file) {
   return result.ok ? result.stdout : null;
 }
 
-async function outputFileState() {
-  const result = await git(['status', '--porcelain=v1', '--untracked-files=all', '--', ARENA_FILE]);
+async function trackedFileState(file = ARENA_FILE) {
+  const result = await git(['status', '--porcelain=v1', '--untracked-files=all', '--', file]);
   const line = result.stdout.split('\n').find(Boolean);
   if (!line) return { modified: false, staged: false };
   // Never replace or commit a staged/untracked output: another actor owns it.
@@ -125,6 +127,32 @@ function validateExistingOutput(bytes, queryId) {
       },
     });
   } else throw new Error('The modified output has an unsupported status.');
+}
+
+async function publishGrowthIfDue(branch, state) {
+  if (Date.now() < (state.nextGrowthPublishAt || 0)) return;
+  const file = path.join(REPO_ROOT, GROWTH_FILE);
+  const original = readBytesOptional(file);
+  if (original === null) return;
+  const status = await trackedFileState(GROWTH_FILE);
+  if (!status.modified || status.staged) return;
+  let growth;
+  try { growth = JSON.parse(original.toString('utf8')); }
+  catch { throw new Error('The growth state is not valid JSON; it was left untouched.'); }
+  if (original.length > MAX_GIT_OUTPUT || growth?.schema !== 'arena-growth-state-v2' ||
+      !Number.isSafeInteger(growth.growth_tick) || growth.growth_tick < 0 ||
+      growth.metrics_status !== 'not_measured' || growth.syntropic_reserve_joules !== null ||
+      growth.coherence !== null || growth.ftle_estimate !== null) {
+    throw new Error('The growth state is not a valid unmeasured v2 snapshot; it was left untouched.');
+  }
+  await assertAgentBranch(branch);
+  if (!sameBytes(original, readBytesOptional(file)) || (await trackedFileState(GROWTH_FILE)).staged) {
+    throw new Error('Growth state changed before commit; it was left untouched.');
+  }
+  await git(['commit', '--only', '-m', `sync: Node 4 growth pulse ${growth.growth_tick}`, '--', GROWTH_FILE]);
+  state.pushPending = true;
+  state.nextGrowthPublishAt = Date.now() + DEFAULT_GROWTH_PUBLISH_MS;
+  console.log(`[AGENT SYNC] Committed symbolic growth pulse ${growth.growth_tick} on ${branch}.`);
 }
 
 /** One agent cycle. The producer snapshot is never checked out or merged. */
@@ -156,7 +184,7 @@ export async function syncArenaAgent({ branch, state }) {
 
   await assertAgentBranch(branch);
   if (!sameBytes(original, readBytesOptional(outputFile))) throw new Error('The local response changed during processing; it was left untouched.');
-  const fileState = await outputFileState();
+  const fileState = await trackedFileState();
   if (fileState.staged) throw new Error('The response file is staged or untracked; it was left untouched.');
   if (result.written && fileState.modified) throw new Error('The response file has uncommitted changes; it was left untouched.');
 
@@ -168,11 +196,11 @@ export async function syncArenaAgent({ branch, state }) {
     if (await fetchMain() !== sourceSha) throw new Error('origin/main changed during processing; the response was not published.');
     await assertAgentBranch(branch);
     if (!sameBytes(original, readBytesOptional(outputFile))) throw new Error('The local response changed before publication; it was left untouched.');
-    const latestState = await outputFileState();
+    const latestState = await trackedFileState();
     if (latestState.staged || (result.written && latestState.modified)) throw new Error('The response file changed before publication; it was left untouched.');
     if (result.written) writeAtomic(outputFile, candidate);
     await assertAgentBranch(branch);
-    if ((await outputFileState()).staged || !sameBytes(candidate, readBytesOptional(outputFile))) {
+    if ((await trackedFileState()).staged || !sameBytes(candidate, readBytesOptional(outputFile))) {
       throw new Error('The response file changed before commit; it was left untouched.');
     }
     // --only prevents unrelated staged changes from entering the daemon commit.
@@ -181,6 +209,11 @@ export async function syncArenaAgent({ branch, state }) {
     console.log(`[AGENT SYNC] Committed ${result.status} for ${result.query_id} on ${branch}.`);
   }
 
+  try { await publishGrowthIfDue(branch, state); }
+  catch (error) {
+    if (error.fatal) throw error;
+    console.error(`[GROWTH SYNC] ${error.message}`);
+  }
   if (state.pushPending && Date.now() >= (state.retryPushAt || 0)) {
     await assertAgentBranch(branch);
     try {
@@ -196,9 +229,58 @@ export async function syncArenaAgent({ branch, state }) {
   return result;
 }
 
-// Local-host mode retains the original main-branch bus workflow for operators
-// on their own machines. Agent mode above does not use this path.
+// Local-host mode retains the main-branch bus workflow for operators on their
+// own machines. It discovers an agent branch but will not overwrite local edits.
 let lastLocalQueryId = null;
+let localPushPending = false;
+async function importAgentSnapshots(triad, triadBytes) {
+  await git(['fetch', '--no-tags', 'origin', '+refs/heads/arena/*:refs/remotes/origin/arena/*']);
+  const list = await git(['for-each-ref', '--sort=-committerdate', '--format=%(refname)', 'refs/remotes/origin/arena/']);
+  const refs = list.stdout.split('\n').map(line => line.trim()).filter(line => line.startsWith('refs/remotes/origin/arena/'));
+  const requested = process.env.ARENA_SYNC_BRANCH ? `refs/remotes/origin/${process.env.ARENA_SYNC_BRANCH}` : null;
+  const ref = requested ? (refs.includes(requested) ? requested : null) : refs[0];
+  if (!ref) return;
+  const sha = (await git(['rev-parse', '--verify', ref])).stdout.trim();
+  if (!/^[a-f0-9]{40,64}$/.test(sha)) throw new Error('Agent branch has an invalid commit ID.');
+  const rawResponse = (await readSnapshot(sha, ARENA_FILE))?.replace(/^\uFEFF/, '') ?? null;
+  const query = triad?.query;
+  if (!rawResponse || !query || typeof query.id !== 'string' || typeof query.question !== 'string') return;
+  let response;
+  try { response = JSON.parse(rawResponse); }
+  catch { throw new Error('The discovered agent response is not valid JSON.'); }
+  const expectedHash = createHash('sha256').update(query.question, 'utf8').digest('hex');
+  if (response?.lastQueryResponse?.id !== query.id || response?.lastQueryResponse?.query_sha256 !== expectedHash) return;
+  if (!sameBytes(triadBytes, readBytesOptional(path.join(REPO_ROOT, TRIAD_FILE)))) throw new Error('The local inquiry changed during branch discovery.');
+
+  const changed = [];
+  for (const file of [ARENA_FILE, GROWTH_FILE]) {
+    const incoming = file === ARENA_FILE ? rawResponse : (await readSnapshot(sha, file))?.replace(/^\uFEFF/, '') ?? null;
+    if (incoming === null) continue;
+    try { JSON.parse(incoming); } catch { throw new Error(`The discovered ${path.basename(file)} is not valid JSON.`); }
+    if (!sameBytes(triadBytes, readBytesOptional(path.join(REPO_ROOT, TRIAD_FILE)))) throw new Error('The local inquiry changed during snapshot import.');
+    const destination = path.join(REPO_ROOT, file);
+    const before = readBytesOptional(destination);
+    const bytes = Buffer.from(incoming, 'utf8');
+    if (sameBytes(before, bytes)) continue;
+    const status = await trackedFileState(file);
+    if (status.modified || status.staged) {
+      console.warn(`[LOCAL SYNC] Local ${path.basename(file)} has changes; it was left untouched.`);
+      continue;
+    }
+    if (!sameBytes(before, readBytesOptional(destination))) throw new Error(`Local ${path.basename(file)} changed during synchronization.`);
+    writeAtomic(destination, bytes);
+    changed.push(file);
+  }
+  if (changed.length) {
+    if (await currentBranch() !== 'main') throw new Error('Local branch changed before snapshot commit.');
+    if (!sameBytes(triadBytes, readBytesOptional(path.join(REPO_ROOT, TRIAD_FILE)))) throw new Error('The local inquiry changed before snapshot commit.');
+    for (const file of changed) if ((await trackedFileState(file)).staged) throw new Error(`Local ${path.basename(file)} was staged during synchronization.`);
+    await git(['commit', '--only', '-m', `sync: integrate Arena snapshot from ${ref.slice('refs/remotes/origin/'.length)}`, '--', ...changed]);
+    localPushPending = true;
+    console.log(`[LOCAL SYNC] Committed matching Arena snapshots from ${ref.slice('refs/remotes/origin/'.length)}.`);
+  }
+}
+
 async function syncLocalHost() {
   const branch = await currentBranch();
   if (branch !== 'main') throw new Error('Local-host mode requires its own main checkout; use --agent on a session branch.');
@@ -210,8 +292,8 @@ async function syncLocalHost() {
     if (typeof id !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(id)) throw new Error('Invalid local query ID.');
     const commit = await git(['commit', '--only', '-m', `sync: publish inquiry ${id}`, '--', TRIAD_FILE, PENDING_FILE], { allowFailure: true });
     if (commit.ok) {
-      await git(['push', 'origin', 'main']);
-      console.log(`[LOCAL SYNC] Published inquiry ${id} to origin/main.`);
+      localPushPending = true;
+      console.log(`[LOCAL SYNC] Committed inquiry ${id}.`);
     } else if (!/nothing to commit|no changes added to commit/i.test(commit.stdout + commit.stderr)) {
       throw new Error('Could not commit the local inquiry.');
     }
@@ -222,6 +304,15 @@ async function syncLocalHost() {
   if (!diff.ok && diff.code === 1) {
     await git(['pull', '--ff-only', 'origin', 'main']);
     console.log('[LOCAL SYNC] Updated the Arena response from origin/main.');
+  } else if (!diff.ok) throw new Error('Could not compare local and remote responses.');
+  const currentBytes = readBytesOptional(path.join(REPO_ROOT, TRIAD_FILE));
+  const currentTriad = currentBytes ? JSON.parse(currentBytes.toString('utf8').replace(/^\uFEFF/, '')) : null;
+  await importAgentSnapshots(currentTriad, currentBytes);
+  if (localPushPending) {
+    if (await currentBranch() !== 'main') throw new Error('Local branch changed before push.');
+    await git(['push', 'origin', 'main']);
+    localPushPending = false;
+    console.log('[LOCAL SYNC] Published local bus updates to origin/main.');
   }
 }
 
