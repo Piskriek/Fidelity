@@ -17,3 +17,7 @@ The camera settings the owner mentioned, as the ninth report's options screensho
 | Camera: Smart Pivot | on |
 | Mouse: Mouse Look Speed | 5.5 |
 | Mouse: Click-to-Move | off |
+
+A second message from the owner, mid-round, verbatim:
+
+> we need a polynomial time algorithm
