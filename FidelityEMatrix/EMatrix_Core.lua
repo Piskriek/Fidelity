@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.7.8"
+local VERSION = "1.7.9"
 local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
@@ -1331,6 +1331,9 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 Say("Full-screen depth scene OFF; the box is back. Click it to ripple it open.")
             end
 
+        elseif cmd == "report" then
+            if ns.Report then ns.Report.Command(args, Say) else Say("EMatrix_Report.lua did not load.") end
+
         elseif cmd == "terrain" then
             if ns.Terrain then
                 ns.Terrain.Command(args, Say)
@@ -1412,7 +1415,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide overlay on|off|r   the full-screen depth scene (world + terrain)")
             print("  |cffffcc00/fide stereo anaglyph|r  red/cyan glasses; |cffffcc00/fide stereo off|r")
             print("  |cffffcc00/fide eye setup|r        webcam head tracking; without it the mouse is the eye")
-            print("  |cffffcc00/fide terrain probe|r    why nothing is drawn (paste it for the director)")
+            print("  |cffffcc00/fide report|r           the report panel: buttons run every check (the terrain probe too) and take screenshots for the director")
             print("  |cffffcc00/fide status|r           the numbers; |cffffcc00/fide box|r shows the old window")
             print("  |cffffcc00/fide cells|r            what drives each cell (|cffffcc00/fide bind on|r makes the box follow it)")
 

@@ -334,6 +334,10 @@ end
 -- model's position, camera and scale as knobs, so the owner can tell whether a Model frame on this
 -- client draws a doodad file at all, and where its view is. Nothing else moves while it is on.
 local testMode = nil
+local testHidBox = false
+-- the client's own question-mark model (the default UI's quest marker): if it shows where a
+-- doodad does not, the frame draws and the doodad's own camera or bounds are the question
+local KNOWN_MODEL = "interface/buttons/talktomequestionmark.m2"
 local lastInfo = { props = 0, buildings = 0, tile = nil, groundZ = nil, pitch = nil }
 local ApplyBackdrop -- defined with the enable/disable commands below
 
@@ -355,6 +359,12 @@ local function ApplyTest(say)
     if s.left then s.left:Hide() end
     if s.right then s.right:Hide() end
     local m = s.mono
+    local box = _G.FidelityEMatrixFrame
+    if box and box:IsShown() then box:Hide(); testHidBox = true end -- the box sits over the screen centre
+    local which = (s.entry[2]:match("([^/]+)$") or s.entry[2])
+    if testMode.known then
+        which = LoadModel(m, nil, KNOWN_MODEL) and "the client's own question-mark model (interface/buttons/talktomequestionmark)" or "the question-mark model, which did NOT load"
+    end
     local h = (GetScreenHeight and GetScreenHeight()) or 1080
     local hPx = math.floor(h * 0.4)
     m:ClearAllPoints()
@@ -365,15 +375,21 @@ local function ApplyTest(say)
     m:Show()
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
-    say("terrain test: %s alone at the screen centre, %d px tall, SetPosition(%.1f, 0, 0), camera %s, model scale %.2f, over a dimmed world. Nothing visible means the Model frame draws the file outside its view: try /fide terrain test z 2, then z -2, cam off, scale 0.2. /fide terrain test off restores.",
-        (s.entry[2]:match("([^/]+)$") or s.entry[2]), hPx, testMode.z, testMode.cam == false and "off" or tostring(testMode.cam), testMode.scale)
+    say("terrain test: %s alone at the screen centre (the box is hidden meanwhile), %d px tall, SetPosition(%.1f, 0, 0), camera %s, model scale %.2f, over a dimmed world. Nothing visible means the Model frame draws the file outside its view: try /fide terrain test z 2, then z -2, cam off, scale 0.2, known. /fide terrain test off restores.",
+        which, hPx, testMode.z, testMode.cam == false and "off" or tostring(testMode.cam), testMode.scale)
     return true
 end
 
 local function EndTest()
     local s = TestSlot()
+    local wasKnown = testMode and testMode.known
     testMode = nil
-    if s and s.mono then SettleModel(s.mono) end
+    if s and s.mono then
+        if wasKnown and s.entry then LoadModel(s.mono, s.entry[1], s.entry[2]) end
+        SettleModel(s.mono)
+    end
+    if testHidBox and _G.FidelityEMatrixFrame then _G.FidelityEMatrixFrame:Show() end
+    testHidBox = false
     ApplyBackdrop()
 end
 
@@ -523,7 +539,7 @@ end
 
 local function Stop()
     if not overlay then return end
-    testMode = nil
+    if testMode then EndTest() end
     overlay:SetScript("OnUpdate", nil)
     for i = 1, #pool do ReleaseSlot(pool[i]) end
     lastInfo.props = 0
@@ -568,7 +584,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|z <x>|cam <n|off>|scale <s>]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|z <x>|cam <n|off>|scale <s>|known]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -616,6 +632,7 @@ function Terrain.Command(args, say)
         elseif what == "cam" and args[4] == "off" then testMode.cam = false
         elseif what == "cam" and n then testMode.cam = math.floor(n)
         elseif what == "scale" and n and n > 0 then testMode.scale = math.min(n, 50)
+        elseif what == "known" then testMode.known = true
         elseif what then say(USAGE); return end
         if not ApplyTest(say) then testMode = nil end
         return

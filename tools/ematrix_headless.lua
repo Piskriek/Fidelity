@@ -39,6 +39,8 @@ for name in ([[
     Show Hide IsShown SetScript GetScript SetSize SetWidth SetHeight GetWidth GetHeight SetPoint ClearAllPoints SetAllPoints
     GetEffectiveScale GetCenter GetLeft GetTop GetObjectType CreateTexture SetTexture SetColorTexture SetTexCoord SetBlendMode
     SetVertexColor SetFrameLevel GetFrameLevel GetModelFileID IsVisible GetName SetModelByUnit
+    CreateFontString SetText GetText SetJustifyH SetTextColor SetFontObject RegisterForClicks SetNormalFontObject
+    SetNormalTexture SetHighlightTexture SetPushedTexture GetFontString
 ]]):gmatch("%S+") do KNOWN[name] = true end
 local ABSENT = {}
 for name in ("SetDefaultModelPosition GetActiveCamera CreateActor AddCamera SetActiveCamera SetTarget SetYaw SetZoomDistance SetRotation UnitFrame"):gmatch("%S+") do ABSENT[name] = true end
@@ -93,6 +95,9 @@ function Region:GetLeft() return 720 end
 function Region:GetTop() return 684 end
 function Region:GetObjectType() return self.kind end
 function Region:CreateTexture() return newRegion("Texture", nil, self) end
+function Region:CreateFontString() return newRegion("FontString", nil, self) end
+function Region:SetText(s) self.text = s end
+function Region:GetText() return rawget(self, "text") end
 function Region:SetTexture(p) self.texture = p; self.color = nil end
 function Region:SetColorTexture(r, g, b, a) self.color = { r, g, b, a }; self.texture = nil end
 function Region:SetTexCoord(...) self.texcoord = { ... } end
@@ -118,6 +123,10 @@ _G.GetCursorPosition = function() return cursorX, cursorY end
 _G.GetScreenWidth = function() return 1920 end
 _G.GetScreenHeight = function() return 1080 end
 _G.GetTime = function() return now end
+_G.date = os.date
+local screenshots, reloads = 0, 0
+_G.Screenshot = function() screenshots = screenshots + 1 end
+_G.ReloadUI = function() reloads = reloads + 1 end
 _G.GetBuildInfo = function() return "2.5.6", "70577", "Oct 2026", 20506 end
 _G.IsShiftKeyDown = function() return false end
 _G.WOW_PROJECT_ID = 5
@@ -217,6 +226,7 @@ local mathChunk = assert(load(MATH_SRC, "@EMatrix_Math.lua"))
 local coreChunk = assert(load(CORE_SRC, "@EMatrix_Core.lua"))
 local worldChunk = assert(load(WORLD_SRC, "@EMatrix_World.lua"))
 local terrainChunk = assert(load(TERRAIN_SRC, "@EMatrix_Terrain.lua"))
+local reportChunk = assert(load(REPORT_SRC, "@EMatrix_Report.lua"))
 mathChunk("FidelityEMatrix", ns)
 -- A small synthetic tile stands in for the generated EMatrix_Data: flat ground at z = 80 over
 -- Northshire's tile (azeroth:32:48), one tree 20 yd north of the abbey door, one bush 5 yd
@@ -248,6 +258,7 @@ end
 coreChunk("FidelityEMatrix", ns)
 worldChunk("FidelityEMatrix", ns)
 terrainChunk("FidelityEMatrix", ns)
+reportChunk("FidelityEMatrix", ns)
 local M = ns.Math
 
 -- The anonymous loader frame is the one holding an OnEvent script
@@ -786,12 +797,23 @@ test("terrain test: one loaded prop alone at the screen centre with position, ca
     check(shown == 1, "exactly one prop is shown during the test, got " .. shown)
     step(1.0)
     check(T.Info().props == 1, "the layout does not run during the test")
+    slash("terrain test off"); step(0.6)
+    slash("box show")
+    check(_G.FidelityEMatrixFrame.shown, "box shown before the test")
+    slash("terrain test")
+    check(not _G.FidelityEMatrixFrame.shown, "the test hides the box, which sits over the screen centre")
     slash("terrain test z 2")
     local m = loaded[1].mono.shown and loaded[1].mono or loaded[2].mono
     check(m.position[1] == 2, "z 2 moves the model toward the camera: SetPosition(2, 0, 0), got " .. tostring(m.position[1]))
     slash("terrain test scale 0.2")
     check(m.modelScale == 0.2, "scale sets SetModelScale, got " .. tostring(m.modelScale))
+    local own = m.model
+    slash("terrain test known")
+    check(m.model == "interface\\buttons\\talktomequestionmark.m2", "known loads the client's question-mark model, got " .. tostring(m.model))
     slash("terrain test off")
+    check(m.model == own, "off reloads the prop's own model, got " .. tostring(m.model))
+    check(_G.FidelityEMatrixFrame.shown, "off shows the box again")
+    slash("box hide")
     check(m.position[1] == 0 and m.modelScale == 1, "off settles the model back")
     step(0.6)
     check(T.Info().props == 2, "off restores the layout, got " .. tostring(T.Info().props))
@@ -1182,6 +1204,48 @@ test("a click is an input the entity names: OnMouseDown only, the wave starts at
     cursorX, cursorY = 960, 540
 end)
 
+test("report panel: buttons run the checks with their chat captured into the saved report, screenshots follow half a second later, save reloads, clear empties", function()
+    local R = ns.Report
+    check(R and R.STEPS and #R.STEPS == 11, "the report module loaded with eleven steps")
+    local terrainWas = ns.Terrain.IsEnabled()
+    FidelityEMatrix_Report = nil
+    printed = {}
+    slash("report show")
+    local p = R._panel()
+    check(p and p.shown and _G.FidelityEMatrixReportButton1 and _G.FidelityEMatrixReportButton11, "the panel and its buttons exist and show")
+    check(printed[1] and printed[1]:find("Report panel shown", 1, true), "the command says what to do")
+    local function click(i) local b = _G["FidelityEMatrixReportButton" .. i]; b.scripts.OnClick(b, "LeftButton") end
+    click(1)
+    local r = FidelityEMatrix_Report
+    check(r and r.version == ns.VERSION and #r.steps == 1 and r.steps[1].step == "checks" and r.at, "one step recorded with the version and a stamp")
+    local text = table.concat(r.steps[1].lines, "\n")
+    check(text:find("Cells:", 1, true) and text:find("Terrain overlay:", 1, true) and text:find("probe:", 1, true) and text:find("Eye probe", 1, true), "the checks' chat lines are captured: " .. text:sub(1, 160))
+    check(not text:find("|cff", 1, true) and not text:find("|r", 1, true), "colour codes are stripped from the saved lines")
+    check(r.steps[1].screenshot == "pending" and screenshots == 0, "the screenshot waits half a second")
+    step(0.6)
+    check(screenshots == 1 and r.steps[1].screenshot:find("taken", 1, true), "the screenshot is taken after the delay: " .. tostring(r.steps[1].screenshot))
+    slash("box show")
+    click(2) -- terrain on + test
+    check(ns.Terrain.IsEnabled() and not _G.FidelityEMatrixFrame.shown, "the terrain test step hides the box")
+    step(0.6)
+    check(screenshots == 2, "each shot step takes one screenshot")
+    click(8) -- test off
+    check(_G.FidelityEMatrixFrame.shown, "test off shows the box again")
+    check(#r.steps == 3 and r.steps[3].screenshot == "none", "a step without a shot says so")
+    click(10) -- save
+    check(reloads == 1, "save reloads the UI to write the file")
+    click(11) -- clear
+    check(#FidelityEMatrix_Report.steps == 0, "clear empties the report")
+    printed = {}
+    slash("report status")
+    check(printed[1] and printed[1]:find("0 step(s)", 1, true) and printed[1]:find("2 screenshot(s)", 1, true), "status counts steps and screenshots: " .. tostring(printed[1]))
+    slash("report hide")
+    check(not p.shown, "panel hidden")
+    slash("box hide")
+    if terrainWas then slash("terrain on") else slash("terrain off") end
+    step(0.6)
+end)
+
 test("every slash command runs without an addon error", function()
     printed = {}
     for _, cmd in ipairs({ "help", "diag", "status", "scene target", "scene player", "spin 1", "parallax 0.5",
@@ -1190,7 +1254,7 @@ test("every slash command runs without an addon error", function()
         "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
         "world", "world status", "world frame dressup", "world frame player", "world parallax 120", "world height 1.8", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
-        "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
+        "terrain backdrop dim", "terrain backdrop none", "terrain probe", "report", "report", "report status", "report clear", "report bogus", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
         "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide",
         "eye", "eye setup", "eye probe", "eye stick 2", "eye depth off", "eye gain 1.5", "eye gain 1", "eye calibrate", "eye source gamepad", "eye source cursor",
         "eye invert", "eye invert", "eye inverty", "eye inverty", "stereo bogus", "box bogus", "overlay bogus", "help", "help all",

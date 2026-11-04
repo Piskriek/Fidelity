@@ -49,8 +49,8 @@ test('every listed file exists, and the module list is the same in every manifes
     for (const f of t.files) {
       assert.ok(fs.existsSync(path.join(addon, ...f.split('\\'))), `${name}: missing ${f}`);
     }
-    assert.deepEqual(modules(t), ['EMatrix_Math.lua', 'EMatrix_Core.lua', 'EMatrix_World.lua', 'EMatrix_Terrain.lua'], `${name}: module order`);
-    assert.equal(t.headers.SavedVariables, 'FidelityEMatrix_Config', `${name}: SavedVariables`);
+    assert.deepEqual(modules(t), ['EMatrix_Math.lua', 'EMatrix_Core.lua', 'EMatrix_World.lua', 'EMatrix_Terrain.lua', 'EMatrix_Report.lua'], `${name}: module order`);
+    assert.equal(t.headers.SavedVariables, 'FidelityEMatrix_Config, FidelityEMatrix_Report', `${name}: SavedVariables`);
   }
 });
 

@@ -2,8 +2,8 @@
 ## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
 ## Notes: Scoreboard wave window, world overlay (nameplate units) and terrain overlay (map placements) with depth parallax and anaglyph stereo
 ## Author: Antigravity Overwatch & Flash
-## Version: 1.7.8
-## SavedVariables: FidelityEMatrix_Config
+## Version: 1.7.9
+## SavedVariables: FidelityEMatrix_Config, FidelityEMatrix_Report
 
 # 1.x clients (WoW Forever, Classic Era): only the vanilla map data is loaded (1.2 MB less Lua
 # than the fallback FidelityEMatrix.toc, which carries both families).
@@ -12,3 +12,4 @@ Data\EMatrix_Data_Azeroth_vanilla.lua
 EMatrix_Core.lua
 EMatrix_World.lua
 EMatrix_Terrain.lua
+EMatrix_Report.lua
