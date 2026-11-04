@@ -34,10 +34,12 @@ function EMatrix_Math.GetCellRotation(col, row)
     -- because the two multipliers are 1 and 3 modulo 4, so the four orientations formed one
     -- diagonal lattice over the 15x9 grid: the first visible repeat (council B1, 04 Nov 2026).
     -- This form fits no (a*c + b*r + k) mod 4 over the grid, is balanced 33/33/33/36 and never
-    -- gives a uniform 2x2 block; every intermediate stays below 2^53, so the game's doubles
-    -- (Lua 5.1) and the test harness (Lua 5.3 integers) agree.
-    local a = (c * 73856093) % 1000003
-    local h = ((a * 19349663 + r * 83492791) % 1000003) % 4
+    -- gives a uniform 2x2 block. The literals are floats on purpose: the game's Lua 5.1 computes
+    -- in doubles (exact below 2^53, and every intermediate here is), while the fengari harness
+    -- (Lua 5.3) has 32-bit integers that would wrap a * 19349663 (council B3, 04 Nov 2026);
+    -- float operands keep both in doubles, so the harness computes the numbers the game draws.
+    local a = (c * 73856093.0) % 1000003
+    local h = ((a * 19349663.0 + r * 83492791.0) % 1000003) % 4
     if h < 0 then h = h + 4 end
     return h, ROT_UV8[h]
 end
@@ -89,8 +91,12 @@ end
 function EMatrix_Math.CalculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration)
     if not waveAge or not waveSpeed or not ringDist or not flipDuration then return 0.0 end
     if flipDuration <= 0.0 then return 1.0 end
+    if waveSpeed <= 0.0 then return 0.0 end
 
-    local u = (waveAge * waveSpeed - ringDist) / flipDuration
+    -- The front reaches this cell at ringDist / waveSpeed seconds; the flip then takes
+    -- flipDuration SECONDS. (The old form divided cells by seconds, so a flip lasted
+    -- flipDuration / waveSpeed = 16 ms, one frame: council B2, 04 Nov 2026.)
+    local u = (waveAge - ringDist / waveSpeed) / flipDuration
     if u < 0.0 then return 0.0 end
     if u > 1.0 then return 1.0 end
     return u

@@ -64,34 +64,27 @@ function calculateRingDistance(x, y, ox, oy) {
 }
 
 /**
- * The REAL EMatrix_Math.GetCellRotation, run through fengari (a JavaScript copy of the hash cannot
- * catch an edit to the Lua, and the old copy hid that the hash was (c - r) mod 4 in disguise).
+ * The REAL EMatrix_Math, run through fengari: returns call(name, ...numbers) -> first number result.
+ * A JavaScript copy of a formula cannot catch an edit to the Lua; the old hash copy hid that the
+ * hash was (c - r) mod 4 in disguise, and the old flip-progress copy hid a 16 ms flip.
  */
-function luaCellRotation() {
+function luaMath() {
   const { lua, lauxlib, lualib, to_luastring } = fengari;
   const L = lauxlib.luaL_newstate();
   lualib.luaL_openlibs(L);
   const src = fs.readFileSync(mathLuaPath, 'utf8');
   if (lauxlib.luaL_loadbuffer(L, to_luastring(src), null, to_luastring('@EMatrix_Math.lua')) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
   if (lua.lua_pcall(L, 0, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
-  return (c, r) => {
-    lua.lua_getfield(L, -1, to_luastring('GetCellRotation'));
-    lua.lua_pushnumber(L, c);
-    lua.lua_pushnumber(L, r);
-    if (lua.lua_pcall(L, 2, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
-    const h = lua.lua_tonumber(L, -1);
+  return (name, ...args) => {
+    lua.lua_getfield(L, -1, to_luastring(name));
+    for (const a of args) lua.lua_pushnumber(L, a);
+    if (lua.lua_pcall(L, args.length, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+    const v = lua.lua_tonumber(L, -1);
     lua.lua_pop(L, 1);
-    return h;
+    return v;
   };
 }
-
-function calculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration) {
-  if (flipDuration <= 0) return 1.0;
-  const u = (waveAge * waveSpeed - ringDist) / flipDuration;
-  if (u < 0.0) return 0.0;
-  if (u > 1.0) return 1.0;
-  return u;
-}
+function luaCellRotation() { const call = luaMath(); return (c, r) => call('GetCellRotation', c, r); }
 
 function getFlipVisuals(u) {
   if (u <= 0.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: false, creviceAlpha: 0.0 };
@@ -217,6 +210,11 @@ runTest('Cell rotations from the real Lua: balanced, no diagonal lattice, no uni
   for (let h = 0; h <= 3; h++) {
     assert.ok(counts[h] >= 20, `Orientation ${h} count must be >= 20 (got ${counts[h]})`);
   }
+  // The game's Lua 5.1 computes in doubles; fengari's integers are 32-bit and would wrap the hash
+  // (council B3). This JavaScript double-model reference exists only to catch that divergence.
+  const doubleModel = (c, r) => { const a = (c * 73856093) % 1000003; return ((a * 19349663 + r * 83492791) % 1000003) % 4; };
+  for (const [c, r, h] of grid) assert.equal(h, doubleModel(c, r), `harness and game disagree at (${c}, ${r}): the Lua must compute in doubles`);
+  assert.deepEqual(counts, [33, 33, 33, 36], `the game's distribution is 33/33/33/36, got ${counts}`);
   // The old hash was (c - r) mod 4 in disguise (its multipliers are 1 and 3 modulo 4), so the
   // 135 cells formed one diagonal lattice: no (a*c + b*r + k) mod 4 may fit the whole grid.
   for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let k = 0; k < 4; k++) {
@@ -234,6 +232,18 @@ runTest('Cell rotations from the real Lua: balanced, no diagonal lattice, no uni
 // TEST 3: Scoreboard Vertical Flip Visual Transforms & Crevice Alpha
 // ============================================================================
 runTest('Flip visual math produces vertical squash, specular flash peak at u=0.5, and zero settled crevice', () => {
+  // Flip progress from the REAL Lua: the front reaches a cell at ringDist / waveSpeed seconds and the
+  // flip then lasts flipDuration SECONDS (the old form made it flipDuration / waveSpeed = 16 ms: one frame).
+  const call = luaMath();
+  const speed = 16, dur = 0.26;
+  assert.equal(call('CalculateFlipProgress', 0.0, speed, 0, dur), 0.0, 'centre cell: not started at t = 0');
+  assert.ok(Math.abs(call('CalculateFlipProgress', dur / 2, speed, 0, dur) - 0.5) < 1e-9, 'centre cell: half way at half the duration');
+  assert.equal(call('CalculateFlipProgress', dur, speed, 0, dur), 1.0, 'centre cell: done after flipDuration seconds');
+  assert.equal(call('CalculateFlipProgress', 8 / speed, speed, 8, dur), 0.0, 'ring 8: the front arrives at 8 / speed seconds');
+  assert.ok(Math.abs(call('CalculateFlipProgress', 8 / speed + dur / 2, speed, 8, dur) - 0.5) < 1e-9, 'ring 8: half way half a duration later');
+  assert.equal(call('CalculateFlipProgress', 1.0, speed, 0, 0), 1.0, 'a zero duration is an instant flip');
+  assert.equal(call('CalculateFlipProgress', 1.0, 0, 0, dur), 0.0, 'a zero speed never arrives');
+
   // At u = 0.0 (unflipped / Closed):
   const v0 = getFlipVisuals(0.0);
   assert.equal(v0.scaleY, 1.0);

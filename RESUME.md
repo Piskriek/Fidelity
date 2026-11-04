@@ -1,6 +1,20 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## Council round 2026-11-04: the compassion loop as councils, v1.7.2 (04 Nov 2026, 04:25Z, Claude in the cloud) — start here
+## Council round 2026-11-04-entity: what the Weight-and-Gradient Entity is, v1.7.3 (04 Nov 2026, 04:40Z, Claude in the cloud) — start here
+
+**The owner:** "mobs now have textures, animation and terrain bridges still broken, Flash says put on 3D glasses; we have to first get the council to tell us what they are; Argon got us started; set up a council so we have a POV of what it is, then we can explore what it can do." Argon's proposal (the "Hilbert Holon") is `docs/council/2026-11-04-entity/ARGON-INPUT.md`, verbatim.
+
+**The round:** five viewpoints as Argon named them (Architect, Somatic and Comfort Guardian, Simicist and Physics, Artist and Lens, Host-Bridge Engineer) and three opposers (a lens never lies; glasses-free 3D; the Hilbert story and the fifth metric), all haiku, one file each, in `docs/council/2026-11-04-entity/`. The Council Synthesis (Shape B) is `STEER.md` there: where they agreed and clashed, the recommended canonical definition **flagged for the owner's sign-off before it enters `PLAN_FRACTAL.md` (HeavyMetal2, not in this checkout)**, and the Wave-1 split across Opus, Argon, Flash and Codex.
+
+**What all eight agreed, each verified by the director:** no cell is bound to any measured number (a click, a clock, a fixed hash); the rainbow and the gold are baked textures; the WoW HUD's `S=(0.20, 0.50, 0.95, 0.20)`, coherence 0.99 and strain 0.00 J are literals nothing writes; an order-2 Hilbert curve is a U of U's and the E is a hand-drawn letter (kept: four true rotations, the exact 1 then 8 cascade, Euclidean from ring 3); the gate `u` is a clock, not a function of `Lx` and `Aq`, so the proposal's own table breaks the Four-Float rule; no frame alternation exists or can be a setting, so continuous parallax is the only honest default; the restorative dual is a toggle; portability cannot be settled here.
+
+**Two findings landed as v1.7.3:** a cell's flip had lasted 16 ms, one frame, because the clock divided cells by seconds (B2), so the squash animation was never visible; now `flipDuration` is seconds after the front arrives. And fengari's integers are 32-bit (B3), so the v1.7.2 hash test had checked wrapped numbers, not the game's doubles; the hash now computes in doubles on both sides and the test asserts the game's 33/33/33/36. Also verified and queued (not landed): the closed E tiles are lit from the upper left while the lens, housing and walls say upper right (B4); the fix is an atlas of four pre-lit orientations, not a sign flip, because closed cells rotate.
+
+**Evidence (04:38Z):** `npm test` 165 tests, 164 pass, 0 fail, 1 skipped; math 12/12; headless 56/56; `node tools/council.mjs check --all`: both rounds open on a pending landing, loop healthy.
+
+**What closes this round:** the owner's word on the definition (`STEER.md` §2), Flash's deploy of v1.7.3 with the pastes in `STEER.md` §"The check that settles it" (the box after the flip fix: each cell squashes and flashes as the wave passes), and Argon's rewrite or argument. Then the next ASK, "what the bound entity can do".
+
+## Council round 2026-11-04: the compassion loop as councils, v1.7.2 (04 Nov 2026, 04:25Z, Claude in the cloud)
 
 **The owner (04 Nov):** "improve the fidelity even more with fractals; an algorithm so the textures do not repeat is the easy example; set up a haiku council to explore the bridges we can build, and an opposing council who explore the ones we have built, then steer your vector." Then: "the councils keep the loop healthy; this should be built into the fractals; this is the compassion loop."
 

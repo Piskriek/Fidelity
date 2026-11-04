@@ -344,6 +344,10 @@ test("math: parallax keeps the screen plane fixed and splits signs by depth", fu
     local fl, fr = M.StereoFacings(1.0, 0.06)
     check(near(fl - fr, 0.12), "stereo facings must differ by 2 * delta")
     check(M.Approach(0, 1, 2, 0.25) == 0.5 and M.Approach(0.9, 1, 2, 0.25) == 1, "Approach overshoots")
+    -- a cell's flip lasts flipDuration SECONDS after the front reaches it (council B2: the old form gave 16 ms)
+    check(M.CalculateFlipProgress(0.13, 16, 0, 0.26) > 0.49 and M.CalculateFlipProgress(0.13, 16, 0, 0.26) < 0.51, "centre cell half way at 0.13 s")
+    check(M.CalculateFlipProgress(0.26, 16, 0, 0.26) == 1, "centre cell done at 0.26 s")
+    check(M.CalculateFlipProgress(0.5, 16, 8, 0.26) == 0 and M.CalculateFlipProgress(0.5 + 0.26, 16, 8, 0.26) == 1, "ring 8 starts at 0.5 s and ends 0.26 s later")
 end)
 
 test("camera: projection and pitch solver (world -> screen for the terrain rebuild)", function()
