@@ -161,6 +161,19 @@ function EMatrix_Math.EyeFromCursor(mx, my, cx, cy, halfW, halfH, strength)
     return clamp((mx - cx) / halfW, -1.0, 1.0) * strength, clamp((my - cy) / halfH, -1.0, 1.0) * strength
 end
 
+--- The grid cell under a screen point: cursor pixels (GetCursorPosition) against the frame's left
+--- and top edges in UI units, through the frame's effective scale. Nil off the grid.
+--- @return number|nil col, number|nil row
+function EMatrix_Math.CellAt(mx, my, left, top, scale, cellSize, cols, rows)
+    if not (finite(mx) and finite(my) and finite(left) and finite(top)) then return nil end
+    if not finite(scale) or scale <= 0 then scale = 1.0 end
+    if not finite(cellSize) or cellSize <= 0 then return nil end
+    local col = math.floor((mx / scale - left) / cellSize) + 1
+    local row = math.floor((top - my / scale) / cellSize) + 1
+    if col < 1 or col > (cols or 0) or row < 1 or row > (rows or 0) then return nil end
+    return col, row
+end
+
 --- Visible widths of the four inner walls of the box. Seen from the right you see more of the
 --- LEFT wall; seen from above you see more of the floor (BOTTOM wall).
 --- @return number left, right, top, bottom (pixels, clamped to [minW, maxW])

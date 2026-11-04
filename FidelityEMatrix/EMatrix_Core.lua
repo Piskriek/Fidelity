@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.7.5"
+local VERSION = "1.7.6"
 local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
@@ -149,37 +149,53 @@ local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then retu
 -- it only when the saved gate `bindCells` is on (off by default, so nothing changes on screen
 -- until the owner turns it on). Callers pass the time they measured at (GetTime()), not an age.
 -- ============================================================================
-local FRESH_SECONDS = 2.0
-local cellSources = {}           -- cell index -> { source, value, at, kind }
+local FRESH_SECONDS = 2.0        -- the default window; a source may state its own (the flows' 180 s: council round 4, B1)
+local cellSources = {}           -- cell index -> { source, value, at, kind, window }
+local sourceCount = 0            -- cells with a record (keeps the driver alive while the gate is on: round 4, B3 and O2)
 local bindAge = 0                -- seconds since the bound cells were last applied to the draw
 local KINDS = { measured = true, symbolic = true, not_measured = true }
 
 local function Now() return (GetTime and GetTime()) or 0 end
 
---- Records that `source` drives cell `index` with `value` in [0, 1], measured at `at`, of `kind`.
-local function BindCell(index, source, value, at, kind)
+--- Records that `source` drives cell `index` with `value` in [0, 1], measured at `at` (on the
+--- same clock as Now(), i.e. GetTime()), of `kind`, fresh for `window` seconds (FRESH_SECONDS when
+--- nil). The value is the source's label for its state (an actor's band: near 1.0, mid 0.5,
+--- far 0.2), not a reading; the reading is the source's own (the range check's answer).
+local function BindCell(index, source, value, at, kind, window)
     index = tonumber(index)
     if not index or index < 1 or index > TOTAL_CELLS or index ~= math.floor(index) then return false end
     if type(source) ~= "string" or source == "" then return false end
     if not KINDS[kind] then kind = "not_measured" end
     value = tonumber(value) or 0
+    window = tonumber(window)
+    if not window or window <= 0 then window = FRESH_SECONDS end
     local rec = cellSources[index]
-    if not rec then rec = {}; cellSources[index] = rec end
-    rec.source, rec.value, rec.at, rec.kind = source, Clamp(value, 0, 1), tonumber(at) or Now(), kind
+    if not rec then
+        rec = {}; cellSources[index] = rec; sourceCount = sourceCount + 1
+        -- the first record with the gate on must wake the driver, or it is never applied
+        if sourceCount == 1 and Cfg("bindCells") and CheckIdleCondition then CheckIdleCondition() end
+    end
+    rec.source, rec.value, rec.at, rec.kind, rec.window = source, Clamp(value, 0, 1), tonumber(at) or Now(), kind, window
     return true
 end
 
 local function ReleaseCell(index)
     index = tonumber(index)
-    if index and cellSources[index] then cellSources[index] = nil; return true end
+    if index and cellSources[index] then cellSources[index] = nil; sourceCount = sourceCount - 1; return true end
     return false
 end
 
 --- The source record of a cell, or nil ("no source").
 local function CellSource(index) return cellSources[tonumber(index) or 0] end
 
---- A cell counts as bound only when its source is fresh and measured.
-local function CellFresh(rec, now) return rec ~= nil and (now - (rec.at or 0)) <= FRESH_SECONDS end
+--- A record is fresh while its age is within its window. A stamp from the future (a wall clock
+--- handed to this GetTime() registry, say) is not fresh: without the lower bound it would read
+--- fresh for ever (council round 4, B1).
+local function CellFresh(rec, now)
+    if rec == nil then return false end
+    local age = now - (rec.at or 0)
+    return age >= 0 and age <= (rec.window or FRESH_SECONDS)
+end
 local function CellOpen(rec, now) return CellFresh(rec, now) and rec.kind == "measured" and rec.value >= 0.5 end
 
 --- Counts: recorded sources, and those fresh and measured right now.
@@ -601,6 +617,11 @@ function CreateMatrixGrid()
     reticleR:SetBlendMode("ADD")
 
     -- Click-picking on the master frame
+    -- A click is an input the entity names, not an event it emits (council round 4, B3 and O3):
+    -- the wave starts at the clicked cell and, with the binding draw on, one chat line says what
+    -- drives that cell. Off the grid nothing happens (the old fallback started a wave from an
+    -- invented origin). OnMouseDown only: wired to OnMouseUp as well, a press held past the
+    -- debounce ran two waves that cancelled each other.
     local function HandleMatrixClick(self, button)
         if button == "LeftButton" and not IsShiftKeyDown() then
             local now = GetTime()
@@ -609,25 +630,24 @@ function CreateMatrixGrid()
 
             pcall(function()
                 local mx, my = GetCursorPosition()
-                local s = self:GetEffectiveScale()
-                if not s or s == 0 then s = 1.0 end
-                mx, my = mx / s, my / s
-                local left = self:GetLeft() or 0
-                local top = self:GetTop() or 0
-                local col = math.floor((mx - left) / CELL_SIZE) + 1
-                local row = math.floor((top - my) / CELL_SIZE) + 1
-
-                if col >= 1 and col <= COLS and row >= 1 and row <= ROWS then
-                    TriggerScoreboardWave(col, row)
-                else
-                    TriggerScoreboardWave(8, 5)
+                local col, row = Math.CellAt(mx, my, self:GetLeft(), self:GetTop(), self:GetEffectiveScale(), CELL_SIZE, COLS, ROWS)
+                if not col then return end
+                TriggerScoreboardWave(col, row)
+                if Cfg("bindCells") then
+                    local index = (row - 1) * COLS + col
+                    local rec = cellSources[index]
+                    if rec then
+                        print(string.format("|cff00ffcc[Fidelity EMatrix]|r Clicked cell %d: %s label %.2f age %.1fs of %.0fs %s, %s",
+                            index, rec.source, rec.value, now - (rec.at or 0), rec.window or FRESH_SECONDS, rec.kind, CellOpen(rec, now) and "open" or "closed"))
+                    else
+                        print(string.format("|cff00ffcc[Fidelity EMatrix]|r Clicked cell %d: no source", index))
+                    end
                 end
             end)
         end
     end
 
     masterFrame:SetScript("OnMouseDown", HandleMatrixClick)
-    masterFrame:SetScript("OnMouseUp", HandleMatrixClick)
 
     UpdateStereoDisplay()
     CheckIdleCondition()
@@ -820,6 +840,18 @@ local function ReadGamepadEye()
     return s.x, s.y, z
 end
 
+--- What drives the eye right now, for the login line and /fide status. The pointer is a hand
+--- that stands in for the eye; only a pad that answers carries a head, and the pad has no age
+--- (council round 4, B2 and O3: the configured source is not the one in use when no pad answers).
+local function EyeLabel()
+    if (Cfg("parallaxStrength") or 0) <= 0.0 then return "none (parallax off)" end
+    if Cfg("eyeSource") == "gamepad" then
+        if ReadGamepadEye() then return "pad (head; age not measured)" end
+        return "hand:cursor (pad configured, none answers; no head measured)"
+    end
+    return "hand:cursor (no head measured)"
+end
+
 -- ============================================================================
 -- 4. Zero-GC Scoreboard Wave & Motion Driver
 -- ============================================================================
@@ -922,6 +954,12 @@ local function OnUpdateDriver(self, dt)
         smoothEyeY = smoothEyeY + (ty - smoothEyeY) * k
         smoothEyeZ = smoothEyeZ + (tz - smoothEyeZ) * k
     elseif pStr > 0.0 and GetCursorPosition then
+        -- the pointer has no depth: a depth left by a pad that stopped answering eases home,
+        -- or it would keep driving EyeGain() while the hand drives the eye (round 4, B2 and O3)
+        if smoothEyeZ ~= 0.0 then
+            smoothEyeZ = smoothEyeZ + (0.0 - smoothEyeZ) * math.min(dt * 10.0, 1.0)
+            if math.abs(smoothEyeZ) < 0.0005 then smoothEyeZ = 0.0 end
+        end
         local mx, my = GetCursorPosition()
         local es = masterFrame:GetEffectiveScale() or 1.0
         local cx, cy = masterFrame:GetCenter()
@@ -939,10 +977,10 @@ local function OnUpdateDriver(self, dt)
             smoothEyeX = smoothEyeX + (tx - smoothEyeX) * k
             smoothEyeY = smoothEyeY + (ty - smoothEyeY) * k
         end
-    elseif smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0 or appliedEyeY ~= 0 then
+    elseif smoothEyeX ~= 0 or smoothEyeY ~= 0 or smoothEyeZ ~= 0 or appliedEyeX ~= 0 or appliedEyeY ~= 0 then
         -- Parallax off: snap the eye home and force one re-apply at exactly 0, so a residue
         -- below the change threshold cannot keep the idle check from detaching OnUpdate
-        smoothEyeX, smoothEyeY = 0.0, 0.0
+        smoothEyeX, smoothEyeY, smoothEyeZ = 0.0, 0.0, 0.0
         appliedEyeX = nil
     end
 
@@ -981,9 +1019,12 @@ function CheckIdleCondition()
     local settlingEye = (pStr <= 0.0) and (smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0)
     -- the world overlay reads the eye and facing from here, so keep the driver alive while it runs
     local worldOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
+    -- a recorded source with the binding draw on must keep being applied, or a stale source would
+    -- stay open once nothing else moves (council round 4, B3 and O2)
+    local bound = Cfg("bindCells") and sourceCount > 0
 
     local host = driverFrame or masterFrame
-    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn then
+    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn or bound then
         if not host:GetScript("OnUpdate") then
             host:SetScript("OnUpdate", OnUpdateDriver)
         end
@@ -1239,14 +1280,14 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             -- the binding registry: what drives each cell, and whether it counts
             local recorded, live = BoundCounts()
             local now = Now()
-            Say("Cells: %d of %d have a source, %d fresh and measured (open when value >= 0.5); binding draw %s. A cell with no source stays closed when the draw is on.",
+            Say("Cells: %d of %d have a source, %d fresh and measured (open when the label is >= 0.5 within the source's window); binding draw %s. A cell with no source stays closed when the draw is on. The label is the source's constant for its state (an actor's band: near 1.0, mid 0.5, far 0.2), not a distance.",
                 recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off (/fide bind on)")
             local shown = 0
             for i = 1, TOTAL_CELLS do
                 local rec = cellSources[i]
                 if rec and shown < 12 then
                     shown = shown + 1
-                    Say("  cell %d: %s value %.2f age %.1fs %s%s", i, rec.source, rec.value, now - (rec.at or 0), rec.kind, CellOpen(rec, now) and " -> open" or "")
+                    Say("  cell %d: %s label %.2f age %.1fs of %.0fs %s%s", i, rec.source, rec.value, now - (rec.at or 0), rec.window or FRESH_SECONDS, rec.kind, CellOpen(rec, now) and " -> open" or "")
                 end
             end
 
@@ -1256,6 +1297,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 FidelityEMatrix_Config.bindCells = (sub == "on")
                 bindAge = 1
                 appliedEyeX = nil -- the walls, glass and reticle follow the gate: re-apply the planes
+                CheckIdleCondition() -- recorded sources keep the driver alive while the gate is on
                 if not FidelityEMatrix_Config.bindCells then RefreshOpenCells() end
                 Say("Binding draw %s: %s", sub == "on" and "ON" or "off", sub == "on" and "bound cells follow their sources, unbound cells stay closed (no source)" or "the box draws as before")
             elseif sub == "status" then
@@ -1362,7 +1404,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 local ts = ns.Terrain.IsSuspended and ns.Terrain.IsSuspended()
                 print(string.format("  Terrain overlay: %s, %d prop(s), %d building(s) nearby, tile %s%s", ns.Terrain.IsEnabled() and "|cff00ff00ON|r" or "off", info.props or 0, info.buildings or 0, tostring(info.tile), ts and (" (|cffff3333suspended after errors|r: " .. ts .. ")") or ""))
             end
-            print(string.format("  Eye: %.2f, %.2f, z %.2f (parallax gain %.2f) from %s", smoothEyeX, smoothEyeY, smoothEyeZ, EyeGain(), Cfg("eyeSource")))
+            print(string.format("  Eye: %.2f, %.2f, z %.2f (parallax gain %.2f) from %s; configured %s", smoothEyeX, smoothEyeY, smoothEyeZ, EyeGain(), EyeLabel(), Cfg("eyeSource")))
 
         elseif cmd == "help" and args[2] ~= "all" then
             -- the short list: what the owner needs at the keyboard (/fide help all prints everything)
@@ -1431,9 +1473,9 @@ local function Bringup(reason)
         data = string.format("%s, %d tile(s), %d placements, %d buildings", ns.Terrain.BuildLabel(), tiles, placements, buildings)
     end
     local recorded, live = BoundCounts()
-    Say("v%s: world overlay %s (%d actor(s) now), terrain overlay %s, map data %s, box %s, eye from the %s, cells with a source %d of %d (%d fresh and measured), binding draw %s. |cffffcc00/fide help|r for the short list.",
+    Say("v%s: world overlay %s (%d actor(s) now), terrain overlay %s, map data %s, box %s, eye %s, cells with a source %d of %d (%d fresh and measured), binding draw %s. |cffffcc00/fide help|r for the short list.",
         VERSION, worldOn and "|cff00ff00ON|r" or "off", ns.World and ns.World.ActorCount() or 0, terrainOn and "|cff00ff00ON|r" or "off", data,
-        (masterFrame and masterFrame:IsShown()) and "shown" or "hidden", Cfg("eyeSource"), recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off")
+        (masterFrame and masterFrame:IsShown()) and "shown" or "hidden", EyeLabel(), recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off")
     if not worldOn and not terrainOn then
         Say("Both overlays are off in your saved settings: |cffffcc00/fide overlay on|r for the full-screen depth scene.")
     end

@@ -1,6 +1,6 @@
 # CLAUDE DIRECTOR BRIEFING: FIDELITY 4-NODE HOLON & EMATRIX 3D PROTOTYPE
-**Timestamp:** 2026-11-03T20:25Z | **Status:** EMatrix v1.7.0, the review fixes, on branch `francois/serene-euler-51wj3e` (draft PR into `claude/ematrix-depth`); read [`RESUME.md`](RESUME.md) §"EMatrix v1.7.0" first  
-**Branch the laptop deploys (H005):** `claude/ematrix-depth` (v1.6.1, `7265578`) until that PR merges | **Sections 1–3 below** are Flash's handoff written on `flash/wow-ematrix-polish` (`db2ae29`), kept for the client telemetry in §1  
+**Timestamp:** 2026-11-04T06:05Z | **Status:** EMatrix v1.7.6 after council round 4 (what the bound entity can do), on branch `francois/serene-euler-51wj3e` (draft PR into `claude/ematrix-depth`); read [`RESUME.md`](RESUME.md) §"Council round 2026-11-04-can" first, then the rounds below it  
+**Branch the laptop deploys (H005):** `francois/serene-euler-51wj3e` (gate: toc version 1.7.5 or later); the owner's last screenshots were v1.7.4 | **Sections 1–3 below** are Flash's handoff written on `flash/wow-ematrix-polish` (`db2ae29`), kept for the client telemetry in §1  
 **Target WoW Client:** `D:\World of Warcraft\_anniversary_\` (Burning Crusade Classic `2.5.6.70577`, character `Ikkibotwo`, realm `Thunderstrike`)
 
 ## 0. Checkpoint 10 — Director takeover from Node 2 (03 Nov 2026, verified 12:06–12:10Z)

@@ -375,6 +375,23 @@ runTest('EMatrix_Core.lua contains SetScript("OnUpdate", nil) for zero idle CPU'
 });
 
 // ============================================================================
+// TEST 6: The click resolves to a cell through the frame's scale (council round 4, B3)
+// ============================================================================
+runTest('CellAt maps cursor pixels to a grid cell through the effective scale, nil off the grid', () => {
+  const call = luaMath();
+  // frame left 720, top 684 (UI units), 32 px cells, 15 x 9: cell (3, 2) spans x 784..816, y 652..620
+  assert.equal(call('CellAt', 800, 636, 720, 684, 1, 32, 15, 9), 3, 'col 3 at scale 1');
+  assert.equal(call('CellAt', 1000, 795, 720, 684, 1.25, 32, 15, 9), 3, 'the same cell when the cursor pixels are 1.25 x the UI units');
+  assert.equal(call('CellAt', 736, 668, 720, 684, 1, 32, 15, 9), 1, 'col 1 at the top-left cell');
+  assert.equal(call('CellAt', 100, 100, 720, 684, 1, 32, 15, 9), 0, 'off the grid: nil (read back as 0)');
+  assert.equal(call('CellAt', 800, 636, 720, 684, 0, 32, 15, 9), 3, 'a zero scale falls back to 1');
+  const coreSrc = fs.readFileSync(coreLuaPath, 'utf8');
+  assert.ok(coreSrc.includes('masterFrame:SetScript("OnMouseDown", HandleMatrixClick)'), 'the click is wired to OnMouseDown');
+  assert.ok(!coreSrc.includes('SetScript("OnMouseUp"'), 'and not to OnMouseUp as well (a held press ran two waves)');
+  assert.ok(!/TriggerScoreboardWave\(8, 5\)/.test(coreSrc), 'no invented wave origin for a click off the grid');
+});
+
+// ============================================================================
 // Summary
 // ============================================================================
 console.log('-----------------------------------------------------------');

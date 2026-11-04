@@ -293,6 +293,7 @@ test("ADDON_LOADED builds the grid closed, with defaults merged into an old save
     local login = printed[#printed] or ""
     check(login:find("world overlay |cff00ff00ON|r", 1, true) and login:find("terrain overlay |cff00ff00ON|r", 1, true), "login line must report the overlays' real state: " .. login)
     check(login:find("1 tile(s), 3 placements, 1 buildings", 1, true), "login line must count the map data: " .. login)
+    check(login:find("eye hand:cursor (no head measured)", 1, true), "login line must name the hand as the eye when no head is measured: " .. login)
     check(FidelityEMatrix_Config.lensAlpha == 0.35 and FidelityEMatrix_Config.backdrop == "nebula", "defaults not merged")
     -- v1.5: an old save is migrated to the full-screen scene: overlays on, box hidden, driver running
     check(FidelityEMatrix_Config.worldOverlay == true and FidelityEMatrix_Config.terrainOverlay == true and FidelityEMatrix_Config.boxHidden == true, "v1.5 defaults not applied to the old save")
@@ -973,6 +974,25 @@ test("gamepad eye: a stick drives the eye, calibrate zeroes it, no pad falls bac
     FidelityEMatrix_Config.eyeCalX, FidelityEMatrix_Config.eyeCalY, FidelityEMatrix_Config.eyeCalZ = 0, 0, 0
     FidelityEMatrix_Config.eyeDepthAxis = 0
     step(1.0)
+    -- a depth left by the pad must not outlive it (round 4, B2 and O3): back on the hand, the gain returns to 1
+    slash("eye source gamepad"); slash("eye depth 5"); plugPad(0, 0, 0.3); step(1.0)
+    check(ns.EyeGain() > 1.1, "depth drives the gain, got " .. ns.EyeGain())
+    slash("eye source cursor"); step(1.5)
+    check(near(ns.EyeGain(), 1, 1e-3), "the pointer has no depth: the gain must return to 1 once the pad stops driving, got " .. ns.EyeGain())
+    -- the label names what drives the eye, not what is configured
+    local function statusHas(s) for _, line in ipairs(printed) do if line:find(s, 1, true) then return true end end return false end
+    printed = {}; slash("status")
+    check(statusHas("from hand:cursor (no head measured)"), "status must name the hand when the cursor drives the eye")
+    slash("eye source gamepad"); padState = nil
+    printed = {}; slash("status")
+    check(statusHas("from hand:cursor (pad configured, none answers"), "status must say the hand drives the eye when no pad answers")
+    plugPad(0, 0, 0)
+    printed = {}; slash("status")
+    check(statusHas("from pad (head; age not measured)"), "status must name the pad when it answers, with no age")
+    padState = nil
+    slash("eye depth off"); slash("eye source cursor")
+    FidelityEMatrix_Config.eyeDepthAxis = 0
+    step(1.0)
 end)
 
 test("typos change nothing, help is short, a migration keeps the owner's choices", function()
@@ -1012,14 +1032,22 @@ test("binding registry: sources are named, valued, aged and kinded; the draw fol
     check(ns.CellSource(5).kind == "not_measured", "an unknown kind is recorded as not_measured")
     check(ns.CellSource(3).value == 0.9 and ns.CellSource(3).source == "test:fresh", "the record keeps the name and the value")
     check(ns.BindCell(6, "test:clamped", 7, now, "measured") and ns.CellSource(6).value == 1, "values clamp to [0, 1]")
+    -- a stamp from the future is not fresh (a wall clock handed to this GetTime() registry would otherwise read fresh for ever: round 4, B1)
+    check(ns.BindCell(7, "test:future", 0.9, now + 1000, "measured"), "a future stamp is recorded")
+    -- a source may state its own window (the flows' 180 s) without loosening the others
+    check(ns.BindCell(8, "test:window", 0.9, now, "measured", 10) and ns.CellSource(8).window == 10, "a source keeps its own window")
+    check(ns.CellSource(3).window == ns.FRESH_SECONDS, "the default window is FRESH_SECONDS")
     local recorded, live = ns.BoundCounts()
-    check(recorded == 4 and live == 2, string.format("4 recorded, 2 fresh and measured, got %d and %d", recorded, live))
-    -- freshness: after FRESH_SECONDS the source is stale and the cell no longer counts
+    check(recorded == 6 and live == 3, string.format("6 recorded, 3 fresh and measured (not the future one), got %d and %d", recorded, live))
+    -- freshness: after FRESH_SECONDS the 2 s sources are stale; the 10 s one still counts
     step(ns.FRESH_SECONDS + 0.5)
     recorded, live = ns.BoundCounts()
-    check(recorded == 4 and live == 0, "stale sources are recorded but not live, got " .. live)
+    check(recorded == 6 and live == 1, "after the default window only the 10 s source is live, got " .. live)
+    step(10.0)
+    recorded, live = ns.BoundCounts()
+    check(live == 0, "after its own window the 10 s source is stale too, got " .. live)
     check(ns.ReleaseCell(3) and ns.CellSource(3) == nil and not ns.ReleaseCell(3), "release clears a cell once")
-    for i = 4, 6 do ns.ReleaseCell(i) end
+    for i = 4, 8 do ns.ReleaseCell(i) end
     -- the gate off: a bound cell changes nothing on screen
     slash("bind off")
     slash("ripple 8 5"); step(3.0) -- open the window
@@ -1060,11 +1088,65 @@ test("binding registry: sources are named, valued, aged and kinded; the draw fol
     printed = {}
     slash("cells")
     check(printed[1] and printed[1]:find("have a source", 1, true) and #printed >= 3, "/fide cells lists the sources")
+    check(printed[2] and printed[2]:find(" label 1.00 ", 1, true) and printed[2]:find(" of 2s ", 1, true), "/fide cells prints the label and the window, not a value: " .. tostring(printed[2]))
     slash("world off")
     check(ns.CellSource(1) == nil and ns.CellSource(2) == nil, "world off releases the slots' cells")
     slash("bind off")
     for i = #plates, 1, -1 do plates[i] = nil end
     slash("ripple 1 1"); step(3.0) -- close the window again for the tests that follow
+end)
+
+test("the binding draw stays alive while the gate is on: a stale source closes with spin, parallax and the overlays off", function()
+    slash("world off"); slash("terrain off"); slash("spin 0"); slash("parallax 0")
+    step(2.0) -- nothing moves: the driver detaches
+    local host = ns.State().frames.driver or ns.State().frames.master
+    check(not host:GetScript("OnUpdate"), "the driver must be detached when nothing moves")
+    slash("bind on")
+    check(ns.BindCell(20, "test:alive", 0.9, now, "measured"), "bind cell 20")
+    check(host:GetScript("OnUpdate"), "a recorded source with the gate on must keep the driver attached")
+    step(0.6)
+    check(ns.cells[20].flapTex.texture:find("Window"), "the bound cell opens")
+    step(ns.FRESH_SECONDS + 1.0)
+    check(ns.cells[20].flapTex.texture:find("Closed"), "the stale source must close its cell although nothing else moves")
+    check(ns.ReleaseCell(20), "release")
+    slash("bind off"); step(0.5)
+    slash("spin 0.5"); slash("parallax 0.5"); slash("terrain on")
+end)
+
+test("a click is an input the entity names: OnMouseDown only, the wave starts at the clicked cell, off the grid nothing happens, with the gate on the line names the source", function()
+    local master = ns.State().frames.master
+    check(master.scripts.OnMouseDown and not master.scripts.OnMouseUp, "the click must be wired to OnMouseDown only")
+    local function click(x, y)
+        cursorX, cursorY = x, y
+        master.scripts.OnMouseDown(master, "LeftButton")
+    end
+    -- the stub's frame: left 720, top 684 (UI units), scale 1; cell (col 3, row 2) spans x 784 to 816, y 652 to 620
+    local wasOpen = ns.State().open
+    step(0.2) -- past the debounce
+    click(800, 636)
+    local st = ns.State()
+    check(st.waveActive and st.open ~= wasOpen, "a click on the grid starts a wave")
+    check(ns.cells[(2 - 1) * 15 + 3].ringDist == 0, "the wave starts at the clicked cell (col 3, row 2), ring distance " .. tostring(ns.cells[18].ringDist))
+    step(3.0)
+    -- off the grid: nothing
+    wasOpen = ns.State().open
+    click(100, 100)
+    st = ns.State()
+    check(not st.waveActive and st.open == wasOpen, "a click off the grid must start no wave")
+    -- with the gate on, the line names the cell's source
+    slash("bind on"); step(0.3)
+    check(ns.BindCell(18, "test:click", 0.9, now, "measured"), "bind cell 18")
+    printed = {}
+    click(800, 636)
+    check(printed[#printed] and printed[#printed]:find("Clicked cell 18: test:click label 0.90 age 0.0s of 2s measured, open", 1, true), "the click must name the source: " .. tostring(printed[#printed]))
+    step(3.0)
+    printed = {}
+    click(736, 668) -- col 1, row 1
+    check(printed[#printed] and printed[#printed]:find("Clicked cell 1: no source", 1, true), "an unbound cell must say no source: " .. tostring(printed[#printed]))
+    step(3.0)
+    ns.ReleaseCell(18)
+    slash("bind off"); step(0.5)
+    cursorX, cursorY = 960, 540
 end)
 
 test("every slash command runs without an addon error", function()

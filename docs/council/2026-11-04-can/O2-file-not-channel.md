@@ -1,0 +1,46 @@
+# O2: a generated file is a snapshot, and under the definition it can never be fresh
+
+*Opposers' voice O2, round 4. Read-only; HeavyMetal2 is not in this checkout and nothing here depends on it.*
+
+**Thesis.** The file bridge fails the definition's FRESH test by construction, not only by age. The addon reads no file after load (FidelityEMatrix.toc:13-15 is the only loader), and a value handed to it is stamped on the addon's session clock and closed after 2 s (EMatrix_Core.lua:152, 168, 182). So no cell can stay open on a file value, and the six flows cannot be bound through a file under the definition. The live inbound channels are the game's unit reads (4 Hz), the cursor, the gamepad fed by the head tracker at 30 Hz, and the click. Only the unit reads carry a measurement the host made; the pad has no age; the click has no outbound path.
+
+Labels: "from the code" = this repo's source or stubs; "needs in-game verification" = client behaviour; "general knowledge" = rules of thumb.
+
+## Attacks, ranked by fatality
+
+**1. A file value cannot be fresh (fatal to "six flows on tiles through a generated file").** The addon contains no `io`, `dofile`, `loadfile` or `loadstring` (grep of `FidelityEMatrix/*.lua`), so a generated file is loaded only as a TOC entry at login and /reload (from the code; the client's load timing is general knowledge, needs in-game verification). `BindCell` stamps `rec.at = tonumber(at) or Now()` (EMatrix_Core.lua:168), `Now()` is `GetTime()` (:157), and a cell is fresh while `now - rec.at <= 2.0` (:152, :182). ApplyBindings runs four times a second (:906-908, :1034-1043). If the file omits `at`, the stamp is the load time and the cell closes about 2 s later. If the file writes its own wall-clock `at` (the holon stamps ISO times, `packages/triad-369/src/evidence.mjs:14-18`), the difference against a session clock is meaningless; that GetTime is not wall time is general knowledge, needs in-game verification. The headless stale test (`tools/ematrix_headless.lua:1017-1043`) passes caller-supplied times only. **Check:** load a generated file in the headless harness with `at` omitted and with a wall-clock `at`; in game, `/reload` with a file that opens a cell and time its close with `/fide cells`.
+
+**2. SavedVariables is a logout write, and the holon's only WoW read happens after logout (fatal to any live WoW-to-holon flow through SavedVariables).** `FidelityEMatrix.toc:6` declares `FidelityEMatrix_Config`, and the addon writes only its config (EMatrix_Core.lua:90-113, :1194-1199). The one WoW-side read in the holon is `packages/triad-369/src/wow_adapter.mjs:354`, which reads `FidelityWoW.lua` from the WTF folder. The FidelityWoW export is filled during play (`packages/wow-syntropic/Kinematics.lua:29-32`, `SomaticFlow.lua:71-79`) and reaches the holon as the saved file. Client rule: SavedVariables are written at logout, and an edit to the WTF file while the game runs is overwritten at logout (general knowledge, needs in-game verification). A holon write into WTF during play is lost, and the holon sees play only after it ends.
+
+**3. The "measured" values are constants, so the screen showed labels, not readings.** `BAND_VALUE = { near = 1.0, mid = 0.5, far = 0.2, ... }` (`FidelityEMatrix/EMatrix_World.lua:149`) supplies every value; the band comes from `CheckInteractDistance` (EMatrix_World.lua:133-141). The owner's "near 1.00" and "mid 0.50" are table entries. The definition says MEASURED means "a number the host read, not a constant". The kind `measured` passes for the band; the value fails. The draw also has no "no source" state: a `far` source (measured, value 0.2) and a cell with no source both give `face = false` (EMatrix_Core.lua:1041-1043), so the definition's "reads no source" is not shown. The World's comment gives ranges of "about 10 yd" and "about 28 yd" (EMatrix_World.lua:11): from the code's comment, needs in-game verification.
+
+**4. The eye fails NAMED and FRESH as built.** The tracker writes `head.json` every third frame with an `at` at one-second precision (`tools/headtrack/headtrack.py:297`), and the addon never reads that file. The pad itself has no timestamp. A lost face holds for 0.5 s, then decays to rest (`tools/headtrack/headmath.py:72-74, 91-92`), so a lost face and a still face at rest both read 0 on the pad. The source also changes silently: `elseif ... GetCursorPosition` (EMatrix_Core.lua:924) takes over whenever the pad answers nothing. Defaults are `eyeSource = "cursor"` (:82) and `eyeDepthAxis = 0`, which is off (:84). No `BindCell` call exists for the eye (the only caller is EMatrix_World.lua:154). **Check:** `/fide eye probe` with the face out of view for 3 s and again with a still face at rest; if both read 0 on the pad, the eye has no age (needs in-game verification of what the pad reports).
+
+**5. The pad is a smuggling channel, not a measurement channel.** The addon reads `sticks[eyeStick]` (x, y) and `axes[eyeDepthAxis]` (EMatrix_Core.lua:808-822); the stick values move the scene (:917-920, smoothing `k = dt * 10`). The only writer is the tracker at 30 Hz (`headtrack.py:212, 295`). A flow written onto a stick would move parallax and would be "measured" by the tracker, not by the host that reads it. `GetActiveDeviceID()` (EMatrix_Core.lua:809) would also admit a physical pad, and the addon cannot tell which device wrote a value (needs in-game verification). The stub's axis layout (`tools/ematrix_headless.lua:171`) is the test's assumption (needs in-game verification).
+
+**6. The click is local input, not an emitted event (fatal to "the click as an event the entity emits" as built).** The click is `OnMouseDown`/`OnMouseUp` on the master frame (EMatrix_Core.lua:629-630), debounced at 0.15 s with silent drops (:607). An off-grid click uses origin (8, 5) (:622-623): an invented origin, which a source may not have. The click's effect is a global toggle, `waveTargetState = not waveTargetState` (:1013), not a per-cell state. Bound cells are not applied while `waveActive` (:1035), so during a wave every cell shows the toggle target and re-settles afterwards. No code writes a click anywhere; the only saved table is config.
+
+**7. A freeze trap in the "calm by default" steer.** ApplyBindings runs only from the driver (:906). The driver detaches when no wave runs and spin, parallax, the eye and the overlays are all idle (:975-992). The default `spinSpeed = 0.50` (:60) keeps it attached, but the steer's spin 0 with `parallaxStrength = 0` and `worldOverlay = false` (:54-90) would leave a bound cell frozen at its last state, past its 2 s limit. **Check:** set those keys, bind on, click, wait 5 s, then `/fide cells`: the age keeps growing and the cell stays open. 
+
+**8. The owner's screen did not test staleness or the far band.** All seven units printed `age 0.0s` (`docs/council/2026-11-04-bridges/LANDED.md`), because each stamp is the scan's own moment (EMatrix_World.lua:154). No unit was far, and far closes like an unbound cell (attack 3).
+
+## Concessions the evidence forces
+
+- **A file cannot open a cell under the definition.** The six-flow binding through a generated file (bridges STEER, item 1) is ruled out as a binding. Salvageable: the holon's honest flows as labelled text (`/fide` output or the HUD), each with its origin, its `at`, and a kind of `symbolic` or `not_measured` (a choice for the owner; the set is `evidence.mjs:48-51`), printed as "snapshot from <at>, not live". No cell opens on it.
+- **The unit reads are the only live measurements the client gives.** Nameplate presence, the range bands and UnitPosition (`EMatrix_Terrain.lua:167`, scanned every 0.25 s, :22) may open cells, provided the value is shown as the band's label and the number is not presented as a reading.
+- **The eye may open a cell only once it has an age;** no channel carries the tracker's timestamp into the addon, so it stays a parallax input labelled "no age".
+- **The click may become a named event** only after the (8, 5) fallback is removed and an emission path exists. That path is not in this repo.
+- **Minimal honest version:** the holon's flows as a labelled snapshot read at /reload (text only); the eye as a parallax input labelled "no age"; the eight unit sources as the only cell binding, with the far band shown and the value labelled as a band.
+
+## Closing table
+
+| Bridge | Channel (from the code) | FRESH | NAMED | Verdict |
+| :--- | :--- | :--- | :--- | :--- |
+| Generated Lua file | TOC load at login, /reload (toc:13-15) | Fails (2 s stamp) | Yes | Text snapshot; no cell |
+| SavedVariables, to client | Written at logout (toc:6; general knowledge) | Fails | Yes | Not live |
+| SavedVariables, to holon | `wow_adapter.mjs:354`, after logout | Fails | Yes | Post-session only |
+| Unit reads (8 sources) | `CheckInteractDistance`, `UnitPosition` (4 Hz) | Yes | Yes | Bands ready; values constant |
+| Eye, cursor | `GetCursorPosition` (Core:925) | Not stamped | Fallback | Parallax only |
+| Eye, pad | `GetDeviceMappedState` (Core:807-822) | Fails (no age) | Fails (silent fallback) | Parallax, "no age" |
+| Click | `OnMouseDown` (Core:629-630) | Yes (GetTime) | Fails ((8, 5) fallback) | Local event only |
+| Keyboard | none in the repo | n/a | n/a | Not built |
