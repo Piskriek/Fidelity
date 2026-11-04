@@ -1,47 +1,47 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, first committed 17:36Z, revised 19:50Z after the round's review, Claude in the cloud) — start here
+## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, first committed 17:36Z, revised twice after adversarial review, evidence 21:07Z, Claude in the cloud) — start here
 
-**The owner's idea** was a node per density or fidelity rung, looping back to the fidelity process, taking his camera settings into account, with "a polynomial time algorithm" (`docs/council/2026-11-04-rungs/OWNER-INPUT.md`). Twelve voices ran, each verified, then three synthesis angles and a judge. Argon's Bentov packet was weighed as a candidate lens and the gradient-equivalence note was applied.
+**The owner's idea** was a node per density or fidelity rung, looping back to the fidelity process, taking his camera settings into account, with "a polynomial time algorithm" (`docs/council/2026-11-04-rungs/OWNER-INPUT.md`). Twelve voices ran, each verified, then three synthesis angles and a judge (`JUDGED.json`). Argon's Bentov packet was weighed as a candidate lens, and the gradient-equivalence note was applied.
 
-**The answer** is in `docs/council/2026-11-04-rungs/STEER.md`. The missing element is a recorded reading per rung: the rung's operating point, paired with what a witness outside the rung saw there, kept as one row with its artifact and that artifact's MANIFEST SHA256, its time and its context. A rung holds only while such a row at the value now in use is within tolerance and every rung beneath it holds. A reading decides only when it clears the tolerance by its own precision. Every rung had its input, output and test; the row was the node it lacked. No node per density, and no awareness number.
+**The answer** is in `docs/council/2026-11-04-rungs/STEER.md`. The missing element is a recorded reading per rung: the rung's operating point, paired with what a witness outside the rung saw there, kept as one row with its artifact and that artifact's MANIFEST SHA256, its time and its context. A rung holds only while such a row at the value now in use is within tolerance and every rung beneath it holds. A reading decides only when it clears the tolerance by its own precision; an edge that only touches the frame (it may be cut there) decides nothing. Every rung had its input, output and test; the row was the node it lacked. No node per density, and no awareness number.
 
-**The director's second reading of all 35 camera-distance fit shots** (ticked crops, 1% zooms; the bush and tree tops corrected after the review re-read them brightened) overturned three first readings made by eye:
-- the barrel fills 0.83 at x0.6, not 1;
-- the tree's canopy is cut at the frame top at x2.8;
-- the bush at x2, said to fill its frame, fills about 0.89: its twigs reach 0.10 to 0.12 below the frame's top and its stems run to the bottom edge, in all seven x2 shots. That is within the readings' precision of the tolerance, so it is undecided. Its reaches (up 0.78, down at least 1.0) mean no camera factor alone fills its frame; it needs a vertical offset.
+**The director's second reading of all 35 camera-distance fit shots** overturned three first readings made by eye. The reading used ticked crops and brightened zooms; the bush and tree readings were corrected after two reviews re-read them.
+- The barrel fills 0.83 at x0.6, not 1.
+- The tree's canopy is cut at the frame top at x2.8, in the narrow and the wide frame alike.
+- The bush at x2, said to fill its frame, has twigs reaching 0.10 to 0.12 below the frame's top and stems touching its bottom in all seven x2 shots. Undecided, since the touching edge may be cut. Its one measured base (x3, stems to 0.89) gives reaches of up 0.78 and down 1.17. By those, no camera factor alone fills its frame; the twins decide whether it needs a vertical offset.
 
-The jar's and the tree's bases were hidden behind the world overlay's copy of the player.
+The jar's base was hidden behind the world overlay's copy of the player. Each file reaches a fixed distance above and below the frame's mid-line at x1; the barrel's five readings agree within 0.025 over a factor of five in k. The proposal puts the larger reach 0.02 inside the frame, so the next reading sees two edges. Whether a frame's aspect changes the framing stays open, so a fit reading counts only in the aspect it was taken in.
 
-Each file reaches a fixed distance above and below the frame's mid-line at x1. The barrel's five readings agree within 0.025 over a factor of five in k. So the proposal is twice the larger reach, the smallest k at which nothing is clipped. The tree reaches about 1.95 in the 0.8-wide frames and about 1.4 in v1.8.7's 1.5-wide frame, so a fit reading counts only in the aspect it was taken in.
+**Where this stands.** None of the fits holds yet. **The claim that the props stand where the real objects stand is withdrawn** until the projection holds on an overlay-off twin, since no scene shot ever carried its pose. The map data, the axis, the load and the PlayerModel frame hold.
 
-**Where this stands.** None of the fits holds yet. **The claim that the props stand where the real objects stand is withdrawn** until the projection holds on an overlay-off twin: no scene shot ever carried its pose. The map data, the axis, the load and the PlayerModel frame hold.
-
-**The review.** Five reviewers (the evaluator, the Lua, the data, the documents, the tests), each checked by a skeptic, confirmed 34 of 39 findings, and all 34 are fixed:
-- the bush and tree readings above;
-- the 13 shots that had no row;
-- the precision rule;
-- `decided` counted inside the decision;
-- the validation gaps (a null, missing or quoted value, a missing observation, a duplicate id);
-- supersede keyed per reading;
-- the re-check refusing stray rows;
-- the cycle naming only the rungs on it;
-- the restated bounds;
-- the twin tool masking the red marks and reporting 'touches';
-- fit steps resetting the aspect knob, scene steps ending any test, and hiding the panel mid-twin restoring the drawings;
-- the headless checks made able to fail;
-- the documents' counts and claims.
+**The reviews.** First pass: five reviewers (the evaluator, the Lua, the data, the documents, the tests), each checked by a skeptic, confirmed 34 of 39 findings. Second pass: five skeptics and a regression hunter verified the fixes. They found 28 sound, 6 partly open, and new defects in the fixes. All are addressed:
+- A touching edge no longer passes a fit, and the twin tool can no longer make a cut model hold.
+- Proposals keep a margin, and doubling applies when every reading reached an edge.
+- Precision is required.
+- The field types each test reads are checked.
+- Duplicates are counted by position.
+- The re-check admits every row and finds changed rungs by content.
+- The cycle report is linear.
+- The lock and precedence tests that the first revision dropped are restored.
+- Every adjacent pair of refusal reasons is pinned.
+- The supersede reasons are honest (a hidden panel says so).
+- The bush's x3 base is read to its stems and the wide tree is clipped.
+- The aspect-effect claim is withdrawn.
+- The judge's synthesis is committed.
 
 **Landed:**
 - **`packages/triad-369/src/rung_ledger.mjs`**, the one evaluator: Kahn order, chained 64-bit keys, admission with reasons in a fixed order, one decision per rung, estimates that only propose, the frontier, and an incremental re-check by BFS. A full pass is O((R + M)·P log P + E + M log M + N), with P ≤ 3 here.
 - **`docs/rungs/ledger.json`:** 82 readings (49 of them fit readings), every hash taken from its report's MANIFEST.
-- **`tools/rung-ledger.test.mjs`:** 16 tests, including:
+- **`tools/rung-ledger.test.mjs`:** 18 tests, including:
   - forty stacked diamonds (2^40 paths) take 121 decisions and a re-check 92;
-  - 300 random cases where the re-check equals a fresh pass;
-  - every refusal reason, and their order.
-- **`docs/council/2026-11-04-rungs/judge/`:** the judge's camera computations, runnable.
+  - 300 random cases where the re-check equals a fresh pass, with reused ids and strays;
+  - every refusal reason, and every adjacent pair in their order;
+  - the lock;
+  - the owner's precedence.
+- **`docs/council/2026-11-04-rungs/JUDGED.json`** and **`judge/`:** the judge's scores, synthesis and camera computations.
 - **v1.8.8:**
-  - fits written back (barrel 0.51, crate 0.37, canopy04 5.6), each with the ledger's status in place of "measured from your reports": estimated, read and undecided, or a trial value;
+  - fits written back: barrel 0.53, crate 0.38, and the tree and canopy04 5.6 as trials. Each carries the ledger's status in place of "measured from your reports": estimated, read and undecided, or a trial value;
   - the probe names every drawable placement;
   - the pitch and the focal say "(saved default, not measured)";
   - every shot records the pose and every placement's prediction at its shutter, silently;
@@ -49,12 +49,12 @@ Each file reaches a fixed distance above and below the frame's mid-line at x1. T
   - a terrain test hides the world's copies;
   - a test `aspect` knob;
   - the panel: 1 scene + twin, 2 checks, 3 to 9 the six fits at their values plus the crate in a 1.85-wide frame, each with a twin, 10 and 11 scenes + twin, 12 the box, Save, Clear.
-- **`tools/frame_fill.py`:** `twin` reads a fit twin into the ledger's fields.
+- **`tools/frame_fill.py`:** `twin` reads a fit twin into the ledger's fields and flags dim edges for the eye.
 - **H009**, re-requested 17:32Z for the tenth report.
 
-**Evidence (19:46Z, Linux, Node 22):**
-- `npm test`: `# tests 201 # pass 200 # fail 0 # skipped 1`;
-- the ledger: 16/16;
+**Evidence (21:07Z, Linux, Node 22):**
+- `npm test`: `# tests 203 # pass 202 # fail 0 # skipped 1`;
+- the ledger: 18/18;
 - headless: 68/68;
 - math: 14/14;
 - manifests: 4/4;
