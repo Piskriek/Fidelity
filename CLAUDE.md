@@ -1,6 +1,6 @@
 # CLAUDE DIRECTOR BRIEFING: FIDELITY 4-NODE HOLON & EMATRIX 3D PROTOTYPE
-**Timestamp:** 2026-11-04T11:01Z | **Status:** EMatrix v1.8.7 (eight owner reports read on `owner/reports`; the terrain is in the game where the real objects stand; five files' camera fits measured, the rest interpolated; H009 re-requested) after council round 5 (Argon's operator answered in Shape B; the Light Being kernel with its five invariants), on branch `francois/serene-euler-51wj3e` (draft PR into `claude/ematrix-depth`); read [`RESUME.md`](RESUME.md) §"The eighth report confirms the fits" first, then the rounds below it  
-**Branch the laptop deploys (H005):** `francois/serene-euler-51wj3e` (gate: toc version 1.7.5 or later); the owner's last report was v1.8.6 (`origin/owner/reports`, `reports/20261104-1247/`) | **Sections 1–3 below** are Flash's handoff written on `flash/wow-ematrix-polish` (`db2ae29`), kept for the client telemetry in §1  
+**Timestamp:** 2026-11-04T17:45Z | **Status:** EMatrix v1.8.8 after council round 6 (`docs/council/2026-11-04-rungs/`: the recorded reading per rung; one evaluator, `packages/triad-369/src/rung_ledger.mjs`, judges the 69 readings in `docs/rungs/ledger.json`, and `npm test` fails a fit with no reading behind it; none of the fits is confirmed yet; the camera has its first paired reading ready, a pose at every shutter and an overlay-off twin; H009 re-requested for the tenth report), on branch `francois/serene-euler-51wj3e` (draft PR into `claude/ematrix-depth`); read [`RESUME.md`](RESUME.md) §"Council round 2026-11-04-rungs" first, then the rounds below it  
+**Branch the laptop deploys (H005):** `francois/serene-euler-51wj3e` (gate: toc version 1.7.5 or later); the owner's last report was v1.8.7 (`origin/owner/reports`, `reports/20261104-1321/`) | **Sections 1–3 below** are Flash's handoff written on `flash/wow-ematrix-polish` (`db2ae29`), kept for the client telemetry in §1  
 **Target WoW Client:** `D:\World of Warcraft\_anniversary_\` (Burning Crusade Classic `2.5.6.70577`, character `Ikkibotwo`, realm `Thunderstrike`)
 
 ## 0. Checkpoint 10 — Director takeover from Node 2 (03 Nov 2026, verified 12:06–12:10Z)
@@ -36,7 +36,7 @@ Claude, you are taking over direction. All SIV anticheat remediation gates (CP9)
    - `SetFacing`: YES, `SetLight`: YES, `SetCamera`: YES.
    - `SetDefaultModelPosition`: NO (Classic does not support this method; position must be explicitly set).
    - A plain `Model` frame draws nothing an addon loads by path (any camera, strata, scale or file); `PlayerModel` and `DressUpModel` frames draw the same file (the owner's report `reports/20261104-1024/` on `owner/reports`, 04 Nov 2026).
-   - A `PlayerModel` frame centres the model's bounds on its mid-line, and the camera distance at which a file fills the frame is a property of that file, not of its nominal height (bush x2, tree x2.8, barrel x0.6: `reports/20261104-1226/`).
+   - A `PlayerModel` frame centres the model's bounds on its mid-line and draws it at 1/k (`SetCamDistanceScale(k)`): each file reaches a fixed distance above and below the mid-line at x1, the barrel's within 0.015 from x0.6 to x3 (the director's second reading, round 6; the readings are rows in `docs/rungs/ledger.json`). The camera distance that fits a file is a property of that file, not of its nominal height.
 
 ---
 

@@ -1,5 +1,50 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, 17:45Z, Claude in the cloud) — start here
+
+**The owner's idea** was a node per density or fidelity rung, looping back to the fidelity process, taking his camera settings into account, with "a polynomial time algorithm" (`docs/council/2026-11-04-rungs/OWNER-INPUT.md`). Twelve voices ran, each verified, then three synthesis angles and a judge. Argon's Bentov packet was weighed as a candidate lens and the gradient-equivalence note was applied.
+
+**The answer** is in `docs/council/2026-11-04-rungs/STEER.md`. The missing element is a recorded reading per rung: the rung's operating point, paired with what a witness outside the rung saw there, kept as one row with its artifact and that artifact's MANIFEST SHA256, its time and its context. A rung holds only while such a row at the value now in use is within tolerance and every rung beneath it holds. Every rung had its input, output and test; the row was the node it lacked. No node per density, and no awareness number.
+
+**The director's second reading of every fit shot** (ticked crops, 1% zooms) overturned the first readings made by eye:
+- the barrel fills 0.83 at x0.6, not 1;
+- the bush's top sits a quarter below its frame's top at x2 in all five shots;
+- the tree's canopy is cut at the frame top at x2.8;
+- the jar's and the tree's bases were hidden behind the world overlay's copy of the player.
+
+Each file reaches a fixed distance above and below the frame's mid-line at x1 (the barrel within 0.015 over a factor of five in k). So the proposal is twice the larger reach, the smallest k at which nothing is clipped.
+
+**Where this stands.** None of the fits holds yet. **The claim that the props stand where the real objects stand is withdrawn** until the projection holds on an overlay-off twin: no scene shot ever carried its pose. The map data, the axis, the load and the PlayerModel frame hold.
+
+**Landed:**
+- **`packages/triad-369/src/rung_ledger.mjs`**, the one evaluator: Kahn order, chained 64-bit keys, admission with reasons, one decision per rung, estimates that only propose, the frontier, and an incremental re-check by BFS. It is near-linear: O(R + E·P + M log M + N).
+- **`docs/rungs/ledger.json`:** 69 readings, every hash taken from its report's MANIFEST.
+- **`tools/rung-ledger.test.mjs`:** 14 tests, including forty stacked diamonds (2^40 paths) decided in 121 steps and re-decided in 92.
+- **v1.8.8:**
+  - fits written back (barrel 0.51, crate 0.37, canopy04 5.6), each with the ledger's status in place of "measured from your reports";
+  - the probe names every drawable placement;
+  - the pitch and the focal say "(saved default, not measured)";
+  - every shot records the pose and every placement's prediction at its shutter, silently;
+  - twin steps take an overlay-off second shot without writing a saved choice;
+  - a terrain test hides the world's copies;
+  - a test `aspect` knob;
+  - the panel: 1 scene + twin, 2 checks, 3 to 9 the six fits at their values plus the crate in a 1.85-wide frame, each with a twin, 10 and 11 scenes + twin, 12 the box, Save, Clear.
+- **`tools/frame_fill.py`:** `twin` reads a fit twin into the ledger's fields.
+- **H009**, re-requested 17:32Z for the tenth report.
+
+**Evidence (17:20Z, Linux, Node 22):**
+- `npm test`: `# tests 199 # pass 198 # fail 0 # skipped 1`;
+- the ledger: 14/14;
+- headless: 68/68;
+- math: 14/14.
+
+**What the tenth report settles:**
+- the camera's first verdict at the start pose: pitch and fovY fitted on the twins' named feet and tested on a held-out placement;
+- the six fits read from their twins with both edges seen;
+- whether hiding the world's copies clears the test frames.
+
+The owner's eight rulings are in the STEER. The first one: whether the director's reading of his screenshots counts as a measurement.
+
 ## The eighth report confirms the fits; the terrain is in the game; v1.8.7 (04 Nov 2026, 11:01Z, Claude in the cloud) — start here
 
 **The eighth report (v1.8.6, 12:46 local, `origin/owner/reports`, `reports/20261104-1247/`).** The tree at its fit (x2.8) fills the red frame top to bottom, canopy at the top edge and trunk base at the bottom; the barrel at its fit (x0.6) fills it too. Both readings of the seventh report hold. The jar at the rule's x2.15 filled about 0.17 of its frame and the crate at x1.39 about 0.3, so their fits are 0.37 and 0.42: the height rule is useless for small props, as the nominal heights (the jar's default was 3 yd) are not the models'. The scenes show the barrel and the crate at the kobold camp where the real ones stand, the near tree mostly off the right edge where its placement projects (`screen 1499,293`, 1013 px tall), and a far canopy tree as a clipped block, because its frame was 0.8 as wide as tall. No saved fit yet: the owner has not used `fit`.
