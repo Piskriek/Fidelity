@@ -765,9 +765,15 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     check(tree and bush, "tree and bush must be in the pool")
     check(tree.mono.kind == "PlayerModel" and bush.mono.kind == "PlayerModel" and T.FrameKind() == "PlayerModel", "props are PlayerModel frames: a plain Model frame draws nothing on the owner's client (the 10:23 report), got " .. tostring(tree.mono.kind))
     check(near(tree.mono.camDistance, 2.8, 1e-9) and near(bush.mono.camDistance, 2, 1e-9) and tree.mono.modelScale == 1, "an unmeasured 16 yd canopy takes the last measured fit (2.8); the measured bush takes x2, got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
-    check(near(T.CameraDistanceFor(14), 2.8, 1e-9) and near(T.CameraDistanceFor(1.2), 0.6, 1e-9) and near(T.CameraDistanceFor(1.85), 1.3, 1e-9) and T.CameraDistanceFor(nil) == 2 and T.CameraDistanceFor(1e9) == 2.8 and near(T.CameraDistanceFor(1e-9), 0.37, 1e-9), "an unmeasured file interpolates between the measured heights and fits, clamped at the ends")
+    check(near(T.CameraDistanceFor(14), 2.8, 1e-9) and near(T.CameraDistanceFor(1.2), 0.51, 1e-9) and near(T.CameraDistanceFor(1.85), 1.255, 1e-9) and T.CameraDistanceFor(nil) == 2 and T.CameraDistanceFor(1e9) == 2.8 and near(T.CameraDistanceFor(1e-9), 0.37, 1e-9), "an unmeasured file interpolates between the fits in use by nominal height, clamped at the ends")
     check(near(tree.mono.w, tree.mono.h * 1.5, 1e-6) and near(bush.mono.w, bush.mono.h * 0.8, 1e-6) and T.AspectFor("x/elwynntreecanopy03.m2") == 1.5 and T.AspectFor("x/jar01.m2") == 0.8, "trees and canopies get a frame 1.5 as wide as tall, the rest 0.8")
-    check(T.CameraDistanceFor(14, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2") == 2.8 and T.CameraDistanceFor(1.2, "World\\Azeroth\\Westfall\\PassiveDoodads\\Barrels\\WestfallBarrel01.M2") == 0.6 and T.CameraDistanceFor(2.5, "x/elwynnbush09.m2") == 2.0, "a file the owner's reports measured uses its own fit, whatever the path's case or slashes")
+    check(T.CameraDistanceFor(14, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2") == 2.8 and T.CameraDistanceFor(1.2, "World\\Azeroth\\Westfall\\PassiveDoodads\\Barrels\\WestfallBarrel01.M2") == 0.51 and T.CameraDistanceFor(2.5, "x/elwynnbush09.m2") == 2.0 and T.CameraDistanceFor(16, "x/elwynntreecanopy04.m2") == 5.6, "a file the owner's reports measured uses its own fit, whatever the path's case or slashes")
+    -- each fit says what the ledger found (docs/rungs/ledger.json; tools/rung-ledger.test.mjs checks they match)
+    check(T.FitSource("x/jar01.m2") == "a fit estimated from report 20261104-1321, not confirmed" and T.FitSource("x/WestfallCrate.m2") == "a fit estimated from report 20261104-1321, not confirmed", "the jar and the crate print an estimate, not a measurement: " .. T.FitSource("x/jar01.m2"))
+    check(T.FitSource("x/elwynnbush09.m2") == "a fit that failed in report 20261104-1247, to be re-read" and T.FitSource("x/elwynntreecanopy03.m2") == "an interpolation between measured files, a guess", "the bush prints its failure; an unmeasured canopy prints a guess: " .. T.FitSource("x/elwynnbush09.m2"))
+    for _, f in ipairs({ "x/elwynnbush09.m2", "x/jar01.m2", "x/westfallcrate.m2", "x/westfallbarrel01.m2", "x/elwynntreemid01.m2", "x/elwynntreecanopy04.m2", "x/elwynntreecanopy03.m2" }) do
+        check(not T.FitSource(f):find("measured from", 1, true), "no fit may print itself as measured: " .. f)
+    end
     check(T.FileKey("World\\A\\WestfallBarrel01.M2") == "westfallbarrel01" and T.FileKey("a/b.m2") == "b", "the file key is the lowercase file name without its extension")
     -- the owner's own fit, saved from the test, re-settles the pool's copies and survives a clear
     slash("terrain test pick bush"); slash("terrain test fit 2.4")
@@ -1239,14 +1245,14 @@ end)
 
 test("report panel: buttons run the checks with their chat captured into the saved report, screenshots follow half a second later, save reloads, clear empties", function()
     local R = ns.Report
-    check(R and R.STEPS and #R.STEPS == 12, "the report module loaded with twelve steps")
+    check(R and R.STEPS and #R.STEPS == 14, "the report module loaded with fourteen buttons (twelve steps, save, clear), got " .. tostring(R and R.STEPS and #R.STEPS))
     local terrainWas = ns.Terrain.IsEnabled()
     FidelityEMatrix_Report = nil
     printed = {}
     slash("report show")
     local p = R._panel()
-    check(p and p.shown and _G.FidelityEMatrixReportButton1 and _G.FidelityEMatrixReportButton12, "the panel and its buttons exist and show")
-    check(printed[1] and printed[1]:find("Report panel shown", 1, true), "the command says what to do")
+    check(p and p.shown and _G.FidelityEMatrixReportButton1 and _G.FidelityEMatrixReportButton14, "the panel and its buttons exist and show")
+    check(printed[1] and printed[1]:find("Report panel shown", 1, true) and printed[1]:find("stand still", 1, true), "the command says what to do, and to stand still for a twin")
     local function click(i) local b = _G["FidelityEMatrixReportButton" .. i]; b.scripts.OnClick(b, "LeftButton") end
     click(2)
     local r = FidelityEMatrix_Report
@@ -1257,31 +1263,158 @@ test("report panel: buttons run the checks with their chat captured into the sav
     check(r.steps[1].screenshot == "pending" and screenshots == 0, "the screenshot waits half a second")
     step(0.6)
     check(screenshots == 1 and r.steps[1].screenshot:find("taken", 1, true), "the screenshot is taken after the delay: " .. tostring(r.steps[1].screenshot))
-    slash("box show"); slash("terrain on"); step(0.6)
-    click(3) -- the test on one prop
+    check(r.steps[1].pose and r.steps[1].pose.props and not r.steps[1].twin, "every shot records the pose at its shutter; a step without a twin takes one shot")
+    step(1.5)
+    check(screenshots == 1, "the checks step takes no twin")
+    slash("box show"); slash("terrain on"); slash("world on"); step(0.6)
+    click(3) -- the bush test, a twin step
     check(ns.Terrain.IsEnabled() and not _G.FidelityEMatrixFrame.shown, "the terrain test step hides the box")
-    click(4) -- the tree by the rule, pressed before the previous shot's half second has passed
-    check(r.steps[2].screenshot:find("not taken", 1, true), "a step pressed within the half second supersedes the pending shot: " .. tostring(r.steps[2].screenshot))
+    click(4) -- the tree, pressed before the previous shot's half second has passed
+    check(r.steps[2].screenshot:find("not taken", 1, true) and r.steps[2].twin and r.steps[2].twin.screenshot:find("not taken", 1, true), "a step pressed within the half second supersedes the pending shot and its twin: " .. tostring(r.steps[2].screenshot))
     step(0.6)
     check(screenshots == 2, "only the superseding step's own shot is taken, got " .. screenshots)
-    click(7) -- test off, then the scene again (the box stays hidden by that step's own command)
+    step(1.2)
+    check(screenshots == 3 and r.steps[3].twin and r.steps[3].twin.screenshot:find("taken at", 1, true), "the test step's twin follows, got " .. screenshots)
+    click(10) -- test off, then the scene again (the box stays hidden by that step's own command)
     check(not ns.Terrain._markFrame().shown, "test off ends the test (the marks are hidden)")
     check(#r.steps == 4 and r.steps[4].screenshot == "pending", "the scene step takes its own shot")
     step(0.6)
-    check(screenshots == 3, "the scene step's shot is taken, got " .. screenshots)
+    check(screenshots == 4, "the scene step's shot is taken, got " .. screenshots)
+    step(1.2)
+    check(screenshots == 5, "and its twin, got " .. screenshots)
     slash("box show")
-    click(11) -- save
+    click(13) -- save
     check(reloads == 1, "save reloads the UI to write the file")
-    click(12) -- clear
+    click(14) -- clear
     check(#FidelityEMatrix_Report.steps == 0, "clear empties the report")
     printed = {}
     slash("report status")
-    check(printed[1] and printed[1]:find("0 step(s)", 1, true) and printed[1]:find("3 screenshot(s)", 1, true), "status counts steps and screenshots: " .. tostring(printed[1]))
+    check(printed[1] and printed[1]:find("0 step(s)", 1, true) and printed[1]:find("5 screenshot(s)", 1, true), "status counts steps and screenshots: " .. tostring(printed[1]))
     slash("report hide")
     check(not p.shown, "panel hidden")
     slash("box hide")
     if terrainWas then slash("terrain on") else slash("terrain off") end
     step(0.6)
+end)
+
+test("report twins: the pose is the shutter's, recorded silently; the twin hides the overlays' drawings without writing a saved choice; a test frame hides the world's copies", function()
+    local R, T, W = ns.Report, ns.Terrain, ns.World
+    local function click(i) local b = _G["FidelityEMatrixReportButton" .. i]; b.scripts.OnClick(b, "LeftButton") end
+    local function worldShown()
+        local n = 0
+        for _, s in ipairs(W._pool) do
+            if s.mono and s.mono.shown then n = n + 1 end
+            if s.left and s.left.shown then n = n + 1 end
+            if s.right and s.right.shown then n = n + 1 end
+        end
+        return n
+    end
+    slash("stereo off"); slash("box hide"); slash("terrain on"); slash("world on")
+    playerFacing = 0.0
+    step(0.6)
+    FidelityEMatrix_Report = nil
+    slash("report show")
+    check(worldShown() >= 1 and T.Info().props == 2, "the scene draws copies and props before the twin")
+    local terrainSaved, worldSaved = FidelityEMatrix_Config.terrainOverlay, FidelityEMatrix_Config.worldOverlay
+    -- (a) the pose is the shutter's, not the press's: press at facing 0, turn to 1.2 before the shutter
+    local shotsBefore = screenshots
+    click(11)
+    local r = FidelityEMatrix_Report
+    local rec = r.steps[#r.steps]
+    local linesAtPress = #rec.lines
+    playerFacing = 1.2
+    printed = {}
+    step(0.55)
+    check(screenshots == shotsBefore + 1 and rec.pose, "the scene shot is taken with its pose")
+    -- (b) silent: the shutter adds no line to the chat and none to the record
+    check(#printed == 0 and #rec.lines == linesAtPress, "the shutter record prints nothing, got " .. #printed .. " line(s)")
+    check(near(rec.pose.facing, 1.2, 1e-9) and near(rec.pose.facingSpread, 1.2, 1e-6), "the pose's facing is the shutter's (1.2) and its spread since the press 1.2, got " .. tostring(rec.pose.facing) .. " and " .. tostring(rec.pose.facingSpread))
+    check(rec.pose.pitchKind == "(saved default, not measured)" and rec.pose.focal and rec.pose.zoom == cameraZoom, "the pose carries the camera's numbers with their kind")
+    local cam = M.BuildCamera(playerPos.x, playerPos.y, 80.0, 1.2, cameraZoom, 0.35, 1.0, 1920, 1080)
+    check(#rec.pose.props >= 1, "the pose lists the drawable placements in view at the shutter")
+    local p1 = rec.pose.props[1]
+    local fx, fy = M.ProjectPoint(cam, p1.x, p1.y, p1.z)
+    check(fx and near(p1.footX, fx, 1.0) and near(p1.footY, fy, 1.0), "the first placement's predicted foot is the projection at the shutter's facing")
+    check(p1.file and p1.k and p1.fit and p1.aspect and p1.topY and p1.depth, "each placement carries its file, fit, status, aspect, predicted top and depth")
+    -- (c) the twin: the drawings hidden a moment after the first shot, the saved choices untouched
+    step(0.3)
+    check(not W._overlay() or worldShown() == 0, "the world's copies are hidden for the twin")
+    check(not _G.FidelityEMatrix_TerrainOverlay.shown, "the terrain overlay's frame is hidden for the twin")
+    check(T.IsEnabled() and W.IsEnabled() and FidelityEMatrix_Config.terrainOverlay == terrainSaved and FidelityEMatrix_Config.worldOverlay == worldSaved, "the twin writes no saved choice and disables nothing")
+    step(0.5)
+    check(screenshots == shotsBefore + 2 and rec.twin and rec.twin.screenshot:find("taken at", 1, true) and rec.twin.pose, "the twin's shot is taken with its own pose")
+    check(near(rec.twin.pose.facing, rec.pose.facing, 1e-9) and #rec.twin.pose.props == #rec.pose.props and near(rec.twin.pose.props[1].footX, rec.pose.props[1].footX, 1e-6), "standing still, the twin's pose equals the first shot's")
+    step(0.4)
+    check(_G.FidelityEMatrix_TerrainOverlay.shown and worldShown() >= 1, "both overlays draw again after the twin")
+    -- a press at rest has no spread
+    click(11)
+    step(0.55)
+    rec = r.steps[#r.steps]
+    check(rec.pose and near(rec.pose.facingSpread, 0, 1e-9), "a press at rest gives a spread of 0, got " .. tostring(rec.pose and rec.pose.facingSpread))
+    -- a press while the drawings are hidden marks the twin not taken and shows them again
+    step(0.3)
+    check(not _G.FidelityEMatrix_TerrainOverlay.shown, "hidden for the twin")
+    click(2)
+    check(rec.twin and rec.twin.screenshot:find("not taken", 1, true), "a press during the twin marks it not taken: " .. tostring(rec.twin and rec.twin.screenshot))
+    check(_G.FidelityEMatrix_TerrainOverlay.shown, "and shows the terrain overlay again at once")
+    step(0.6)
+    check(worldShown() >= 1, "and the world's copies again")
+    -- (d) a terrain test frame hides the world's copies (they covered the jar's base), choice untouched
+    slash("terrain test")
+    step(0.3)
+    check(worldShown() == 0 and W.IsEnabled() and FidelityEMatrix_Config.worldOverlay == worldSaved, "no world copy is shown while a test frame is up, and the world overlay stays on")
+    -- a test twin hides only the model's frame and its marks: the dimmed world stays
+    local tf = T._testFrames[#T._testFrames]
+    T.HideForShot(true)
+    check(not tf.shown and not T._markFrame().shown and _G.FidelityEMatrix_TerrainOverlay.shown, "a test twin hides the test frame and the marks, not the overlay")
+    T.HideForShot(false)
+    check(tf.shown and T._markFrame().shown, "and shows them again")
+    -- (h) a snapshot moves nothing that is drawn
+    slash("terrain test off")
+    step(0.6)
+    check(worldShown() >= 1, "test off shows the world's copies again")
+    local before = {}
+    for i, s in ipairs(T._pool) do if s.used then before[i] = { s.mono.points.BOTTOM.x, s.mono.points.BOTTOM.y, s.mono.w, s.mono.h } end end
+    local snap = T.Snapshot()
+    step(1 / 60)
+    for i, b in pairs(before) do
+        local m = T._pool[i].mono
+        check(near(m.points.BOTTOM.x, b[1], 1e-6) and near(m.points.BOTTOM.y, b[2], 1e-6) and near(m.w, b[3], 1e-6) and near(m.h, b[4], 1e-6), "a snapshot must not move a drawn prop")
+    end
+    -- the record keeps the rectangle the layout drew for each placement it drew
+    local withRect = 0
+    for _, q in ipairs(snap.props) do if q.drawn then withRect = withRect + 1; check(q.drawn.h > 0 and q.drawn.w > 0, "a drawn rectangle has a size") end end
+    check(withRect == T.Info().props, "every drawn prop's rectangle is in the record: " .. withRect .. " of " .. tostring(T.Info().props))
+    -- (e) the probe names every drawable placement, and the snapshot holds the same ones
+    printed = {}
+    slash("terrain probe")
+    local named = 0
+    for _, line in ipairs(printed) do if line:match("^%[Fidelity EMatrix%]%s+%d+%. ") or line:match("^%s+%d+%. ") or line:find("  %d+%. ") then named = named + 1 end end
+    local found = tonumber((table.concat(printed, "\n")):match("probe: (%d+) drawable placements"))
+    check(found and named == found and named == #snap.props, "the probe names every drawable placement (" .. tostring(found) .. "), and the snapshot holds the same, got " .. named .. " and " .. #snap.props)
+    -- (f) the camera numbers carry their kind
+    local all = table.concat(printed, "\n")
+    check(all:find("camera pitch 20.1 deg (saved default, not measured), focal", 1, true) and all:find("px (saved default, not measured), screen", 1, true), "the probe prints the pitch and the focal with their kind: " .. all:sub(1, 300))
+    printed = {}
+    slash("terrain pitch 25"); slash("terrain probe"); slash("terrain status")
+    all = table.concat(printed, "\n")
+    check(all:find("camera pitch 25.0 deg (your setting, not measured)", 1, true) and all:find("pitch 25.0 deg (your setting, not measured)", 1, true), "after the owner's own pitch the lines say it is his setting: " .. all:sub(1, 300))
+    FidelityEMatrix_Config.terrainPitch = nil
+    printed = {}
+    slash("terrain status")
+    check(printed[1] and printed[1]:find("(saved default, not measured)", 1, true), "back to the saved default")
+    -- the aspect knob draws a test frame of the asked aspect, and auto returns to the file's own
+    slash("terrain test aspect 1.85")
+    local f = T._testFrames[#T._testFrames]
+    check(near(f.w, math.floor(f.h * 1.85), 1e-6), "aspect 1.85 widens the test frame, got " .. f.w .. " x " .. f.h)
+    slash("terrain test aspect auto"); slash("terrain test")
+    f = T._testFrames[#T._testFrames]
+    check(near(f.w, math.floor(f.h * T.AspectFor(tostring(f.model):gsub("\\", "/"))), 1e-6), "aspect auto returns to the file's own aspect")
+    slash("terrain test off")
+    slash("report hide")
+    playerFacing = 0.0
+    step(0.6)
+    check(#lastErrors() == 0, table.concat(lastErrors(), " | "))
 end)
 
 test("every slash command runs without an addon error", function()

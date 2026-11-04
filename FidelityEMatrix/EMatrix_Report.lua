@@ -4,17 +4,24 @@
 -- and reload to write the file. The laptop (hands task H009) then copies the screenshots and
 -- the saved report into the repo, so the director reads the exact lines, not a picture of them.
 --
--- Nothing here measures anything: it records what the other modules print and when.
+-- Nothing here measures anything: it records what the other modules print and when. At each scene
+-- step's shutter it also records, silently, the pose and every drawable placement's prediction
+-- (Terrain.Snapshot), and a twin step takes a second screenshot with the overlays' drawings hidden:
+-- the director reads the real objects' feet and tops in the twin against that record (council round
+-- 2026-11-04-rungs: the camera's first paired reading). The saved overlay choices are never written.
 local ADDON_NAME, ns = ...
 
 local Report = {}
 ns.Report = Report
 
 local PREFIX = "|cff00ffcc[Fidelity EMatrix]|r "
-local SHOT_DELAY = 0.5 -- seconds between a step's commands and its screenshot, so the frame has drawn
+local SHOT_DELAY = 0.5  -- seconds between a step's commands and its screenshot, so the frame has drawn
+local TWIN_HIDE = 0.25  -- after the first shot, before the drawings are hidden (a screenshot is taken at the end of a frame)
+local TWIN_DELAY = 0.5  -- after hiding, before the twin's screenshot
+local TWIN_SHOW = 0.25  -- after the twin's screenshot, before the drawings come back
 
 local panel = nil
-local pendingShot, pendingRec = nil, nil
+local pending = nil -- { rec, twin, phase = "shot" | "hide" | "twin" | "show", t, f0, lo, hi }
 local shots = 0
 
 local function Stamp() return (date and date("%Y-%m-%d %H:%M:%S")) or "?" end
@@ -50,56 +57,132 @@ local function Slash(cmd)
     if f then f(cmd) end
 end
 
+local function Facing() return GetPlayerFacing and tonumber(GetPlayerFacing()) or nil end
+
+--- The facing's spread since the press: the wrapped difference from the first sample, as its lowest
+--- and highest value (two running numbers). Near zero means the character did not turn; it cannot
+--- see the camera orbit at rest.
+local function TrackFacing(p)
+    local f = Facing()
+    if not f then return end
+    if not p.f0 then p.f0, p.lo, p.hi = f, 0, 0; return end
+    local d = (f - p.f0 + math.pi) % (2 * math.pi) - math.pi
+    if d < p.lo then p.lo = d end
+    if d > p.hi then p.hi = d end
+end
+
+local function Pose(p)
+    TrackFacing(p)
+    local snap = (ns.Terrain and ns.Terrain.Snapshot and ns.Terrain.Snapshot()) or { none = "no terrain module" }
+    snap.facingAtPress = p.f0
+    snap.facingSpread = p.f0 and (p.hi - p.lo) or nil
+    snap.stamp = Stamp()
+    return snap
+end
+
+--- Hides (or shows again) what the overlays draw, for a twin: the terrain's props or test frame,
+--- and the world's copies. Neither saved choice is written.
+local function HideDrawings(on)
+    if ns.Terrain and ns.Terrain.HideForShot then ns.Terrain.HideForShot(on) end
+    if ns.World and ns.World.HideFor then ns.World.HideFor("shot", on) end
+end
+
+--- A press while a shot or a twin is pending supersedes it: the record says what was not taken, and
+--- drawings hidden for a twin are shown again before the next step's commands run.
+local function Supersede()
+    local p = pending
+    if not p then return end
+    pending = nil
+    if p.phase == "shot" then
+        p.rec.screenshot = "not taken: the next step started within the half second"
+        if p.twin then p.rec.twin = { screenshot = "not taken: the next step started" } end
+    elseif p.twin and not p.rec.twin then
+        p.rec.twin = { screenshot = "not taken: the next step started" }
+    end
+    if p.phase == "twin" or p.phase == "show" then HideDrawings(false) end
+end
+
 -- The steps, top to bottom. Each runs its commands, records their chat, and (shot) takes a
--- screenshot half a second later. The terrain test hides the box while it is on.
+-- screenshot half a second later; a twin step takes a second one three quarters of a second later,
+-- with the overlays' drawings hidden (for a test step: the model's frame and its red marks only).
+-- The fit steps draw each measured file at the fit in use, the frontier of docs/rungs/ledger.json.
 Report.STEPS = {
-    { key = "scene",   label = "1 Overlays on + shot",         cmds = { "terrain on", "world on", "box hide" }, shot = true },
-    { key = "checks",  label = "2 Checks + shot",              cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
-    { key = "jar",     label = "3 Jar by its fit + shot",      cmds = { "terrain test own", "terrain test pick jar", "terrain test" }, shot = true },
-    { key = "crate",   label = "4 Crate by its fit + shot",    cmds = { "terrain test pick crate", "terrain test" }, shot = true },
-    { key = "canopy",  label = "5 Canopy, wide frame + shot",  cmds = { "terrain test pick canopy", "terrain test" }, shot = true },
-    { key = "tree",    label = "6 Tree, wide frame + shot",    cmds = { "terrain test pick treemid", "terrain test" }, shot = true },
-    { key = "walk",    label = "7 Test off, scene + shot",     cmds = { "terrain test pick any", "terrain test off", "terrain on", "world on", "box hide" }, shot = true },
-    { key = "turn",    label = "8 Face a tree, scene + shot",  cmds = { "terrain on", "world on", "box hide" }, shot = true },
-    { key = "camp",    label = "9 Face the camp, scene + shot", cmds = { "terrain on", "world on", "box hide" }, shot = true },
-    { key = "bound",   label = "10 Box, bind on + shot",       cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
-    { key = "save",    label = "Save (reload UI)",             save = true },
-    { key = "clear",   label = "Clear report",                 clear = true },
+    { key = "scene",     label = "1 Scene + twin",              cmds = { "terrain on", "world on", "box hide" }, shot = true, twin = true },
+    { key = "checks",    label = "2 Checks + shot",             cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
+    { key = "bush",      label = "3 Bush at its fit + twin",    cmds = { "terrain test own", "terrain test aspect auto", "terrain test pick bush09", "terrain test" }, shot = true, twin = true },
+    { key = "tree",      label = "4 Tree at its fit + twin",    cmds = { "terrain test pick treemid", "terrain test" }, shot = true, twin = true },
+    { key = "barrel",    label = "5 Barrel at its fit + twin",  cmds = { "terrain test pick westfallbarrel", "terrain test" }, shot = true, twin = true },
+    { key = "jar",       label = "6 Jar at its fit + twin",     cmds = { "terrain test pick jar01", "terrain test" }, shot = true, twin = true },
+    { key = "crate",     label = "7 Crate at its fit + twin",   cmds = { "terrain test pick westfallcrate", "terrain test" }, shot = true, twin = true },
+    { key = "cratewide", label = "8 Crate, wide frame + twin",  cmds = { "terrain test pick westfallcrate", "terrain test aspect 1.85" }, shot = true, twin = true },
+    { key = "canopy",    label = "9 Canopy04 at its fit + twin", cmds = { "terrain test aspect auto", "terrain test pick canopy04", "terrain test" }, shot = true, twin = true },
+    { key = "walk",      label = "10 Test off, scene + twin",   cmds = { "terrain test pick any", "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true },
+    { key = "turn",      label = "11 Turn, scene + twin",       cmds = { "terrain on", "world on", "box hide" }, shot = true, twin = true },
+    { key = "bound",     label = "12 Box, bind on + shot",      cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
+    { key = "save",      label = "Save (reload UI)",            save = true },
+    { key = "clear",     label = "Clear report",                clear = true },
 }
 
 function Report.Run(step)
     local r = Store()
     if step.clear then
+        Supersede()
         r.steps = {}
         r.at = Stamp()
         print(PREFIX .. "Report cleared.")
         return
     end
     if step.save then
+        Supersede()
         print(PREFIX .. string.format("Saving the report (%d step(s)) by reloading the UI.", #r.steps))
         if ReloadUI then ReloadUI() end
         return
     end
+    Supersede()
     local rec = { step = step.key, label = step.label, at = Stamp(), lines = {} }
+    local p = step.shot and { rec = rec, twin = step.twin and true or false, phase = "shot", t = SHOT_DELAY } or nil
+    if p then TrackFacing(p) end -- the facing at the press
     rec.lines = Capture(function() for _, c in ipairs(step.cmds or {}) do Slash(c) end end)
     rec.screenshot = step.shot and "pending" or "none"
     r.steps[#r.steps + 1] = rec
-    if pendingRec then pendingRec.screenshot = "not taken: the next step started within the half second"; pendingRec, pendingShot = nil, nil end
-    if step.shot then pendingShot, pendingRec = SHOT_DELAY, rec end
+    pending = p
     print(PREFIX .. string.format("Report step %s: %d line(s) captured%s. %d step(s) in the report; press Save (reload UI) to write it.",
-        step.label, #rec.lines, step.shot and ", screenshot in half a second" or "", #r.steps))
+        step.label, #rec.lines, step.twin and ", two screenshots in about a second, the second with the overlays hidden: stand still" or (step.shot and ", screenshot in half a second" or ""), #r.steps))
 end
 
-local function OnUpdate(self, dt)
-    if not pendingShot then return end
-    pendingShot = pendingShot - dt
-    if pendingShot > 0 then return end
-    pendingShot = nil
+local function Shoot()
     local ok = false
     if Screenshot then ok = pcall(Screenshot) end
     shots = shots + 1
-    if pendingRec then pendingRec.screenshot = ok and ("taken at " .. Stamp()) or "Screenshot() failed" end
-    pendingRec = nil
+    return ok
+end
+
+local function OnUpdate(self, dt)
+    local p = pending
+    if not p then return end
+    TrackFacing(p)
+    p.t = p.t - dt
+    if p.t > 0 then return end
+    if p.phase == "shot" then
+        local ok = Shoot()
+        p.rec.screenshot = ok and ("taken at " .. Stamp()) or "Screenshot() failed"
+        p.rec.pose = Pose(p) -- silently: no line is printed
+        if p.twin and ok then p.phase, p.t = "hide", TWIN_HIDE
+        else
+            if p.twin then p.rec.twin = { screenshot = "not taken: the first screenshot failed" } end
+            pending = nil
+        end
+    elseif p.phase == "hide" then
+        HideDrawings(true)
+        p.phase, p.t = "twin", TWIN_DELAY
+    elseif p.phase == "twin" then
+        local ok = Shoot()
+        p.rec.twin = { screenshot = ok and ("taken at " .. Stamp()) or "Screenshot() failed", pose = Pose(p) }
+        p.phase, p.t = "show", TWIN_SHOW
+    else
+        HideDrawings(false)
+        pending = nil
+    end
 end
 
 local function Build()
@@ -155,7 +238,7 @@ function Report.Command(args, say)
     local show = (sub == "show") or (sub == "toggle" and not p:IsShown())
     if show then p:Show() else p:Hide() end
     if show then
-        say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")
+        say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about a second and a half; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")
     else
         say("Report panel hidden.")
     end
@@ -164,3 +247,4 @@ end
 -- Test access
 Report._panel = function() return panel end
 Report._shots = function() return shots end
+Report._pending = function() return pending end

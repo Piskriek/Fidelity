@@ -35,20 +35,27 @@ local HEIGHT_RULES = {
     { "canopy", 16 }, { "tree", 14 }, { "bush", 2.5 }, { "shrub", 2 }, { "rock", 3 }, { "stone", 2.5 },
     { "fence", 1.5 }, { "lamp", 4 }, { "post", 2 }, { "crate", 1 }, { "barrel", 1.2 }, { "jar", 0.7 },
 }
+local HEIGHT_DEFAULT = 1.5
 -- Trees and canopies are wider than tall on screen; a frame 0.8 as wide as it is tall clipped the
 -- far canopies into blocks (the owner's eighth report, 12:46 local), so their frames are wider.
--- The camera fits the model's height, so the width only shows more of it. Needs in-game verification.
+-- Whether the width changes how the camera frames the model's height is open: the tree's top reach
+-- read 1.34 frame heights in the ninth report's wide frame against about 1.6 in the narrow frames, so
+-- the ledger keys every fit reading on its frame's aspect (a reading in the other aspect does not count).
+local ASPECT_RULES = { { "canopy", 1.5 }, { "tree", 1.5 } }
+local ASPECT_DEFAULT = 0.8
 local function AspectFor(path)
     local p = (path or ""):lower()
-    if p:find("canopy", 1, true) or p:find("tree", 1, true) then return 1.5 end
-    return 0.8
+    for _, rule in ipairs(ASPECT_RULES) do
+        if p:find(rule[1], 1, true) then return rule[2] end
+    end
+    return ASPECT_DEFAULT
 end
 local function NominalHeight(path)
     local p = (path or ""):lower()
     for _, rule in ipairs(HEIGHT_RULES) do
         if p:find(rule[1], 1, true) then return rule[2] end
     end
-    return 1.5
+    return HEIGHT_DEFAULT
 end
 
 local MAP_BY_INSTANCE = { [0] = "azeroth", [1] = "kalimdor", [530] = "expansion01", [571] = "northrend" }
@@ -112,6 +119,14 @@ local function Cfg(k)
     if v == nil then v = DEFAULTS[k] end
     if v == nil then v = ns.Cfg(k) end
     return v
+end
+
+--- Where a camera number comes from. The client gives no pitch and no field of view to read, so no
+--- camera number here is a reading: it is the saved default until the owner sets it himself.
+local function CameraKind(key)
+    local v = FidelityEMatrix_Config and FidelityEMatrix_Config[key]
+    if v == nil then return "(saved default, not measured)" end
+    return "(your setting, not measured)"
 end
 
 -- ---------------------------------------------------------------------------
@@ -230,6 +245,7 @@ local function HideModels(s)
     if s.mono then s.mono:Hide() end
     if s.left then s.left:Hide() end
     if s.right then s.right:Hide() end
+    s.drawH = nil -- nothing drawn: the shutter record says so
 end
 
 --- Frees a slot and hides whatever it showed: a slot that is not in use never keeps a picture.
@@ -255,24 +271,35 @@ end
 --- No SetCamera here: every prop had SetCamera(0) from v1.6 to v1.7.9 and none was ever visible
 --- on the owner's client, including the client's own question-mark model (the 09:35 report), and a
 --- doodad file has no camera 0 to select. The test's "cam 0" variant puts the call back on purpose.
--- A PlayerModel frame's own camera already backs off with the model's bounds, but not fully, so
--- the factor grows with the nominal height more slowly than in proportion. Two points from the
--- owner's reports: the 2.5 yd bush fits its frame whole at x2 (fifth report, measured: x1 and x0.5
--- overflow, x2 fits); the 14 yd tree at x11.2 reads about a third of its frame (sixth report), so
--- its fit is near x4 (estimated by eye, not measured). factor = 2 * (h / 2.5) ^ 0.4 passes both.
--- The seventh run tests the tree and a barrel at the rule and beside it.
--- The camera distance at which a file fills its PlayerModel frame top to bottom, so that the frame's
--- projected height is the model's and the model's base sits at the frame's bottom (the engine
--- centres the model's bounds on the mid-line). Measured per file from the owner's reports with the
--- test frame's edges in red (fill read by eye, the factor scaled to fill 1): the bush at x2 fills
--- (fifth and seventh reports); the tree at x3.98 filled 0.7 (fit 2.8) and the barrel at x1.49 filled
--- 0.4 (fit 0.6), both confirmed filling at those fits in the eighth; the jar at x2.15 filled about
--- 0.17 (fit 0.37) and the crate at x1.39 about 0.3 (fit 0.42), eighth report. No rule in the nominal
--- height predicts these, so a file not yet measured takes an interpolation between the measured
--- heights and fits, and the owner can set its own fit from the test.
+-- The camera factor k at which each measured file fills its PlayerModel frame top to bottom, so the
+-- frame's projected height is the model's and its base sits at the frame's bottom, where the prop's
+-- projected foot is anchored. Every value answers to readings in docs/rungs/ledger.json: the test
+-- tools/rung-ledger.test.mjs fails for a value with no reading behind it, and FIT_STATUS carries the
+-- ledger's verdict on each (packages/triad-369/src/rung_ledger.mjs decides it).
+-- What the readings show (council round 2026-11-04-rungs: the director's second reading of every fit
+-- shot, on crops ticked every 5% of the frame): the frame centres the model's bounds on its mid-line
+-- and draws it at 1/k, so a file reaches a fixed distance above and below the mid-line at x1 (the
+-- barrel's three readings, x0.6 to x3, agree within 0.015). The proposal is twice the larger reach,
+-- the smallest k at which nothing is clipped. The barrel filled 0.83 of its frame at x0.6 (now x0.51);
+-- the crate filled 0.80 at x0.42 with its planks past both side edges (now x0.37; a frame about 1.85
+-- as wide as tall would hold it); canopy04 overflowed at x2.8 (doubled to x5.6). The bush's top sits a
+-- quarter below the frame's top at x2 in five shots, so x2 fails, and its base was never seen, so no k
+-- is proposed; the jar's and the tree's bases were hidden behind the world overlay's copy of the
+-- player. None is confirmed yet: the next report's twins read both edges of every model.
 local REF_HEIGHT = 2.5
-local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.6, jar01 = 0.37, westfallcrate = 0.42 }
-local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.42 }, { 1.2, 0.6 }, { 2.5, 2.0 }, { 14, 2.8 } } -- (nominal height, measured fit), ascending
+local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.51, jar01 = 0.37, westfallcrate = 0.37, elwynntreecanopy04 = 5.6 }
+-- The ledger's verdict on each value above, and the report that decided it (holds, fitted, fails, contested).
+local FIT_STATUS = {
+    elwynnbush09 = { "fails", "20261104-1247" },
+    elwynntreemid01 = { "fitted", "20261104-1321" },
+    westfallbarrel01 = { "fitted", "20261104-1247" },
+    jar01 = { "fitted", "20261104-1321" },
+    westfallcrate = { "fitted", "20261104-1321" },
+    elwynntreecanopy04 = { "fitted", "20261104-1321" },
+}
+-- (nominal height, the fit in use), ascending: an unmeasured file takes an interpolation between them,
+-- a guess. canopy04's x5.6 is a bracket step after an overflow, not a fit, so it steers no other canopy.
+local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.37 }, { 1.2, 0.51 }, { 2.5, 2.0 }, { 14, 2.8 } }
 local function FileKey(path)
     local p = tostring(path or ""):lower():gsub("\\", "/")
     return p:match("([^/]+)%.%w+$") or p:match("([^/]+)$") or p
@@ -301,10 +328,18 @@ local function CameraDistanceFor(heightYd, path)
     if h <= 0 then h = REF_HEIGHT end
     return math.min(math.max(InterpolatedFit(h), 0.25), 16.0)
 end
+local STATUS_TEXT = {
+    holds = "a fit confirmed in report %s",
+    fitted = "a fit estimated from report %s, not confirmed",
+    fails = "a fit that failed in report %s, to be re-read",
+    contested = "a fit contested in report %s",
+}
+--- Where a prop's camera factor comes from, in the words the test line prints after "by".
 local function FitSource(path)
     local key = path and FileKey(path) or nil
     if key and OwnerFit(key) then return "your saved fit" end
-    if key and FIT_BY_FILE[key] then return "measured from your reports" end
+    local st = key and FIT_BY_FILE[key] and FIT_STATUS[key]
+    if st then return string.format(STATUS_TEXT[st[1]] or (st[1] .. " in report %s"), st[2]) end
     return "an interpolation between measured files, a guess"
 end
 
@@ -459,6 +494,9 @@ local function ApplyTest(say)
     local kind = FRAME_KINDS[testMode.frame or ""] or propFrameKind or "PlayerModel"
     local m, actual = NewTestFrame(kind)
     if not m then say("terrain test: the client refused to create a %s frame", kind); return false end
+    -- the world overlay's copy of the player stands in the test frame and covered the jar's and the
+    -- tree's bases (the ninth report): its copies are hidden while a test frame is up, choice untouched
+    if ns.World and ns.World.HideFor then ns.World.HideFor("test", true) end
     if testMode.strata then pcall(m.SetFrameStrata, m, testMode.strata) end
     local fdid, path = s.entry[1], s.entry[2]
     if testMode.known then fdid, path = nil, KNOWN_MODEL end
@@ -476,8 +514,9 @@ local function ApplyTest(say)
     pcall(function() if m.GetModelFileID then fileId = tostring(m:GetModelFileID()) end end)
     local h = (GetScreenHeight and GetScreenHeight()) or 1080
     local hPx = math.floor(h * 0.4)
+    local aspect = testMode.aspect or AspectFor(path)
     m:ClearAllPoints()
-    m:SetSize(math.floor(hPx * AspectFor(path)), hPx)
+    m:SetSize(math.floor(hPx * aspect), hPx)
     m:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     m:SetAlpha(1.0)
     m:Show()
@@ -490,8 +529,8 @@ local function ApplyTest(say)
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
-    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera x%.2f by %s%s), %s (file id %s), %d px tall at the screen centre (its edges marked in red, its mid-line thin), strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, fit <k>|clear (saves the pick's fit for the pool), scale <s>, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
-        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height, path), FitSource(path), testMode.pick and (", picked by \"" .. testMode.pick .. "\"") or "", loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
+    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera x%.2f by %s%s), %s (file id %s), %d px tall and %.2f as wide at the screen centre%s (its edges marked in red, its mid-line thin), strata %s level %s, visible %s; the box and the world's copies are hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, fit <k>|clear (saves the pick's fit for the pool), scale <s>, aspect <a>|auto, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
+        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height, path), FitSource(path), testMode.pick and (", picked by \"" .. testMode.pick .. "\"") or "", loaded and "loaded" or "did NOT load", fileId, hPx, aspect, testMode.aspect and " (aspect set for this test)" or "", strata, level, visible)
     return true
 end
 
@@ -528,7 +567,23 @@ local function EndTest()
     if markFrame then markFrame:Hide() end
     if testHidBox and _G.FidelityEMatrixFrame then _G.FidelityEMatrixFrame:Show() end
     testHidBox = false
+    if ns.World and ns.World.HideFor then ns.World.HideFor("test", false) end
     ApplyBackdrop()
+end
+
+--- Hides what this overlay draws for one screenshot, or shows it again: the report's overlay-off twin.
+--- During a terrain test only the test frame and its marks are hidden (the dimmed world stays, so the
+--- two shots differ by the model alone); otherwise the overlay's frame. The saved choice
+--- (FidelityEMatrix_Config.terrainOverlay) and the enabled state are not touched.
+function Terrain.HideForShot(on)
+    local hide = on and true or false
+    if testMode then
+        local f = testFrames[#testFrames]
+        if f then if hide then f:Hide() else f:Show() end end
+        if markFrame then if hide then markFrame:Hide() else markFrame:Show() end end
+    elseif overlay and enabled then
+        if hide then overlay:Hide() else overlay:Show() end
+    end
 end
 
 function Terrain.Layout(cam, eyeX, eyeY, zoom)
@@ -574,6 +629,7 @@ function Terrain.Layout(cam, eyeX, eyeY, zoom)
                     s.mono:SetAlpha(1.0)
                     s.mono:Show()
                 end
+                s.drawX, s.drawY, s.drawW, s.drawH = sx + shiftX, sy + shiftY, wPx, hPx -- the frame's bottom centre and size, for the shutter record
                 drawn = drawn + 1
             else
                 HideModels(s)
@@ -583,6 +639,51 @@ function Terrain.Layout(cam, eyeX, eyeY, zoom)
     return drawn
 end
 
+
+--- The pose at this moment and every drawable placement's prediction, for the report's shutter: one
+--- table, built only when a step's screenshot is taken. It prints nothing, works with the overlay
+--- hidden, and measures nothing: the twin shot, read against it, is the reading.
+function Terrain.Snapshot()
+    local snap = { time = GetTime and GetTime() or 0 }
+    local ps = Terrain.PlayerState()
+    if not ps then snap.none = "UnitPosition gave nothing"; return snap end
+    local own, tiles = Terrain.TilesAround(ps.mapName, ps.x, ps.y)
+    local groundZ = Terrain.GroundHeight(own, ps.x, ps.y)
+    local cam, pitch = Terrain.BuildCamera(ps, groundZ or 0)
+    cam.yaw = ps.facing
+    snap.x, snap.y, snap.map, snap.facing, snap.zoom = ps.x, ps.y, ps.mapName, ps.facing, ps.zoom
+    snap.tile = own and (ps.mapName .. ":" .. own.col .. ":" .. own.row) or "MISSING"
+    snap.ground = groundZ
+    snap.pitch, snap.pitchKind = pitch, CameraKind("terrainPitch")
+    snap.fovY, snap.fovKind = Cfg("terrainFovY"), CameraKind("terrainFovY")
+    snap.focal, snap.w, snap.h = cam.focal, cam.w, cam.h
+    if ns.GetEye then snap.eyeX, snap.eyeY = ns.GetEye() end
+    snap.overlay = enabled and (testMode and "test" or "on") or "off"
+    local slotOf = {}
+    for i = 1, MAX_PROPS do
+        local s = pool[i]
+        if s and s.used and s.key then slotOf[s.key] = s end
+    end
+    local props = {}
+    if #tiles > 0 then
+        local found = Scan(ps, cam, tiles)
+        for i = 1, math.min(MAX_PROPS, #found) do
+            local e, key = found[i].e, found[i].key
+            local h = NominalHeight(e[2])
+            local fx, fy, depth = Math.ProjectPoint(cam, e[3], e[4], e[5])
+            local tx, ty = Math.ProjectPoint(cam, e[3], e[4], e[5] + h * e[7])
+            local s = slotOf[key]
+            props[#props + 1] = {
+                file = FileKey(e[2]), x = e[3], y = e[4], z = e[5], scale = e[7], dist = math.sqrt(found[i].d2), height = h,
+                footX = fx, footY = fy, topX = tx, topY = ty, depth = depth,
+                k = CameraDistanceFor(h, e[2]), fit = FitSource(e[2]), aspect = AspectFor(e[2]),
+                drawn = (s and s.drawH) and { x = s.drawX, y = s.drawY, w = s.drawW, h = s.drawH } or nil,
+            }
+        end
+    end
+    snap.props = props
+    return snap
+end
 
 local function Refresh()
     local ps = Terrain.PlayerState()
@@ -722,7 +823,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|fit <k|clear>|scale <s>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|fit <k|clear>|scale <s>|aspect <a|auto>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -746,9 +847,9 @@ function Terrain.Command(args, say)
         local cam, pitch = Terrain.BuildCamera(ps, groundZ or 0)
         cam.yaw = ps.facing
         local found, buildings = Scan(ps, cam, tiles)
-        say("probe: %d drawable placements within %d yd (%d buildings not drawn: Model frames load M2 only); camera pitch %.1f deg, focal %.0f px, screen %dx%d",
-            #found, RADIUS, buildings, math.deg(pitch), cam.focal, cam.w, cam.h)
-        for i = 1, math.min(6, #found) do
+        say("probe: %d drawable placements within %d yd (%d buildings not drawn: Model frames load M2 only); camera pitch %.1f deg %s, focal %.0f px %s, screen %dx%d",
+            #found, RADIUS, buildings, math.deg(pitch), CameraKind("terrainPitch"), cam.focal, CameraKind("terrainFovY"), cam.w, cam.h)
+        for i = 1, math.min(MAX_PROPS, #found) do
             local e = found[i].e
             local sx, sy, depth = Math.ProjectPoint(cam, e[3], e[4], e[5])
             local hPx = depth and (cam.focal * NominalHeight(e[2]) * e[7] / depth) or 0
@@ -766,7 +867,7 @@ function Terrain.Command(args, say)
         end
         if not enabled then say("terrain test needs the overlay on: /fide terrain on, stand near placements, then /fide terrain test"); return end
         local prev = testMode or {}
-        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata, pick = prev.pick }
+        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata, pick = prev.pick, aspect = prev.aspect }
         if what == "cam" and n then testMode.variant, testMode.value = "cam", math.floor(n)
         elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
@@ -792,6 +893,8 @@ function Terrain.Command(args, say)
         elseif what == "pick" and args[4] then
             if args[4] == "any" then testMode.pick = nil else testMode.pick = args[4]:lower() end
         elseif what == "frame" and FRAME_KINDS[args[4] or ""] then testMode.frame = args[4]
+        elseif what == "aspect" and (args[4] == "auto" or (n and n > 0)) then
+            if args[4] == "auto" then testMode.aspect = nil else testMode.aspect = math.min(math.max(n, 0.2), 4.0) end
         elseif what == "strata" and (args[4] == "background" or args[4] == "medium" or args[4] == "high") then
             if args[4] == "background" then testMode.strata = nil else testMode.strata = args[4]:upper() end
         elseif what and what ~= "default" then say(USAGE); return end
@@ -804,7 +907,7 @@ function Terrain.Command(args, say)
         say("Terrain overlay: %s | client %s | frames %s | tile %s | ground %s | pitch %s | props drawn %d | buildings nearby %d (not drawn) | models loaded %d failed %d | errors %d%s | pos %s",
             enabled and "ON" or (suspended and ("SUSPENDED after errors: " .. suspended) or "off"), Terrain.BuildLabel(), tostring(propFrameKind or "none yet"), tostring(lastInfo.tile),
             lastInfo.groundZ and string.format("%.1f", lastInfo.groundZ) or "?",
-            lastInfo.pitch and string.format("%.1f deg", math.deg(lastInfo.pitch)) or "?", lastInfo.props or 0, lastInfo.buildings or 0, loadStats.ok, loadStats.failed,
+            lastInfo.pitch and string.format("%.1f deg %s", math.deg(lastInfo.pitch), CameraKind("terrainPitch")) or "?", lastInfo.props or 0, lastInfo.buildings or 0, loadStats.ok, loadStats.failed,
             errors.count, errors.last and (" (last: " .. errors.last .. ")") or "",
             ps and string.format("%.1f, %.1f (%s)", ps.x, ps.y, ps.mapName) or "unknown (no UnitPosition here)")
         return
@@ -826,4 +929,6 @@ Terrain.FileKey = FileKey
 Terrain.AspectFor = AspectFor
 Terrain._markFrame = function() return markFrame end
 Terrain.RETRY_AFTER = RETRY_AFTER
+Terrain.FitSource = FitSource
+Terrain.CameraKind = CameraKind
 Terrain.DEFAULTS = DEFAULTS

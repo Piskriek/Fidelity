@@ -56,6 +56,7 @@ local enabled = false
 local suspended = nil         -- reason text while the overlay stopped itself after errors (saved choice untouched)
 local errors = { count = 0, last = nil }
 World.errors = errors
+local hiddenFor = {}          -- reasons the copies are hidden for a moment: "test" (a terrain test frame is up), "shot" (the report's overlay-off twin)
 
 local function Cfg(k) return ns.Cfg(k) end
 
@@ -199,6 +200,7 @@ end
 
 function World.Layout(eyeX, eyeY)
     if not overlay then return end
+    if next(hiddenFor) then return end -- hidden for a test frame or a twin shot: the scan runs on, nothing is shown
     local anaglyph = Cfg("stereoMode") == "anaglyph"
     local px, delta = Cfg("stereoPixels"), Cfg("stereoDelta")
     local turnSign = Cfg("turnSign")
@@ -383,6 +385,24 @@ end
 
 function World.IsEnabled() return enabled end
 function World.IsSuspended() return suspended end
+
+--- Hides every copy while any reason holds (a terrain test frame is up; the report's overlay-off twin
+--- is being taken), or lets the layout show them again once none does. A copy may live under its
+--- nameplate rather than the overlay, so each copy is hidden, not the overlay frame. The saved choice
+--- (FidelityEMatrix_Config.worldOverlay) and the enabled state are not touched, and the scan keeps
+--- running, so the copies come back current.
+function World.HideFor(reason, on)
+    hiddenFor[reason] = on and true or nil
+    if next(hiddenFor) then
+        for i = 1, #pool do
+            local s = pool[i]
+            if s.mono then s.mono:Hide() end
+            if s.left then s.left:Hide() end
+            if s.right then s.right:Hide() end
+        end
+    end
+end
+function World.IsHidden() return next(hiddenFor) ~= nil end
 
 --- Drops every copy and starts a fresh pool (after /fide world frame): frames cannot be destroyed,
 --- so the old ones stay hidden under the overlay and the new ones get a new generation tag.
