@@ -186,13 +186,20 @@ end
 -- ---------------------------------------------------------------------------
 -- Pool
 -- ---------------------------------------------------------------------------
+-- The frame kind every prop is drawn on. The owner's third report (v1.8.1, 10:23 local,
+-- reports/20261104-1024) settled it: on Burning Crusade Classic 2.5.6 a plain Model frame draws
+-- nothing an addon loads by path (the bush, the client's own question-mark model, at any strata,
+-- camera or scale), while a PlayerModel frame and a DressUpModel frame draw the same file at the
+-- same place. So props are PlayerModel frames first, DressUpModel second, Model last.
+local FRAME_ORDER = { "PlayerModel", "DressUpModel", "Model" }
+local propFrameKind = nil
 local function NewModel(name)
-    local ok, m = pcall(CreateFrame, "Model", name, overlay)
-    if not (ok and m) then
-        local ok2, pm = pcall(CreateFrame, "PlayerModel", name, overlay)
-        if not (ok2 and pm) then return nil end
-        m = pm
+    local m
+    for _, kind in ipairs(FRAME_ORDER) do
+        local ok, f = pcall(CreateFrame, kind, name, overlay)
+        if ok and f then m = f; propFrameKind = propFrameKind or kind; break end
     end
+    if not m then return nil end
     m:SetFrameLevel(LEVEL_MIN)
     m.__ematrixLevel = LEVEL_MIN
     m:EnableMouse(false)
@@ -374,7 +381,7 @@ local function ApplyTest(say)
     for _, f in ipairs(testFrames) do f:Hide() end
     local box = _G.FidelityEMatrixFrame
     if box and box:IsShown() then box:Hide(); testHidBox = true end -- the box sits over the screen centre
-    local kind = FRAME_KINDS[testMode.frame or "model"] or "Model"
+    local kind = FRAME_KINDS[testMode.frame or ""] or propFrameKind or "PlayerModel"
     local m, actual = NewTestFrame(kind)
     if not m then say("terrain test: the client refused to create a %s frame", kind); return false end
     if testMode.strata then pcall(m.SetFrameStrata, m, testMode.strata) end
@@ -671,8 +678,8 @@ function Terrain.Command(args, say)
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
     elseif sub == "status" then
         local ps = Terrain.PlayerState()
-        say("Terrain overlay: %s | client %s | tile %s | ground %s | pitch %s | props drawn %d | buildings nearby %d (not drawn) | models loaded %d failed %d | errors %d%s | pos %s",
-            enabled and "ON" or (suspended and ("SUSPENDED after errors: " .. suspended) or "off"), Terrain.BuildLabel(), tostring(lastInfo.tile),
+        say("Terrain overlay: %s | client %s | frames %s | tile %s | ground %s | pitch %s | props drawn %d | buildings nearby %d (not drawn) | models loaded %d failed %d | errors %d%s | pos %s",
+            enabled and "ON" or (suspended and ("SUSPENDED after errors: " .. suspended) or "off"), Terrain.BuildLabel(), tostring(propFrameKind or "none yet"), tostring(lastInfo.tile),
             lastInfo.groundZ and string.format("%.1f", lastInfo.groundZ) or "?",
             lastInfo.pitch and string.format("%.1f deg", math.deg(lastInfo.pitch)) or "?", lastInfo.props or 0, lastInfo.buildings or 0, loadStats.ok, loadStats.failed,
             errors.count, errors.last and (" (last: " .. errors.last .. ")") or "",
@@ -690,5 +697,6 @@ Terrain._pool = pool
 Terrain._lastCam = function() return lastCam end
 Terrain._failedAt = failedAt
 Terrain._testFrames = testFrames
+Terrain.FrameKind = function() return propFrameKind end
 Terrain.RETRY_AFTER = RETRY_AFTER
 Terrain.DEFAULTS = DEFAULTS

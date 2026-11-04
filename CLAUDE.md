@@ -1,6 +1,6 @@
 # CLAUDE DIRECTOR BRIEFING: FIDELITY 4-NODE HOLON & EMATRIX 3D PROTOTYPE
-**Timestamp:** 2026-11-04T08:10Z | **Status:** EMatrix v1.8.1 (two owner reports read on `owner/reports`; every terrain test press draws on a new frame of its own kind; H009 re-requested) after council round 5 (Argon's operator answered in Shape B; the Light Being kernel with its five invariants), on branch `francois/serene-euler-51wj3e` (draft PR into `claude/ematrix-depth`); read [`RESUME.md`](RESUME.md) §"The second report" first, then the rounds below it  
-**Branch the laptop deploys (H005):** `francois/serene-euler-51wj3e` (gate: toc version 1.7.5 or later); the owner's last report was v1.8.0 (`origin/owner/reports`, `reports/20261104-0959/`) | **Sections 1–3 below** are Flash's handoff written on `flash/wow-ematrix-polish` (`db2ae29`), kept for the client telemetry in §1  
+**Timestamp:** 2026-11-04T08:35Z | **Status:** EMatrix v1.8.2 (three owner reports read on `owner/reports`; the third proved a plain Model frame draws nothing on this client while PlayerModel draws the same file, so every prop is a PlayerModel frame; H009 re-requested) after council round 5 (Argon's operator answered in Shape B; the Light Being kernel with its five invariants), on branch `francois/serene-euler-51wj3e` (draft PR into `claude/ematrix-depth`); read [`RESUME.md`](RESUME.md) §"The third report settles the terrain" first, then the rounds below it  
+**Branch the laptop deploys (H005):** `francois/serene-euler-51wj3e` (gate: toc version 1.7.5 or later); the owner's last report was v1.8.1 (`origin/owner/reports`, `reports/20261104-1024/`) | **Sections 1–3 below** are Flash's handoff written on `flash/wow-ematrix-polish` (`db2ae29`), kept for the client telemetry in §1  
 **Target WoW Client:** `D:\World of Warcraft\_anniversary_\` (Burning Crusade Classic `2.5.6.70577`, character `Ikkibotwo`, realm `Thunderstrike`)
 
 ## 0. Checkpoint 10 — Director takeover from Node 2 (03 Nov 2026, verified 12:06–12:10Z)
@@ -35,6 +35,7 @@ Claude, you are taking over direction. All SIV anticheat remediation gates (CP9)
    - `DressUpModel`: YES (Active in the build).
    - `SetFacing`: YES, `SetLight`: YES, `SetCamera`: YES.
    - `SetDefaultModelPosition`: NO (Classic does not support this method; position must be explicitly set).
+   - A plain `Model` frame draws nothing an addon loads by path (any camera, strata, scale or file); `PlayerModel` and `DressUpModel` frames draw the same file (the owner's report `reports/20261104-1024/` on `owner/reports`, 04 Nov 2026).
 
 ---
 

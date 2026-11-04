@@ -53,7 +53,7 @@ end
 -- The steps, top to bottom. Each runs its commands, records their chat, and (shot) takes a
 -- screenshot half a second later. The terrain test hides the box while it is on.
 Report.STEPS = {
-    { key = "checks",  label = "1 Checks + shot",             cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
+    { key = "checks",  label = "1 Checks + shot",             cmds = { "terrain on", "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
     { key = "fresh",   label = "2 New Model frame + shot",    cmds = { "terrain on", "terrain test own", "terrain test frame model", "terrain test" }, shot = true },
     { key = "player",  label = "3 PlayerModel frame + shot",  cmds = { "terrain test frame player" }, shot = true },
     { key = "dressup", label = "4 DressUpModel frame + shot", cmds = { "terrain test frame dressup" }, shot = true },
