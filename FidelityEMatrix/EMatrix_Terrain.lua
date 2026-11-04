@@ -33,14 +33,22 @@ local LEVEL_MIN, LEVEL_SPAN = 2, 50 -- frame levels: the nearest prop draws on t
 -- Nominal model heights in yards by path keyword, until bounding boxes are read from the models
 local HEIGHT_RULES = {
     { "canopy", 16 }, { "tree", 14 }, { "bush", 2.5 }, { "shrub", 2 }, { "rock", 3 }, { "stone", 2.5 },
-    { "fence", 1.5 }, { "lamp", 4 }, { "post", 2 }, { "crate", 1 }, { "barrel", 1.2 },
+    { "fence", 1.5 }, { "lamp", 4 }, { "post", 2 }, { "crate", 1 }, { "barrel", 1.2 }, { "jar", 0.7 },
 }
+-- Trees and canopies are wider than tall on screen; a frame 0.8 as wide as it is tall clipped the
+-- far canopies into blocks (the owner's eighth report, 12:46 local), so their frames are wider.
+-- The camera fits the model's height, so the width only shows more of it. Needs in-game verification.
+local function AspectFor(path)
+    local p = (path or ""):lower()
+    if p:find("canopy", 1, true) or p:find("tree", 1, true) then return 1.5 end
+    return 0.8
+end
 local function NominalHeight(path)
     local p = (path or ""):lower()
     for _, rule in ipairs(HEIGHT_RULES) do
         if p:find(rule[1], 1, true) then return rule[2] end
     end
-    return 3
+    return 1.5
 end
 
 local MAP_BY_INSTANCE = { [0] = "azeroth", [1] = "kalimdor", [530] = "expansion01", [571] = "northrend" }
@@ -253,16 +261,18 @@ end
 -- overflow, x2 fits); the 14 yd tree at x11.2 reads about a third of its frame (sixth report), so
 -- its fit is near x4 (estimated by eye, not measured). factor = 2 * (h / 2.5) ^ 0.4 passes both.
 -- The seventh run tests the tree and a barrel at the rule and beside it.
-local REF_HEIGHT = 2.5     -- the bush, measured
-local REF_FACTOR = 2.0     -- its fit, measured
-local HEIGHT_EXPONENT = 0.4 -- a guess for files not measured yet
--- Per-file fits read from the owner's seventh report (v1.8.5, 12:24 local, the test frame's edges
--- in red): the camera factor at which the model fills its frame top to bottom, so that the frame's
--- projected height is the model's and its base sits at the frame's bottom (the engine centres the
--- model's bounds on the frame's mid-line). bush x2 filled it (measured); the tree at x3.98 filled
--- about 0.7, so its fit is 2.8; the barrel at x1.49 filled about 0.4, so its fit is 0.6. The
--- nominal heights do not predict these, which is why the fits are per file.
-local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.6 }
+-- The camera distance at which a file fills its PlayerModel frame top to bottom, so that the frame's
+-- projected height is the model's and the model's base sits at the frame's bottom (the engine
+-- centres the model's bounds on the mid-line). Measured per file from the owner's reports with the
+-- test frame's edges in red (fill read by eye, the factor scaled to fill 1): the bush at x2 fills
+-- (fifth and seventh reports); the tree at x3.98 filled 0.7 (fit 2.8) and the barrel at x1.49 filled
+-- 0.4 (fit 0.6), both confirmed filling at those fits in the eighth; the jar at x2.15 filled about
+-- 0.17 (fit 0.37) and the crate at x1.39 about 0.3 (fit 0.42), eighth report. No rule in the nominal
+-- height predicts these, so a file not yet measured takes an interpolation between the measured
+-- heights and fits, and the owner can set its own fit from the test.
+local REF_HEIGHT = 2.5
+local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.6, jar01 = 0.37, westfallcrate = 0.42 }
+local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.42 }, { 1.2, 0.6 }, { 2.5, 2.0 }, { 14, 2.8 } } -- (nominal height, measured fit), ascending
 local function FileKey(path)
     local p = tostring(path or ""):lower():gsub("\\", "/")
     return p:match("([^/]+)%.%w+$") or p:match("([^/]+)$") or p
@@ -273,19 +283,29 @@ local function OwnerFit(key)
     local v = t and key and tonumber(t[key])
     return v and v > 0 and v or nil
 end
+local function InterpolatedFit(h)
+    local first, last = FIT_KNOTS[1], FIT_KNOTS[#FIT_KNOTS]
+    if h <= first[1] then return first[2] end
+    if h >= last[1] then return last[2] end
+    for i = 2, #FIT_KNOTS do
+        local a, b = FIT_KNOTS[i - 1], FIT_KNOTS[i]
+        if h <= b[1] then return a[2] + (b[2] - a[2]) * (h - a[1]) / (b[1] - a[1]) end
+    end
+    return last[2]
+end
 local function CameraDistanceFor(heightYd, path)
     local key = path and FileKey(path) or nil
     local known = key and (OwnerFit(key) or FIT_BY_FILE[key]) or nil
     if known then return math.min(math.max(known, 0.25), 16.0) end
     local h = tonumber(heightYd) or REF_HEIGHT
     if h <= 0 then h = REF_HEIGHT end
-    return math.min(math.max(REF_FACTOR * (h / REF_HEIGHT) ^ HEIGHT_EXPONENT, 0.25), 16.0)
+    return math.min(math.max(InterpolatedFit(h), 0.25), 16.0)
 end
 local function FitSource(path)
     local key = path and FileKey(path) or nil
     if key and OwnerFit(key) then return "your saved fit" end
     if key and FIT_BY_FILE[key] then return "measured from your reports" end
-    return "the height rule, a guess"
+    return "an interpolation between measured files, a guess"
 end
 
 local function SettleModel(model, x, heightYd, path)
@@ -457,7 +477,7 @@ local function ApplyTest(say)
     local h = (GetScreenHeight and GetScreenHeight()) or 1080
     local hPx = math.floor(h * 0.4)
     m:ClearAllPoints()
-    m:SetSize(math.floor(hPx * 0.8), hPx)
+    m:SetSize(math.floor(hPx * AspectFor(path)), hPx)
     m:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     m:SetAlpha(1.0)
     m:Show()
@@ -532,7 +552,7 @@ function Terrain.Layout(cam, eyeX, eyeY, zoom)
                 local shiftX = Math.ParallaxShift(eyeX, z) * gain
                 local shiftY = Math.ParallaxShift(eyeY, z) * gain
                 local pair = px * Math.ParallaxShift(1, z) / Math.ParallaxShift(1, STEREO_REF_Z)
-                local wPx = hPx * 0.8
+                local wPx = hPx * AspectFor(e[2])
                 local facing = math.rad(e[6] or 0) - cam.yaw
                 -- nearer props draw over farther ones (frames at one level draw in creation order)
                 local level = LEVEL_MIN + math.floor(math.max(0, math.min(1, 1 - depth / RADIUS)) * LEVEL_SPAN)
@@ -803,6 +823,7 @@ Terrain._testFrames = testFrames
 Terrain.FrameKind = function() return propFrameKind end
 Terrain.CameraDistanceFor = CameraDistanceFor
 Terrain.FileKey = FileKey
+Terrain.AspectFor = AspectFor
 Terrain._markFrame = function() return markFrame end
 Terrain.RETRY_AFTER = RETRY_AFTER
 Terrain.DEFAULTS = DEFAULTS
