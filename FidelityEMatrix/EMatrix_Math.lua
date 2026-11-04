@@ -90,6 +90,10 @@ end
 --- @return number u Normalized flip progress clamped in [0, 1]
 function EMatrix_Math.CalculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration)
     if not waveAge or not waveSpeed or not ringDist or not flipDuration then return 0.0 end
+    -- a NaN or infinite age or distance made u NaN, which slipped through both clamps below
+    -- (council round 2026-11-04-operator, O1; the kernel's invariant 3): no flip, never NaN
+    if waveAge ~= waveAge or waveSpeed ~= waveSpeed or ringDist ~= ringDist or flipDuration ~= flipDuration then return 0.0 end
+    if waveAge == math.huge or waveAge == -math.huge or ringDist == math.huge or ringDist == -math.huge then return 0.0 end
     if flipDuration <= 0.0 then return 1.0 end
     if waveSpeed <= 0.0 then return 0.0 end
 

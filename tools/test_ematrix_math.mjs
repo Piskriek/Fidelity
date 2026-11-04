@@ -392,6 +392,17 @@ runTest('CellAt maps cursor pixels to a grid cell through the effective scale, n
 });
 
 // ============================================================================
+// TEST 7: The flip clock never returns NaN (council round 5, O1)
+// ============================================================================
+runTest('CalculateFlipProgress returns 0, not NaN, for a non-finite age or ring', () => {
+  const call = luaMath();
+  assert.equal(call('CalculateFlipProgress', NaN, 16, 0, 0.26), 0, 'NaN age');
+  assert.equal(call('CalculateFlipProgress', 1, 16, NaN, 0.26), 0, 'NaN ring');
+  assert.equal(call('CalculateFlipProgress', Infinity, 16, Infinity, 0.26), 0, 'two infinities');
+  assert.equal(call('CalculateFlipProgress', 0.13, 16, 0, 0.26), 0.5, 'a finite age still flips');
+});
+
+// ============================================================================
 // Summary
 // ============================================================================
 console.log('-----------------------------------------------------------');

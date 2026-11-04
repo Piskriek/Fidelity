@@ -92,6 +92,10 @@ let lastPush = null; // { at, ok, latency_ms, error } of the last push to Sol; w
  * long as its sshd answers (council round 2026-11-04-bridges, O2). Default max age 180 s, the
  * same threshold the Apex uses.
  */
+// The Four Floats this bridge writes are model-derived (a loss constant, a clock, an availability
+// ratio): the same label the Apex already carries (council round 2026-11-04-operator, B2 and O3).
+export const FOUR_FLOATS_KIND = 'symbolic (model-derived, not sensor)';
+
 export function solIsUp(sol, nowMs = Date.now(), maxAgeMs = 180000) {
   if (!sol || sol.up !== true) return false;
   const at = Date.parse(sol.at);
@@ -168,6 +172,7 @@ export async function stepBridge() {
     loss: rawLoss,
     telemetry: {
       fourFloats: [Pxd, Vtx, Lx, Aq],
+      fourFloatsKind: FOUR_FLOATS_KIND,
       strainJoules: +(rawLoss * 0.1).toFixed(4),
       syntropicReserveJoules: 5.0,
       activeRung: activeRung.rung,
@@ -196,6 +201,7 @@ export async function stepBridge() {
     coherence: coherence,
     loss: rawLoss,
     four_floats: [Pxd, Vtx, Lx, Aq],
+    four_floats_kind: FOUR_FLOATS_KIND,
     active_density: activeRung.density,
     daemons_up: `${partsUp}/${partsTotal}`,
     endpoint_active: true,
@@ -211,6 +217,7 @@ export async function stepBridge() {
       tick: tickCount,
       coherence: coherence,
       fourFloats: [Pxd, Vtx, Lx, Aq],
+      fourFloatsKind: FOUR_FLOATS_KIND,
       activeRung: activeRung.rung,
       activeDensity: activeRung.density,
       daemonsUp: `${partsUp}/${partsTotal}`,

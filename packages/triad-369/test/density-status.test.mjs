@@ -28,6 +28,7 @@ test('without an SSH key the bridge says local_only, and the four floats and dae
   assert.equal(density.status, 'local_only', `status ${density.status}`);
   assert.notEqual(density.status, 'synchronized');
   assert.equal(density.sol_tick, null, 'no Sol was read');
+  assert.equal(density.four_floats_kind, 'symbolic (model-derived, not sensor)', 'the four floats carry their label (council round 2026-11-04-operator)');
   assert.ok(Array.isArray(density.four_floats) && density.four_floats.length === 4);
   assert.equal(density.lyapunovFTLE ?? null, null, 'FTLE is not measured here');
   fs.rmSync(root, { recursive: true, force: true });
