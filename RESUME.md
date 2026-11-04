@@ -11,6 +11,8 @@
 
 **Evidence (07:17Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4; hands 22/22; math 14/14; kernel 6/6.
 
+**Argon's note on the return loop** (relayed by the owner at 07:20Z; the Triad relay returned it unchanged) is recorded verbatim in `.agents/skills/compassion-loop/ARGON-RETURN-LOOP.md`; the skill's new section "The return loop and the one distortion trap" maps each clause to the rule that already enforces it here (with the file), names what is framing rather than code, and states the trap as a rule for the director: the council never secures itself against the owner.
+
 **The owner's procedure on v1.7.9:** `/reload`, `/fide report`, press 1 to 9 top to bottom (each takes its screenshot after half a second; the terrain test hides the box so the centre is visible), then Save (reload UI); tell Flash, who runs H009. The report's step 2 to 7 screenshots settle the Model frame question; step 1's lines are the full check list in text.
 
 ## The owner's terrain probe: the axis fix proven, the loader proven, the Model frame in question; v1.7.8 adds `/fide terrain test` (04 Nov 2026, 06:55Z, Claude in the cloud) — start here
