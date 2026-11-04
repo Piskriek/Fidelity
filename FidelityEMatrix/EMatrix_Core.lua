@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.7.0"
+local VERSION = "1.7.1"
 local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
@@ -70,6 +70,9 @@ local DEFAULTS = {
     sideSign = 1,
     turnSign = 1,
     worldOverlay = true,      -- EMatrix_World: live actors re-rendered over the game (the default experience)
+    worldFrameType = "player", -- "player" (PlayerModel, textured for any unit) | "dressup" (DressUpModel, v1.6.1: white NPCs in the game)
+    worldParallaxPx = 120,    -- screen pixels per unit of eye the copies shift (0 = they stay on their units)
+    worldUnitHeight = 1.8,    -- yards: nominal height of a nameplate unit, sized as focal * height / distance
     terrainOverlay = true,    -- EMatrix_Terrain: map placements re-rendered with depth (the default experience)
     boxHidden = true,         -- the scoreboard window is a side show: /fide box shows it
     configVersion = 0,
@@ -1209,7 +1212,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print(string.format("  OnUpdate Hook: %s | Box: %s", (host and host:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r", (masterFrame and masterFrame:IsShown()) and "shown" or "hidden"))
             if ns.World then
                 local ws = ns.World.IsSuspended and ns.World.IsSuspended()
-                print(string.format("  World overlay: %s, %d actor(s)%s", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount(), ws and (" (|cffff3333suspended after errors|r: " .. ws .. ")") or ""))
+                print(string.format("  World overlay: %s, %d actor(s), %s frames, parallax %d px%s", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount(), Cfg("worldFrameType"), Cfg("worldParallaxPx"), ws and (" (|cffff3333suspended after errors|r: " .. ws .. ")") or ""))
             end
             if ns.Terrain then
                 local info = ns.Terrain.Info()
@@ -1244,7 +1247,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene (default): world + terrain overlays")
             print("  |cffffcc00/fide box <show|hide>|r              - The old scoreboard window (click it to ripple it open)")
             print("  |cffffcc00/fide eye <setup|probe|calibrate|source|invert|inverty ...>|r - Head tracking through the virtual gamepad (webcam tracker)")
-            print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
+            print("  |cffffcc00/fide world <on|off|status|frame <player|dressup>|parallax <px>|height <yd>>|r - Re-render the live actors over the game with depth")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
             print("  |cffffcc00/fide diag|r                        - Client engine probe")

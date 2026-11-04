@@ -1,6 +1,23 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## EMatrix v1.7.0: the review fixes (03 Nov 2026, Claude in the cloud) — start here
+## EMatrix v1.7.1: the first in-game evidence and the response (04 Nov 2026, 03:52Z, Claude in the cloud) — start here
+
+**The evidence.** The owner's screenshot of v1.6.1 on the TBC Anniversary client (Northshire, 04 Nov): the login line printed "full-screen depth scene ON"; white, untextured copies of the kobolds hung under their nameplates at three to four times the size of the real units (which are about 35 px tall at that range), each with a hollow hexagon beside it; no copy of the player at the bottom centre; no terrain props at all; no visible parallax. The owner's words: "not synced up, only mobs render an untextured version of themselves, no parallax or 3d effect yet".
+
+**The diagnosis, from the code.** (1) The copies were `DressUpModel` frames fed NPC units; the box's `DressUpModel` of the player was textured, so the frame type's handling of creatures is the prime suspect. `PlayerModel` is what unit-frame addons use for 3D portraits of any unit. The hexagon is probably an untextured attachment (the pick) drawn without its skin: a hypothesis. (2) The band heights were fixed pixels (95 to 230 UI units), not a camera model, so far units were drawn huge. (3) The copies' parallax gain was 60 px per unit of eye, about 16 px at full lean. (4) Why the player copy and the terrain props are missing is not visible in the picture; v1.7.0's login line and `/fide terrain probe` say.
+
+**What v1.7.1 changes** (`EMatrix_World.lua`, `EMatrix_Core.lua`): copies are `PlayerModel` frames, with `/fide world frame <player|dressup>` to compare in the game (it rebuilds the pool and `/fide world status` names the type that took); each copy is parented to its nameplate, so the client scales and hides it with the plate; heights come from the camera model the terrain uses, `focal * unitHeight / (zoom + bandDepth)` with band depths 7, 18 and 45 yd and `focal * 2 / zoom` for the player, so at 1080p and zoom 10 a far copy is about 32 px, a mid one 64, a near one 105, the player 198; `/fide world height <yd>` (1.8) and `/fide world parallax <px>` (120, was 60) tune them; the status line prints each copy's height, the focal length and the zoom. Headless 54/54; `npm test` 159 tests, 158 pass, 1 skipped.
+
+**Deploy from the laptop now** (no need to wait for the PR; `D:\fidelity-repo` is on `flash/wow-ematrix-polish` or `claude/ematrix-depth`):
+```powershell
+git -C D:\fidelity-repo fetch origin
+git -C D:\fidelity-repo checkout francois/serene-euler-51wj3e
+Rename-Item "D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix" "FidelityEMatrix.bak-$(Get-Date -Format yyyyMMdd-HHmm)"
+robocopy D:\fidelity-repo\FidelityEMatrix "D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix" /E
+```
+Then `/reload` and paste, in this order: the login line; `/fide diag` (the SetLight form line); `/fide world status`; `/fide terrain probe`; `/fide terrain status`; `/fide status`. Then try `/fide world frame dressup` and back to `player`, and say which one is textured. Move the mouse to the screen edge: the copies should leave their units by up to 60 px (far ones more than near ones); `/fide world parallax 240` doubles that. If the copies are still the wrong size, `/fide world height 1.2` (kobolds) or `3`.
+
+## EMatrix v1.7.0: the review fixes (03 Nov 2026, Claude in the cloud)
 
 **Branch:** `francois/serene-euler-51wj3e`, a fast-forward of `claude/ematrix-depth` `7265578` plus these commits; draft PR into `claude/ematrix-depth`, which is what the laptop deploys (H005). **Not verified in the game**: everything below is proven headless only. The findings come from [`docs/EMATRIX-REVIEW-STATE.md`](docs/EMATRIX-REVIEW-STATE.md) (four of six hostile reviews); each one was checked against the code before it was fixed, and each fix has a test.
 

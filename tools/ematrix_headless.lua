@@ -61,6 +61,8 @@ function Region:SetPoint(p, rel, rp, x, y)
 end
 function Region:SetFrameLevel(l) self.level = l end
 function Region:GetFrameLevel() return rawget(self, "level") end
+function Region:SetParent(p) self.parent = p end
+function Region:GetParent() return rawget(self, "parent") end
 function Region:ClearAllPoints() self.points = {} end
 function Region:SetAllPoints(rel) self.points = { ALL = { rel = rel } } end
 function Region:GetEffectiveScale() return 1 end
@@ -544,7 +546,8 @@ test("world overlay: copies never spin with the window, nil range answers mean f
     stepUntilWorldRefresh()
     check(slot.band == "mid", "a band change must not apply on the first scan it is seen")
     stepUntilWorldRefresh()
-    check(slot.band == "near" and slot.h == 230, "a band change seen twice must apply, got " .. tostring(slot.band))
+    local focal, zoom = ns.World.CameraScale()
+    check(slot.band == "near" and near(slot.h, focal * 1.8 / (zoom + 7), 1e-6), "a band change seen twice must apply, got " .. tostring(slot.band) .. " " .. tostring(slot.h))
     check(slot.unit == "nameplate1" and slot.used, "a unit keeps its slot across a band change (no SetUnit churn)")
     -- a copy that cannot take its unit is hidden and holds no slot; it is not an overlay error
     failUnits["nameplate9"] = true
@@ -569,6 +572,64 @@ test("world overlay: copies never spin with the window, nil range answers mean f
     slash("world off")
     for i = #plates, 1, -1 do plates[i] = nil end
     plateDistance["nameplate1"] = nil
+end)
+
+test("world overlay: copies are PlayerModel frames under their plates, sized by the camera, with a tunable parallax", function()
+    local p1 = addPlate("nameplate1", 1200, 600, 15) -- mid
+    cursorX, cursorY = 960, 540
+    slash("world on")
+    step(0.6)
+    local pool = ns.World._pool
+    local focal, zoom = ns.World.CameraScale()
+    check(near(focal, 540 / math.tan(0.5), 1e-6) and zoom == 10, "camera scale from the screen height, the fov and GetCameraZoom")
+    local function find()
+        for i = 1, #ns.World._pool do if ns.World._pool[i].unit == "nameplate1" then return ns.World._pool[i] end end
+    end
+    local slot = find()
+    check(slot and slot.mono.kind == "PlayerModel", "copies are PlayerModel frames by default (DressUpModel drew white NPCs in the game)")
+    check(slot.mono.parent == p1 and slot.left.parent == p1 and slot.right.parent == p1, "a copy lives under its nameplate so the client scales and hides it with the plate")
+    check(pool[1].mono.parent == ns.World._overlay(), "the player copy has no plate and lives under the overlay")
+    check(near(slot.h, focal * 1.8 / (zoom + 18), 1e-6), "a mid copy is focal * 1.8 yd / (zoom + 18 yd) tall, got " .. tostring(slot.h))
+    check(near(pool[1].h, focal * 2.0 / zoom, 1e-6), "the player copy is focal * 2 yd / zoom tall, got " .. tostring(pool[1].h))
+    check(slot.h < 100 and slot.h > 40, "a mid copy at 1080p must be tens of pixels, not the 150 of v1.6.1: " .. tostring(slot.h))
+    cameraZoom = 20
+    stepUntilWorldRefresh()
+    check(near(slot.h, focal * 1.8 / (20 + 18), 1e-6), "zooming the camera out shrinks the copies")
+    cameraZoom = 10
+    slash("world height 3.6")
+    stepUntilWorldRefresh()
+    check(near(slot.h, focal * 3.6 / 28, 1e-6), "the nominal unit height scales the copies")
+    slash("world height 1.8")
+    stepUntilWorldRefresh()
+    -- the parallax gain
+    cursorX = 1440
+    step(1.5)
+    local shift120 = slot.mono.points.TOP.x
+    local expected = 120 * M.ParallaxShift(ns.State().eyeX, 0.5)
+    check(shift120 > 5 and near(shift120, expected, 1e-3), string.format("a mid copy shifts 120 px * ParallaxShift(eye, 0.5) = %.2f, got %.2f", expected, shift120))
+    slash("world parallax 240")
+    step(0.5)
+    check(near(slot.mono.points.TOP.x, shift120 * 2, 1e-3), "the parallax gain doubles the shift")
+    slash("world parallax 120")
+    cursorX = 960
+    step(1.0)
+    -- the frame type switch rebuilds the pool
+    slash("world frame dressup")
+    step(0.6)
+    slot = find()
+    check(slot and slot.mono.kind == "DressUpModel", "world frame dressup rebuilds the copies as DressUpModel frames")
+    check(FidelityEMatrix_Config.worldFrameType == "dressup", "the frame type is saved")
+    slash("world frame player")
+    step(0.6)
+    slot = find()
+    check(slot and slot.mono.kind == "PlayerModel", "world frame player restores PlayerModel")
+    printed = {}
+    slash("world status")
+    check(printed[1] and printed[1]:find("frames PlayerModel (player)", 1, true), "status names the frame type: " .. tostring(printed[1]))
+    slash("world bogus")
+    slash("world off")
+    check(slot.mono.parent == ns.World._overlay(), "a released copy goes back under the overlay")
+    for i = #plates, 1, -1 do plates[i] = nil end
 end)
 
 test("terrain: tile lookup, ground height and the player state from UnitPosition", function()
@@ -880,7 +941,7 @@ test("every slash command runs without an addon error", function()
         "lens 0.4", "backdrop black", "backdrop nebula", "stereo", "stereo", "stereo", "stereo",
         "stereo delta 0.08", "stereo pixels 6", "stereo mix 0.6", "stereo off", "calibrate", "calibrate side",
         "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
-        "world", "world status", "world off", "world bogus",
+        "world", "world status", "world frame dressup", "world frame player", "world parallax 120", "world height 1.8", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
         "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
         "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide",
