@@ -1,32 +1,32 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-04T04:22:29.670Z",
+  "updated_at": "2026-11-04T04:58:14.485Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
       "id": "H005",
-      "requested_at": "2026-11-03T20:18:33Z",
       "priority": 0,
-      "title": "Deploy FidelityEMatrix v1.7.0 (the claude/ematrix-depth tip once the review-fix PR is merged into it) to the TBC Anniversary client and WoW Forever when present; owner runs the check list",
+      "title": "Deploy FidelityEMatrix v1.7.4 from branch francois/serene-euler-51wj3e (the branch the owner already runs) to the TBC Anniversary client and WoW Forever when present; owner pastes the check list",
       "steps": [
         "git -C D:\\fidelity-repo fetch origin",
-        "If D:\\fidelity-repo is on flash/wow-ematrix-polish or claude/ematrix-depth with no new local commits: git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth. If that is not a fast-forward, stop and report blocked with the output of git status; never reset, clean or checkout -f.",
-        "Confirm the version is 1.7.0 or later: Select-String '## Version' D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc. If it is still 1.6.1 the PR is not merged yet: report blocked with blocked_on \"director: merge the v1.7.0 PR into claude/ematrix-depth\" and stop.",
-        "node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs D:\\fidelity-repo\\tools\\ematrix-toc.test.mjs (expect 0 fail; both need npm install once, for fengari)",
+        "git -C D:\\fidelity-repo status --short (report it; if the tree is dirty, stop and report blocked with that output; never reset, clean, restore or checkout -f)",
+        "git -C D:\\fidelity-repo checkout francois/serene-euler-51wj3e (a plain checkout of the branch; it creates the tracking branch the first time) then git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e. If the merge is not a fast-forward, stop and report blocked with the output of git status.",
+        "Confirm the version: Select-String '## Version' D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc must say 1.7.4 or later; otherwise report blocked with blocked_on \"director: the branch tip is not v1.7.4\" and stop.",
+        "npm --prefix D:\\fidelity-repo install (once; fengari) then node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs D:\\fidelity-repo\\tools\\ematrix-toc.test.mjs (expect 0 fail)",
         "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\FidelityEMatrix \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix\" /E (no /MIR, no /PURGE).",
-        "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared and any mismatch. Expected files (15): EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, FidelityEMatrix_Vanilla.toc, FidelityEMatrix_TBC.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6). The two new manifests let the client load only its own family's map data; a client that ignores them falls back to FidelityEMatrix.toc, which loads both.",
+        "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared (expect 15) and any mismatch. Expected files: EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, FidelityEMatrix_Vanilla.toc, FidelityEMatrix_TBC.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6).",
         "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityEMatrix (or its parent AddOns folder) exists, do the same backup, copy and hash check there; report whether that client exists and its version from its .build.info if present.",
-        "Report the version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc (## Version) and the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
-        "Owner, after /reload (the full-screen scene is on by itself; the box stays hidden): paste the one login line (it now reports what really came up: both overlays, the map data counts, the eye source), then stand at the Northshire Abbey door and paste /fide terrain probe, /fide terrain status, /fide world status and /fide status. The probe prints position, tile, ground, camera, the first six drawable placements with screen positions, how many buildings are nearby (not drawn: Model frames load M2 only), and how many models loaded or failed.",
-        "Owner, the window checks need the box: /fide box show, click it to ripple it open, move the cursor right (the character slides right and turns; the reticle slides left; the left wall widens), then /fide stereo anaglyph with the glasses (character behind the screen, reticle in front), /fide stereo off, /fide box hide. Report what you saw and any [Fidelity EMatrix Error] line. Set status blocked with blocked_on \"owner: paste the login line and the probe output\" until the owner reports; Claude relays the owner's answer into this file as a new requested_at when needed."
+        "Report the version from the toc and the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
+        "Owner, after /reload: paste the one login line (it says v1.7.4 and what came up, including cells with a source), /fide diag, /fide world status, /fide terrain probe (at the Northshire Abbey door), /fide terrain status, /fide status. Then /fide box show and click the box: say whether each cell visibly squashes and flashes as the wave crosses it (the flip now lasts 0.26 s; before it was one frame), whether the E wall still shows diagonal stripes of one orientation (it must not), and from which side the closed E tiles look lit (upper left is the known defect the atlas will fix). Set status blocked with blocked_on \"owner: paste the login line, the probes and the box observations\" until the owner reports."
       ],
       "report": [
-        "The merge result (new HEAD), the toc version, and all test summary lines",
+        "git status before, the checkout and merge result (new HEAD), the toc version, all test summary lines",
         "The backup folder name, the robocopy summary line, the hash comparison count (expect 15) and any mismatch, for each client",
-        "After the owner check: the login line and the full probe/status output verbatim, then the window observations"
+        "After the owner check: the login line and the probe/status output verbatim, then the three box observations"
       ],
-      "status": "requested"
+      "status": "requested",
+      "requested_at": "2026-11-04T04:58:14.485Z"
     },
     {
       "id": "H006",

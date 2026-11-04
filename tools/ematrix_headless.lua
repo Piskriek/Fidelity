@@ -994,6 +994,66 @@ test("typos change nothing, help is short, a migration keeps the owner's choices
     FidelityEMatrix_Config = saved
 end)
 
+test("binding registry: sources are named, valued, aged and kinded; the draw follows them only behind the gate; the world slots publish themselves", function()
+    -- the API
+    check(ns.BindCell and ns.ReleaseCell and ns.CellSource and ns.BoundCounts, "the registry API is exported")
+    check(not ns.BindCell(0, "x", 1, now, "measured") and not ns.BindCell(136, "x", 1, now, "measured") and not ns.BindCell(3, "", 1, now, "measured"), "bad indexes and empty names are refused")
+    check(ns.BindCell(3, "test:fresh", 0.9, now, "measured"), "a bind succeeds")
+    check(ns.BindCell(4, "test:symbolic", 0.9, now, "symbolic") and ns.BindCell(5, "test:unknown", 0.9, now, "bogus-kind"), "binds with other kinds succeed")
+    check(ns.CellSource(5).kind == "not_measured", "an unknown kind is recorded as not_measured")
+    check(ns.CellSource(3).value == 0.9 and ns.CellSource(3).source == "test:fresh", "the record keeps the name and the value")
+    check(ns.BindCell(6, "test:clamped", 7, now, "measured") and ns.CellSource(6).value == 1, "values clamp to [0, 1]")
+    local recorded, live = ns.BoundCounts()
+    check(recorded == 4 and live == 2, string.format("4 recorded, 2 fresh and measured, got %d and %d", recorded, live))
+    -- freshness: after FRESH_SECONDS the source is stale and the cell no longer counts
+    step(ns.FRESH_SECONDS + 0.5)
+    recorded, live = ns.BoundCounts()
+    check(recorded == 4 and live == 0, "stale sources are recorded but not live, got " .. live)
+    check(ns.ReleaseCell(3) and ns.CellSource(3) == nil and not ns.ReleaseCell(3), "release clears a cell once")
+    for i = 4, 6 do ns.ReleaseCell(i) end
+    -- the gate off: a bound cell changes nothing on screen
+    slash("bind off")
+    slash("ripple 8 5"); step(3.0) -- open the window
+    check(ns.State().open, "window open for the gate test")
+    ns.BindCell(10, "test:gate", 0.1, now, "measured") -- would close cell 10 if the gate were on
+    step(1.0)
+    check(ns.cells[10].flapTex.texture:find("Window") and near(ns.cells[10].flapTex.alpha, 0.35), "with the gate off the draw is unchanged")
+    -- the gate on: a bound cell follows its source, an unbound cell stays closed ("no source")
+    slash("bind on")
+    step(0.6)
+    check(ns.cells[10].flapTex.texture:find("Closed") and ns.cells[10].flapTex.alpha == 1 and ns.cells[10].face == false, "a bound cell with value 0.1 closes")
+    check(ns.cells[11].flapTex.texture:find("Closed") and ns.cells[11].specBar.alpha == 0, "an unbound cell closes with no glint (no source)")
+    ns.BindCell(10, "test:gate", 0.9, now, "measured")
+    step(0.6)
+    check(ns.cells[10].flapTex.texture:find("Window") and near(ns.cells[10].flapTex.alpha, 0.35), "a bound cell with value 0.9 opens")
+    ns.BindCell(10, "test:gate", 0.9, now, "symbolic")
+    step(0.6)
+    check(ns.cells[10].flapTex.texture:find("Closed"), "a symbolic source does not open a cell")
+    ns.BindCell(10, "test:gate", 0.9, now, "measured")
+    step(ns.FRESH_SECONDS + 1.0)
+    check(ns.cells[10].flapTex.texture:find("Closed"), "a stale source closes its cell")
+    ns.ReleaseCell(10)
+    -- the world overlay's slots publish themselves as sources: slot i -> cell i
+    addPlate("nameplate1", 1200, 600, 15) -- mid
+    addPlate("nameplate2", 400, 760, 40)  -- far
+    slash("world on")
+    step(0.6)
+    local src1, src2, src3 = ns.CellSource(1), ns.CellSource(2), ns.CellSource(3)
+    check(src1 and src1.source == "actor:player:player" and src1.kind == "symbolic", "slot 1 is the player, a symbolic source: " .. tostring(src1 and src1.source))
+    check(src2 and src2.source:find("^actor:nameplate%d:mid") and src2.kind == "measured" and src2.value == 0.5, "the mid unit is a measured source at 0.5: " .. tostring(src2 and src2.source))
+    check(src3 and src3.source:find(":far$") and src3.value == 0.2, "the far unit is a measured source at 0.2")
+    check(ns.cells[2].flapTex.texture:find("Window"), "with the gate on the mid actor's cell opens")
+    check(ns.cells[3].flapTex.texture:find("Closed"), "the far actor's cell (0.2) stays closed")
+    printed = {}
+    slash("cells")
+    check(printed[1] and printed[1]:find("have a source", 1, true) and #printed >= 3, "/fide cells lists the sources")
+    slash("world off")
+    check(ns.CellSource(1) == nil and ns.CellSource(2) == nil, "world off releases the slots' cells")
+    slash("bind off")
+    for i = #plates, 1, -1 do plates[i] = nil end
+    slash("ripple 1 1"); step(3.0) -- close the window again for the tests that follow
+end)
+
 test("every slash command runs without an addon error", function()
     printed = {}
     for _, cmd in ipairs({ "help", "diag", "status", "scene target", "scene player", "spin 1", "parallax 0.5",
@@ -1005,7 +1065,8 @@ test("every slash command runs without an addon error", function()
         "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
         "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide",
         "eye", "eye setup", "eye probe", "eye stick 2", "eye depth off", "eye gain 1.5", "eye gain 1", "eye calibrate", "eye source gamepad", "eye source cursor",
-        "eye invert", "eye invert", "eye inverty", "eye inverty", "stereo bogus", "box bogus", "overlay bogus", "help", "help all", "bogus" }) do
+        "eye invert", "eye invert", "eye inverty", "eye inverty", "stereo bogus", "box bogus", "overlay bogus", "help", "help all",
+        "cells", "bind", "bind status", "bind on", "bind off", "bind bogus", "bogus" }) do
         slash(cmd)
         step(0.05)
     end

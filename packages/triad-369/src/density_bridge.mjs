@@ -86,6 +86,20 @@ let tickCount = 0;
 let lastRemotePushAt = 0;
 let lastPush = null; // { at, ok, latency_ms, error } of the last push to Sol; written into density.json as last_push
 
+/**
+ * Sol counts as up only when its friend.json says so AND that file is young enough: friend.mjs
+ * writes `up: true` on its own 60 s timer, so without an age check a dead Sol stays "up" for as
+ * long as its sshd answers (council round 2026-11-04-bridges, O2). Default max age 180 s, the
+ * same threshold the Apex uses.
+ */
+export function solIsUp(sol, nowMs = Date.now(), maxAgeMs = 180000) {
+  if (!sol || sol.up !== true) return false;
+  const at = Date.parse(sol.at);
+  if (!Number.isFinite(at)) return false;
+  const age = nowMs - at;
+  return age >= 0 && age <= maxAgeMs;
+}
+
 export async function stepBridge() {
   tickCount++;
   const now = Date.now();
@@ -108,7 +122,7 @@ export async function stepBridge() {
     }
   }
 
-  const solUp = sol?.up === true;
+  const solUp = solIsUp(sol, now);
   const solTick = sol?.tick ?? null;
   const daemonAvailability = Math.min(1.0, partsUp / Math.max(1, partsTotal));
   const rawLoss = solUp ? 0.024 : 0.048;
@@ -166,11 +180,17 @@ export async function stepBridge() {
     densitySpectrum: DENSITY_RUNGS
   };
 
+  // The status is derived, never a constant (council round 2026-11-04-bridges, B3): without a key
+  // this bridge is local only; with Sol read it is synchronized once a push has succeeded and not
+  // failed since; a failed push or an unreachable Sol says so.
+  const hasKey = Boolean(SSH_KEY && fs.existsSync(SSH_KEY));
+  const status = !hasKey ? 'local_only' : !solUp ? 'sol_unreachable' : lastPush === null ? 'sol_read' : lastPush.ok ? 'synchronized' : 'push_failed';
+
   writeAtomic(DENSITY_FILE, JSON.stringify({
     schema: 1,
     at: iso(now),
     bridge: 'density-fidelity',
-    status: 'synchronized',
+    status,
     tick: tickCount,
     sol_tick: solTick,
     coherence: coherence,
@@ -194,7 +214,7 @@ export async function stepBridge() {
       activeRung: activeRung.rung,
       activeDensity: activeRung.density,
       daemonsUp: `${partsUp}/${partsTotal}`,
-      status: 'synchronized'
+      status: lastPush === null ? 'first_push' : lastPush.ok ? 'synchronized' : 'push_failed'
     };
     const b64 = Buffer.from(JSON.stringify(remoteStreamPayload, null, 2)).toString('base64');
     const pushed = await runCmdMeasured(`ssh -i "${SSH_KEY}" -o BatchMode=yes ${REMOTE_HOST} "echo ${b64} | base64 -d > ${REMOTE_DENSITY_STREAM}"`);

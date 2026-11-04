@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.7.3"
+local VERSION = "1.7.4"
 local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
@@ -75,6 +75,7 @@ local DEFAULTS = {
     worldUnitHeight = 1.8,    -- yards: nominal height of a nameplate unit, sized as focal * height / distance
     terrainOverlay = true,    -- EMatrix_Terrain: map placements re-rendered with depth (the default experience)
     boxHidden = true,         -- the scoreboard window is a side show: /fide box shows it
+    bindCells = false,        -- when on, a bound cell's face follows its source and an unbound cell stays closed ("no source"); off: the draw is unchanged
     configVersion = 0,
     -- Eye source. "gamepad": the webcam head tracker (tools/headtrack) feeds a virtual gamepad;
     -- the addon reads one stick for left/right + up/down and one axis for distance.
@@ -140,6 +141,60 @@ local lastClickTime = 0.0
 
 local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
 
+-- ============================================================================
+-- 0a. Cell sources: the binding registry (council round 2026-11-04-bridges, B1)
+-- The entity's rule: a cell is honest only when a NAMED source drives it with a MEASURED value
+-- that is FRESH, carrying an evidence kind from packages/triad-369/src/evidence.mjs
+-- (measured | symbolic | not_measured). The registry records that per cell; the draw follows
+-- it only when the saved gate `bindCells` is on (off by default, so nothing changes on screen
+-- until the owner turns it on). Callers pass the time they measured at (GetTime()), not an age.
+-- ============================================================================
+local FRESH_SECONDS = 2.0
+local cellSources = {}           -- cell index -> { source, value, at, kind }
+local bindAge = 0                -- seconds since the bound cells were last applied to the draw
+local KINDS = { measured = true, symbolic = true, not_measured = true }
+
+local function Now() return (GetTime and GetTime()) or 0 end
+
+--- Records that `source` drives cell `index` with `value` in [0, 1], measured at `at`, of `kind`.
+local function BindCell(index, source, value, at, kind)
+    index = tonumber(index)
+    if not index or index < 1 or index > TOTAL_CELLS or index ~= math.floor(index) then return false end
+    if type(source) ~= "string" or source == "" then return false end
+    if not KINDS[kind] then kind = "not_measured" end
+    value = tonumber(value) or 0
+    local rec = cellSources[index]
+    if not rec then rec = {}; cellSources[index] = rec end
+    rec.source, rec.value, rec.at, rec.kind = source, Clamp(value, 0, 1), tonumber(at) or Now(), kind
+    return true
+end
+
+local function ReleaseCell(index)
+    index = tonumber(index)
+    if index and cellSources[index] then cellSources[index] = nil; return true end
+    return false
+end
+
+--- The source record of a cell, or nil ("no source").
+local function CellSource(index) return cellSources[tonumber(index) or 0] end
+
+--- A cell counts as bound only when its source is fresh and measured.
+local function CellFresh(rec, now) return rec ~= nil and (now - (rec.at or 0)) <= FRESH_SECONDS end
+local function CellOpen(rec, now) return CellFresh(rec, now) and rec.kind == "measured" and rec.value >= 0.5 end
+
+--- Counts: recorded sources, and those fresh and measured right now.
+local function BoundCounts()
+    local now, recorded, live = Now(), 0, 0
+    for i = 1, TOTAL_CELLS do
+        local rec = cellSources[i]
+        if rec then
+            recorded = recorded + 1
+            if CellFresh(rec, now) and rec.kind == "measured" then live = live + 1 end
+        end
+    end
+    return recorded, live
+end
+
 --- Parallax gain from the eye's depth: leaning toward the screen (z > 0) strengthens every
 --- plane's shift, sitting back weakens it. 1.0 at rest. Shared with the overlays.
 local function EyeGain()
@@ -166,6 +221,7 @@ local CheckIdleCondition
 local RunDiagnostics
 local ApplyDepthPlanes
 local ApplyBackdrop
+local ApplyBindings
 
 -- ============================================================================
 -- 0. Client Capability Probe (/fide diag)
@@ -255,6 +311,11 @@ ns.ApplyLight = ApplyLight
 ns.PlaceModel = PlaceModel
 ns.FaceModel = FaceModel
 ns.EyeGain = EyeGain
+ns.BindCell = BindCell
+ns.ReleaseCell = ReleaseCell
+ns.CellSource = CellSource
+ns.BoundCounts = BoundCounts
+ns.FRESH_SECONDS = FRESH_SECONDS
 ns.LIGHTS = { mono = LIGHT_MONO, red = LIGHT_RED, cyan = LIGHT_CYAN }
 
 -- The E is drawn in its cell's fixed orientation (cell.uv8). The lens is not: its sun-lit rim
@@ -835,6 +896,13 @@ local function OnUpdateDriver(self, dt)
         openAmount = Math.Approach(openAmount, target, OPEN_RATE, dt)
     end
 
+    -- 2b. Bound cells follow their sources (only with the bindCells gate on), four times a second
+    bindAge = bindAge + dt
+    if bindAge >= 0.25 then
+        bindAge = 0
+        ApplyBindings()
+    end
+
     -- 3. Eye from the cursor (raw pixels on both sides of the comparison)
     local pStr = Cfg("parallaxStrength")
     local padX, padY, padZ
@@ -951,6 +1019,30 @@ function TriggerScoreboardWave(ox, oy)
     local host = driverFrame or masterFrame
     if not host:GetScript("OnUpdate") then
         host:SetScript("OnUpdate", OnUpdateDriver)
+    end
+end
+
+--- With the `bindCells` gate on: a settled bound cell shows its source (open when fresh,
+--- measured and at least 0.5; closed otherwise) and a settled unbound cell stays closed with
+--- no glint ("no source"). The wave still animates a click; this is what it settles into.
+--- With the gate off nothing here runs, so the draw is the box the owner knows.
+function ApplyBindings()
+    if not Cfg("bindCells") or waveActive or not cells[1] then return end
+    local now = Now()
+    local lens = Cfg("lensAlpha")
+    for i = 1, TOTAL_CELLS do
+        local cell = cells[i]
+        if cell and cell.settled then
+            local open = CellOpen(cellSources[i], now)
+            if cell.face ~= open then
+                ShowFace(cell, open)
+                cell.flapTex:SetHeight(CELL_SIZE)
+                cell.specBar:SetAlpha(0.0)
+                cell.creviceTex:SetAlpha(0.0)
+                cell.isWindow = open
+            end
+            cell.flapTex:SetAlpha(open and lens or 1.0)
+        end
     end
 end
 
@@ -1138,6 +1230,35 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 Say("Usage: /fide eye <source cursor|gamepad | stick <1-4> | depth <axis|off> | gain <0.1-10> | invert | inverty | calibrate | probe | setup>")
             end
 
+        elseif cmd == "cells" then
+            -- the binding registry: what drives each cell, and whether it counts
+            local recorded, live = BoundCounts()
+            local now = Now()
+            Say("Cells: %d of %d have a source, %d fresh and measured (open when value >= 0.5); binding draw %s. A cell with no source stays closed when the draw is on.",
+                recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off (/fide bind on)")
+            local shown = 0
+            for i = 1, TOTAL_CELLS do
+                local rec = cellSources[i]
+                if rec and shown < 12 then
+                    shown = shown + 1
+                    Say("  cell %d: %s value %.2f age %.1fs %s%s", i, rec.source, rec.value, now - (rec.at or 0), rec.kind, CellOpen(rec, now) and " -> open" or "")
+                end
+            end
+
+        elseif cmd == "bind" then
+            local sub = args[2] or "status"
+            if sub == "on" or sub == "off" then
+                FidelityEMatrix_Config.bindCells = (sub == "on")
+                bindAge = 1
+                if not FidelityEMatrix_Config.bindCells then RefreshOpenCells() end
+                Say("Binding draw %s: %s", sub == "on" and "ON" or "off", sub == "on" and "bound cells follow their sources, unbound cells stay closed (no source)" or "the box draws as before")
+            elseif sub == "status" then
+                local recorded, live = BoundCounts()
+                Say("Binding draw %s; %d cell(s) with a source, %d fresh and measured. /fide cells lists them.", Cfg("bindCells") and "ON" or "off", recorded, live)
+            else
+                Say("Usage: /fide bind <on|off|status>")
+            end
+
         elseif cmd == "box" then
             local sub = args[2] or "toggle"
             if sub ~= "show" and sub ~= "hide" and sub ~= "toggle" then Say("Usage: /fide box <show|hide|toggle>  (now %s)", masterFrame:IsShown() and "shown" or "hidden"); return end
@@ -1245,6 +1366,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide eye setup|r        webcam head tracking; without it the mouse is the eye")
             print("  |cffffcc00/fide terrain probe|r    why nothing is drawn (paste it for the director)")
             print("  |cffffcc00/fide status|r           the numbers; |cffffcc00/fide box|r shows the old window")
+            print("  |cffffcc00/fide cells|r            what drives each cell (|cffffcc00/fide bind on|r makes the box follow it)")
 
         elseif cmd ~= "help" then
             -- an unknown word changes nothing and says so in one line
@@ -1266,6 +1388,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide world <on|off|status|frame <player|dressup>|parallax <px>|height <yd>>|r - Re-render the live actors over the game with depth")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
+            print("  |cffffcc00/fide cells|r, |cffffcc00/fide bind <on|off|status>|r - The binding registry: what drives each cell; the gate that lets the box follow it")
             print("  |cffffcc00/fide diag|r                        - Client engine probe")
             print("  |cffffcc00/fide scale <0.5..2.5>|r            - Uniform UI scale")
             print("  |cffffcc00/fide status|r                      - Runtime and idle-CPU status")
@@ -1301,9 +1424,10 @@ local function Bringup(reason)
         local tiles, placements, buildings = ns.Terrain.DataStats()
         data = string.format("%s, %d tile(s), %d placements, %d buildings", ns.Terrain.BuildLabel(), tiles, placements, buildings)
     end
-    Say("v%s: world overlay %s (%d actor(s) now), terrain overlay %s, map data %s, box %s, eye from the %s. |cffffcc00/fide help|r for the short list.",
+    local recorded, live = BoundCounts()
+    Say("v%s: world overlay %s (%d actor(s) now), terrain overlay %s, map data %s, box %s, eye from the %s, cells with a source %d of %d (%d fresh and measured), binding draw %s. |cffffcc00/fide help|r for the short list.",
         VERSION, worldOn and "|cff00ff00ON|r" or "off", ns.World and ns.World.ActorCount() or 0, terrainOn and "|cff00ff00ON|r" or "off", data,
-        (masterFrame and masterFrame:IsShown()) and "shown" or "hidden", Cfg("eyeSource"))
+        (masterFrame and masterFrame:IsShown()) and "shown" or "hidden", Cfg("eyeSource"), recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off")
     if not worldOn and not terrainOn then
         Say("Both overlays are off in your saved settings: |cffffcc00/fide overlay on|r for the full-screen depth scene.")
     end

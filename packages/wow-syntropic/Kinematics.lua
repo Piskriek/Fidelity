@@ -9,6 +9,7 @@ local samples = {}
 local MAX_SAMPLES = 60
 local lastSampleTime = 0
 local lastX, lastY = 0, 0
+local lastHadPos = false -- whether the previous sample had a map position (no position is "not measured", not (0, 0))
 local accumulatedFtle = 0.005
 local FTLE_LIMIT = 0.010
 local MAX_GROUND_SPEED = 16.0 -- yards/sec
@@ -43,17 +44,25 @@ function Kinematics:SampleTick(timeMs)
     local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
     local pos = mapID and C_Map.GetPlayerMapPosition(mapID, "player")
     local curX, curY = 0, 0
+    local hadPos = false
     if pos and pos.GetXY then
         curX, curY = pos:GetXY()
+        -- the client answers (0, 0) where it has no map position (instances, loading): that is
+        -- "not measured", and measuring a jump from or to it flagged false teleports (council
+        -- round 2026-11-04-bridges, O1)
+        hadPos = type(curX) == "number" and type(curY) == "number" and not (curX == 0 and curY == 0)
     end
 
     local dt = (timeMs - lastSampleTime) / 1000.0
     if dt <= 0 then dt = 0.05 end
 
-    -- Compute displacement if map coordinates available
-    local dx = curX - lastX
-    local dy = curY - lastY
-    local dist = math.sqrt(dx * dx + dy * dy)
+    -- Displacement only between two samples that both had a map position
+    local dist = 0
+    if hadPos and lastHadPos then
+        local dx = curX - lastX
+        local dy = curY - lastY
+        dist = math.sqrt(dx * dx + dy * dy)
+    end
 
     -- Kinematic Divergence Evaluation (empirical spline prediction heuristic)
     local instantaneousFtle = 0.002
@@ -72,6 +81,8 @@ function Kinematics:SampleTick(timeMs)
 
     accumulatedFtle = (accumulatedFtle * 0.90) + (instantaneousFtle * 0.10)
     FidelityWoW_Telemetry.lyapunovFTLE = tonumber(string.format("%.4f", accumulatedFtle))
+    FidelityWoW_Telemetry.measured = FidelityWoW_Telemetry.measured or {}
+    FidelityWoW_Telemetry.measured.lyapunovFTLE = true -- a writer exists: the HUD may print it as a reading
 
     local point = {
         t = timeMs,
@@ -90,7 +101,8 @@ function Kinematics:SampleTick(timeMs)
     end
 
     lastSampleTime = timeMs
-    lastX, lastY = curX, curY
+    if hadPos then lastX, lastY = curX, curY end
+    lastHadPos = hadPos
 end
 
 function Kinematics:PrintAudit()

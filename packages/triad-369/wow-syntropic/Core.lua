@@ -37,7 +37,9 @@ FidelityWoW_Telemetry = FidelityWoW_Telemetry or {
     fourFloats = { Pxd = 0.20, Vtx = 0.50, Lx = 0.95, Aq = 0.20 },
     strainJoules = 0.0,
     lyapunovFTLE = 0.005,
-    shannonEntropyBits = 2.5
+    shannonEntropyBits = 2.5,
+    -- which fields a writer has actually measured this session; the HUD prints the rest as seeds
+    measured = {}
 }
 
 local function GetPrecisionTimeMs()

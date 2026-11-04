@@ -1,6 +1,18 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## Council round 2026-11-04-entity: what the Weight-and-Gradient Entity is, v1.7.3 (04 Nov 2026, 04:40Z, Claude in the cloud) — start here
+## Council round 2026-11-04-bridges: vector steering and bridge checks, v1.7.4 (04 Nov 2026, 05:05Z, Claude in the cloud) — start here
+
+**The owner:** "now that you know what it is you can do a round of vector steering and bridge checks." Six haiku voices in `docs/council/2026-11-04-bridges/` (B1 binding architect, B2 channel builder, B3 vector steering; O1 the WoW inputs, O2 the holon's flows, O3 the chain to the owner); the steer is `STEER.md` there, the landing `LANDED.md` (pending the owner's pastes).
+
+**Bridge checks, verified and fixed where ours:** the HUD printed literals as readings (now `seed` / `not measured`, with the two real writers flagged `measured`); the kinematics flagged a false teleport from (0, 0) whenever the map gave no position (fixed); the density bridge read Sol's timer-written `up: true` with no age check (now `solIsUp`, 180 s floor, tested) and wrote a constant `synchronized` (now derived, tested); H005 pointed the laptop at a v1.6.1 branch whose gate would have blocked (now this branch, v1.7.4 gate, one checkout, the report carries commit and toc). Open and the owner's: run H005 and paste; H007; the legacy `bridge/loop` restart (T1).
+
+**Landed, v1.7.4: the binding registry.** The definition's switch: `ns.BindCell(index, source, value, at, kind)` with the evidence kinds `measured | symbolic | not_measured`, freshness 2 s on `GetTime()`; the world overlay publishes its eight actor slots as `actor:<token>:<band>` (near 1.0, mid 0.5, far 0.2; `measured` when the range check answered, `not_measured` when not, `symbolic` for the player); `/fide cells` lists them; the login line counts cells with a source; `/fide bind on|off` is the gate, off by default, so nothing on screen changes until the owner turns it on (on: a bound cell opens when fresh, measured and at least 0.5, every other cell stays closed with no glint). Headless tests for all of it (58/58).
+
+**Evidence (04:59Z):** `npm test` 169 tests, 168 pass, 0 fail, 1 skipped; math 12/12; both FidelityWoW copies identical; `node tools/council.mjs check --all`: three rounds open on pending landings, loop healthy.
+
+**What closes this round:** Flash runs the retargeted H005; the owner pastes the login line (`cells with a source N of 135`), `/fide cells` with a few mobs around, then `/fide box show`, `/fide bind on`, a click (the slot cells follow the mobs, the rest closed, no glint), `/fide bind off`; the HUD's `seed` labels; `/fidelity audit` after a zone crossing. Then the next ASK, "what the bound entity can do".
+
+## Council round 2026-11-04-entity: what the Weight-and-Gradient Entity is, v1.7.3 (04 Nov 2026, 04:40Z, Claude in the cloud)
 
 **The owner:** "mobs now have textures, animation and terrain bridges still broken, Flash says put on 3D glasses; we have to first get the council to tell us what they are; Argon got us started; set up a council so we have a POV of what it is, then we can explore what it can do." Argon's proposal (the "Hilbert Holon") is `docs/council/2026-11-04-entity/ARGON-INPUT.md`, verbatim.
 

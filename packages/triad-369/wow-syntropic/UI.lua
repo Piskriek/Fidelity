@@ -72,10 +72,18 @@ function UI:UpdateHUD()
     local strain = FidelityWoW_Telemetry.strainJoules or 0.0
     local ff = FidelityWoW_Telemetry.fourFloats or { Pxd = 0.2, Vtx = 0.5, Lx = 0.95, Aq = 0.2 }
     local optIn = FidelityWoW_Config.optIn
+    -- A lens never lies: a value nothing has measured is shown as the seed it is, not as a reading.
+    -- Writers set FidelityWoW_Telemetry.measured.<field> = true when they measure (council round
+    -- 2026-11-04-bridges: coherence, strain and the four floats had no writer and printed as readings).
+    local measured = FidelityWoW_Telemetry.measured or {}
 
-    hudFrame.coherenceText:SetText(string.format("Coherence: |cff00ff00%.0f%%|r | Strain: |cffffcc00%.2f J|r", coh * 100, strain))
+    hudFrame.coherenceText:SetText(string.format("Coherence: %s | Strain: %s",
+        measured.coherence and string.format("|cff00ff00%.0f%%|r", coh * 100) or "|cff888888seed|r",
+        measured.strainJoules and string.format("|cffffcc00%.2f J|r", strain) or "|cff888888not measured|r"))
     hudFrame.rungText:SetText(string.format("Active Rung: |cff00e5ff%s|r (Somatic Vessel)", rung))
-    hudFrame.metricsText:SetText(string.format("λ(FTLE): %.3f | H: %.2f bits", ftle, entropy))
+    hudFrame.metricsText:SetText(string.format("λ(FTLE): %s | H: %s",
+        measured.lyapunovFTLE and string.format("%.3f", ftle) or "|cff888888seed|r",
+        measured.shannonEntropyBits and string.format("%.2f bits", entropy) or (optIn and "|cff888888<5 casts|r" or "|cff888888opt-in off|r")))
 
     if ftle > 0.010 or FidelityWoW_Telemetry.inhumanKickDetected or FidelityWoW_Telemetry.rotationBotting then
         hudFrame.statusText:SetText("Invariant: |cffff0000DEVIANT (Anomaly Detected)|r")
@@ -85,7 +93,7 @@ function UI:UpdateHUD()
         hudFrame:SetBackdropBorderColor(0.0, 0.8, 0.7, 0.9)
     end
 
-    hudFrame.footerText:SetText(string.format("S=(%.2f,%.2f,%.2f,%.2f) | OptIn:%s", ff.Pxd or 0, ff.Vtx or 0, ff.Lx or 0, ff.Aq or 0, optIn and "|cff00ff00ON|r" or "|cffff8800OFF|r"))
+    hudFrame.footerText:SetText(string.format("S=%s(%.2f,%.2f,%.2f,%.2f) | OptIn:%s", measured.fourFloats and "" or "seed", ff.Pxd or 0, ff.Vtx or 0, ff.Lx or 0, ff.Aq or 0, optIn and "|cff00ff00ON|r" or "|cffff8800OFF|r"))
 end
 
 function UI:ToggleHUD(show)

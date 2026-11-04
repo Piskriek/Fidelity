@@ -128,6 +128,8 @@ end
 -- ---------------------------------------------------------------------------
 local scratch = {} -- reused: { unit, plate, band }
 
+--- The range band of a unit. "unknown" means the client did not answer (the API is missing or
+--- the calls errored), which is a "not measured", not a distance.
 local function RangeBand(unit)
     if not CheckInteractDistance then return "unknown" end
     local ok3, near = pcall(CheckInteractDistance, unit, 3)
@@ -139,6 +141,18 @@ local function RangeBand(unit)
     return "unknown"
 end
 World.RangeBand = RangeBand
+
+-- Each actor slot is a SOURCE for the cell with the same index (the binding registry in
+-- EMatrix_Core: council round 2026-11-04-bridges). The value is the band's closeness (near 1.0,
+-- mid 0.5, far 0.2); the kind is "measured" when the range check answered, "not_measured" when
+-- it did not, and "symbolic" for the player's own slot, whose presence is not a measurement.
+local BAND_VALUE = { near = 1.0, mid = 0.5, far = 0.2, unknown = 0.0, player = 1.0 }
+local function PublishSlot(i, s)
+    if not ns.BindCell then return end
+    if not s.used then ns.ReleaseCell(i); return end
+    local kind = (s.band == "player") and "symbolic" or (s.band == "unknown") and "not_measured" or "measured"
+    ns.BindCell(i, "actor:" .. tostring(s.unit) .. ":" .. tostring(s.band), BAND_VALUE[s.band] or 0, (GetTime and GetTime()) or 0, kind)
+end
 
 function World.Scan()
     for i = #scratch, 1, -1 do scratch[i] = nil end
@@ -303,6 +317,8 @@ local function Refresh()
             end
         end
     end
+    -- every scan re-stamps the slots as sources (a slot that is not used releases its cell)
+    for i = 1, MAX_ACTORS do if pool[i] then PublishSlot(i, pool[i]) end end
 end
 
 local function OnUpdate(self, dt)
@@ -331,7 +347,7 @@ end
 local function Stop()
     if not overlay then return end
     overlay:SetScript("OnUpdate", nil)
-    for i = 1, #pool do HideSlot(pool[i]) end
+    for i = 1, #pool do HideSlot(pool[i]); if ns.ReleaseCell then ns.ReleaseCell(i) end end
     overlay:Hide()
 end
 

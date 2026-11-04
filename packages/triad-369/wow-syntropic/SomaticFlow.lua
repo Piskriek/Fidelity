@@ -128,6 +128,8 @@ function SomaticFlow:ComputeFlowState(timeMs)
     end
 
     FidelityWoW_Telemetry.shannonEntropyBits = tonumber(string.format("%.3f", H))
+    FidelityWoW_Telemetry.measured = FidelityWoW_Telemetry.measured or {}
+    FidelityWoW_Telemetry.measured.shannonEntropyBits = true -- a writer exists: the HUD may print it as a reading
     FidelityWoW_Telemetry.rotationBotting = H < 0.80
 
     -- APM calculation
