@@ -53,18 +53,18 @@ end
 -- The steps, top to bottom. Each runs its commands, records their chat, and (shot) takes a
 -- screenshot half a second later. The terrain test hides the box while it is on.
 Report.STEPS = {
-    { key = "checks",  label = "1 Checks + shot",             cmds = { "terrain on", "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
-    { key = "fresh",   label = "2 New Model frame + shot",    cmds = { "terrain on", "terrain test own", "terrain test frame model", "terrain test" }, shot = true },
-    { key = "player",  label = "3 PlayerModel frame + shot",  cmds = { "terrain test frame player" }, shot = true },
-    { key = "dressup", label = "4 DressUpModel frame + shot", cmds = { "terrain test frame dressup" }, shot = true },
-    { key = "strata",  label = "5 Strata high + shot",        cmds = { "terrain test frame model", "terrain test strata high" }, shot = true },
-    { key = "known",   label = "6 Known model + shot",        cmds = { "terrain test strata background", "terrain test known" }, shot = true },
-    { key = "cam0",    label = "7 Cam 0 + shot",              cmds = { "terrain test own", "terrain test cam 0" }, shot = true },
-    { key = "scale5",  label = "8 Scale 5 + shot",            cmds = { "terrain test scale 5" }, shot = true },
-    { key = "testoff", label = "9 Test off",                  cmds = { "terrain test off" }, shot = false },
-    { key = "bound",   label = "10 Box, bind on + shot",      cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
-    { key = "save",    label = "Save (reload UI)",            save = true },
-    { key = "clear",   label = "Clear report",                clear = true },
+    { key = "scene",   label = "1 Overlays on + shot",         cmds = { "terrain on", "world on", "box hide" }, shot = true },
+    { key = "checks",  label = "2 Checks + shot",              cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
+    { key = "fresh",   label = "3 Test one prop + shot",       cmds = { "terrain test own", "terrain test" }, shot = true },
+    { key = "cd05",    label = "4 Camera x0.5 + shot",         cmds = { "terrain test camdist 0.5" }, shot = true },
+    { key = "cd2",     label = "5 Camera x2 + shot",           cmds = { "terrain test camdist 2" }, shot = true },
+    { key = "cd4",     label = "6 Camera x4 + shot",           cmds = { "terrain test camdist 4" }, shot = true },
+    { key = "sc03",    label = "7 Model scale 0.3 + shot",     cmds = { "terrain test scale 0.3" }, shot = true },
+    { key = "testoff", label = "8 Test off",                   cmds = { "terrain test off" }, shot = false },
+    { key = "walk",    label = "9 Scene again + shot",         cmds = { "terrain on", "world on", "box hide" }, shot = true },
+    { key = "bound",   label = "10 Box, bind on + shot",       cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
+    { key = "save",    label = "Save (reload UI)",             save = true },
+    { key = "clear",   label = "Clear report",                 clear = true },
 }
 
 function Report.Run(step)

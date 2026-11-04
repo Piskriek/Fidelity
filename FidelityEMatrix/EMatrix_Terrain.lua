@@ -247,16 +247,32 @@ end
 --- No SetCamera here: every prop had SetCamera(0) from v1.6 to v1.7.9 and none was ever visible
 --- on the owner's client, including the client's own question-mark model (the 09:35 report), and a
 --- doodad file has no camera 0 to select. The test's "cam 0" variant puts the call back on purpose.
-local function SettleModel(model, x)
+-- A PlayerModel frame frames whatever it loads as if it were a character: the bush (2.5 yd) filled
+-- its frame at the default camera (the owner's fourth report, 10:58 local) while the 14 yd tree was
+-- seen from inside its canopy. So the camera backs off in proportion to the model's nominal height.
+-- Needs in-game verification: the fourth run's sizing is the first look at it.
+local REF_HEIGHT = 2.5
+local function CameraDistanceFor(heightYd)
+    local h = tonumber(heightYd) or REF_HEIGHT
+    if h <= 0 then h = REF_HEIGHT end
+    return math.min(math.max(h / REF_HEIGHT, 0.25), 8.0)
+end
+
+local function SettleModel(model, x, heightYd)
     pcall(function()
         if model.SetPosition then model:SetPosition(x or 0, 0, 0) end
         if model.SetFacing then model:SetFacing(0) end
-        if model.SetModelScale then model:SetModelScale(1) end
+        if model.SetCamDistanceScale then
+            model:SetCamDistanceScale(CameraDistanceFor(heightYd))
+            if model.SetModelScale then model:SetModelScale(1) end
+        elseif model.SetModelScale then
+            model:SetModelScale(1 / CameraDistanceFor(heightYd))
+        end
         if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end
     end)
 end
 
-local function LoadModel(model, fdid, path)
+local function LoadModel(model, fdid, path, heightYd)
     if not model then return false end
     local winPath = path and path ~= "" and path:gsub("/", "\\") or nil
     local tries = {}
@@ -268,7 +284,7 @@ local function LoadModel(model, fdid, path)
     for _, asset in ipairs(tries) do
         local ok = pcall(model.SetModel, model, asset)
         if ok and Loaded(model) then
-            SettleModel(model)
+            SettleModel(model, 0, heightYd)
             loadStats.ok = loadStats.ok + 1
             loadStats.lastWin = type(asset) == "number" and ("id " .. asset) or asset
             return true
@@ -357,7 +373,7 @@ local function TestSlot()
     return nil
 end
 
-local VARIANT_LABEL = { default = "default (no camera call)", cam = "camera", z = "SetPosition x", scale = "model scale", nolight = "no light applied" }
+local VARIANT_LABEL = { default = "default (camera distance from the model's height)", cam = "camera", z = "SetPosition x", scale = "model scale", camdist = "camera distance scale", nolight = "no light applied" }
 local FRAME_KINDS = { model = "Model", player = "PlayerModel", dressup = "DressUpModel" }
 
 --- A brand-new frame of the asked kind for one test press (falls back to Model), above the pool.
@@ -387,14 +403,15 @@ local function ApplyTest(say)
     if testMode.strata then pcall(m.SetFrameStrata, m, testMode.strata) end
     local fdid, path = s.entry[1], s.entry[2]
     if testMode.known then fdid, path = nil, KNOWN_MODEL end
-    local loaded = LoadModel(m, fdid, path)
+    local loaded = LoadModel(m, fdid, path, testMode.known and REF_HEIGHT or s.height)
     local which = testMode.known and "the client's own question-mark model (interface/buttons/talktomequestionmark)" or (path:match("([^/]+)$") or path)
     local v, value = testMode.variant or "default", testMode.value
     if v ~= "nolight" and ns.ApplyLight then ns.ApplyLight(m, ns.LIGHTS.mono) end
     pcall(function()
         if v == "cam" and m.SetCamera then m:SetCamera(value or 0)
         elseif v == "z" and m.SetPosition then m:SetPosition(value or 0, 0, 0)
-        elseif v == "scale" and m.SetModelScale then m:SetModelScale(value or 1) end
+        elseif v == "scale" and m.SetModelScale then m:SetModelScale(value or 1)
+        elseif v == "camdist" and m.SetCamDistanceScale then m:SetCamDistanceScale(value or 1) end
     end)
     local fileId, visible, strata, level = "?", "?", "?", "?"
     pcall(function() if m.GetModelFileID then fileId = tostring(m:GetModelFileID()) end end)
@@ -413,8 +430,8 @@ local function ApplyTest(say)
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
-    say("terrain test [%s] on a new %s frame: %s, %s (file id %s), %d px tall at the screen centre, strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test (new Model frame, no camera call), frame player, frame dressup, strata high, known, cam 0, z 2, scale 5, nolight; /fide terrain test off restores.",
-        knob, actual, which, loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
+    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera distance x%.2f), %s (file id %s), %d px tall at the screen centre, strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist 0.5, camdist 2, camdist 4, scale 0.3, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
+        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height), loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
     return true
 end
 
@@ -498,8 +515,8 @@ local function Refresh()
                 s.key = c.key
                 s.entry = e
                 s.height = NominalHeight(e[2])
-                if LoadModel(s.mono, e[1], e[2]) then
-                    LoadModel(s.left, e[1], e[2]); LoadModel(s.right, e[1], e[2])
+                if LoadModel(s.mono, e[1], e[2], s.height) then
+                    LoadModel(s.left, e[1], e[2], s.height); LoadModel(s.right, e[1], e[2], s.height)
                     s.used = true
                     ns.ApplyLight(s.mono, ns.LIGHTS.mono)
                     ns.ApplyLight(s.left, ns.LIGHTS.red)
@@ -617,7 +634,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|scale <s>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|scale <s>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -665,6 +682,7 @@ function Terrain.Command(args, say)
         if what == "cam" and n then testMode.variant, testMode.value = "cam", math.floor(n)
         elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
+        elseif what == "camdist" and n and n > 0 then testMode.variant, testMode.value = "camdist", math.min(n, 50)
         elseif what == "nolight" then testMode.variant = "nolight"
         elseif what == "known" then testMode.known = true
         elseif what == "own" then testMode.known = false
@@ -698,5 +716,6 @@ Terrain._lastCam = function() return lastCam end
 Terrain._failedAt = failedAt
 Terrain._testFrames = testFrames
 Terrain.FrameKind = function() return propFrameKind end
+Terrain.CameraDistanceFor = CameraDistanceFor
 Terrain.RETRY_AFTER = RETRY_AFTER
 Terrain.DEFAULTS = DEFAULTS

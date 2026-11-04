@@ -2,7 +2,7 @@
 ## Title: |cff00ffccFidelity|r |cffffffffEMatrix|r
 ## Notes: Scoreboard wave window, world overlay (nameplate units) and terrain overlay (map placements) with depth parallax and anaglyph stereo
 ## Author: Antigravity Overwatch & Flash
-## Version: 1.8.2
+## Version: 1.8.3
 ## SavedVariables: FidelityEMatrix_Config, FidelityEMatrix_Report
 
 # Fallback manifest. Clients that support per-family manifests pick FidelityEMatrix_Vanilla.toc
