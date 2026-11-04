@@ -159,8 +159,12 @@ local lastCam
 
 function Terrain.PlayerState()
     if not UnitPosition then return nil end
-    -- UnitPosition returns the west-east coordinate first, then north-south (see the wiki)
-    local uy, ux, _, instanceID = UnitPosition("player")
+    -- UnitPosition returns the NORTH-SOUTH coordinate first (the map data's x), then the west-east
+    -- one (its y). Measured by the owner's probe on 04 Nov 2026: with the old swapped read it
+    -- printed "pos -97.6, -8763.0 ... tile azeroth:48:32 MISSING" at the Northshire Abbey door,
+    -- which is tile 32:48. The old comment cited the wiki the other way round, and the headless
+    -- stub had copied that belief, so every test agreed with the mistake.
+    local ux, uy, _, instanceID = UnitPosition("player")
     if not ux or not uy then return nil end
     local mapName = MAP_BY_INSTANCE[instanceID or 0]
     if not mapName then return nil end

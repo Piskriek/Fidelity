@@ -1,24 +1,44 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-04T04:58:14.485Z",
+  "updated_at": "2026-11-04T05:42:29.860Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
+      "id": "H008",
+      "priority": 0,
+      "title": "Deploy the FidelityWoW addon (packages/wow-syntropic, the Syntropic Flow HUD) from branch francois/serene-euler-51wj3e: its HUD now labels seeds, and its kinematics no longer flags a false teleport at a zone crossing",
+      "steps": [
+        "git -C D:\\fidelity-repo fetch origin && git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e (the checkout is already on that branch after H005; if the merge is not a fast-forward, stop and report blocked with git status; never reset, clean, restore or checkout -f)",
+        "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\packages\\wow-syntropic \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW\" /E (no /MIR, no /PURGE).",
+        "Verify the copy: for every file under D:\\fidelity-repo\\packages\\wow-syntropic, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW; report the count compared and any mismatch. Expected: Core.lua, Kinematics.lua, SomaticFlow.lua, UI.lua, FidelityWoW.toc and whatever else the folder holds (list them).",
+        "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityWoW exists, do the same there.",
+        "Report the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
+        "Owner, after /reload: the Fidelity Syntropic Flow panel must read \"Coherence: seed | Strain: not measured\", the FTLE line \"seed\" until you have moved and a number after, and the footer \"S=seed(0.20,0.50,0.95,0.20)\". Then walk across a zone line (Northshire into Elwynn) and type /fidelity audit: it must not say DEVIANT on its own. Paste the panel and the audit."
+      ],
+      "report": [
+        "The merge result and the commit",
+        "The backup folder name, the robocopy summary, the hash count and any mismatch",
+        "After the owner check: the panel text and the audit output verbatim"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-04T05:42:29.860Z"
+    },
+    {
       "id": "H005",
       "priority": 0,
-      "title": "Deploy FidelityEMatrix v1.7.4 from branch francois/serene-euler-51wj3e (the branch the owner already runs) to the TBC Anniversary client and WoW Forever when present; owner pastes the check list",
+      "title": "Deploy FidelityEMatrix v1.7.5 from branch francois/serene-euler-51wj3e (the branch the owner already runs) to the TBC Anniversary client and WoW Forever when present; owner pastes the check list",
       "steps": [
         "git -C D:\\fidelity-repo fetch origin",
         "git -C D:\\fidelity-repo status --short (report it; if the tree is dirty, stop and report blocked with that output; never reset, clean, restore or checkout -f)",
         "git -C D:\\fidelity-repo checkout francois/serene-euler-51wj3e (a plain checkout of the branch; it creates the tracking branch the first time) then git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e. If the merge is not a fast-forward, stop and report blocked with the output of git status.",
-        "Confirm the version: Select-String '## Version' D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc must say 1.7.4 or later; otherwise report blocked with blocked_on \"director: the branch tip is not v1.7.4\" and stop.",
+        "Confirm the version: Select-String '## Version' D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc must say 1.7.5 or later; otherwise report blocked with blocked_on \"director: the branch tip is not v1.7.5\" and stop.",
         "npm --prefix D:\\fidelity-repo install (once; fengari) then node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs D:\\fidelity-repo\\tools\\ematrix-toc.test.mjs (expect 0 fail)",
         "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\FidelityEMatrix \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix\" /E (no /MIR, no /PURGE).",
         "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared (expect 15) and any mismatch. Expected files: EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, FidelityEMatrix_Vanilla.toc, FidelityEMatrix_TBC.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6).",
         "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityEMatrix (or its parent AddOns folder) exists, do the same backup, copy and hash check there; report whether that client exists and its version from its .build.info if present.",
         "Report the version from the toc and the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
-        "Owner, after /reload: paste the one login line (it says v1.7.4 and what came up, including cells with a source), /fide diag, /fide world status, /fide terrain probe (at the Northshire Abbey door), /fide terrain status, /fide status. Then /fide box show and click the box: say whether each cell visibly squashes and flashes as the wave crosses it (the flip now lasts 0.26 s; before it was one frame), whether the E wall still shows diagonal stripes of one orientation (it must not), and from which side the closed E tiles look lit (upper left is the known defect the atlas will fix). Set status blocked with blocked_on \"owner: paste the login line, the probes and the box observations\" until the owner reports."
+        "Owner, after /reload: paste the one login line (it says v1.7.5 and what came up, including cells with a source), /fide diag, /fide world status, /fide terrain probe (at the Northshire Abbey door), /fide terrain status, /fide status. Then /fide box show and click the box: say whether each cell visibly squashes and flashes as the wave crosses it (the flip now lasts 0.26 s; before it was one frame), whether the E wall still shows diagonal stripes of one orientation (it must not), and from which side the closed E tiles look lit (upper left is the known defect the atlas will fix). Set status blocked with blocked_on \"owner: paste the login line, the probes and the box observations\" until the owner reports."
       ],
       "report": [
         "git status before, the checkout and merge result (new HEAD), the toc version, all test summary lines",

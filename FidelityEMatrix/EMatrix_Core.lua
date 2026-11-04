@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.7.4"
+local VERSION = "1.7.5"
 local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
@@ -744,8 +744,13 @@ function ApplyDepthPlanes(eyeX, eyeY)
             Math.ParallaxShift(eyeY, Z_SUBJECT) * modelGain)
     end
 
+    -- With the bound draw on there is no single window, only cells that follow their sources, so
+    -- the window's walls, glass and reticle stay off (the owner saw the reticle floating over the
+    -- closed E wall, 04 Nov 2026).
+    local bound = Cfg("bindCells") and true or false
+
     -- Inner walls: see more of the far wall's opposite side as the eye moves
-    local wallsOn = (not split) and openAmount > 0.001
+    local wallsOn = (not split) and openAmount > 0.001 and not bound
     if wallL then
         if wallsOn then
             local l, r, t, b = Math.WallWidths(eyeX, eyeY, WALL_BASE, WALL_GAIN, WALL_MIN, WALL_MAX)
@@ -758,7 +763,7 @@ function ApplyDepthPlanes(eyeX, eyeY)
     end
 
     -- Cover glass (z = -0.15) and pop-out reticle (z = -0.4): move against the eye
-    local frontOn = (not split) and openAmount > 0.001
+    local frontOn = (not split) and openAmount > 0.001 and not bound
     if sheenTex then
         if frontOn and mode ~= "anaglyph" then
             sheenTex:SetPoint("CENTER", frameFront, "CENTER",
@@ -1250,6 +1255,7 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             if sub == "on" or sub == "off" then
                 FidelityEMatrix_Config.bindCells = (sub == "on")
                 bindAge = 1
+                appliedEyeX = nil -- the walls, glass and reticle follow the gate: re-apply the planes
                 if not FidelityEMatrix_Config.bindCells then RefreshOpenCells() end
                 Say("Binding draw %s: %s", sub == "on" and "ON" or "off", sub == "on" and "bound cells follow their sources, unbound cells stay closed (no source)" or "the box draws as before")
             elseif sub == "status" then

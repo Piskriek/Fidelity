@@ -1,6 +1,17 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## Council round 2026-11-04-bridges: vector steering and bridge checks, v1.7.4 (04 Nov 2026, 05:01Z, Claude in the cloud) — start here
+## News back from the game: v1.7.4 seen, the terrain's cause found, v1.7.5 (04 Nov 2026, 05:45Z, Claude in the cloud) — start here
+
+**The owner's four screenshots (v1.7.4 on TBC Anniversary, 6:31 to 6:37 local), read against the three steers:**
+- **Round 3, the binding registry: `used`.** The login line counts sources; `/fide cells` lists eight with real kinds (the player `symbolic`, seven units `measured`: one `near 1.00`, six `mid 0.50`, all `age 0.0s`); with `/fide bind on` the box settles into exactly the bound state, cells 2 to 8 of the top row open, everything else closed, no glint.
+- **Round 2's in-game checks:** the flip is visible (a frame catches cells mid-squash as the wave crosses); no diagonal stripes in the E wall; the closed tiles are lit from the upper left, the known defect. The definition still waits for the owner's word.
+- **Round 1: `changed`.** The lattice break is in the game. The probe, pasted for the first time, found why the terrain draws nothing, and it was ours: `UnitPosition` was read west-east first, so the player at the Abbey door was looked up at tile `48:32` (`pos -97.6, -8763.0 ... MISSING, 0 tile(s) around, ground nil`); Northshire is `32:48`. The headless stub had copied the same wrong belief, so every test agreed with the mistake.
+
+**Landed as v1.7.5:** `UnitPosition`'s first return is the north-south coordinate (the probe's numbers are now a test that must land on tile 32:48); the window's reticle, glass and walls stay off while the bound draw is on (they floated over the closed E wall); H005 gated on 1.7.5; **H008** added: the FidelityWoW addon (`packages/wow-syntropic`) is deployed separately from the EMatrix folder, which is why the HUD still read `Coherence: 99%`, so its seed labels and the false-teleport fix are not in the game yet.
+
+**The next terrain check:** on v1.7.5, `/fide terrain probe` at the Abbey door must say `tile azeroth:32:48 FOUND` with a ground height near 80 and placements listed; then `/fide terrain status` says how many props drew and how many models loaded or failed.
+
+## Council round 2026-11-04-bridges: vector steering and bridge checks, v1.7.4 (04 Nov 2026, 05:01Z, Claude in the cloud)
 
 **The owner:** "now that you know what it is you can do a round of vector steering and bridge checks." Six haiku voices in `docs/council/2026-11-04-bridges/` (B1 binding architect, B2 channel builder, B3 vector steering; O1 the WoW inputs, O2 the holon's flows, O3 the chain to the owner); the steer is `STEER.md` there, the landing `LANDED.md` (pending the owner's pastes).
 

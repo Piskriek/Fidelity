@@ -171,10 +171,12 @@ local function plugPad(rx, ry, lt)
     padState = { name = "Virtual Xbox pad", sticks = { { x = 0, y = 0, len = 0 }, { x = rx, y = ry, len = math.sqrt(rx * rx + ry * ry) } }, axes = { 0, 0, rx, ry, lt or 0, 0 } }
 end
 
--- Player world state for the terrain overlay (UnitPosition returns y first, then x)
+-- Player world state for the terrain overlay. UnitPosition returns the north-south coordinate
+-- (the map data's x) FIRST, then the west-east one: measured by the owner's probe on 04 Nov 2026
+-- (the stub used to return them the other way round, copying the code's wrong belief).
 local playerPos = { x = -8897.0, y = -178.3, instance = 0 } -- at the Northshire Abbey door
 local playerFacing, cameraZoom = 0.0, 10.0
-_G.UnitPosition = function(unit) if unit == "player" then return playerPos.y, playerPos.x, 0, playerPos.instance end return nil end
+_G.UnitPosition = function(unit) if unit == "player" then return playerPos.x, playerPos.y, 0, playerPos.instance end return nil end
 _G.GetPlayerFacing = function() return playerFacing end
 _G.GetCameraZoom = function() return cameraZoom end
 function Region:SetModel(asset) if asset == nil then error("Usage: SetModel(asset)") end self.model = asset end
@@ -703,7 +705,14 @@ test("terrain: tile lookup, ground height and the player state from UnitPosition
     check(near(mid, 100.0, 1e-6), "halfway between 120 and 80 must be 100, got " .. tostring(mid))
     tile.heights[1] = 800
     local ps = T.PlayerState()
-    check(ps and near(ps.x, -8897.0) and near(ps.y, -178.3) and ps.mapName == "azeroth", "PlayerState must map UnitPosition (y, x) to x north / y west")
+    check(ps and near(ps.x, -8897.0) and near(ps.y, -178.3) and ps.mapName == "azeroth", "PlayerState must take UnitPosition's first return as x (north-south) and the second as y (west-east)")
+    -- the owner's probe numbers (04 Nov 2026): first return -8763.0, second -97.6, must land on tile 32:48
+    local savedUP = _G.UnitPosition
+    _G.UnitPosition = function() return -8763.0, -97.6, 0, 0 end
+    local probe = T.PlayerState()
+    local pc, pr, ptile = T.TileFor(probe.mapName, probe.x, probe.y)
+    check(pc == 32 and pr == 48 and ptile ~= nil, string.format("the probe's position must be tile 32:48 (Northshire), got %d:%d", pc, pr))
+    _G.UnitPosition = savedUP
     -- the client family picks the data set: this stub is a 2.5.6 client (toc 20506) -> tbc
     check(T.Family() == "tbc", "a 2.5.6 client must use the tbc data, got " .. T.Family())
     check(T.BuildLabel():find("2.5.6.70577", 1, true), "build label must name the data build: " .. T.BuildLabel())
@@ -1044,6 +1053,10 @@ test("binding registry: sources are named, valued, aged and kinded; the draw fol
     check(src3 and src3.source:find(":far$") and src3.value == 0.2, "the far unit is a measured source at 0.2")
     check(ns.cells[2].flapTex.texture:find("Window"), "with the gate on the mid actor's cell opens")
     check(ns.cells[3].flapTex.texture:find("Closed"), "the far actor's cell (0.2) stays closed")
+    -- the window's own planes are off while the bound draw is on (no single window to frame)
+    local st = ns.State()
+    check(not st.reticle.mono.shown and not st.sheen.shown, "reticle and glass must be hidden while the bound draw is on")
+    for _, w in ipairs(st.walls) do check(not w.shown, "a wall is shown while the bound draw is on") end
     printed = {}
     slash("cells")
     check(printed[1] and printed[1]:find("have a source", 1, true) and #printed >= 3, "/fide cells lists the sources")
