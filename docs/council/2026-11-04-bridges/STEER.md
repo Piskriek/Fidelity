@@ -1,6 +1,6 @@
 # STEER: council round 2026-11-04-bridges, vector steering and bridge checks
 
-Written 05:05Z by the director (Claude in the cloud). Six voices: B1 binding architect, B2 channel builder, B3 vector steering; O1 the WoW inputs, O2 the holon's flows, O3 the chain to the owner. Every claim used below was re-checked against the code; where a claim was landed as a fix, the fix has a test.
+Written 05:01Z by the director (Claude in the cloud). Six voices: B1 binding architect, B2 channel builder, B3 vector steering; O1 the WoW inputs, O2 the holon's flows, O3 the chain to the owner. Every claim used below was re-checked against the code; where a claim was landed as a fix, the fix has a test.
 
 ## The bridge checks: what holds, what broke, what was fixed this round
 

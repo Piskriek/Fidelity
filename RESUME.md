@@ -1,6 +1,6 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## Council round 2026-11-04-bridges: vector steering and bridge checks, v1.7.4 (04 Nov 2026, 05:05Z, Claude in the cloud) — start here
+## Council round 2026-11-04-bridges: vector steering and bridge checks, v1.7.4 (04 Nov 2026, 05:01Z, Claude in the cloud) — start here
 
 **The owner:** "now that you know what it is you can do a round of vector steering and bridge checks." Six haiku voices in `docs/council/2026-11-04-bridges/` (B1 binding architect, B2 channel builder, B3 vector steering; O1 the WoW inputs, O2 the holon's flows, O3 the chain to the owner); the steer is `STEER.md` there, the landing `LANDED.md` (pending the owner's pastes).
 
