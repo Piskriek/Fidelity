@@ -1,7 +1,7 @@
 {
  "about": "The recorded reading per rung (council round 2026-11-04-rungs). Each row is one reading: the rung it witnesses, the witness class and reader, the time (the step stamp, the client's local clock), the artifact with the SHA256 its report's MANIFEST lists, the context it was taken in, the operating point (value) and what was observed. packages/triad-369/src/rung_ledger.mjs turns the rows into verdicts; tools/rung-ledger.test.mjs makes the addon's constants answer to them. A value moves only when a counted reading moves it.",
  "conventions": {
-  "fit.observed": "top and bottom: the gaps from the red frame's top and bottom edges to the model's outermost part (twigs and stems included, not only the dense leaves), as fractions of the frame height; 'touches' when the model reaches that edge and whether it is cut there cannot be seen, 'clipped' when it visibly runs past it, 'hidden' when something covers it. width: the model's width as a fraction of the frame width, or 'overflow'. fill: a first reading that recorded only how much of the frame the model fills.",
+  "fit.observed": "top and bottom: the gaps from the red frame's top and bottom edges to the model's outermost part (twigs and stems included, not only the dense leaves), as fractions of the frame height; 'touches' when the model reaches that edge and whether it is cut there cannot be seen, 'clipped' when it visibly runs past it, 'hidden' when something covers it. topBound and bottomBound: with that edge hidden, the largest gap the visible part allows (the model reaches at least that far). width: the model's width as a fraction of the frame width, or 'overflow'. fill: a first reading that recorded only how much of the frame the model fills.",
   "coverage": "every camera-distance fit shot in the nine reports has a second reading (35 shots). The two model-scale shots of the fifth report (WoWScrnShot_110426_112707 and 112755) are not fit readings: they vary SetModelScale at the default camera, not the camera factor a fit is.",
   "decisive": "a reading passes only when its residual plus its precision is within the tolerance, and fails only when its residual minus its precision is outside it; a reading nearer the tolerance than its own precision decides nothing",
   "precision": "about half a tick of the reading grid: 0.03 on a marked frame, 0.05 on the known rectangle; 0.1 for a first reading by eye",
@@ -962,10 +962,11 @@
    "value": 3.0,
    "observed": {
     "top": 0.24,
-    "bottom": 0.11
+    "bottom": "hidden",
+    "bottomBound": 0.11
    },
    "precision": 0.05,
-   "note": "leaf tips at about 0.24 below the top; its tan stems right of the player copy reach about 0.89 of the frame (absent from 120001 and 120004, the same pose without the bush), though the leaves end near 0.82 (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
+   "note": "leaf tips at about 0.24 below the top; its base is behind the player copy, but its tan stems beside the copy reach at least 0.89 of the frame (absent from 120001 and 120004, the same pose without the bush), so the gap is at most 0.11 (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
   },
   {
    "id": "r7-122430-bush-2",

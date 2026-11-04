@@ -174,10 +174,12 @@ def cmd_twin(with_model, without):
           f" | top {edge(s)} bottom {edge(H - 1 - e)} width {width} fill {round((e - s + 1) / H, 3)}"
           f" | precision about {round(2 / H, 3)} of the frame (ledger fields: top, bottom, width)")
     if low is not None:
-        ls, le = low[0], low[1]
-        if abs(ls - s) / H > 0.01 or abs(le - e) / H > 0.01:
-            print(f"twin: at a low threshold the model reaches top {edge(ls)} bottom {edge(H - 1 - le)}: a dim edge (twigs, a dark crown)"
-                  f" or something else moving; check by eye on a brightened crop (frame_fill.py sheet) before entering the row")
+        ls, le, lc0, lc1 = low
+        lsides = lc0 <= near or lc1 >= W - 1 - near
+        lwidth = "overflow" if lsides else round((lc1 - lc0 + 1) / W, 3)
+        if abs(ls - s) / H > 0.01 or abs(le - e) / H > 0.01 or abs(lc0 - c0) / W > 0.01 or abs(lc1 - c1) / W > 0.01:
+            print(f"twin: at a low threshold the model reaches top {edge(ls)} bottom {edge(H - 1 - le)} width {lwidth}: a dim edge (twigs, a dark"
+                  f" crown) or something else moving; check by eye on a brightened crop (frame_fill.py sheet) before entering the row")
     return 0
 
 

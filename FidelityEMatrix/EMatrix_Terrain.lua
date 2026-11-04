@@ -286,19 +286,20 @@ end
 -- its frame at x0.6 (now x0.53); the crate filled 0.80 at x0.42 with its planks past both side edges
 -- (now x0.38; its reaches differ too much to pass in any 0.8-wide frame, and a frame about 1.8 as wide
 -- as tall would hold its width); the tree and canopy04 ran past the top edge at x2.8 (trials at x5.6).
--- At x2 the bush's twigs reach 0.10 to 0.12 below the frame's top and its stems reach the bottom edge:
--- undecided; its one measured base (x3, unmarked) gives reaches of up 0.78 and down 1.17, which no k
--- alone fits, so the next twins decide whether it needs a vertical offset. The jar's base was hidden
--- behind the world overlay's copy of the player. None is confirmed: the next report's twins read both
--- edges of every model.
+-- At x2 the bush's twigs reach 0.10 to 0.12 below the frame's top and its stems touch the bottom edge,
+-- where a reading cannot see whether the frame cuts it, so x2 can never be decided; its base, hidden at
+-- x3, reaches at least 0.89 there, so its down reach is at least 1.17 against up 0.78. It moves to a
+-- trial at x2.44, where its twin can see both edges; by those bounds no k alone fills its frame (at
+-- most 0.83), so a vertical offset is the likely next step. The jar's base was hidden behind the world
+-- overlay's copy of the player. None is confirmed: the next report's twins read both edges.
 local REF_HEIGHT = 2.5
-local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 5.6, westfallbarrel01 = 0.53, jar01 = 0.37, westfallcrate = 0.38, elwynntreecanopy04 = 5.6 }
+local FIT_BY_FILE = { elwynnbush09 = 2.44, elwynntreemid01 = 5.6, westfallbarrel01 = 0.53, jar01 = 0.37, westfallcrate = 0.38, elwynntreecanopy04 = 5.6 }
 -- The ledger's verdict on each value above (holds, fitted, fails, contested), the report it cites, and
 -- for a fitted value where the value came from: "estimated" (the evaluator's proposal from the
 -- readings), "read" (readings at this value exist but none could decide) or "trial" (a step after
--- an overflow, not an estimate).
+-- the model reached an edge of its frame, to a value where a reading can decide; not an estimate).
 local FIT_STATUS = {
-    elwynnbush09 = { "fitted", "20261104-1247", "read" },
+    elwynnbush09 = { "fitted", "20261104-1247", "trial" },
     elwynntreemid01 = { "fitted", "20261104-1321", "trial" },
     westfallbarrel01 = { "fitted", "20261104-1247", "estimated" },
     jar01 = { "fitted", "20261104-1321", "read" },
@@ -306,9 +307,9 @@ local FIT_STATUS = {
     elwynntreecanopy04 = { "fitted", "20261104-1321", "trial" },
 }
 -- (nominal height, the fit in use), ascending: an unmeasured file takes an interpolation between them,
--- a guess. The tree's x5.6 is a trial after it overflowed at x2.8, so the guess for every file of
--- 14 yd and up is that trial too; canopy04's own trial adds no knot.
-local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.38 }, { 1.2, 0.53 }, { 2.5, 2.0 }, { 14, 5.6 } }
+-- a guess. The bush's x2.44 and the tree's x5.6 are trials, so the guesses between and beyond them
+-- are trials too; canopy04's own trial adds no knot.
+local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.38 }, { 1.2, 0.53 }, { 2.5, 2.44 }, { 14, 5.6 } }
 local function FileKey(path)
     local p = tostring(path or ""):lower():gsub("\\", "/")
     return p:match("([^/]+)%.%w+$") or p:match("([^/]+)$") or p
@@ -341,7 +342,7 @@ local STATUS_TEXT = {
     holds = "a fit confirmed in report %s",
     estimated = "a fit estimated from report %s, not confirmed",
     read = "a fit read at this value in report %s, undecided",
-    trial = "a trial value after report %s (it overflowed there), not a fit yet",
+    trial = "a trial value after report %s (it reached the frame's edge there), not a fit yet",
     fails = "a fit that failed in report %s, to be re-read",
     contested = "a fit contested in report %s",
 }

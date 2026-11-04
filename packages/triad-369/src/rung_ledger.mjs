@@ -48,7 +48,8 @@ export const MARGIN = 0.02; // a proposal leaves this gap (of the frame height) 
 export const HEADROOM = 0.01; // a proposal can pass only if its predicted residual clears the tolerance by this much
 const EDGE_WORDS = ['touches', 'clipped', 'hidden'];
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
-const isEdge = e => e === undefined || isNum(e) || EDGE_WORDS.includes(e);
+const isFrac = v => isNum(v) && v >= 0 && v <= 1; // a gap, a width or a fill: a fraction of the frame
+const isEdge = e => e === undefined || isFrac(e) || EDGE_WORDS.includes(e);
 
 const finite = Number.isFinite;
 const round2 = v => Math.round(v * 100) / 100;
@@ -70,8 +71,10 @@ export const KINDS = Object.freeze({
   // how much of its red-edged test frame the model fills, top to bottom, at the camera factor k
   fit: {
     witnesses: ['owner', 'director'], echoes: ['headless', 'typed-constant'], atValue: true, precise: true, test: fitTest, estimate: estimateFit,
-    valid: o => isEdge(o.top) && isEdge(o.bottom) && (o.width === undefined || isNum(o.width) || o.width === 'overflow')
-      && (o.fill === undefined || isNum(o.fill)) && (o.top !== undefined || o.bottom !== undefined || o.fill !== undefined),
+    valid: o => isEdge(o.top) && isEdge(o.bottom) && (o.width === undefined || isFrac(o.width) || o.width === 'overflow')
+      && (o.fill === undefined || isFrac(o.fill)) && (o.top !== undefined || o.bottom !== undefined || o.fill !== undefined)
+      && (o.topBound === undefined || (o.top === 'hidden' && isFrac(o.topBound)))
+      && (o.bottomBound === undefined || (o.bottom === 'hidden' && isFrac(o.bottomBound))),
   },
   // predicted feet and tops against real ones in an overlay-off twin (no rows yet: the tenth report)
   projection: { witnesses: ['owner', 'director'], echoes: ['probe-print', 'overlay-on', 'headless'], atValue: false, needsPose: true, precise: true, valid: o => o.residual === undefined || isNum(o.residual), test: residualTest },
@@ -136,7 +139,8 @@ function median(xs) {
  * in frame heights: up = k (0.5 - top) above the mid-line and down = k (0.5 - bottom) below it.
  * Both are invariant in k (the barrel's five readings, x0.6 to x3, agree within 0.025), as
  * k x fill = up + down is. An edge that touches or runs past the frame gives only a lower bound,
- * 0.5 k, on its reach. The proposal puts the model's larger reach MARGIN inside the frame,
+ * 0.5 k, on its reach, and a hidden edge whose visible part reaches within topBound or bottomBound
+ * of the frame edge gives the bound k (0.5 - bound). The proposal puts the model's larger reach MARGIN inside the frame,
  * k = max(up, down) / (0.5 - MARGIN), so the next reading sees two edges and can decide; there the
  * base sits just above the frame's bottom when down >= up, where the prop's projected foot is
  * anchored. canPass says whether that k can pass at all, with HEADROOM to spare: a model whose
@@ -153,25 +157,44 @@ export function estimateFit(rows, rung, tau) {
     const o = row.observed || {}, k = row.value;
     if (typeof o.top === 'number') ups.push(k * (0.5 - o.top));
     else if (o.top === 'touches' || o.top === 'clipped') upLow = Math.max(upLow, 0.5 * k);
+    else if (isNum(o.topBound)) upLow = Math.max(upLow, k * (0.5 - o.topBound));
     if (typeof o.bottom === 'number') downs.push(k * (0.5 - o.bottom));
     else if (o.bottom === 'touches' || o.bottom === 'clipped') downLow = Math.max(downLow, 0.5 * k);
+    else if (isNum(o.bottomBound)) downLow = Math.max(downLow, k * (0.5 - o.bottomBound));
     if (typeof o.width === 'number' && finite(aspect)) widths.push(k * o.width * aspect);
     if (o.top === undefined && o.bottom === undefined && typeof o.fill === 'number') fills.push(k * o.fill);
     const reached = ['clipped', 'touches'].includes(o.top) || ['clipped', 'touches'].includes(o.bottom);
     if (reached) reachedK = Math.max(reachedK, k); else allReached = false;
   }
+  const clampK = want => Math.min(Math.max(want, K_MIN), K_MAX);
   if (ups.length && downs.length) {
     const up = Math.max(median(ups), upLow), down = Math.max(median(downs), downLow);
     const want = Math.max(up, down) / (0.5 - MARGIN);
-    const k = Math.min(Math.max(want, K_MIN), K_MAX);
-    const inside = k >= want - 1e-9; // the clamp at K_MAX would leave it clipped
-    const fillAt = inside ? (up + down) / k : null;
+    const value = round2(clampK(want)); // judged at the value proposed, not before rounding
+    const inside = value >= want - 0.005; // rounding may move the margin by half a hundredth; the clamp at K_MAX would clip
+    const fillAt = inside ? (up + down) / value : null;
     const out = {
-      value: round2(k), rule: 'the larger reach, a margin inside the frame', reaches: { up: round3(up), down: round3(down) },
+      value, rule: 'the larger reach, a margin inside the frame', reaches: { up: round3(up), down: round3(down) },
       fillAt: fillAt === null ? null : round3(fillAt), canPass: inside && 1 - fillAt + HEADROOM <= tau,
     };
-    if (widths.length) out.aspectNeeded = round3(median(widths) / k);
+    if (widths.length) out.aspectNeeded = round3(median(widths) / value);
     return out;
+  }
+  // one reach measured and the other only bounded from below, the bound the larger: a trial at the bound.
+  // A larger true reach only lowers the best fill, so a bound that already forbids a pass is decisive for canPass.
+  const oneSided = (seen, bound) => {
+    const want = bound / (0.5 - MARGIN);
+    const value = round2(clampK(want));
+    const bestFill = 0.5 + seen / (2 * bound); // the most it can fill at any k, with the bounded reach at its bound
+    return { value, bestFill: round3(bestFill), canPass: 1 - bestFill + HEADROOM <= tau ? null : false };
+  };
+  if (ups.length && !downs.length && downLow > Math.max(median(ups), upLow)) {
+    const up = Math.max(median(ups), upLow), o = oneSided(up, downLow);
+    return { value: o.value, rule: 'a bound on the larger reach, a margin inside the frame', reaches: { up: round3(up), downAtLeast: round3(downLow) }, bestFill: o.bestFill, canPass: o.canPass };
+  }
+  if (downs.length && !ups.length && upLow > Math.max(median(downs), downLow)) {
+    const down = Math.max(median(downs), downLow), o = oneSided(down, upLow);
+    return { value: o.value, rule: 'a bound on the larger reach, a margin inside the frame', reaches: { upAtLeast: round3(upLow), down: round3(down) }, bestFill: o.bestFill, canPass: o.canPass };
   }
   if (allReached) return { value: round2(Math.min(2 * reachedK, K_MAX)), rule: 'doubled: it reached or ran past an edge at every value read' };
   if (fills.length && !ups.length && !downs.length) return { value: round2(median(fills)), rule: 'k x fill (edges not recorded)' };

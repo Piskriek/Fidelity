@@ -53,7 +53,7 @@ test('the fit status the addon prints is the ledger\'s verdict, from the same re
         assert.ok(v.estimate && v.estimate.rule === 'the larger reach, a margin inside the frame' && Math.abs(v.estimate.value - k) <= 0.02, `${file}: 'estimated' needs the evaluator's estimate at that value`);
         assert.ok(!v.readAtValue, `${file}: an estimated value has no reading at it yet`);
       }
-      if (st.how === 'trial') assert.ok(v.estimate && /^doubled/.test(v.estimate.rule) && Math.abs(v.estimate.value - k) <= 0.02, `${file}: 'trial' needs a doubling step`);
+      if (st.how === 'trial') assert.ok(v.estimate && /^(doubled|a bound)/.test(v.estimate.rule) && Math.abs(v.estimate.value - k) <= 0.02, `${file}: 'trial' needs a doubling step or a step to a bound`);
       if (st.how === 'read') assert.ok(v.readAtValue && v.untestable.length > 0, `${file}: 'read' needs a reading at this value that could not decide`);
     }
   }
@@ -91,9 +91,8 @@ test('verdicts from the rows through the ninth report, at the values v1.8.8 uses
   for (const f of Object.keys(C.fitByFile)) assert.ok(res.frontier.includes('fit:' + f), f + ' is on the frontier');
   assert.ok(!res.frontier.includes('frame:Model'), 'a frame kind not in use is not asked for');
   for (const d of res.verdicts.values()) assert.ok(VERDICTS.includes(d.verdict));
-  // the bush at x2: its stems touch the frame's bottom in every reading, so none can decide
-  const bush = res.verdicts.get('fit:elwynnbush09');
-  assert.ok(bush.untestable.length >= 7 && bush.untestable.every(u => /touches/.test(u.reason)), 'the bush\'s x2 readings decide nothing: ' + JSON.stringify(bush.untestable));
+  // the bush moved to its trial: no reading at x2.44 yet
+  assert.equal(res.verdicts.get('fit:elwynnbush09').readAtValue, false);
   // the estimates the write-back took
   const est = f => res.verdicts.get('fit:' + f).estimate;
   assert.equal(est('westfallbarrel01').value, 0.53);
@@ -103,8 +102,9 @@ test('verdicts from the rows through the ninth report, at the values v1.8.8 uses
   assert.ok(est('westfallcrate').aspectNeeded > 1.7, 'the crate needs a frame about 1.8 as wide as tall');
   assert.equal(est('elwynntreecanopy04').value, 5.6);
   assert.equal(est('elwynntreemid01').value, 5.6, 'the tree ran past the top of its wide frame at x2.8: a doubled trial');
-  assert.deepEqual(est('elwynnbush09').reaches, { up: 0.78, down: 1.17 }, 'the bush reaches further below its mid-line than above it');
-  assert.equal(est('elwynnbush09').canPass, false, 'by its readings no k alone fills its frame; the twins decide');
+  assert.deepEqual(est('elwynnbush09').reaches, { up: 0.78, downAtLeast: 1.17 }, 'the bush\'s base is only bounded: hidden at x3, touching at x2');
+  assert.equal(est('elwynnbush09').value, 2.44, 'its trial puts the bound a margin inside the frame');
+  assert.equal(est('elwynnbush09').canPass, false, 'even at its bound no k alone fills its frame (at most 0.83)');
   assert.equal(est('jar01'), null, 'the jar\'s base was hidden: nothing is proposed');
 });
 
@@ -112,10 +112,12 @@ test('at the values v1.8.7 used, the barrel, the crate and canopy04 fail and the
   const old = { ...C, fitByFile: { elwynnbush09: 2.0, elwynntreemid01: 2.8, westfallbarrel01: 0.6, jar01: 0.37, westfallcrate: 0.42, elwynntreecanopy04: 2.8 } };
   const res = run(rungsFor(old));
   for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01']) assert.equal(res.verdicts.get('fit:' + f).verdict, 'fails', f);
-  assert.equal(res.verdicts.get('fit:elwynnbush09').verdict, 'fitted', 'the bush at x2 is undecided, not failed');
+  const bush = res.verdicts.get('fit:elwynnbush09');
+  assert.equal(bush.verdict, 'fitted', 'the bush at x2 is undecided, not failed');
+  assert.ok(bush.untestable.length >= 7 && bush.untestable.every(u => /touches/.test(u.reason)), 'its stems touch the frame\'s bottom in every x2 reading, so none can decide: ' + JSON.stringify(bush.untestable));
   const barrel = res.verdicts.get('fit:westfallbarrel01');
   assert.ok(barrel.superseded.some(s => s.id === 'r8-124647-barrel-1' && s.by === 'r8-124647-barrel-2'), 'the grid reading of 124647 supersedes the first reading of the same shot');
-  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01']) assert.equal(res.verdicts.get('fit:' + f).estimate.value, C.fitByFile[f], f);
+  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01', 'elwynnbush09']) assert.equal(res.verdicts.get('fit:' + f).estimate.value, C.fitByFile[f], f);
 });
 
 test('the lock: a reading counts only in the context it was taken in; a version bump re-keys nothing; a base change re-keys exactly what rests on it', () => {
@@ -180,10 +182,13 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
     { ...base, id: 'noprecision', precision: undefined },
     { ...base, id: 'negprecision', precision: -0.5 },
     { ...base, id: 'textprecision', precision: '0.03' },
+    { ...base, id: 'negativegap', observed: { top: -0.15, bottom: 0.2 } },
+    { ...base, id: 'gapoverone', observed: { top: 0.1, bottom: 1.4 } },
+    { ...base, id: 'boundseen', observed: { top: 0.1, bottom: 0.1, bottomBound: 0.05 } },
   ];
   const r2 = run(rungsFor(), [...ledger.rows, ...synth]);
   const w2 = id => (r2.refused.find(r => r.id === id) || {}).reason;
-  for (const id of ['nan', 'inf', 'nullvalue', 'novalue', 'quoted', 'noobs', 'badtime', 'mapnoobs', 'loadquoted', 'failquoted', 'drawnword', 'topword', 'widthword', 'noprecision', 'negprecision', 'textprecision']) assert.equal(w2(id), 'non-finite', id);
+  for (const id of ['nan', 'inf', 'nullvalue', 'novalue', 'quoted', 'noobs', 'badtime', 'mapnoobs', 'loadquoted', 'failquoted', 'drawnword', 'topword', 'widthword', 'noprecision', 'negprecision', 'textprecision', 'negativegap', 'gapoverone', 'boundseen']) assert.equal(w2(id), 'non-finite', id);
   assert.equal(w2('future'), 'future');
   assert.equal(w2('stub'), 'echo'); assert.equal(w2('typed'), 'echo');
   assert.equal(w2('hostfit'), 'witness', 'no host API reads a fill');
@@ -216,9 +221,11 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
 test('the refusal order is fixed: a row with two defects is refused for the earlier one, in REFUSALS order', () => {
   const base = rowById.get('r8-124647-barrel-2');
   const proj = { id: 'p', rung: 'projection:abbey-door', kind: 'measured', witness: 'director', at: '2026-11-04 13:16:58', artifact: base.artifact, context: { pose: 'abbey-door' }, value: 0.35, observed: { residual: 0.02 }, precision: 0.01 };
-  // every adjacent pair of REFUSALS that one row can carry (echo and witness cannot co-occur, nor future and stale)
+  // every adjacent pair of REFUSALS that one row can carry. Every echo witness is also outside its kind's
+  // witness list, so echo and witness always co-occur, and the 'stub' row of the refusals test pins that pair;
+  // a row cannot be both in the future and stale.
   const adjacent = [
-    { ...base, id: 'rung+duplicate', rung: 'fit:nothing-here' },
+    { ...base, id: 'rung+duplicate', rung: 'fit:nothing-here' }, // takes base.id below: both defects
     { ...base, id: 'duplicate+non-finite', value: NaN },
     { ...base, id: 'non-finite+kind', id2: 1, value: NaN, kind: 'symbolic' },
     { ...base, id: 'kind+echo', kind: 'symbolic', witness: 'headless' },
@@ -227,18 +234,26 @@ test('the refusal order is fixed: a row with two defects is refused for the earl
     { ...base, id: 'key+future', id2: 1, context: { ...base.context, aspect: 1.5 }, at: '2026-11-06 10:00:00' },
     { ...proj, id: 'stale+shutter' },
   ];
-  const rows = [base, ...adjacent.map(r => (r.id === 'duplicate+non-finite' ? { ...r, id: base.id, tag: r.id } : r))];
+  const rows = [base, ...adjacent.map(r => (r.id === 'duplicate+non-finite' || r.id === 'rung+duplicate' ? { ...r, id: base.id, tag: r.id } : r))];
   const windowed = rungsFor().map(r => (r.id === 'projection:abbey-door' ? { ...r, window: 60 } : r));
   const got = admit(rows, windowed, { now: NOW, manifests: ledger.manifests }).refused;
   const reasonOf = id => (got.find(r => r.id === id) || {}).reason;
   for (const r of adjacent) {
     const [a, b] = r.id.split('+');
     assert.ok(REFUSALS.indexOf(a) + 1 === REFUSALS.indexOf(b), `${r.id} is an adjacent pair of REFUSALS`);
-    const id = r.id === 'duplicate+non-finite' ? base.id : r.id;
-    const reasons = got.filter(x => x.id === id).map(x => x.reason);
+    const id = r.id === 'duplicate+non-finite' || r.id === 'rung+duplicate' ? base.id : r.id;
+    const reasons = got.filter(x => x.id === id && x.rung === r.rung).map(x => x.reason);
     assert.ok(reasons.includes(a) && !reasons.includes(b), `${r.id}: refused as ${reasons.join(', ')}, expected ${a}`);
   }
   assert.ok(reasonOf('kind+echo') === 'kind');
+  // the rung+duplicate row is refused as 'rung', and its duplicate+non-finite twin as 'duplicate': both carry base.id
+  const forBase = got.filter(x => x.id === base.id).map(x => x.reason).sort();
+  assert.deepEqual(forBase, ['duplicate', 'rung'], 'the two rows reusing base.id: one on no rung, one a duplicate');
+  // a row on no rung does not take its id: a later valid row with that id is still admitted
+  const stray = { ...base, id: 'shared', rung: 'fit:nothing-here' }, real = { ...base, id: 'shared' };
+  const strayFirst = admit([stray, real], rungsFor(), { now: NOW, manifests: ledger.manifests });
+  assert.equal(strayFirst.byRung.get('fit:westfallbarrel01').length, 1, 'the valid row keeps the id the stray named');
+  assert.deepEqual(strayFirst.refused.map(x => x.reason), ['rung']);
   const two = [
     { ...base, id: 'echo+key', witness: 'headless', context: { ...base.context, aspect: 1.5 } },
     { ...base, id: 'kind+manifest', kind: 'symbolic', artifact: { ...base.artifact, sha256: '1'.repeat(64) } },
@@ -265,7 +280,7 @@ test('a reading decides only when it clears the tolerance by its own precision',
   const r = (observed, precision) => ({ value: 1, observed, precision });
   assert.equal(fitTest(r({ top: 0.04, bottom: 0.03 }, 0.03), 0.1).result, 'pass', '0.07 + 0.03 is within 0.1');
   assert.equal(fitTest(r({ top: 0.06, bottom: 0.03 }, 0.03), 0.1).result, 'untestable', '0.09 is within its precision of 0.1');
-  assert.equal(fitTest(r({ top: 0.11, bottom: 'touches' }, 0.03), 0.1).result, 'untestable', 'a touching edge is a gap of 0; 0.11 is within its precision of 0.1');
+  assert.equal(fitTest(r({ top: 0.02, bottom: 'touches' }, 0.03), 0.1).result, 'untestable', 'a touching edge may be cut: one seen gap cannot pass (as a gap of 0 this would pass)');
   assert.equal(fitTest(r({ top: 0.16, bottom: 0.0 }, 0.03), 0.1).result, 'fail', '0.16 - 0.03 is outside 0.1');
   assert.equal(fitTest(r({ fill: 1 }, 0.1), 0.1).result, 'pass', 'a first reading of a full frame passes at its own precision');
   assert.equal(fitTest(r({ fill: 0.9 }, 0.1), 0.1).result, 'untestable');
@@ -387,6 +402,14 @@ test('the estimate only proposes: reaches and their bounds, doubling inside the 
   assert.ok(both.value > 0.5 && both.value < 0.54 && both.canPass, JSON.stringify(both));
   // the proposal leaves MARGIN at the larger reach: the next twin sees that edge as a gap, not a touch
   assert.ok(Math.abs(both.value - round2(both.reaches.down / (0.5 - MARGIN))) < 1e-9, 'k = max(up, down) / (0.5 - MARGIN)');
+  // up larger than down: the top edge sets the proposal
+  const upper = estimateFit([r(1, { top: 0.0, bottom: 0.3 })], rung, 0.1);
+  assert.equal(upper.value, round2(0.5 / (0.5 - MARGIN))); assert.equal(upper.canPass, false);
+  // one reach measured and the other bounded from below, the bound the larger: a trial at the bound, judged by its best fill
+  const bounded2 = estimateFit([r(3, { top: 0.24, bottom: 'hidden', bottomBound: 0.11 }), r(2, { top: 0.11, bottom: 'touches' })], rung, 0.1);
+  assert.equal(bounded2.rule, 'a bound on the larger reach, a margin inside the frame');
+  assert.equal(bounded2.value, round2(1.17 / (0.5 - MARGIN))); assert.equal(bounded2.canPass, false, JSON.stringify(bounded2));
+  assert.equal(estimateFit([r(3, { top: 0.24, bottom: 'hidden' })], rung, 0.1), null, 'a hidden edge with no bound proposes nothing');
   // a model that reached both edges at every value read: double (a pair of shots cannot tell a touch from a cut)
   assert.equal(estimateFit([r(2.8, { top: 'touches', bottom: 'touches' })], rung, 0.1).value, 5.6);
   assert.equal(fitTest({ value: 1, observed: { top: 'touches', bottom: 'touches' }, precision: 0.005 }, 0.1).result, 'untestable', 'a model touching both edges may be cut: it cannot pass');
