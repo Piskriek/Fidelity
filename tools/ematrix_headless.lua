@@ -764,8 +764,8 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     local bush = byPath["world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"]
     check(tree and bush, "tree and bush must be in the pool")
     check(tree.mono.kind == "PlayerModel" and bush.mono.kind == "PlayerModel" and T.FrameKind() == "PlayerModel", "props are PlayerModel frames: a plain Model frame draws nothing on the owner's client (the 10:23 report), got " .. tostring(tree.mono.kind))
-    check(near(tree.mono.camDistance, 16 / 1.25, 1e-9) and near(bush.mono.camDistance, 2, 1e-9) and tree.mono.modelScale == 1, "the camera backs off in proportion to the nominal height (a 16 yd canopy x12.8, the 2.5 yd bush x2 as the owner's fifth report measured), got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
-    check(T.CameraDistanceFor(100) == 16 and T.CameraDistanceFor(0.1) == 0.25 and T.CameraDistanceFor(nil) == 1, "the camera distance is clamped and defaults to the reference height")
+    check(near(tree.mono.camDistance, 2 * (16 / 2.5) ^ 0.4, 1e-9) and near(bush.mono.camDistance, 2, 1e-9) and tree.mono.modelScale == 1, "the camera backs off with the nominal height by the measured rule 2 * (h / 2.5) ^ 0.4 (the bush x2, a 16 yd canopy about x4.2), got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
+    check(near(T.CameraDistanceFor(14), 2 * 5.6 ^ 0.4, 1e-9) and near(T.CameraDistanceFor(1.2), 2 * 0.48 ^ 0.4, 1e-9) and T.CameraDistanceFor(nil) == 2 and T.CameraDistanceFor(1e9) == 16 and T.CameraDistanceFor(1e-9) == 0.25, "the rule gives the tree about x4 and the barrel about x1.5, defaults to the bush, and is clamped")
     check(not byPath["world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2"], "the 150 yd tree must be outside the radius")
     check(tree.mono.model == "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy03.m2", "model must be loaded by its path (verified), got " .. tostring(tree.mono.model))
     check(tree.mono.animation == 0, "a loaded prop must start its idle animation")
@@ -829,11 +829,13 @@ test("terrain test: every press draws on a brand-new frame of the asked kind, th
     slash("terrain test camdist 2")
     check(newest().camDistance == 2 and newest().modelScale == 1, "camdist 2 sets the camera distance scale on a new frame, got " .. tostring(newest().camDistance))
     slash("terrain test pick canopy"); slash("terrain test")
-    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 16 / 1.25, 1e-9), "pick canopy draws the canopy at its own rule, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
+    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 2 * (16 / 2.5) ^ 0.4, 1e-9), "pick canopy draws the canopy at its own rule, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
+    check(T._markFrame() and T._markFrame().shown and T._markFrame().points.ALL and T._markFrame().points.ALL.rel == newest(), "the test marks the frame's edges on a frame above the model")
     slash("terrain test pick any"); slash("terrain test")
     check(tostring(newest().model):find("bush", 1, true) or tostring(newest().model):find("canopy", 1, true), "pick any goes back to the first loaded prop")
     slash("terrain test off")
     for _, f in ipairs(frames) do check(not f.shown, "off hides every test frame") end
+    check(not T._markFrame().shown, "off hides the marks")
     check(_G.FidelityEMatrixFrame.shown, "off shows the box again")
     slash("box hide")
     step(0.6)
@@ -1248,20 +1250,23 @@ test("report panel: buttons run the checks with their chat captured into the sav
     slash("box show"); slash("terrain on"); step(0.6)
     click(3) -- the test on one prop
     check(ns.Terrain.IsEnabled() and not _G.FidelityEMatrixFrame.shown, "the terrain test step hides the box")
-    click(4) -- camera x0.5, pressed before the previous shot's half second has passed
+    click(4) -- the tree by the rule, pressed before the previous shot's half second has passed
     check(r.steps[2].screenshot:find("not taken", 1, true), "a step pressed within the half second supersedes the pending shot: " .. tostring(r.steps[2].screenshot))
     step(0.6)
     check(screenshots == 2, "only the superseding step's own shot is taken, got " .. screenshots)
-    click(8) -- test off
-    check(_G.FidelityEMatrixFrame.shown, "test off shows the box again")
-    check(#r.steps == 4 and r.steps[4].screenshot == "none", "a step without a shot says so")
+    click(9) -- test off, then the scene again (the box stays hidden by that step's own command)
+    check(not ns.Terrain._markFrame().shown, "test off ends the test (the marks are hidden)")
+    check(#r.steps == 4 and r.steps[4].screenshot == "pending", "the scene step takes its own shot")
+    step(0.6)
+    check(screenshots == 3, "the scene step's shot is taken, got " .. screenshots)
+    slash("box show")
     click(11) -- save
     check(reloads == 1, "save reloads the UI to write the file")
     click(12) -- clear
     check(#FidelityEMatrix_Report.steps == 0, "clear empties the report")
     printed = {}
     slash("report status")
-    check(printed[1] and printed[1]:find("0 step(s)", 1, true) and printed[1]:find("2 screenshot(s)", 1, true), "status counts steps and screenshots: " .. tostring(printed[1]))
+    check(printed[1] and printed[1]:find("0 step(s)", 1, true) and printed[1]:find("3 screenshot(s)", 1, true), "status counts steps and screenshots: " .. tostring(printed[1]))
     slash("report hide")
     check(not p.shown, "panel hidden")
     slash("box hide")

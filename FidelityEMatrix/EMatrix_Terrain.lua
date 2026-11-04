@@ -247,16 +247,19 @@ end
 --- No SetCamera here: every prop had SetCamera(0) from v1.6 to v1.7.9 and none was ever visible
 --- on the owner's client, including the client's own question-mark model (the 09:35 report), and a
 --- doodad file has no camera 0 to select. The test's "cam 0" variant puts the call back on purpose.
--- A PlayerModel frame frames whatever it loads as if it were a character at one camera distance,
--- so the camera backs off in proportion to the model's nominal height. The reference is measured:
--- in the owner's fifth report (v1.8.3, 11:26 local) the 2.5 yd bush overflowed its frame at x1 and
--- x0.5, fitted it whole at x2, and sat small at its foot at model scale 0.3, so one camera
--- distance frames about 1.25 yd of height and the model's base sits at the frame's bottom.
-local REF_HEIGHT = 1.25
+-- A PlayerModel frame's own camera already backs off with the model's bounds, but not fully, so
+-- the factor grows with the nominal height more slowly than in proportion. Two points from the
+-- owner's reports: the 2.5 yd bush fits its frame whole at x2 (fifth report, measured: x1 and x0.5
+-- overflow, x2 fits); the 14 yd tree at x11.2 reads about a third of its frame (sixth report), so
+-- its fit is near x4 (estimated by eye, not measured). factor = 2 * (h / 2.5) ^ 0.4 passes both.
+-- The seventh run tests the tree and a barrel at the rule and beside it.
+local REF_HEIGHT = 2.5     -- the bush, measured
+local REF_FACTOR = 2.0     -- its fit, measured
+local HEIGHT_EXPONENT = 0.4 -- from the tree's fit of about 4, estimated
 local function CameraDistanceFor(heightYd)
     local h = tonumber(heightYd) or REF_HEIGHT
     if h <= 0 then h = REF_HEIGHT end
-    return math.min(math.max(h / REF_HEIGHT, 0.25), 16.0)
+    return math.min(math.max(REF_FACTOR * (h / REF_HEIGHT) ^ HEIGHT_EXPONENT, 0.25), 16.0)
 end
 
 local function SettleModel(model, x, heightYd)
@@ -358,6 +361,7 @@ end
 -- model's position, camera and scale as knobs, so the owner can tell whether a Model frame on this
 -- client draws a doodad file at all, and where its view is. Nothing else moves while it is on.
 local testMode = nil
+local MarkFrame -- defined with EndTest below; ApplyTest calls it
 local testHidBox = false
 local testFrames = {} -- every /fide terrain test press draws on a brand-new frame, so no earlier knob (a camera index, a scale) can linger on it
 -- the client's own question-mark model (the default UI's quest marker): if it shows where a
@@ -430,6 +434,7 @@ local function ApplyTest(say)
     m:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     m:SetAlpha(1.0)
     m:Show()
+    MarkFrame(m)
     pcall(function()
         if m.IsVisible then visible = tostring(m:IsVisible()) end
         if m.GetFrameStrata then strata = tostring(m:GetFrameStrata()) end
@@ -438,14 +443,42 @@ local function ApplyTest(say)
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
-    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera distance x%.2f by the rule%s), %s (file id %s), %d px tall at the screen centre, strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, scale <s>, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
+    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera distance x%.2f by the rule%s), %s (file id %s), %d px tall at the screen centre (its edges marked in red, its mid-line thin), strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, scale <s>, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
         knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height), testMode.pick and (", picked by \"" .. testMode.pick .. "\"") or "", loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
     return true
+end
+
+-- The test frame's edges in red and its mid-line thin, on a frame above the model, so a screenshot
+-- shows where the viewport is and where the model sits in it (centred or on its base).
+local markFrame, marks = nil, nil
+MarkFrame = function(m)
+    if not markFrame then
+        markFrame = CreateFrame("Frame", nil, overlay)
+        markFrame:SetFrameLevel(LEVEL_MIN + LEVEL_SPAN + 20)
+        markFrame:EnableMouse(false)
+        marks = {}
+        for i = 1, 5 do
+            local t = markFrame:CreateTexture(nil, "OVERLAY")
+            t:SetColorTexture(1, 0.2, 0.2, 0.75)
+            marks[i] = t
+        end
+    end
+    markFrame:ClearAllPoints()
+    markFrame:SetAllPoints(m)
+    local T, B, L, R, C = marks[1], marks[2], marks[3], marks[4], marks[5]
+    for _, t in ipairs(marks) do t:ClearAllPoints() end
+    T:SetPoint("TOPLEFT", m, "TOPLEFT", 0, 0); T:SetPoint("TOPRIGHT", m, "TOPRIGHT", 0, 0); T:SetHeight(2)
+    B:SetPoint("BOTTOMLEFT", m, "BOTTOMLEFT", 0, 0); B:SetPoint("BOTTOMRIGHT", m, "BOTTOMRIGHT", 0, 0); B:SetHeight(2)
+    L:SetPoint("TOPLEFT", m, "TOPLEFT", 0, 0); L:SetPoint("BOTTOMLEFT", m, "BOTTOMLEFT", 0, 0); L:SetWidth(2)
+    R:SetPoint("TOPRIGHT", m, "TOPRIGHT", 0, 0); R:SetPoint("BOTTOMRIGHT", m, "BOTTOMRIGHT", 0, 0); R:SetWidth(2)
+    C:SetPoint("LEFT", m, "LEFT", 0, 0); C:SetPoint("RIGHT", m, "RIGHT", 0, 0); C:SetHeight(1)
+    markFrame:Show()
 end
 
 local function EndTest()
     testMode = nil
     for _, f in ipairs(testFrames) do f:Hide() end
+    if markFrame then markFrame:Hide() end
     if testHidBox and _G.FidelityEMatrixFrame then _G.FidelityEMatrixFrame:Show() end
     testHidBox = false
     ApplyBackdrop()
@@ -727,5 +760,6 @@ Terrain._failedAt = failedAt
 Terrain._testFrames = testFrames
 Terrain.FrameKind = function() return propFrameKind end
 Terrain.CameraDistanceFor = CameraDistanceFor
+Terrain._markFrame = function() return markFrame end
 Terrain.RETRY_AFTER = RETRY_AFTER
 Terrain.DEFAULTS = DEFAULTS
