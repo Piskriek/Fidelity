@@ -282,7 +282,8 @@ function supersede(rows) {
     if (p < cur.p || (p === cur.p && i > cur.i)) { superseded.push({ id: cur.row.id, by: row.id }); best.set(g, { row, i, p }); }
     else superseded.push({ id: row.id, by: cur.row.id });
   });
-  const kept = rows.filter(r => !superseded.some(s => s.id === r.id));
+  const gone = new Set(superseded.map(x => x.id)); // a Set, so this stays linear in the rung's rows
+  const kept = rows.filter(r => !gone.has(r.id));
   return { kept, superseded };
 }
 
@@ -333,13 +334,15 @@ export function evaluate(rungs, rows, opts = {}) {
   const byId = new Map(rungs.map(r => [r.id, r]));
   const verdicts = new Map();
   const status = new Map();
+  let decided = 0;
   for (const id of seq) {
     const d = decideOne(byId.get(id), byRung.get(id), status);
+    decided++;
     d.key = keys.get(id);
     verdicts.set(id, d);
     status.set(id, d.verdict);
   }
-  return { order: seq, keys, verdicts, frontier: frontierOf(rungs, verdicts), decided: seq.length, refused };
+  return { order: seq, keys, verdicts, frontier: frontierOf(rungs, verdicts), decided, refused };
 }
 
 /**
