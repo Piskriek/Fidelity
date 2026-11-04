@@ -16,8 +16,10 @@ This tool makes the reading repeatable and states its precision:
             model is the longest run of rows where the two differ inside the frame (a unit walking
             past is a shorter run), with the frame's red marks masked out. Prints the gaps from
             the frame's top and bottom edges, the width, and 'touches' or 'overflow' where the
-            model reaches an edge (whether it is cut there no pair of shots can show): the fields
-            of a ledger row (docs/rungs/ledger.json).
+            model reaches an edge (whether it is cut there no pair of shots can show, so a
+            touching edge can never pass a fit): the fields of a ledger row (docs/rungs/ledger.json).
+            It reads each edge again at a low threshold and says so when the two disagree: dim
+            parts (twigs, a dark crown) can differ from the world by less than the main threshold.
 
 An automatic fill from one shot was tried and dropped: the test models are lit dimly and the
 dimmed world is not uniformly darker, so a brightness threshold read a frame-filling bush as 0.075.
@@ -133,6 +135,19 @@ def red_mask(a):
     return d
 
 
+def twin_edges(a, b, region, H, W, threshold):
+    """The model's rows and columns where the pair differs by more than `threshold`, marks masked out."""
+    diff = np.abs(a[region] - b[region]).max(axis=2) > threshold
+    diff &= ~red_mask(a[region])
+    run = largest_run(np.where(diff.mean(axis=1) >= 0.01)[0])
+    if run is None:
+        return None
+    s, e = int(run[0]), int(run[1])
+    crun = largest_run(np.where(diff[s:e + 1].mean(axis=0) >= 0.01)[0])
+    c0, c1 = (int(crun[0]), int(crun[1])) if crun else (0, W - 1)
+    return s, e, c0, c1
+
+
 def cmd_twin(with_model, without):
     a = np.asarray(Image.open(with_model).convert("RGB")).astype(int)
     b = np.asarray(Image.open(without).convert("RGB")).astype(int)
@@ -143,26 +158,26 @@ def cmd_twin(with_model, without):
     top, bottom, left, right = f if f else known_frame(a.shape[0], a.shape[1])
     H, W = bottom - top + 1, right - left + 1
     region = (slice(top, bottom + 1), slice(left, right + 1))
-    diff = np.abs(a[region] - b[region]).max(axis=2) > 40
-    # the twin hides the red marks with the model, so they differ too: they are not the model
-    diff &= ~red_mask(a[region])
-    run = largest_run(np.where(diff.mean(axis=1) >= 0.01)[0])
-    if run is None:
+    # the twin hides the red marks with the model, so they differ too: twin_edges masks them out
+    main, low = twin_edges(a, b, region, H, W, 40), twin_edges(a, b, region, H, W, 12)
+    if main is None:
         print(f"twin: no difference inside the frame rows {top}-{bottom} beyond its marks: nothing drawn, or the pair is not a twin")
         return 1
-    s, e = int(run[0]), int(run[1])
-    crun = largest_run(np.where(diff[s:e + 1].mean(axis=0) >= 0.01)[0])
-    c0, c1 = (int(crun[0]), int(crun[1])) if crun else (0, W - 1)
-    # gaps from the frame's own edges; within 4 px of an edge (its 2-px mark and a pixel either side)
-    # the model reaches it, and whether it is cut there cannot be seen: 'touches'
+    s, e, c0, c1 = main
+    # within 4 px of an edge (its 2-px mark and a pixel either side) the model reaches it, and whether it is
+    # cut there no pair of shots can show: 'touches', which can never pass a fit (rung_ledger.mjs fitTest)
     near = 4
-    top_gap, bottom_gap = s / H, (H - 1 - e) / H
-    edge = lambda gap_px, gap: "touches" if gap_px <= near else round(gap, 3)
+    edge = lambda gap_px: "touches" if gap_px <= near else round(gap_px / H, 3)
     sides = c0 <= near or c1 >= W - 1 - near
     width = "overflow" if sides else round((c1 - c0 + 1) / W, 3)
     print(f"twin: frame rows {top}-{bottom} cols {left}-{right} | model rows {top + s}-{top + e} cols {left + c0}-{left + c1}"
-          f" | top {edge(s, top_gap)} bottom {edge(H - 1 - e, bottom_gap)} width {width} fill {round((e - s + 1) / H, 3)}"
+          f" | top {edge(s)} bottom {edge(H - 1 - e)} width {width} fill {round((e - s + 1) / H, 3)}"
           f" | precision about {round(2 / H, 3)} of the frame (ledger fields: top, bottom, width)")
+    if low is not None:
+        ls, le = low[0], low[1]
+        if abs(ls - s) / H > 0.01 or abs(le - e) / H > 0.01:
+            print(f"twin: at a low threshold the model reaches top {edge(ls)} bottom {edge(H - 1 - le)}: a dim edge (twigs, a dark crown)"
+                  f" or something else moving; check by eye on a brightened crop (frame_fill.py sheet) before entering the row")
     return 0
 
 

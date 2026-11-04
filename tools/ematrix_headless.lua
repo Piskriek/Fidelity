@@ -769,14 +769,14 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     local bush = byPath["world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"]
     check(tree and bush, "tree and bush must be in the pool")
     check(tree.mono.kind == "PlayerModel" and bush.mono.kind == "PlayerModel" and T.FrameKind() == "PlayerModel", "props are PlayerModel frames: a plain Model frame draws nothing on the owner's client (the 10:23 report), got " .. tostring(tree.mono.kind))
-    check(near(tree.mono.camDistance, 2.8, 1e-9) and near(bush.mono.camDistance, 2, 1e-9) and tree.mono.modelScale == 1, "an unmeasured 16 yd canopy takes the last measured fit (2.8); the measured bush takes x2, got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
-    check(near(T.CameraDistanceFor(14), 2.8, 1e-9) and near(T.CameraDistanceFor(1.2), 0.51, 1e-9) and near(T.CameraDistanceFor(1.85), 1.255, 1e-9) and T.CameraDistanceFor(nil) == 2 and T.CameraDistanceFor(1e9) == 2.8 and near(T.CameraDistanceFor(1e-9), 0.37, 1e-9), "an unmeasured file interpolates between the fits in use by nominal height, clamped at the ends")
+    check(near(tree.mono.camDistance, 5.6, 1e-9) and near(bush.mono.camDistance, 2, 1e-9) and tree.mono.modelScale == 1, "an unmeasured 16 yd canopy takes the last knot (the tree's trial x5.6); the measured bush takes x2, got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
+    check(near(T.CameraDistanceFor(14), 5.6, 1e-9) and near(T.CameraDistanceFor(1.2), 0.53, 1e-9) and near(T.CameraDistanceFor(1.85), 1.265, 1e-9) and T.CameraDistanceFor(nil) == 2 and T.CameraDistanceFor(1e9) == 5.6 and near(T.CameraDistanceFor(1e-9), 0.37, 1e-9), "an unmeasured file interpolates between the fits in use by nominal height, clamped at the ends")
     check(near(tree.mono.w, tree.mono.h * 1.5, 1e-6) and near(bush.mono.w, bush.mono.h * 0.8, 1e-6) and T.AspectFor("x/elwynntreecanopy03.m2") == 1.5 and T.AspectFor("x/jar01.m2") == 0.8, "trees and canopies get a frame 1.5 as wide as tall, the rest 0.8")
-    check(T.CameraDistanceFor(14, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2") == 2.8 and T.CameraDistanceFor(1.2, "World\\Azeroth\\Westfall\\PassiveDoodads\\Barrels\\WestfallBarrel01.M2") == 0.51 and T.CameraDistanceFor(2.5, "x/elwynnbush09.m2") == 2.0 and T.CameraDistanceFor(16, "x/elwynntreecanopy04.m2") == 5.6, "a file the owner's reports measured uses its own fit, whatever the path's case or slashes")
+    check(T.CameraDistanceFor(14, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2") == 5.6 and T.CameraDistanceFor(1.2, "World\\Azeroth\\Westfall\\PassiveDoodads\\Barrels\\WestfallBarrel01.M2") == 0.53 and T.CameraDistanceFor(2.5, "x/elwynnbush09.m2") == 2.0 and T.CameraDistanceFor(16, "x/elwynntreecanopy04.m2") == 5.6, "a file the owner's reports measured uses its own fit, whatever the path's case or slashes")
     -- each fit says what the ledger found (docs/rungs/ledger.json; tools/rung-ledger.test.mjs checks they match)
     check(T.FitSource("x/WestfallCrate.m2") == "a fit estimated from report 20261104-1321, not confirmed" and T.FitSource("x/westfallbarrel01.m2") == "a fit estimated from report 20261104-1247, not confirmed", "the crate and the barrel print an estimate, not a measurement: " .. T.FitSource("x/WestfallCrate.m2"))
     check(T.FitSource("x/jar01.m2") == "a fit read at this value in report 20261104-1321, undecided" and T.FitSource("x/elwynnbush09.m2") == "a fit read at this value in report 20261104-1247, undecided", "the jar and the bush print an undecided reading: " .. T.FitSource("x/jar01.m2"))
-    check(T.FitSource("x/elwynntreecanopy04.m2") == "a trial value after report 20261104-1321 (it overflowed there), not a fit yet" and T.FitSource("x/elwynntreecanopy03.m2") == "an interpolation between measured files, a guess", "canopy04 prints a trial; an unmeasured canopy prints a guess: " .. T.FitSource("x/elwynntreecanopy04.m2"))
+    check(T.FitSource("x/elwynntreecanopy04.m2") == "a trial value after report 20261104-1321 (it overflowed there), not a fit yet" and T.FitSource("x/elwynntreemid01.m2") == T.FitSource("x/elwynntreecanopy04.m2") and T.FitSource("x/elwynntreecanopy03.m2") == "an interpolation between measured files, a guess", "the tree and canopy04 print a trial; an unmeasured canopy prints a guess: " .. T.FitSource("x/elwynntreecanopy04.m2"))
     for _, f in ipairs({ "x/elwynnbush09.m2", "x/jar01.m2", "x/westfallcrate.m2", "x/westfallbarrel01.m2", "x/elwynntreemid01.m2", "x/elwynntreecanopy04.m2", "x/elwynntreecanopy03.m2" }) do
         check(not T.FitSource(f):find("measured from", 1, true), "no fit may print itself as measured: " .. f)
     end
@@ -851,7 +851,7 @@ test("terrain test: every press draws on a brand-new frame of the asked kind, th
     slash("terrain test camdist 2")
     check(newest().camDistance == 2 and newest().modelScale == 1, "camdist 2 sets the camera distance scale on a new frame, got " .. tostring(newest().camDistance))
     slash("terrain test pick canopy"); slash("terrain test")
-    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 2.8, 1e-9) and near(newest().w, newest().h * 1.5, 1e-6), "pick canopy draws the canopy at its interpolated fit in a wide frame, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
+    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 5.6, 1e-9) and near(newest().w, newest().h * 1.5, 1e-6), "pick canopy draws the canopy at its interpolated fit in a wide frame, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
     check(T._markFrame() and T._markFrame().shown and T._markFrame().points.ALL and T._markFrame().points.ALL.rel == newest(), "the test marks the frame's edges on a frame above the model")
     slash("terrain test pick any"); slash("terrain test")
     check(tostring(newest().model):find("bush", 1, true) or tostring(newest().model):find("canopy", 1, true), "pick any goes back to the first loaded prop")
@@ -1390,6 +1390,8 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     check(not _G.FidelityEMatrix_TerrainOverlay.shown, "hidden for the twin before the panel is hidden")
     slash("report hide")
     check(_G.FidelityEMatrix_TerrainOverlay.shown, "hiding the panel mid-twin shows the terrain overlay again")
+    rec = r.steps[#r.steps]
+    check(rec.twin and rec.twin.screenshot == "not taken: the panel was hidden", "the record says the panel was hidden, not that a step started: " .. tostring(rec.twin and rec.twin.screenshot))
     step(0.6)
     check(worldShown() >= 1, "and the world's copies")
     slash("report show")
@@ -1397,9 +1399,13 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     -- steps turn the world on by their own command)
     slash("world off")
     step(0.3)
+    local logFit = #shotLog
     click(5)
     step(1.6)
     check(not W.IsEnabled() and FidelityEMatrix_Config.worldOverlay == false, "a twin never turns the world overlay on, nor writes its choice")
+    local fitFirst, fitTwin = shotLog[logFit + 1], shotLog[logFit + 2]
+    check(fitFirst and fitFirst.test and fitFirst.marks, "a fit step's first shot shows its test frame and the red marks")
+    check(fitTwin and not fitTwin.test and not fitTwin.marks and fitTwin.terrain, "a fit twin hides the test frame and its marks, and nothing else of the terrain overlay")
     check(testShown() and T._markFrame().shown, "after a test twin the test frame and its marks show again")
     slash("terrain test off")
     slash("world on")

@@ -87,17 +87,18 @@ local function HideDrawings(on)
     if ns.World and ns.World.HideFor then ns.World.HideFor("shot", on) end
 end
 
---- A press while a shot or a twin is pending supersedes it: the record says what was not taken, and
---- drawings hidden for a twin are shown again before the next step's commands run.
-local function Supersede()
+--- A press, Save, Clear or hiding the panel while a shot or a twin is pending supersedes it: the
+--- record says what was not taken and why, and drawings hidden for a twin are shown again at once.
+local function Supersede(why)
     local p = pending
     if not p then return end
     pending = nil
+    why = why or "the next step started"
     if p.phase == "shot" then
-        p.rec.screenshot = "not taken: the next step started within the half second"
-        if p.twin then p.rec.twin = { screenshot = "not taken: the next step started" } end
+        p.rec.screenshot = "not taken: " .. why .. " within the half second"
+        if p.twin then p.rec.twin = { screenshot = "not taken: " .. why } end
     elseif p.twin and not p.rec.twin then
-        p.rec.twin = { screenshot = "not taken: the next step started" }
+        p.rec.twin = { screenshot = "not taken: " .. why }
     end
     if p.phase == "twin" or p.phase == "show" then HideDrawings(false) end
 end
@@ -126,14 +127,14 @@ Report.STEPS = {
 function Report.Run(step)
     local r = Store()
     if step.clear then
-        Supersede()
+        Supersede("the report was cleared")
         r.steps = {}
         r.at = Stamp()
         print(PREFIX .. "Report cleared.")
         return
     end
     if step.save then
-        Supersede()
+        Supersede("the report was saved")
         print(PREFIX .. string.format("Saving the report (%d step(s)) by reloading the UI.", #r.steps))
         if ReloadUI then ReloadUI() end
         return
@@ -237,7 +238,7 @@ function Report.Command(args, say)
     if sub ~= "show" and sub ~= "hide" and sub ~= "toggle" then say("Usage: /fide report <show|hide|toggle|clear|status>"); return end
     local show = (sub == "show") or (sub == "toggle" and not p:IsShown())
     -- the panel's OnUpdate drives the shots: hiding it mid-twin would leave the drawings hidden
-    if not show then Supersede() end
+    if not show then Supersede("the panel was hidden") end
     if show then p:Show() else p:Hide() end
     if show then
         say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about a second and a half; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")

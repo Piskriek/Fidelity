@@ -10,8 +10,9 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   evaluate, recheck, order, rungKeys, descendants, admit, estimateFit, fitTest, readTerrainConstants, terrainRungs,
-  VERDICTS, REFUSALS, VALUE_EPS, K_MAX,
+  VERDICTS, REFUSALS, VALUE_EPS, K_MAX, MARGIN,
 } from '../packages/triad-369/src/rung_ledger.mjs';
+const round2 = v => Math.round(v * 100) / 100;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..');
@@ -49,7 +50,7 @@ test('the fit status the addon prints is the ledger\'s verdict, from the same re
     if (st.verdict === 'fitted') {
       assert.ok(['estimated', 'read', 'trial'].includes(st.how), `${file}: a fitted value must say where it came from, got ${st.how}`);
       if (st.how === 'estimated') {
-        assert.ok(v.estimate && v.estimate.rule === 'twice the larger reach' && Math.abs(v.estimate.value - k) <= 0.02, `${file}: 'estimated' needs the evaluator's estimate at that value`);
+        assert.ok(v.estimate && v.estimate.rule === 'the larger reach, a margin inside the frame' && Math.abs(v.estimate.value - k) <= 0.02, `${file}: 'estimated' needs the evaluator's estimate at that value`);
         assert.ok(!v.readAtValue, `${file}: an estimated value has no reading at it yet`);
       }
       if (st.how === 'trial') assert.ok(v.estimate && /^doubled/.test(v.estimate.rule) && Math.abs(v.estimate.value - k) <= 0.02, `${file}: 'trial' needs a doubling step`);
@@ -90,29 +91,60 @@ test('verdicts from the rows through the ninth report, at the values v1.8.8 uses
   for (const f of Object.keys(C.fitByFile)) assert.ok(res.frontier.includes('fit:' + f), f + ' is on the frontier');
   assert.ok(!res.frontier.includes('frame:Model'), 'a frame kind not in use is not asked for');
   for (const d of res.verdicts.values()) assert.ok(VERDICTS.includes(d.verdict));
-  // the bush at x2: every reading there is within its precision of the tolerance
+  // the bush at x2: its stems touch the frame's bottom in every reading, so none can decide
   const bush = res.verdicts.get('fit:elwynnbush09');
-  assert.ok(bush.untestable.length >= 7 && bush.untestable.every(u => /precision/.test(u.reason)), 'the bush\'s x2 readings decide nothing: ' + JSON.stringify(bush.untestable));
+  assert.ok(bush.untestable.length >= 7 && bush.untestable.every(u => /touches/.test(u.reason)), 'the bush\'s x2 readings decide nothing: ' + JSON.stringify(bush.untestable));
   // the estimates the write-back took
   const est = f => res.verdicts.get('fit:' + f).estimate;
-  assert.equal(est('westfallbarrel01').value, 0.51);
-  assert.equal(est('westfallcrate').value, 0.37);
-  assert.ok(est('westfallcrate').aspectNeeded > 1.8, 'the crate needs a frame about 1.85 as wide as tall');
+  assert.equal(est('westfallbarrel01').value, 0.53);
+  assert.equal(est('westfallbarrel01').canPass, true);
+  assert.equal(est('westfallcrate').value, 0.38);
+  assert.equal(est('westfallcrate').canPass, false, 'the crate\'s reaches differ too much to pass in any 0.8-wide frame');
+  assert.ok(est('westfallcrate').aspectNeeded > 1.7, 'the crate needs a frame about 1.8 as wide as tall');
   assert.equal(est('elwynntreecanopy04').value, 5.6);
-  assert.equal(est('elwynnbush09').value, 2.0, 'the bush\'s base at least touches the frame bottom at x2, so its proposal is no smaller');
-  assert.equal(est('elwynnbush09').canPass, false, 'its reaches differ too much for any k alone: it needs a vertical offset');
+  assert.equal(est('elwynntreemid01').value, 5.6, 'the tree ran past the top of its wide frame at x2.8: a doubled trial');
+  assert.deepEqual(est('elwynnbush09').reaches, { up: 0.78, down: 1.17 }, 'the bush reaches further below its mid-line than above it');
+  assert.equal(est('elwynnbush09').canPass, false, 'by its readings no k alone fills its frame; the twins decide');
   assert.equal(est('jar01'), null, 'the jar\'s base was hidden: nothing is proposed');
-  assert.equal(est('elwynntreemid01'), null, 'the tree\'s base was hidden in its one wide reading: nothing is proposed');
 });
 
 test('at the values v1.8.7 used, the barrel, the crate and canopy04 fail and their proposals are the v1.8.8 values', () => {
   const old = { ...C, fitByFile: { elwynnbush09: 2.0, elwynntreemid01: 2.8, westfallbarrel01: 0.6, jar01: 0.37, westfallcrate: 0.42, elwynntreecanopy04: 2.8 } };
   const res = run(rungsFor(old));
-  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04']) assert.equal(res.verdicts.get('fit:' + f).verdict, 'fails', f);
+  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01']) assert.equal(res.verdicts.get('fit:' + f).verdict, 'fails', f);
   assert.equal(res.verdicts.get('fit:elwynnbush09').verdict, 'fitted', 'the bush at x2 is undecided, not failed');
   const barrel = res.verdicts.get('fit:westfallbarrel01');
   assert.ok(barrel.superseded.some(s => s.id === 'r8-124647-barrel-1' && s.by === 'r8-124647-barrel-2'), 'the grid reading of 124647 supersedes the first reading of the same shot');
-  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04']) assert.equal(res.verdicts.get('fit:' + f).estimate.value, C.fitByFile[f], f);
+  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01']) assert.equal(res.verdicts.get('fit:' + f).estimate.value, C.fitByFile[f], f);
+});
+
+test('the lock: a reading counts only in the context it was taken in; a version bump re-keys nothing; a base change re-keys exactly what rests on it', () => {
+  const wide = run();
+  const narrow = run(rungsFor({ ...C, aspectRules: [] }));
+  const tree = id => narrow.verdicts.get('fit:elwynntreemid01').admitted.includes(id);
+  assert.ok(tree('r7-122455-tree-2') && tree('r8-124636-tree-2') && !tree('r9-131714-tree-2'), 'in 0.8-wide frames the narrow readings count and the wide one does not');
+  assert.ok(wide.refused.some(r => r.id === 'r7-122455-tree-2' && r.reason === 'key') && !wide.refused.some(r => r.id === 'r9-131714-tree-2'), 'in 1.5-wide frames it is the other way round');
+  for (const f of ['elwynnbush09', 'westfallbarrel01', 'jar01', 'westfallcrate']) assert.equal(narrow.verdicts.get('fit:' + f).verdict, wide.verdicts.get('fit:' + f).verdict, f + ' does not change with the trees\' aspect');
+  const a = rungsFor(), b = rungsFor().map(r => ({ ...r, version: '1.8.9' }));
+  assert.deepEqual([...rungKeys(a)], [...rungKeys(b)], 'a version is no rung\'s context: it changes no key');
+  const c = rungsFor().map(r => (r.id === 'frame:PlayerModel' ? { ...r, context: { build: '2.5.6.99999' } } : r));
+  const ka = rungKeys(a), kc = rungKeys(c);
+  const above = descendants(a, ['frame:PlayerModel']);
+  for (const r of a) assert.equal(ka.get(r.id) !== kc.get(r.id), above.has(r.id), r.id + (above.has(r.id) ? ' must' : ' must not') + ' change key');
+});
+
+test('precedence: the owner\'s own fit outranks the director\'s reading; disagreeing outside readings are contested', () => {
+  const base = rowById.get('r7-122517-barrel-2');
+  const at = { ...base, value: 0.53 };
+  const shot = (report, file) => ({ report, file, sha256: ledger.manifests[report][file] });
+  const dirFail = { ...at, id: 'dir-fail', artifact: shot('20261104-1247', 'WoWScrnShot_110426_124647.jpg'), observed: { top: 0.2, bottom: 0.05 } };
+  const dirPass = { ...at, id: 'dir-pass', artifact: shot('20261104-1226', 'WoWScrnShot_110426_122603.jpg'), observed: { top: 0.03, bottom: 0.02 } };
+  const owner = { ...at, id: 'owner-fit', witness: 'owner', reader: 'the owner pressed /fide terrain test fit 0.53', observed: { fill: 1 }, precision: 0.1, artifact: { ...shot('20261104-1321', 'FidelityEMatrix.lua'), line: 1 } };
+  const v = rows => run(rungsFor(), [...ledger.rows, ...rows]).verdicts.get('fit:westfallbarrel01').verdict;
+  assert.equal(v([dirFail]), 'fails');
+  assert.equal(v([dirPass]), 'holds');
+  assert.equal(v([dirFail, dirPass]), 'contested');
+  assert.equal(v([dirFail, owner]), 'holds', 'the owner\'s saved fit ranks first, as CameraDistanceFor ranks it');
 });
 
 test('refusals: every reason fires for its defect and keeps its reason; nothing refused changes a verdict', () => {
@@ -140,10 +172,18 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
     { ...base, id: 'badtime', at: 'yesterday' },
     { ...base, id: 'r8-124647-barrel-2' }, // a second row with an id already taken
     { ...rowById.get('20261104-1321-map'), id: 'mapnoobs', observed: null },
+    { ...rowById.get('20261104-1321-load'), id: 'loadquoted', observed: { loaded: '45', failed: 0 } },
+    { ...rowById.get('20261104-1321-load'), id: 'failquoted', observed: { loaded: 45, failed: '0' } },
+    { ...rowById.get('r3-102342-frame'), id: 'drawnword', observed: { drawn: 'yes' } },
+    { ...base, id: 'topword', observed: { top: '0.1', bottom: 0.1 } },
+    { ...base, id: 'widthword', observed: { top: 0.1, bottom: 0.1, width: 'wide' } },
+    { ...base, id: 'noprecision', precision: undefined },
+    { ...base, id: 'negprecision', precision: -0.5 },
+    { ...base, id: 'textprecision', precision: '0.03' },
   ];
   const r2 = run(rungsFor(), [...ledger.rows, ...synth]);
   const w2 = id => (r2.refused.find(r => r.id === id) || {}).reason;
-  for (const id of ['nan', 'inf', 'nullvalue', 'novalue', 'quoted', 'noobs', 'badtime', 'mapnoobs']) assert.equal(w2(id), 'non-finite', id);
+  for (const id of ['nan', 'inf', 'nullvalue', 'novalue', 'quoted', 'noobs', 'badtime', 'mapnoobs', 'loadquoted', 'failquoted', 'drawnword', 'topword', 'widthword', 'noprecision', 'negprecision', 'textprecision']) assert.equal(w2(id), 'non-finite', id);
   assert.equal(w2('future'), 'future');
   assert.equal(w2('stub'), 'echo'); assert.equal(w2('typed'), 'echo');
   assert.equal(w2('hostfit'), 'witness', 'no host API reads a fill');
@@ -175,6 +215,30 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
 
 test('the refusal order is fixed: a row with two defects is refused for the earlier one, in REFUSALS order', () => {
   const base = rowById.get('r8-124647-barrel-2');
+  const proj = { id: 'p', rung: 'projection:abbey-door', kind: 'measured', witness: 'director', at: '2026-11-04 13:16:58', artifact: base.artifact, context: { pose: 'abbey-door' }, value: 0.35, observed: { residual: 0.02 }, precision: 0.01 };
+  // every adjacent pair of REFUSALS that one row can carry (echo and witness cannot co-occur, nor future and stale)
+  const adjacent = [
+    { ...base, id: 'rung+duplicate', rung: 'fit:nothing-here' },
+    { ...base, id: 'duplicate+non-finite', value: NaN },
+    { ...base, id: 'non-finite+kind', id2: 1, value: NaN, kind: 'symbolic' },
+    { ...base, id: 'kind+echo', kind: 'symbolic', witness: 'headless' },
+    { ...base, id: 'witness+manifest', witness: 'host', artifact: { ...base.artifact, sha256: '3'.repeat(64) } },
+    { ...base, id: 'manifest+key', id2: 1, artifact: { ...base.artifact, sha256: '4'.repeat(64) }, context: { ...base.context, aspect: 1.5 } },
+    { ...base, id: 'key+future', id2: 1, context: { ...base.context, aspect: 1.5 }, at: '2026-11-06 10:00:00' },
+    { ...proj, id: 'stale+shutter' },
+  ];
+  const rows = [base, ...adjacent.map(r => (r.id === 'duplicate+non-finite' ? { ...r, id: base.id, tag: r.id } : r))];
+  const windowed = rungsFor().map(r => (r.id === 'projection:abbey-door' ? { ...r, window: 60 } : r));
+  const got = admit(rows, windowed, { now: NOW, manifests: ledger.manifests }).refused;
+  const reasonOf = id => (got.find(r => r.id === id) || {}).reason;
+  for (const r of adjacent) {
+    const [a, b] = r.id.split('+');
+    assert.ok(REFUSALS.indexOf(a) + 1 === REFUSALS.indexOf(b), `${r.id} is an adjacent pair of REFUSALS`);
+    const id = r.id === 'duplicate+non-finite' ? base.id : r.id;
+    const reasons = got.filter(x => x.id === id).map(x => x.reason);
+    assert.ok(reasons.includes(a) && !reasons.includes(b), `${r.id}: refused as ${reasons.join(', ')}, expected ${a}`);
+  }
+  assert.ok(reasonOf('kind+echo') === 'kind');
   const two = [
     { ...base, id: 'echo+key', witness: 'headless', context: { ...base.context, aspect: 1.5 } },
     { ...base, id: 'kind+manifest', kind: 'symbolic', artifact: { ...base.artifact, sha256: '1'.repeat(64) } },
@@ -236,10 +300,11 @@ test('no rung holds above a base that does not, over random graphs and rows', ()
   }
 });
 
-test('the re-check gives the same verdicts as a fresh pass, over random graphs, rows and context changes', () => {
+test('the re-check gives the same verdicts, frontier and refusals as a fresh pass, over random graphs, rows, reused ids and context changes', () => {
   let seed = 777;
   const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   const manifests = { rep: { 'a.jpg': 'AA' } };
+  const multiset = refused => refused.map(x => `${x.id}|${x.rung}|${x.reason}`).sort();
   for (let trial = 0; trial < 300; trial++) {
     const n = 3 + Math.floor(rnd() * 20);
     const rungs = [];
@@ -248,23 +313,29 @@ test('the re-check gives the same verdicts as a fresh pass, over random graphs, 
       for (let j = 0; j < i; j++) if (rnd() < 0.25) restsOn.push('r' + j);
       rungs.push({ id: 'r' + i, kind: 'check', restsOn, context: { c: Math.floor(rnd() * 2) } });
     }
-    const mk = (id, i) => ({ id, rung: 'r' + i, kind: 'measured', witness: 'director', at: '2026-11-04 12:00:00', artifact: { report: 'rep', file: 'a.jpg', sha256: 'AA', line: id }, observed: { ok: rnd() < 0.75 }, context: { c: rungs[i].context.c } });
+    let line = 0;
+    const mk = (id, i, c = rungs[i].context.c) => ({ id, rung: 'r' + i, kind: 'measured', witness: 'director', at: '2026-11-04 12:00:00', artifact: { report: 'rep', file: 'a.jpg', sha256: 'AA', line: line++ }, observed: { ok: rnd() < 0.75 }, context: { c } });
     const rows = [];
-    for (let i = 0; i < n; i++) if (rnd() < 0.8) rows.push(mk(`a${i}`, i));
+    for (let i = 0; i < n; i++) if (rnd() < 0.8) rows.push(mk(`a${i}`, i, rnd() < 0.85 ? undefined : 9));
+    rows.push({ ...mk('stray0', 0), rung: 'r-none' });
+    if (rows.length > 2 && rnd() < 0.5) rows.push({ ...mk(rows[1].id, Math.floor(rnd() * n)) }); // a reused id already in the first pass
     const prev = evaluate(rungs, rows, { now: NOW, manifests });
-    // add rows to a few rungs, change one rung's context, add a row on no rung
-    const changed = [];
+    // then: new rows (some inserted ahead of existing ones, some reusing a taken id), a stray, a changed context
     const more = [...rows];
-    for (let k = 0; k < 3; k++) { const i = Math.floor(rnd() * n); more.push(mk(`b${trial}-${k}`, i)); changed.push('r' + i); }
-    more.push({ ...mk('stray', 0), rung: 'r-none' });
+    for (let k = 0; k < 3; k++) {
+      const i = Math.floor(rnd() * n);
+      const row = mk(`b${trial}-${k}`, i);
+      if (rnd() < 0.3 && more.length) row.id = more[Math.floor(rnd() * more.length)].id; // reuse an id
+      more.splice(Math.floor(rnd() * (more.length + 1)), 0, row); // anywhere, also ahead of the id's first holder
+    }
+    more.push({ ...mk('stray1', 0), rung: 'r-none' });
     const flip = Math.floor(rnd() * n);
     const rungs2 = rungs.map((r, i) => (i === flip ? { ...r, context: { c: 1 - r.context.c } } : r));
     const fresh = evaluate(rungs2, more, { now: NOW, manifests });
-    const inc = recheck(rungs2, more, prev, changed, { now: NOW, manifests });
+    const inc = recheck(rungs2, more, prev, [], { now: NOW, manifests }); // no hint: it finds the changed rungs itself
     for (const r of rungs2) assert.deepEqual(inc.verdicts.get(r.id), fresh.verdicts.get(r.id), `trial ${trial}: ${r.id}`);
-    assert.deepEqual(inc.frontier, fresh.frontier);
-    const key = x => `${x.id}|${x.rung}|${x.reason}`;
-    assert.deepEqual(new Set(inc.refused.map(key)), new Set(fresh.refused.map(key)), `trial ${trial}: the refusals`);
+    assert.deepEqual(inc.frontier, fresh.frontier, `trial ${trial}: the frontier`);
+    assert.deepEqual(multiset(inc.refused), multiset(fresh.refused), `trial ${trial}: the refusals, as a multiset`);
     assert.ok(inc.decided <= fresh.decided);
   }
 });
@@ -313,7 +384,12 @@ test('the estimate only proposes: reaches and their bounds, doubling inside the 
   const rung = { context: { aspect: 0.8 } };
   const r = (value, observed) => ({ value, observed });
   const both = estimateFit([r(0.6, { top: 0.105, bottom: 0.065, width: 0.93 }), r(1.49, { top: 0.345, bottom: 0.335 })], rung, 0.1);
-  assert.ok(both.value > 0.5 && both.value < 0.53 && both.canPass, JSON.stringify(both));
+  assert.ok(both.value > 0.5 && both.value < 0.54 && both.canPass, JSON.stringify(both));
+  // the proposal leaves MARGIN at the larger reach: the next twin sees that edge as a gap, not a touch
+  assert.ok(Math.abs(both.value - round2(both.reaches.down / (0.5 - MARGIN))) < 1e-9, 'k = max(up, down) / (0.5 - MARGIN)');
+  // a model that reached both edges at every value read: double (a pair of shots cannot tell a touch from a cut)
+  assert.equal(estimateFit([r(2.8, { top: 'touches', bottom: 'touches' })], rung, 0.1).value, 5.6);
+  assert.equal(fitTest({ value: 1, observed: { top: 'touches', bottom: 'touches' }, precision: 0.005 }, 0.1).result, 'untestable', 'a model touching both edges may be cut: it cannot pass');
   const over = estimateFit([r(2.8, { top: 'clipped', bottom: 'hidden' })], rung, 0.1);
   assert.equal(over.value, 5.6);
   assert.equal(estimateFit([r(12, { top: 'clipped', bottom: 'clipped' })], rung, 0.1).value, K_MAX, 'doubling stops at the clamp');

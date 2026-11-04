@@ -38,9 +38,10 @@ local HEIGHT_RULES = {
 local HEIGHT_DEFAULT = 1.5
 -- Trees and canopies are wider than tall on screen; a frame 0.8 as wide as it is tall clipped the
 -- far canopies into blocks (the owner's eighth report, 12:46 local), so their frames are wider.
--- Whether the width changes how the camera frames the model's height is open: the tree's top reach
--- read 1.34 frame heights in the ninth report's wide frame against about 1.6 in the narrow frames, so
--- the ledger keys every fit reading on its frame's aspect (a reading in the other aspect does not count).
+-- Whether the width changes how the camera frames the model's height is open: the tree reached past
+-- the top edge at x2.8 in both the narrow and the wide frame, which only bounds its reach and cannot
+-- tell the two apart. So the ledger keys every fit reading on its frame's aspect (a reading taken in
+-- the other aspect does not count) until a pair of twins settles it.
 local ASPECT_RULES = { { "canopy", 1.5 }, { "tree", 1.5 } }
 local ASPECT_DEFAULT = 0.8
 local function AspectFor(path)
@@ -277,35 +278,37 @@ end
 -- tools/rung-ledger.test.mjs fails for a value with no reading behind it, and FIT_STATUS carries the
 -- ledger's verdict on each (packages/triad-369/src/rung_ledger.mjs decides it).
 -- What the readings show (council round 2026-11-04-rungs: the director's second reading of all 35
--- camera-distance fit shots, on crops ticked every 5% of the frame, the bush and tree tops corrected
--- after the round's review re-read them brightened): the frame centres the model's bounds on its
--- mid-line and draws it at 1/k, so a file reaches a fixed distance above and below the mid-line at
--- x1 (the barrel's five readings, x0.6 to x3, agree within 0.025). The proposal is twice the larger
--- reach, the smallest k at which nothing is clipped. The barrel filled 0.83 of its frame at x0.6 (now
--- x0.51); the crate filled 0.80 at x0.42 with its planks past both side edges (now x0.37; a frame
--- about 1.85 as wide as tall would hold it); canopy04 overflowed at x2.8 (a trial at x5.6). At x2 the
--- bush's twigs reach 0.10 to 0.12 below the frame's top and its stems run to the bottom edge: within
--- the readings' precision of the tolerance, so undecided; its reaches (up 0.78, down at least 1.0)
--- mean no k alone fills its frame, which needs a vertical offset. The jar's and the tree's bases were
--- hidden behind the world overlay's copy of the player. None is confirmed: the next report's twins
--- read both edges of every model.
+-- camera-distance fit shots, on crops ticked every 5% of the frame, the bush and tree readings
+-- corrected after the round's two reviews re-read them brightened): the frame centres the model's
+-- bounds on its mid-line and draws it at 1/k, so a file reaches a fixed distance above and below the
+-- mid-line at x1 (the barrel's five readings, x0.6 to x3, agree within 0.025). The proposal puts the
+-- larger reach 0.02 inside the frame, so the next reading sees both edges. The barrel filled 0.83 of
+-- its frame at x0.6 (now x0.53); the crate filled 0.80 at x0.42 with its planks past both side edges
+-- (now x0.38; its reaches differ too much to pass in any 0.8-wide frame, and a frame about 1.8 as wide
+-- as tall would hold its width); the tree and canopy04 ran past the top edge at x2.8 (trials at x5.6).
+-- At x2 the bush's twigs reach 0.10 to 0.12 below the frame's top and its stems reach the bottom edge:
+-- undecided; its one measured base (x3, unmarked) gives reaches of up 0.78 and down 1.17, which no k
+-- alone fits, so the next twins decide whether it needs a vertical offset. The jar's base was hidden
+-- behind the world overlay's copy of the player. None is confirmed: the next report's twins read both
+-- edges of every model.
 local REF_HEIGHT = 2.5
-local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.51, jar01 = 0.37, westfallcrate = 0.37, elwynntreecanopy04 = 5.6 }
+local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 5.6, westfallbarrel01 = 0.53, jar01 = 0.37, westfallcrate = 0.38, elwynntreecanopy04 = 5.6 }
 -- The ledger's verdict on each value above (holds, fitted, fails, contested), the report it cites, and
 -- for a fitted value where the value came from: "estimated" (the evaluator's proposal from the
 -- readings), "read" (readings at this value exist but none could decide) or "trial" (a step after
 -- an overflow, not an estimate).
 local FIT_STATUS = {
     elwynnbush09 = { "fitted", "20261104-1247", "read" },
-    elwynntreemid01 = { "fitted", "20261104-1321", "read" },
+    elwynntreemid01 = { "fitted", "20261104-1321", "trial" },
     westfallbarrel01 = { "fitted", "20261104-1247", "estimated" },
     jar01 = { "fitted", "20261104-1321", "read" },
     westfallcrate = { "fitted", "20261104-1321", "estimated" },
     elwynntreecanopy04 = { "fitted", "20261104-1321", "trial" },
 }
 -- (nominal height, the fit in use), ascending: an unmeasured file takes an interpolation between them,
--- a guess. canopy04's x5.6 is a trial step after an overflow, not a fit, so it steers no other canopy.
-local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.37 }, { 1.2, 0.51 }, { 2.5, 2.0 }, { 14, 2.8 } }
+-- a guess. The tree's x5.6 is a trial after it overflowed at x2.8, so the guess for every file of
+-- 14 yd and up is that trial too; canopy04's own trial adds no knot.
+local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.38 }, { 1.2, 0.53 }, { 2.5, 2.0 }, { 14, 5.6 } }
 local function FileKey(path)
     local p = tostring(path or ""):lower():gsub("\\", "/")
     return p:match("([^/]+)%.%w+$") or p:match("([^/]+)$") or p

@@ -962,10 +962,10 @@
    "value": 3.0,
    "observed": {
     "top": 0.24,
-    "bottom": 0.18
+    "bottom": 0.11
    },
    "precision": 0.05,
-   "note": "leaf tips at about 0.24 below the top; the lowest leaves end about 0.18 above the bottom, at the sides of the player copy (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
+   "note": "leaf tips at about 0.24 below the top; its tan stems right of the player copy reach about 0.89 of the frame (absent from 120001 and 120004, the same pose without the bush), though the leaves end near 0.82 (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
   },
   {
    "id": "r7-122430-bush-2",
@@ -1407,12 +1407,12 @@
    },
    "value": 2.8,
    "observed": {
-    "top": "touches",
+    "top": "clipped",
     "bottom": "hidden",
     "width": "overflow"
    },
    "precision": 0.03,
-   "note": "v1.8.7 wide frame: the dark canopy reaches the top edge (whether cut there cannot be seen) and runs past the left edge; the trunk base behind the player copy"
+   "note": "v1.8.7 wide frame: the canopy meets the top edge flat across most of the frame width (cut there, as in 124636) and runs past the left edge; the trunk base behind the player copy. the review re-read this shot brightened; the director confirmed it on 1% zooms"
   },
   {
    "id": "r6-120004-tree-2",
