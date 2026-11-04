@@ -335,6 +335,7 @@ end
 -- client draws a doodad file at all, and where its view is. Nothing else moves while it is on.
 local testMode = nil
 local testHidBox = false
+local testFrames = {} -- every /fide terrain test press draws on a brand-new frame, so no earlier knob (a camera index, a scale) can linger on it
 -- the client's own question-mark model (the default UI's quest marker): if it shows where a
 -- doodad does not, the frame draws and the doodad's own camera or bounds are the question
 local KNOWN_MODEL = "interface/buttons/talktomequestionmark.m2"
@@ -349,7 +350,19 @@ local function TestSlot()
     return nil
 end
 
-local VARIANT_LABEL = { default = "default (fresh load, no camera call)", cam = "camera", z = "SetPosition x", scale = "model scale", nolight = "no light applied" }
+local VARIANT_LABEL = { default = "default (no camera call)", cam = "camera", z = "SetPosition x", scale = "model scale", nolight = "no light applied" }
+local FRAME_KINDS = { model = "Model", player = "PlayerModel", dressup = "DressUpModel" }
+
+--- A brand-new frame of the asked kind for one test press (falls back to Model), above the pool.
+local function NewTestFrame(kind)
+    local ok, f = pcall(CreateFrame, kind, nil, overlay)
+    if not (ok and f) then ok, f = pcall(CreateFrame, "Model", nil, overlay); kind = "Model" end
+    if not (ok and f) then return nil end
+    f:SetFrameLevel(LEVEL_MIN + LEVEL_SPAN + 10)
+    f:EnableMouse(false)
+    testFrames[#testFrames + 1] = f
+    return f, kind
+end
 
 local function ApplyTest(say)
     local s = TestSlot()
@@ -357,13 +370,14 @@ local function ApplyTest(say)
         say("terrain test: no loaded prop yet (turn the overlay on near placements, wait a second, then try again)")
         return false
     end
-    for i = 1, MAX_PROPS do if pool[i] and pool[i] ~= s then HideModels(pool[i]) end end
-    if s.left then s.left:Hide() end
-    if s.right then s.right:Hide() end
-    local m = s.mono
+    for i = 1, MAX_PROPS do if pool[i] then HideModels(pool[i]) end end
+    for _, f in ipairs(testFrames) do f:Hide() end
     local box = _G.FidelityEMatrixFrame
     if box and box:IsShown() then box:Hide(); testHidBox = true end -- the box sits over the screen centre
-    -- every variant starts from a fresh SetModel, so no earlier knob (a camera index, a scale) lingers
+    local kind = FRAME_KINDS[testMode.frame or "model"] or "Model"
+    local m, actual = NewTestFrame(kind)
+    if not m then say("terrain test: the client refused to create a %s frame", kind); return false end
+    if testMode.strata then pcall(m.SetFrameStrata, m, testMode.strata) end
     local fdid, path = s.entry[1], s.entry[2]
     if testMode.known then fdid, path = nil, KNOWN_MODEL end
     local loaded = LoadModel(m, fdid, path)
@@ -375,7 +389,7 @@ local function ApplyTest(say)
         elseif v == "z" and m.SetPosition then m:SetPosition(value or 0, 0, 0)
         elseif v == "scale" and m.SetModelScale then m:SetModelScale(value or 1) end
     end)
-    local fileId = "?"
+    local fileId, visible, strata, level = "?", "?", "?", "?"
     pcall(function() if m.GetModelFileID then fileId = tostring(m:GetModelFileID()) end end)
     local h = (GetScreenHeight and GetScreenHeight()) or 1080
     local hPx = math.floor(h * 0.4)
@@ -384,21 +398,22 @@ local function ApplyTest(say)
     m:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
     m:SetAlpha(1.0)
     m:Show()
+    pcall(function()
+        if m.IsVisible then visible = tostring(m:IsVisible()) end
+        if m.GetFrameStrata then strata = tostring(m:GetFrameStrata()) end
+        if m.GetFrameLevel then level = tostring(m:GetFrameLevel()) end
+    end)
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
-    say("terrain test [%s]: %s, %s (file id %s), %d px tall at the screen centre over a dimmed world; the box is hidden meanwhile. Variants: /fide terrain test (fresh, no camera), cam 0, z 2, z -2, scale 5, nolight, known; /fide terrain test off restores.",
-        knob, which, loaded and "loaded" or "did NOT load", fileId, hPx)
+    say("terrain test [%s] on a new %s frame: %s, %s (file id %s), %d px tall at the screen centre, strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test (new Model frame, no camera call), frame player, frame dressup, strata high, known, cam 0, z 2, scale 5, nolight; /fide terrain test off restores.",
+        knob, actual, which, loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
     return true
 end
 
 local function EndTest()
-    local s = TestSlot()
     testMode = nil
-    if s and s.mono and s.entry then
-        LoadModel(s.mono, s.entry[1], s.entry[2]) -- a fresh load: no test knob lingers
-        if ns.ApplyLight then ns.ApplyLight(s.mono, ns.LIGHTS.mono) end
-    end
+    for _, f in ipairs(testFrames) do f:Hide() end
     if testHidBox and _G.FidelityEMatrixFrame then _G.FidelityEMatrixFrame:Show() end
     testHidBox = false
     ApplyBackdrop()
@@ -595,7 +610,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|cam <n>|z <x>|scale <s>|nolight|known|own]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|scale <s>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -638,15 +653,19 @@ function Terrain.Command(args, say)
             return
         end
         if not enabled then say("terrain test needs the overlay on: /fide terrain on, stand near placements, then /fide terrain test"); return end
-        local known = testMode and testMode.known or false
-        testMode = { variant = "default", value = nil, known = known }
+        local prev = testMode or {}
+        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata }
         if what == "cam" and n then testMode.variant, testMode.value = "cam", math.floor(n)
         elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
         elseif what == "nolight" then testMode.variant = "nolight"
         elseif what == "known" then testMode.known = true
         elseif what == "own" then testMode.known = false
-        elseif what and what ~= "default" and not (what == "cam" and args[4] == "off") then say(USAGE); return end
+        elseif what == "frame" and FRAME_KINDS[args[4] or ""] then testMode.frame = args[4]
+        elseif what == "strata" and (args[4] == "background" or args[4] == "medium" or args[4] == "high") then
+            if args[4] == "background" then testMode.strata = nil else testMode.strata = args[4]:upper() end
+        elseif what and what ~= "default" then say(USAGE); return end
+        if not TestSlot() then Refresh() end -- the overlay may have come on this very frame: scan now
         if not ApplyTest(say) then testMode = nil end
         return
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
@@ -670,5 +689,6 @@ end
 Terrain._pool = pool
 Terrain._lastCam = function() return lastCam end
 Terrain._failedAt = failedAt
+Terrain._testFrames = testFrames
 Terrain.RETRY_AFTER = RETRY_AFTER
 Terrain.DEFAULTS = DEFAULTS

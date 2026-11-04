@@ -84,6 +84,9 @@ function Region:SetPoint(p, rel, rp, x, y)
     self.points[p] = { rel = rel, rp = rp, x = x or 0, y = y or 0 }
 end
 function Region:SetFrameLevel(l) self.level = l end
+function Region:SetFrameStrata(s) self.strata = s end
+function Region:GetFrameStrata() return rawget(self, "strata") or "MEDIUM" end
+function Region:IsVisible() return self.shown end
 function Region:GetFrameLevel() return rawget(self, "level") end
 function Region:SetParent(p) self.parent = p end
 function Region:GetParent() return rawget(self, "parent") end
@@ -776,7 +779,7 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     check(near(T.Info().pitch, 0.35, 1e-9), "with no measurable nameplate the saved pitch (0.35) is used, got " .. tostring(T.Info().pitch))
 end)
 
-test("terrain test: one loaded prop alone at the screen centre with position, camera and scale knobs; off restores the layout", function()
+test("terrain test: every press draws on a brand-new frame of the asked kind, the pool is untouched, off restores the layout and the box", function()
     local T = ns.Terrain
     slash("terrain on")
     step(0.6)
@@ -786,43 +789,45 @@ test("terrain test: one loaded prop alone at the screen centre with position, ca
     for i = 1, #pool do if pool[i].used then loaded[#loaded + 1] = pool[i] end end
     check(#loaded == 2 and loaded[1].mono.position and loaded[1].mono.position[1] == 0, "a loaded prop is settled at its origin: SetPosition(0, 0, 0)")
     check(not rawget(loaded[1].mono, "setCameraCalls"), "no prop gets SetCamera: a doodad has no camera 0 and the call blanked every frame on the owner's client")
-    printed = {}
-    slash("terrain test")
-    check(printed[1] and printed[1]:find("terrain test [", 1, true) and printed[1]:find("432 px tall", 1, true), "the test names the prop and its size: " .. tostring(printed[1]))
-    local shown = 0
-    for i = 1, #pool do
-        local s = pool[i]
-        if s.mono and s.mono.shown then shown = shown + 1; check(s.mono.h == 432 and s.mono.points.CENTER, "the test prop is 40% of the screen tall at the centre") end
-        check(not (s.left and s.left.shown) and not (s.right and s.right.shown), "no stereo copies during the test")
-    end
-    check(shown == 1, "exactly one prop is shown during the test, got " .. shown)
-    step(1.0)
-    check(T.Info().props == 1, "the layout does not run during the test")
-    slash("terrain test off"); step(0.6)
+    local frames = T._testFrames
+    local function newest() return frames[#frames] end
     slash("box show")
     check(_G.FidelityEMatrixFrame.shown, "box shown before the test")
+    printed = {}
     slash("terrain test")
+    local f1 = newest()
+    check(#frames == 1 and f1.kind == "Model" and f1.shown and f1.h == 432 and f1.points.CENTER, "the first press draws on a new Model frame, 40% of the screen tall at the centre")
+    check(not rawget(f1, "setCameraCalls") and f1.position[1] == 0, "the default variant makes no camera call and settles the model at its origin")
+    check(f1.model == loaded[1].mono.model or f1.model == loaded[2].mono.model, "the test frame loads one of the pool's own models")
+    check(not loaded[1].mono.shown and not loaded[2].mono.shown, "the pool's props are hidden during the test")
     check(not _G.FidelityEMatrixFrame.shown, "the test hides the box, which sits over the screen centre")
-    local m = loaded[1].mono.shown and loaded[1].mono or loaded[2].mono
-    check(not rawget(m, "setCameraCalls"), "the default variant makes no camera call")
-    check(printed[#printed]:find("terrain test [default (fresh load, no camera call)]", 1, true) and printed[#printed]:find("loaded (file id", 1, true), "the test names its variant and whether the file loaded: " .. tostring(printed[#printed]))
+    check(printed[1] and printed[1]:find("terrain test [default (no camera call)] on a new Model frame", 1, true) and printed[1]:find("432 px tall", 1, true) and printed[1]:find("visible true", 1, true), "the test names its variant, frame, size and visibility: " .. tostring(printed[1]))
+    step(1.0)
+    check(T.Info().props == 1 and #frames == 1, "the layout does not run during the test")
     slash("terrain test cam 0")
-    check(m.camera == 0 and m.setCameraCalls == 1, "cam 0 puts the camera call back, once: camera " .. tostring(rawget(m, "camera")) .. " calls " .. tostring(rawget(m, "setCameraCalls")) .. " last line " .. tostring(printed[#printed]))
-    slash("terrain test z 2")
-    check(m.position[1] == 2, "z 2 moves the model toward the camera: SetPosition(2, 0, 0), got " .. tostring(m.position[1]))
-    check(m.setCameraCalls == 1, "a later variant starts fresh: no second camera call")
-    slash("terrain test scale 0.2")
-    check(m.modelScale == 0.2 and m.position[1] == 0, "scale sets SetModelScale on a fresh load (the z knob is gone), got " .. tostring(m.modelScale) .. " at x " .. tostring(m.position[1]))
-    local own = m.model
-    slash("terrain test known")
-    check(m.model == "interface\\buttons\\talktomequestionmark.m2", "known loads the client's question-mark model, got " .. tostring(m.model))
+    local f2 = newest()
+    check(#frames == 2 and f2 ~= f1 and not f1.shown and f2.shown and f2.camera == 0 and f2.setCameraCalls == 1, "cam 0 draws on a second new frame with the camera call, and hides the first")
+    check(not rawget(f1, "setCameraCalls"), "the first frame never received the camera call")
+    slash("terrain test frame player")
+    local f3 = newest()
+    check(f3.kind == "PlayerModel" and f3.shown and not f2.shown and not rawget(f3, "setCameraCalls"), "frame player draws on a new PlayerModel frame with no camera call, got " .. tostring(f3.kind))
+    slash("terrain test frame dressup")
+    check(newest().kind == "DressUpModel", "frame dressup draws on a DressUpModel frame")
+    slash("terrain test frame model"); slash("terrain test strata high")
+    local f5 = newest()
+    check(f5.kind == "Model" and f5:GetFrameStrata() == "HIGH", "strata high lifts the new frame to HIGH, got " .. tostring(f5:GetFrameStrata()))
+    slash("terrain test strata background"); slash("terrain test known")
+    local f6 = newest()
+    check(f6.model == "interface\\buttons\\talktomequestionmark.m2" and f6:GetFrameStrata() == "MEDIUM", "known loads the client's question-mark model on a frame at the default strata, got " .. tostring(f6.model))
+    slash("terrain test own"); slash("terrain test scale 5")
+    local f7 = newest()
+    check(f7.modelScale == 5 and f7.position[1] == 0 and f7.model ~= f6.model, "scale 5 on a new frame of the prop's own model")
     slash("terrain test off")
-    check(m.model == own, "off reloads the prop's own model, got " .. tostring(m.model))
+    for _, f in ipairs(frames) do check(not f.shown, "off hides every test frame") end
     check(_G.FidelityEMatrixFrame.shown, "off shows the box again")
     slash("box hide")
-    check(m.position[1] == 0 and m.modelScale == 1, "off settles the model back")
     step(0.6)
-    check(T.Info().props == 2, "off restores the layout, got " .. tostring(T.Info().props))
+    check(T.Info().props == 2 and loaded[1].mono.shown and loaded[2].mono.shown, "off restores the layout: the pool's props draw again, got " .. tostring(T.Info().props))
     -- the overlay stays on: the tests that follow continue from this state
 end)
 
@@ -1262,7 +1267,7 @@ test("every slash command runs without an addon error", function()
         "calibrate side", "calibrate turn", "calibrate turn", "scale 1.2", "scale 1", "toggle", "toggle",
         "world", "world status", "world frame dressup", "world frame player", "world parallax 120", "world height 1.8", "world off", "world bogus",
         "terrain", "terrain status", "terrain fov 60", "terrain head 2", "terrain pitch 30", "terrain autopitch",
-        "terrain backdrop dim", "terrain backdrop none", "terrain probe", "report", "report", "report status", "report clear", "report bogus", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
+        "terrain backdrop dim", "terrain backdrop none", "terrain probe", "terrain test frame player", "terrain test strata high", "terrain test off", "report", "report", "report status", "report clear", "report bogus", "terrain loader id", "terrain loader path", "terrain off", "terrain bogus",
         "overlay", "overlay", "overlay on", "overlay off", "full", "full off", "box", "box show", "box hide",
         "eye", "eye setup", "eye probe", "eye stick 2", "eye depth off", "eye gain 1.5", "eye gain 1", "eye calibrate", "eye source gamepad", "eye source cursor",
         "eye invert", "eye invert", "eye inverty", "eye inverty", "stereo bogus", "box bogus", "overlay bogus", "help", "help all",
