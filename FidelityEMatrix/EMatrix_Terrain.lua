@@ -235,6 +235,20 @@ local function Loaded(model)
     return ok and type(id) == "number" and id > 0
 end
 
+--- Puts a loaded model where a Model frame can see it: at its origin, facing forward, on the
+--- file's own camera when it has one. Classic has no SetDefaultModelPosition, so the position is
+--- set by hand (CLAUDE.md section 1). The owner's v1.7.7 probe showed 90 files loaded and none
+--- visible, so /fide terrain test lets the owner move this by hand to find the frame's view.
+local function SettleModel(model, x, cam, scale)
+    pcall(function()
+        if model.SetPosition then model:SetPosition(x or 0, 0, 0) end
+        if model.SetFacing then model:SetFacing(0) end
+        if cam ~= false and model.SetCamera then model:SetCamera(cam or 0) end
+        if model.SetModelScale then model:SetModelScale(scale or 1) end
+        if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end
+    end)
+end
+
 local function LoadModel(model, fdid, path)
     if not model then return false end
     local winPath = path and path ~= "" and path:gsub("/", "\\") or nil
@@ -247,10 +261,7 @@ local function LoadModel(model, fdid, path)
     for _, asset in ipairs(tries) do
         local ok = pcall(model.SetModel, model, asset)
         if ok and Loaded(model) then
-            pcall(function()
-                if model.SetCamera then model:SetCamera(0) end
-                if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end
-            end)
+            SettleModel(model)
             loadStats.ok = loadStats.ok + 1
             loadStats.lastWin = type(asset) == "number" and ("id " .. asset) or asset
             return true
@@ -319,8 +330,56 @@ local function SetLevel(model, level)
     end
 end
 
+-- /fide terrain test: one loaded prop alone at the screen centre over a dimmed world, with the
+-- model's position, camera and scale as knobs, so the owner can tell whether a Model frame on this
+-- client draws a doodad file at all, and where its view is. Nothing else moves while it is on.
+local testMode = nil
+local lastInfo = { props = 0, buildings = 0, tile = nil, groundZ = nil, pitch = nil }
+local ApplyBackdrop -- defined with the enable/disable commands below
+
+local function TestSlot()
+    for i = 1, MAX_PROPS do
+        local s = pool[i]
+        if s and s.used and s.entry and s.mono then return s end
+    end
+    return nil
+end
+
+local function ApplyTest(say)
+    local s = TestSlot()
+    if not s then
+        say("terrain test: no loaded prop yet (turn the overlay on near placements, wait a second, then try again)")
+        return false
+    end
+    for i = 1, MAX_PROPS do if pool[i] and pool[i] ~= s then HideModels(pool[i]) end end
+    if s.left then s.left:Hide() end
+    if s.right then s.right:Hide() end
+    local m = s.mono
+    local h = (GetScreenHeight and GetScreenHeight()) or 1080
+    local hPx = math.floor(h * 0.4)
+    m:ClearAllPoints()
+    m:SetSize(math.floor(hPx * 0.8), hPx)
+    m:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+    SettleModel(m, testMode.z, testMode.cam, testMode.scale)
+    m:SetAlpha(1.0)
+    m:Show()
+    lastInfo.props = 1
+    if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
+    say("terrain test: %s alone at the screen centre, %d px tall, SetPosition(%.1f, 0, 0), camera %s, model scale %.2f, over a dimmed world. Nothing visible means the Model frame draws the file outside its view: try /fide terrain test z 2, then z -2, cam off, scale 0.2. /fide terrain test off restores.",
+        (s.entry[2]:match("([^/]+)$") or s.entry[2]), hPx, testMode.z, testMode.cam == false and "off" or tostring(testMode.cam), testMode.scale)
+    return true
+end
+
+local function EndTest()
+    local s = TestSlot()
+    testMode = nil
+    if s and s.mono then SettleModel(s.mono) end
+    ApplyBackdrop()
+end
+
 function Terrain.Layout(cam, eyeX, eyeY, zoom)
     if not overlay then return 0 end
+    if testMode then return 1 end
     local anaglyph = Cfg("stereoMode") == "anaglyph"
     local px, delta = Cfg("stereoPixels"), Cfg("stereoDelta")
     local turnSign = Cfg("turnSign")
@@ -370,7 +429,6 @@ function Terrain.Layout(cam, eyeX, eyeY, zoom)
     return drawn
 end
 
-local lastInfo = { props = 0, buildings = 0, tile = nil, groundZ = nil, pitch = nil }
 
 local function Refresh()
     local ps = Terrain.PlayerState()
@@ -416,6 +474,7 @@ local errors = { count = 0, last = nil }
 Terrain.errors = errors
 
 local function Step(self, dt)
+    if testMode then return end -- the test picture stays put
     clock = clock + dt
     scanAge = scanAge + dt
     if scanAge >= SCAN_INTERVAL or not lastCam then
@@ -454,7 +513,7 @@ end
 -- ---------------------------------------------------------------------------
 -- Enable / disable / commands
 -- ---------------------------------------------------------------------------
-local function ApplyBackdrop()
+function ApplyBackdrop()
     if not backdropTex then return end
     local mode = Cfg("terrainBackdrop")
     if mode == "black" then backdropTex:SetColorTexture(0, 0, 0, 1); backdropTex:Show()
@@ -464,6 +523,7 @@ end
 
 local function Stop()
     if not overlay then return end
+    testMode = nil
     overlay:SetScript("OnUpdate", nil)
     for i = 1, #pool do ReleaseSlot(pool[i]) end
     lastInfo.props = 0
@@ -508,7 +568,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|z <x>|cam <n|off>|scale <s>]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -543,6 +603,21 @@ function Terrain.Command(args, say)
         end
         say("probe: models loaded %d, failed %d%s%s", loadStats.ok, loadStats.failed,
             loadStats.lastWin and (", last loaded via " .. loadStats.lastWin) or "", loadStats.lastFailure and (", last failure " .. loadStats.lastFailure) or "")
+        return
+    elseif sub == "test" then
+        local what, n = args[3], tonumber(args[4])
+        if what == "off" then
+            if testMode then EndTest(); say("terrain test off: the overlay draws as before") else say("terrain test is not on") end
+            return
+        end
+        if not enabled then say("terrain test needs the overlay on: /fide terrain on, stand near placements, then /fide terrain test"); return end
+        testMode = testMode or { z = 0, cam = 0, scale = 1 }
+        if what == "z" and n then testMode.z = math.min(math.max(n, -50), 50)
+        elseif what == "cam" and args[4] == "off" then testMode.cam = false
+        elseif what == "cam" and n then testMode.cam = math.floor(n)
+        elseif what == "scale" and n and n > 0 then testMode.scale = math.min(n, 50)
+        elseif what then say(USAGE); return end
+        if not ApplyTest(say) then testMode = nil end
         return
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
     elseif sub == "status" then

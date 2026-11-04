@@ -1,5 +1,15 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## The owner's terrain probe: the axis fix proven, the loader proven, the Model frame in question; v1.7.8 adds `/fide terrain test` (04 Nov 2026, 06:55Z, Claude in the cloud) — start here
+
+**The probe (v1.7.7, the Abbey door):** `tile azeroth:32:48 FOUND, 9 tile(s) around | ground 89.1`; `15 drawable placements within 70 yd` with screen positions and heights for the six nearest; `models loaded 90, failed 0`, the last by its path. So the v1.7.5 axis fix is proven in the game, the map data is right, and `SetModel` with a path loads on this client. The status line's `props drawn 0` was taken after `/fide overlay off`, so it says nothing; with the overlay on, models loaded (the loads only happen then), were placed and shown, and the owner saw nothing. The headless harness cannot see inside a Model frame: it asserts the frame's size, anchor and `Show()`, not what the client renders in it.
+
+**Landed as v1.7.8** (the addon only): every loaded model is settled at its origin (`SetPosition(0, 0, 0)`, facing 0, the file's camera 0 when it has one, scale 1; Classic has no `SetDefaultModelPosition`), and `/fide terrain test` draws one loaded prop alone at the screen centre, 40% of the screen tall, over a dimmed world, and prints what it did; `z <x>` moves the model toward or away from the frame's camera, `cam <n|off>` picks or drops the file's camera, `scale <s>` scales it; `off` restores. Nothing else moves while the test is on. Headless: the test shows exactly one prop at the centre, the knobs reach the model, off restores the layout (64/64).
+
+**The owner's next paste:** `/fide terrain on`, then `/fide terrain status` (it must now say `props drawn N` with N above 0), then `/fide terrain test` and a screenshot. If nothing shows at the centre over the dimmed world: `/fide terrain test z 2`, `z -2`, `cam off`, `scale 0.2`, a screenshot of the first one that shows anything, then `/fide terrain test off`. That tells us the frame's view, and the next version places every prop accordingly.
+
+**Evidence (06:55Z, Linux, Node 22):** `npm test`: `# tests 181 # pass 180 # fail 0 # skipped 1`; headless 64/64; math 14/14; kernel 6/6.
+
 ## News back from the game: v1.7.7 seen, round 4 `used`, the terrain still not drawn (04 Nov 2026, 06:47Z, Claude in the cloud) — start here
 
 **The owner's three screenshots (v1.7.7 on TBC Anniversary, 7:41 to 7:42 local), read against round 4's check list:** the login line says `v1.7.7` and `eye hand:cursor (no head measured)` (check 1); `/fide cells` prints `label 0.50 age 0.1s of 2s measured -> open` for seven units and `label 1.00 ... symbolic` for the player, with the header that the label is the band's constant (check 2); clicks on unbound cells print `Clicked cell 82: no source` and `Clicked cell 112: no source`, the top row's cells 2 to 8 stand open as lenses and the rest closed, and `/fide overlay off` releases the slots so every cell closes (check 3 in part). Round 4 is `used` (`docs/council/2026-11-04-can/LANDED.md`). Not yet seen: a click on an open bound cell, the half-second held press, `/fide status`.

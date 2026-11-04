@@ -765,6 +765,39 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     check(near(T.Info().pitch, 0.35, 1e-9), "with no measurable nameplate the saved pitch (0.35) is used, got " .. tostring(T.Info().pitch))
 end)
 
+test("terrain test: one loaded prop alone at the screen centre with position, camera and scale knobs; off restores the layout", function()
+    local T = ns.Terrain
+    slash("terrain on")
+    step(0.6)
+    check(T.Info().props == 2, "two props drawn before the test, got " .. tostring(T.Info().props))
+    local pool = T._pool
+    local loaded = {}
+    for i = 1, #pool do if pool[i].used then loaded[#loaded + 1] = pool[i] end end
+    check(#loaded == 2 and loaded[1].mono.position and loaded[1].mono.position[1] == 0, "a loaded prop is settled at its origin: SetPosition(0, 0, 0)")
+    printed = {}
+    slash("terrain test")
+    check(printed[1] and printed[1]:find("terrain test: ", 1, true) and printed[1]:find("432 px tall", 1, true), "the test names the prop and its size: " .. tostring(printed[1]))
+    local shown = 0
+    for i = 1, #pool do
+        local s = pool[i]
+        if s.mono and s.mono.shown then shown = shown + 1; check(s.mono.h == 432 and s.mono.points.CENTER, "the test prop is 40% of the screen tall at the centre") end
+        check(not (s.left and s.left.shown) and not (s.right and s.right.shown), "no stereo copies during the test")
+    end
+    check(shown == 1, "exactly one prop is shown during the test, got " .. shown)
+    step(1.0)
+    check(T.Info().props == 1, "the layout does not run during the test")
+    slash("terrain test z 2")
+    local m = loaded[1].mono.shown and loaded[1].mono or loaded[2].mono
+    check(m.position[1] == 2, "z 2 moves the model toward the camera: SetPosition(2, 0, 0), got " .. tostring(m.position[1]))
+    slash("terrain test scale 0.2")
+    check(m.modelScale == 0.2, "scale sets SetModelScale, got " .. tostring(m.modelScale))
+    slash("terrain test off")
+    check(m.position[1] == 0 and m.modelScale == 1, "off settles the model back")
+    step(0.6)
+    check(T.Info().props == 2, "off restores the layout, got " .. tostring(T.Info().props))
+    -- the overlay stays on: the tests that follow continue from this state
+end)
+
 test("terrain overlay: anaglyph pairs, facing follows the player, off releases everything", function()
     local T = ns.Terrain
     slash("stereo anaglyph")
