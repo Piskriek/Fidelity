@@ -1,19 +1,19 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-04T07:17:27.562Z",
+  "updated_at": "2026-11-04T07:50:32.221Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
       "id": "H009",
       "priority": 0,
-      "title": "Collect the owner's report: copy the newest WoW screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (a separate worktree, never main) and push, so the director reads the exact lines",
+      "title": "Collect the owner's second report on v1.8.0: deploy it, have the owner press the twelve-button panel (1 to 10, then Save), copy the newest WoW screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (the worktree from the first run, never main) and push",
       "steps": [
-        "First deploy v1.7.9 of FidelityEMatrix the H005 way (fetch, merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; the folder now holds 16 files with EMatrix_Report.lua). Then tell the owner: /reload, /fide report, press the buttons top to bottom (1 to 9; each takes a screenshot half a second later), then Save (reload UI). Wait for the owner to say they are done.",
+        "First deploy v1.8.0 of FidelityEMatrix the H005 way (git -C D:\\fidelity-repo fetch origin, git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; 16 files; the toc must say 1.8.0). Then tell the owner: /reload, stand where the first report was taken (the Abbey door), /fide report, press the buttons top to bottom, 1 to 10 (each takes a screenshot half a second later; wait for the chat line before the next press), then Save (reload UI). Wait for the owner to say they are done.",
         "Find the report file: D:\\World of Warcraft\\_anniversary_\\WTF\\Account\\<the account folder>\\SavedVariables\\FidelityEMatrix.lua. It must contain FidelityEMatrix_Report with steps; read its at field (the report's start time). If it has no steps, stop and report blocked with blocked_on \"owner: press the report buttons and Save (reload UI)\".",
         "Collect the screenshots: every file in D:\\World of Warcraft\\_anniversary_\\Screenshots\\ modified at or after that at time (if in doubt, the last two hours). List them with size and mtime. Skip any single file over 8 MB and name it in the report instead.",
         "Prepare the reports worktree (never touch the deploy checkout's branch): if D:\\fidelity-reports does not exist, run git -C D:\\fidelity-repo fetch origin, then git -C D:\\fidelity-repo worktree add -B owner/reports D:\\fidelity-reports origin/owner/reports if that remote branch exists, else git -C D:\\fidelity-repo worktree add -b owner/reports D:\\fidelity-reports origin/francois/serene-euler-51wj3e. If it exists: git -C D:\\fidelity-reports fetch origin and git -C D:\\fidelity-reports pull --ff-only origin owner/reports (ignore the error if the remote branch does not exist yet).",
-        "Copy into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm, the report's at time>\\: the screenshots, the FidelityEMatrix.lua SavedVariables file, and a MANIFEST.txt listing every file with its size, mtime and Get-FileHash -Algorithm SHA256, plus the addon version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc and the client build from .build.info.",
+        "Copy into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm, the report's at time; a new folder, the first run's 20261104-0935 stays>\\: the screenshots, the FidelityEMatrix.lua SavedVariables file, and a MANIFEST.txt listing every file with its size, mtime and Get-FileHash -Algorithm SHA256, plus the addon version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc and the client build from .build.info.",
         "git -C D:\\fidelity-reports add reports && git -C D:\\fidelity-reports commit -m \"report: owner screenshots and saved report <yyyymmdd-hhmm>\" && git -C D:\\fidelity-reports push -u origin owner/reports",
         "If that push is rejected as non-fast-forward: git -C D:\\fidelity-reports pull --ff-only origin owner/reports and then git -C D:\\fidelity-reports push -u origin owner/reports. The branch is always owner/reports and the push is always plain: no other branch, no forcing of any kind.",
         "Report the folder name, the file list with sizes, the commit hash and the push output. The director fetches origin/owner/reports and reads the lines there."
@@ -25,7 +25,7 @@
         "The commit hash on owner/reports and the push output"
       ],
       "status": "requested",
-      "requested_at": "2026-11-04T07:17:27.562Z"
+      "requested_at": "2026-11-04T07:50:32.221Z"
     },
     {
       "id": "H008",

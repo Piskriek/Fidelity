@@ -235,16 +235,16 @@ local function Loaded(model)
     return ok and type(id) == "number" and id > 0
 end
 
---- Puts a loaded model where a Model frame can see it: at its origin, facing forward, on the
---- file's own camera when it has one. Classic has no SetDefaultModelPosition, so the position is
---- set by hand (CLAUDE.md section 1). The owner's v1.7.7 probe showed 90 files loaded and none
---- visible, so /fide terrain test lets the owner move this by hand to find the frame's view.
-local function SettleModel(model, x, cam, scale)
+--- Puts a loaded model where a Model frame can see it: at its origin, facing forward, scale 1.
+--- Classic has no SetDefaultModelPosition, so the position is set by hand (CLAUDE.md section 1).
+--- No SetCamera here: every prop had SetCamera(0) from v1.6 to v1.7.9 and none was ever visible
+--- on the owner's client, including the client's own question-mark model (the 09:35 report), and a
+--- doodad file has no camera 0 to select. The test's "cam 0" variant puts the call back on purpose.
+local function SettleModel(model, x)
     pcall(function()
         if model.SetPosition then model:SetPosition(x or 0, 0, 0) end
         if model.SetFacing then model:SetFacing(0) end
-        if cam ~= false and model.SetCamera then model:SetCamera(cam or 0) end
-        if model.SetModelScale then model:SetModelScale(scale or 1) end
+        if model.SetModelScale then model:SetModelScale(1) end
         if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end
     end)
 end
@@ -349,6 +349,8 @@ local function TestSlot()
     return nil
 end
 
+local VARIANT_LABEL = { default = "default (fresh load, no camera call)", cam = "camera", z = "SetPosition x", scale = "model scale", nolight = "no light applied" }
+
 local function ApplyTest(say)
     local s = TestSlot()
     if not s then
@@ -361,32 +363,41 @@ local function ApplyTest(say)
     local m = s.mono
     local box = _G.FidelityEMatrixFrame
     if box and box:IsShown() then box:Hide(); testHidBox = true end -- the box sits over the screen centre
-    local which = (s.entry[2]:match("([^/]+)$") or s.entry[2])
-    if testMode.known then
-        which = LoadModel(m, nil, KNOWN_MODEL) and "the client's own question-mark model (interface/buttons/talktomequestionmark)" or "the question-mark model, which did NOT load"
-    end
+    -- every variant starts from a fresh SetModel, so no earlier knob (a camera index, a scale) lingers
+    local fdid, path = s.entry[1], s.entry[2]
+    if testMode.known then fdid, path = nil, KNOWN_MODEL end
+    local loaded = LoadModel(m, fdid, path)
+    local which = testMode.known and "the client's own question-mark model (interface/buttons/talktomequestionmark)" or (path:match("([^/]+)$") or path)
+    local v, value = testMode.variant or "default", testMode.value
+    if v ~= "nolight" and ns.ApplyLight then ns.ApplyLight(m, ns.LIGHTS.mono) end
+    pcall(function()
+        if v == "cam" and m.SetCamera then m:SetCamera(value or 0)
+        elseif v == "z" and m.SetPosition then m:SetPosition(value or 0, 0, 0)
+        elseif v == "scale" and m.SetModelScale then m:SetModelScale(value or 1) end
+    end)
+    local fileId = "?"
+    pcall(function() if m.GetModelFileID then fileId = tostring(m:GetModelFileID()) end end)
     local h = (GetScreenHeight and GetScreenHeight()) or 1080
     local hPx = math.floor(h * 0.4)
     m:ClearAllPoints()
     m:SetSize(math.floor(hPx * 0.8), hPx)
     m:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-    SettleModel(m, testMode.z, testMode.cam, testMode.scale)
     m:SetAlpha(1.0)
     m:Show()
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
-    say("terrain test: %s alone at the screen centre (the box is hidden meanwhile), %d px tall, SetPosition(%.1f, 0, 0), camera %s, model scale %.2f, over a dimmed world. Nothing visible means the Model frame draws the file outside its view: try /fide terrain test z 2, then z -2, cam off, scale 0.2, known. /fide terrain test off restores.",
-        which, hPx, testMode.z, testMode.cam == false and "off" or tostring(testMode.cam), testMode.scale)
+    local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
+    say("terrain test [%s]: %s, %s (file id %s), %d px tall at the screen centre over a dimmed world; the box is hidden meanwhile. Variants: /fide terrain test (fresh, no camera), cam 0, z 2, z -2, scale 5, nolight, known; /fide terrain test off restores.",
+        knob, which, loaded and "loaded" or "did NOT load", fileId, hPx)
     return true
 end
 
 local function EndTest()
     local s = TestSlot()
-    local wasKnown = testMode and testMode.known
     testMode = nil
-    if s and s.mono then
-        if wasKnown and s.entry then LoadModel(s.mono, s.entry[1], s.entry[2]) end
-        SettleModel(s.mono)
+    if s and s.mono and s.entry then
+        LoadModel(s.mono, s.entry[1], s.entry[2]) -- a fresh load: no test knob lingers
+        if ns.ApplyLight then ns.ApplyLight(s.mono, ns.LIGHTS.mono) end
     end
     if testHidBox and _G.FidelityEMatrixFrame then _G.FidelityEMatrixFrame:Show() end
     testHidBox = false
@@ -584,7 +595,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|z <x>|cam <n|off>|scale <s>|known]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|cam <n>|z <x>|scale <s>|nolight|known|own]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -627,13 +638,15 @@ function Terrain.Command(args, say)
             return
         end
         if not enabled then say("terrain test needs the overlay on: /fide terrain on, stand near placements, then /fide terrain test"); return end
-        testMode = testMode or { z = 0, cam = 0, scale = 1 }
-        if what == "z" and n then testMode.z = math.min(math.max(n, -50), 50)
-        elseif what == "cam" and args[4] == "off" then testMode.cam = false
-        elseif what == "cam" and n then testMode.cam = math.floor(n)
-        elseif what == "scale" and n and n > 0 then testMode.scale = math.min(n, 50)
+        local known = testMode and testMode.known or false
+        testMode = { variant = "default", value = nil, known = known }
+        if what == "cam" and n then testMode.variant, testMode.value = "cam", math.floor(n)
+        elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
+        elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
+        elseif what == "nolight" then testMode.variant = "nolight"
         elseif what == "known" then testMode.known = true
-        elseif what then say(USAGE); return end
+        elseif what == "own" then testMode.known = false
+        elseif what and what ~= "default" and not (what == "cam" and args[4] == "off") then say(USAGE); return end
         if not ApplyTest(say) then testMode = nil end
         return
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return

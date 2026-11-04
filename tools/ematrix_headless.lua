@@ -199,7 +199,7 @@ function Region:GetModelFileID()
 end
 function Region:SetAnimation(a) self.animation = a end
 function Region:SetModelScale(s) self.modelScale = s end
-function Region:SetCamera(i) self.camera = i end
+function Region:SetCamera(c) self.camera = c; self.setCameraCalls = (rawget(self, "setCameraCalls") or 0) + 1 end
 if PROFILE == "table" then
     _G.CreateVector3D = function(x, y, z) return { x = x, y = y, z = z } end
     _G.CreateColor = function(r, g, b) return { r = r, g = g, b = b } end
@@ -785,9 +785,10 @@ test("terrain test: one loaded prop alone at the screen centre with position, ca
     local loaded = {}
     for i = 1, #pool do if pool[i].used then loaded[#loaded + 1] = pool[i] end end
     check(#loaded == 2 and loaded[1].mono.position and loaded[1].mono.position[1] == 0, "a loaded prop is settled at its origin: SetPosition(0, 0, 0)")
+    check(not rawget(loaded[1].mono, "setCameraCalls"), "no prop gets SetCamera: a doodad has no camera 0 and the call blanked every frame on the owner's client")
     printed = {}
     slash("terrain test")
-    check(printed[1] and printed[1]:find("terrain test: ", 1, true) and printed[1]:find("432 px tall", 1, true), "the test names the prop and its size: " .. tostring(printed[1]))
+    check(printed[1] and printed[1]:find("terrain test [", 1, true) and printed[1]:find("432 px tall", 1, true), "the test names the prop and its size: " .. tostring(printed[1]))
     local shown = 0
     for i = 1, #pool do
         local s = pool[i]
@@ -802,11 +803,16 @@ test("terrain test: one loaded prop alone at the screen centre with position, ca
     check(_G.FidelityEMatrixFrame.shown, "box shown before the test")
     slash("terrain test")
     check(not _G.FidelityEMatrixFrame.shown, "the test hides the box, which sits over the screen centre")
-    slash("terrain test z 2")
     local m = loaded[1].mono.shown and loaded[1].mono or loaded[2].mono
+    check(not rawget(m, "setCameraCalls"), "the default variant makes no camera call")
+    check(printed[#printed]:find("terrain test [default (fresh load, no camera call)]", 1, true) and printed[#printed]:find("loaded (file id", 1, true), "the test names its variant and whether the file loaded: " .. tostring(printed[#printed]))
+    slash("terrain test cam 0")
+    check(m.camera == 0 and m.setCameraCalls == 1, "cam 0 puts the camera call back, once: camera " .. tostring(rawget(m, "camera")) .. " calls " .. tostring(rawget(m, "setCameraCalls")) .. " last line " .. tostring(printed[#printed]))
+    slash("terrain test z 2")
     check(m.position[1] == 2, "z 2 moves the model toward the camera: SetPosition(2, 0, 0), got " .. tostring(m.position[1]))
+    check(m.setCameraCalls == 1, "a later variant starts fresh: no second camera call")
     slash("terrain test scale 0.2")
-    check(m.modelScale == 0.2, "scale sets SetModelScale, got " .. tostring(m.modelScale))
+    check(m.modelScale == 0.2 and m.position[1] == 0, "scale sets SetModelScale on a fresh load (the z knob is gone), got " .. tostring(m.modelScale) .. " at x " .. tostring(m.position[1]))
     local own = m.model
     slash("terrain test known")
     check(m.model == "interface\\buttons\\talktomequestionmark.m2", "known loads the client's question-mark model, got " .. tostring(m.model))
@@ -1206,13 +1212,13 @@ end)
 
 test("report panel: buttons run the checks with their chat captured into the saved report, screenshots follow half a second later, save reloads, clear empties", function()
     local R = ns.Report
-    check(R and R.STEPS and #R.STEPS == 11, "the report module loaded with eleven steps")
+    check(R and R.STEPS and #R.STEPS == 12, "the report module loaded with twelve steps")
     local terrainWas = ns.Terrain.IsEnabled()
     FidelityEMatrix_Report = nil
     printed = {}
     slash("report show")
     local p = R._panel()
-    check(p and p.shown and _G.FidelityEMatrixReportButton1 and _G.FidelityEMatrixReportButton11, "the panel and its buttons exist and show")
+    check(p and p.shown and _G.FidelityEMatrixReportButton1 and _G.FidelityEMatrixReportButton12, "the panel and its buttons exist and show")
     check(printed[1] and printed[1]:find("Report panel shown", 1, true), "the command says what to do")
     local function click(i) local b = _G["FidelityEMatrixReportButton" .. i]; b.scripts.OnClick(b, "LeftButton") end
     click(1)
@@ -1227,14 +1233,16 @@ test("report panel: buttons run the checks with their chat captured into the sav
     slash("box show")
     click(2) -- terrain on + test
     check(ns.Terrain.IsEnabled() and not _G.FidelityEMatrixFrame.shown, "the terrain test step hides the box")
+    click(3) -- cam 0, pressed before the previous shot's half second has passed
+    check(r.steps[2].screenshot:find("not taken", 1, true), "a step pressed within the half second supersedes the pending shot: " .. tostring(r.steps[2].screenshot))
     step(0.6)
-    check(screenshots == 2, "each shot step takes one screenshot")
-    click(8) -- test off
+    check(screenshots == 2, "only the superseding step's own shot is taken, got " .. screenshots)
+    click(9) -- test off
     check(_G.FidelityEMatrixFrame.shown, "test off shows the box again")
-    check(#r.steps == 3 and r.steps[3].screenshot == "none", "a step without a shot says so")
-    click(10) -- save
+    check(#r.steps == 4 and r.steps[4].screenshot == "none", "a step without a shot says so")
+    click(11) -- save
     check(reloads == 1, "save reloads the UI to write the file")
-    click(11) -- clear
+    click(12) -- clear
     check(#FidelityEMatrix_Report.steps == 0, "clear empties the report")
     printed = {}
     slash("report status")

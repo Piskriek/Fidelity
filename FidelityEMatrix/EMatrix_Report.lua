@@ -53,17 +53,18 @@ end
 -- The steps, top to bottom. Each runs its commands, records their chat, and (shot) takes a
 -- screenshot half a second later. The terrain test hides the box while it is on.
 Report.STEPS = {
-    { key = "checks",  label = "1 Checks + shot",          cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
-    { key = "test",    label = "2 Terrain test + shot",    cmds = { "terrain on", "terrain test" }, shot = true },
-    { key = "z2",      label = "3 Test z 2 + shot",        cmds = { "terrain test z 2" }, shot = true },
-    { key = "zm2",     label = "4 Test z -2 + shot",       cmds = { "terrain test z -2" }, shot = true },
-    { key = "camoff",  label = "5 Test cam off + shot",    cmds = { "terrain test cam off" }, shot = true },
-    { key = "scale",   label = "6 Test scale 0.2 + shot",  cmds = { "terrain test scale 0.2" }, shot = true },
-    { key = "known",   label = "7 Known model + shot",     cmds = { "terrain test known" }, shot = true },
-    { key = "testoff", label = "8 Test off",               cmds = { "terrain test off" }, shot = false },
-    { key = "bound",   label = "9 Box, bind on + shot",    cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
-    { key = "save",    label = "Save (reload UI)",         save = true },
-    { key = "clear",   label = "Clear report",             clear = true },
+    { key = "checks",  label = "1 Checks + shot",           cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
+    { key = "test",    label = "2 Test fresh + shot",       cmds = { "terrain on", "terrain test own", "terrain test" }, shot = true },
+    { key = "cam0",    label = "3 Test cam 0 + shot",       cmds = { "terrain test cam 0" }, shot = true },
+    { key = "z2",      label = "4 Test z 2 + shot",         cmds = { "terrain test z 2" }, shot = true },
+    { key = "zm2",     label = "5 Test z -2 + shot",        cmds = { "terrain test z -2" }, shot = true },
+    { key = "scale5",  label = "6 Test scale 5 + shot",     cmds = { "terrain test scale 5" }, shot = true },
+    { key = "nolight", label = "7 Test no light + shot",    cmds = { "terrain test nolight" }, shot = true },
+    { key = "known",   label = "8 Known model + shot",      cmds = { "terrain test known" }, shot = true },
+    { key = "testoff", label = "9 Test off",                cmds = { "terrain test off" }, shot = false },
+    { key = "bound",   label = "10 Box, bind on + shot",    cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
+    { key = "save",    label = "Save (reload UI)",          save = true },
+    { key = "clear",   label = "Clear report",              clear = true },
 }
 
 function Report.Run(step)
@@ -83,6 +84,7 @@ function Report.Run(step)
     rec.lines = Capture(function() for _, c in ipairs(step.cmds or {}) do Slash(c) end end)
     rec.screenshot = step.shot and "pending" or "none"
     r.steps[#r.steps + 1] = rec
+    if pendingRec then pendingRec.screenshot = "not taken: the next step started within the half second"; pendingRec, pendingShot = nil, nil end
     if step.shot then pendingShot, pendingRec = SHOT_DELAY, rec end
     print(PREFIX .. string.format("Report step %s: %d line(s) captured%s. %d step(s) in the report; press Save (reload UI) to write it.",
         step.label, #rec.lines, step.shot and ", screenshot in half a second" or "", #r.steps))
