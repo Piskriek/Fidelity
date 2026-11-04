@@ -255,22 +255,49 @@ end
 -- The seventh run tests the tree and a barrel at the rule and beside it.
 local REF_HEIGHT = 2.5     -- the bush, measured
 local REF_FACTOR = 2.0     -- its fit, measured
-local HEIGHT_EXPONENT = 0.4 -- from the tree's fit of about 4, estimated
-local function CameraDistanceFor(heightYd)
+local HEIGHT_EXPONENT = 0.4 -- a guess for files not measured yet
+-- Per-file fits read from the owner's seventh report (v1.8.5, 12:24 local, the test frame's edges
+-- in red): the camera factor at which the model fills its frame top to bottom, so that the frame's
+-- projected height is the model's and its base sits at the frame's bottom (the engine centres the
+-- model's bounds on the frame's mid-line). bush x2 filled it (measured); the tree at x3.98 filled
+-- about 0.7, so its fit is 2.8; the barrel at x1.49 filled about 0.4, so its fit is 0.6. The
+-- nominal heights do not predict these, which is why the fits are per file.
+local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.6 }
+local function FileKey(path)
+    local p = tostring(path or ""):lower():gsub("\\", "/")
+    return p:match("([^/]+)%.%w+$") or p:match("([^/]+)$") or p
+end
+--- The owner's own fits, saved by /fide terrain test fit <k> on the picked prop (SavedVariables).
+local function OwnerFit(key)
+    local t = FidelityEMatrix_Config and FidelityEMatrix_Config.propFit
+    local v = t and key and tonumber(t[key])
+    return v and v > 0 and v or nil
+end
+local function CameraDistanceFor(heightYd, path)
+    local key = path and FileKey(path) or nil
+    local known = key and (OwnerFit(key) or FIT_BY_FILE[key]) or nil
+    if known then return math.min(math.max(known, 0.25), 16.0) end
     local h = tonumber(heightYd) or REF_HEIGHT
     if h <= 0 then h = REF_HEIGHT end
     return math.min(math.max(REF_FACTOR * (h / REF_HEIGHT) ^ HEIGHT_EXPONENT, 0.25), 16.0)
 end
+local function FitSource(path)
+    local key = path and FileKey(path) or nil
+    if key and OwnerFit(key) then return "your saved fit" end
+    if key and FIT_BY_FILE[key] then return "measured from your reports" end
+    return "the height rule, a guess"
+end
 
-local function SettleModel(model, x, heightYd)
+local function SettleModel(model, x, heightYd, path)
     pcall(function()
         if model.SetPosition then model:SetPosition(x or 0, 0, 0) end
         if model.SetFacing then model:SetFacing(0) end
+        local k = CameraDistanceFor(heightYd, path)
         if model.SetCamDistanceScale then
-            model:SetCamDistanceScale(CameraDistanceFor(heightYd))
+            model:SetCamDistanceScale(k)
             if model.SetModelScale then model:SetModelScale(1) end
         elseif model.SetModelScale then
-            model:SetModelScale(1 / CameraDistanceFor(heightYd))
+            model:SetModelScale(1 / k)
         end
         if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end
     end)
@@ -288,7 +315,7 @@ local function LoadModel(model, fdid, path, heightYd)
     for _, asset in ipairs(tries) do
         local ok = pcall(model.SetModel, model, asset)
         if ok and Loaded(model) then
-            SettleModel(model, 0, heightYd)
+            SettleModel(model, 0, heightYd, path)
             loadStats.ok = loadStats.ok + 1
             loadStats.lastWin = type(asset) == "number" and ("id " .. asset) or asset
             return true
@@ -443,8 +470,8 @@ local function ApplyTest(say)
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
-    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera distance x%.2f by the rule%s), %s (file id %s), %d px tall at the screen centre (its edges marked in red, its mid-line thin), strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, scale <s>, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
-        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height), testMode.pick and (", picked by \"" .. testMode.pick .. "\"") or "", loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
+    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera x%.2f by %s%s), %s (file id %s), %d px tall at the screen centre (its edges marked in red, its mid-line thin), strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, fit <k>|clear (saves the pick's fit for the pool), scale <s>, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
+        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height, path), FitSource(path), testMode.pick and (", picked by \"" .. testMode.pick .. "\"") or "", loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
     return true
 end
 
@@ -675,7 +702,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|scale <s>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|fit <k|clear>|scale <s>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -724,6 +751,21 @@ function Terrain.Command(args, say)
         elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
         elseif what == "camdist" and n and n > 0 then testMode.variant, testMode.value = "camdist", math.min(n, 50)
+        elseif what == "fit" and (args[4] == "clear" or (n and n > 0)) then
+            local s = TestSlot(testMode.pick)
+            if not s then say("terrain test fit: no prop picked yet"); return end
+            local key = FileKey(s.entry[2])
+            FidelityEMatrix_Config.propFit = FidelityEMatrix_Config.propFit or {}
+            if args[4] == "clear" then FidelityEMatrix_Config.propFit[key] = nil
+            else FidelityEMatrix_Config.propFit[key] = math.min(math.max(n, 0.25), 16.0) end
+            say("terrain test fit: %s now uses camera x%.2f (%s); the pool's copies are re-settled", key, CameraDistanceFor(s.height, s.entry[2]), FitSource(s.entry[2]))
+            for i = 1, MAX_PROPS do
+                local q = pool[i]
+                if q and q.used and q.entry and FileKey(q.entry[2]) == key then
+                    SettleModel(q.mono, 0, q.height, q.entry[2]); SettleModel(q.left, 0, q.height, q.entry[2]); SettleModel(q.right, 0, q.height, q.entry[2])
+                end
+            end
+            testMode.variant, testMode.value = "default", nil
         elseif what == "nolight" then testMode.variant = "nolight"
         elseif what == "known" then testMode.known = true
         elseif what == "own" then testMode.known = false
@@ -760,6 +802,7 @@ Terrain._failedAt = failedAt
 Terrain._testFrames = testFrames
 Terrain.FrameKind = function() return propFrameKind end
 Terrain.CameraDistanceFor = CameraDistanceFor
+Terrain.FileKey = FileKey
 Terrain._markFrame = function() return markFrame end
 Terrain.RETRY_AFTER = RETRY_AFTER
 Terrain.DEFAULTS = DEFAULTS

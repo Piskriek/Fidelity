@@ -1,15 +1,15 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-04T10:15:04.573Z",
+  "updated_at": "2026-11-04T10:39:03.959Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
       "id": "H009",
       "priority": 0,
-      "title": "Collect the owner's seventh report on v1.8.5 (the camera rule now has two points, the bush measured and the tree estimated; this run tests the tree and a barrel at the rule and beside it, with the test frame's edges marked in red): deploy it, have the owner press the panel (Clear, then 1 to 10, then Save), copy the newest WoW screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (the existing worktree, never main) and push",
+      "title": "Collect the owner's eighth report on v1.8.6 (per-file camera fits measured from the seventh run: bush, tree, barrel; the rest by the rule): deploy it, have the owner press the panel (Clear, then 1 to 10, then Save), copy the newest WoW screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (the existing worktree, never main) and push",
       "steps": [
-        "First deploy v1.8.5 of FidelityEMatrix the H005 way (git -C D:\\fidelity-repo fetch origin, git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; 16 files; the toc must say 1.8.5). Then tell the owner: /reload, stand at the Abbey door facing the abbey as before, /fide report, press Clear report, then the buttons top to bottom, 1 to 10, waiting for each chat line before the next press (3 the bush by the rule; 4 to 6 the tree by the rule, x3, x6; 7 and 8 a barrel by the rule and x3; the test frame's edges are drawn in red with a thin mid-line, so the pictures show where the model sits in its frame), then Save (reload UI). Ask the owner to say in one line which tree picture and which barrel picture fit the red frame best. Wait for the owner to say they are done.",
+        "First deploy v1.8.6 of FidelityEMatrix the H005 way (git -C D:\\fidelity-repo fetch origin, git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; 16 files; the toc must say 1.8.6). Then tell the owner: /reload, stand at the Abbey door facing the abbey as before, /fide report, press Clear report, then the buttons top to bottom, 1 to 10, waiting for each chat line before the next press; before pressing 9, turn the camera to the right so the kobold camp with the barrel and jars is in front of you (9 takes the scene from there); then Save (reload UI). Ask the owner to say in one line whether the bush, tree and barrel in 3 to 5 fill the red frame top to bottom, and whether in 1 and 9 the props stand on the ground where the real ones stand. Wait for the owner to say they are done.",
         "Find the report file: D:\\World of Warcraft\\_anniversary_\\WTF\\Account\\<the account folder>\\SavedVariables\\FidelityEMatrix.lua. It must contain FidelityEMatrix_Report with steps; read its at field (the report's start time). If it has no steps, stop and report blocked with blocked_on \"owner: press the report buttons and Save (reload UI)\".",
         "Collect the screenshots: every file in D:\\World of Warcraft\\_anniversary_\\Screenshots\\ modified at or after that at time (if in doubt, the last two hours). List them with size and mtime. Skip any single file over 8 MB and name it in the report instead.",
         "Prepare the reports worktree (never touch the deploy checkout's branch): if D:\\fidelity-reports does not exist, run git -C D:\\fidelity-repo fetch origin, then git -C D:\\fidelity-repo worktree add -B owner/reports D:\\fidelity-reports origin/owner/reports if that remote branch exists, else git -C D:\\fidelity-repo worktree add -b owner/reports D:\\fidelity-reports origin/francois/serene-euler-51wj3e. If it exists: git -C D:\\fidelity-reports fetch origin and git -C D:\\fidelity-reports pull --ff-only origin owner/reports (ignore the error if the remote branch does not exist yet).",
@@ -25,7 +25,7 @@
         "The commit hash on owner/reports and the push output"
       ],
       "status": "requested",
-      "requested_at": "2026-11-04T10:15:04.573Z"
+      "requested_at": "2026-11-04T10:39:03.959Z"
     },
     {
       "id": "H008",

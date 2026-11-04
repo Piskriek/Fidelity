@@ -1,5 +1,17 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## The seventh report: fits per file, the model centred on the mid-line, the owner's rule of relative position; v1.8.6 (04 Nov 2026, 10:39Z, Claude in the cloud) — start here
+
+**The seventh report (v1.8.5, 12:24 local, `origin/owner/reports`, `reports/20261104-1226/`, seventeen screenshots, the test frame's edges in red).** The bush at x2 fills its frame top to bottom. The tree at x3.98 fills about 0.7 of its frame, so its fit (fill 1) is near x2.8; at x6 about 0.55. The barrel at x1.49 fills about 0.4, so its fit is near x0.6; at x3 about 0.2. The engine centres the model's bounds on the frame's mid-line: the barrel sits exactly on it, the tree's visible part above it (its bounds reach below the trunk). The nominal heights (2.5, 14, 1.2 yd) do not predict these fits, so no one rule does; the fit is a property of each file.
+
+**The owner's reading, recorded as the rule:** "It is not the size that matters, just the relative position between them compared to the mirror": a camera sweep on one model alone only scales it in a vacuum; what counts is that the props stand where the real objects stand and keep their proportions to each other and to the player. The frame's projected height carries the proportion once each model fills its frame; the base of a frame-filling model sits at the frame's bottom, which is where the prop's projected foot is anchored.
+
+**Landed as v1.8.6:** per-file camera fits, measured (`elwynnbush09` 2.0, `elwynntreemid01` 2.8, `westfallbarrel01` 0.6), keyed by the lowercase file name whatever the path's case or slashes; the owner's own fit for the picked prop saved from the test (`/fide terrain test fit <k>`, `fit clear`) into `FidelityEMatrix_Config.propFit`, re-settling the pool's copies at once; the height rule only for files not yet measured, and the test line says which of the three it used; the panel checks each kind of prop by its fit (bush, tree, barrel, then the jar and the crate by the rule), the scene twice (the second after the owner turns to the kobold camp), the bound box. Headless 66/66. H009 re-requested for v1.8.6.
+
+**Evidence (10:39Z, Linux, Node 22):** `npm test`: `# tests 183 # pass 182 # fail 0 # skipped 1`; headless 66/66; manifests 4/4.
+
+**Open after this:** fits for the other files near the abbey (the jar, the crate, the canopy trees), which the owner can set by eye with `fit`; the frame's aspect for wide canopies; the eye's parallax across the props; the stereo pair.
+
 ## The sixth report: the proportional rule overshoots on the tree; v1.8.5 fits a two-point rule and marks the test frame (04 Nov 2026, 10:13Z, Claude in the cloud) — start here
 
 **The sixth report (v1.8.4, 11:59 local, `origin/owner/reports`, `reports/20261104-1200/`).** The bush by the rule (camera x2) sits whole in its frame at the player's feet, with a little margin; at x3 it is smaller and whole. The tree by the rule (x11.2) is a small whole tree, about a third of its frame; at x16 smaller still. So the proportional rule overshoots: a PlayerModel's own camera already backs off with the model's bounds, only not fully. The live scene shows the barrel, jars and crate beside the kobolds and the tree's canopy as a smaller block at the upper left (its frame still runs off the top of the screen at 1013 px). The bound box worked as before.
