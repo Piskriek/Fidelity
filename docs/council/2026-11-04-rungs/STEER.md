@@ -1,10 +1,11 @@
 # STEER: council round 2026-11-04-rungs, the recorded reading per rung, returned in Shape B
 
-Written by the director (Claude in the cloud), first committed 17:36Z. Revised twice after adversarial review:
+Written by the director (Claude in the cloud), first committed 17:36Z. Revised three times after adversarial review:
 - the first review's five reviewers, each checked by a skeptic, confirmed 34 of 39 findings;
-- a second pass found 28 of those fixes sound, 6 partly open, and new defects in the fixes themselves.
+- a second pass found 28 of those fixes sound, 6 partly open, and new defects in the fixes themselves;
+- a final pass over the second revision demonstrated nine more.
 
-All are addressed below, in the ledger, in the evaluator or in v1.8.8, and each correction is stated where it falls. Evidence for this revision: the test run at 21:07Z.
+All are addressed below, in the ledger, in the evaluator or in v1.8.8, and each correction is stated where it falls. Evidence for this revision: the test run at 22:01Z.
 
 **Inputs**, all in this folder and each relayed through the Triad unchanged:
 - the owner's idea, his camera settings and his second message, "we need a polynomial time algorithm" (`OWNER-INPUT.md`);
@@ -66,7 +67,7 @@ These are the rows of `docs/rungs/ledger.json` as `packages/triad-369/src/rung_l
 
 | File | v1.8.7 | Verdict there | v1.8.8 | Verdict now | Why |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| elwynnbush09 | x2.0 | fitted | x2.0 | fitted | In all seven x2 shots (112659, 112751, 115950, 122430, 122502, 122553, 124621), its twigs reach 0.10 to 0.12 below the frame's top and its stems touch the bottom edge. A touching edge may be cut, so none of these readings can decide. Its one measured base (x3, an unmarked frame: tan stems to 0.89) gives reaches of up 0.78 and down 1.17. By those, no k alone fills its frame within 0.1 (at best 0.80 at x2.44); the twins decide whether it needs a vertical offset. |
+| elwynnbush09 | x2.0 | fitted | x2.44 | fitted | In all seven x2 shots (112659, 112751, 115950, 122430, 122502, 122553, 124621), its twigs reach 0.10 to 0.12 below the frame's top and its stems touch the bottom edge. A touching edge may be cut, so x2 can never be decided. At x3 its base is behind the player copy, but its stems beside the copy reach at least 0.89, so its down reach is at least 1.17, against up 0.78. It moves to a trial at x2.44, where its twin can see both edges. By those bounds no k alone fills its frame (at most 0.83), so a vertical offset is the likely next step. |
 | westfallbarrel01 | x0.6 | fails | x0.53 | fitted | At x0.6 it fills 0.83 (124647: lid at 0.105, staves end at 0.935). Five readings give reaches of up 0.240 and down 0.255. At x0.53, with the margin, it should fill 0.93. Its width needs a frame 0.81 as wide as tall, against 0.8. |
 | westfallcrate | x0.42 | fails | x0.38 | fitted | At x0.42 it fills 0.80, and its planks run past both side edges (131707). Its reaches are up 0.154 and down 0.183, too different to pass in any 0.8-wide frame (0.88 at x0.38). It needs a frame about 1.8 as wide as tall, and the panel's step 8 reads it in one. |
 | jar01 | x0.37 | fitted | x0.37 | fitted | Its reading at x0.37 is partial: the top is at 0.095, and the rounded base is hidden behind the world overlay's copy of the player (131702). |
@@ -79,7 +80,7 @@ Nothing holds among the fits. The frontier, the next ask, is the projection and 
 
 The judge's synthesis took the first readings as recorded in RESUME. Those were made by eye on whole screenshots when each report landed. Re-read against ticked crops:
 - **The barrel.** "Fills it too" at x0.6 is a fill of 0.83: there is a visible gap of 0.105 at the top and 0.065 at the bottom.
-- **The bush.** "Fills its frame top to bottom" at x2 was nearly right. The director's crops at first measured only the dense bright leaves (from 0.27). The review found the thin dark twigs reaching 0.10 to 0.12, and the stems running to the bottom edge at x2 and to 0.89 at x3. The director confirmed both on brightened zooms. So the bush at x2 is undecided, not failed: its base touches the frame, and a touching edge may be cut.
+- **The bush.** "Fills its frame top to bottom" at x2 was nearly right. The director's crops at first measured only the dense bright leaves (from 0.27). The review found the thin dark twigs reaching 0.10 to 0.12, and the stems running to the bottom edge at x2 and to at least 0.89 at x3, where its base itself is behind the player copy. The director confirmed both on brightened zooms. So the bush at x2 is undecided, not failed: its base touches the frame, and a touching edge may be cut.
 - **The tree.** "Canopy at the top edge and trunk base at the bottom" at x2.8 has its canopy cut at the top edge, in the narrow frame (124636) and in v1.8.7's wide frame (131714) alike. The trunk base is behind the player copy in every tree shot. The review also corrected the narrow-frame tops to the dark crown rather than the lit leaves: 0.02 at x3.98 (three shots), 0.175 at x6 (two), and 0.32 at x11.2.
 
 Each second reading is a row that supersedes the first reading of the same shot, because the evaluator ranks a more precise reading by the same class of witness first (precision 0.03 on a marked frame against 0.1 by eye). The first readings stay in the ledger as rows.
@@ -88,7 +89,7 @@ Each second reading is a row that supersedes the first reading of the same shot,
 - up = k (0.5 - top);
 - down = k (0.5 - bottom).
 
-The barrel's five readings, x0.6 to x3 (a factor of five), give up 0.231 to 0.255 and down 0.238 to 0.261, each within 0.025; k × fill = up + down spans 0.477 to 0.510. The crate's two give 0.149 to 0.158 and 0.182 to 0.185. For the bush, the tops give up 0.72 to 0.79 over x2 to x6, and its x3 base gives down 1.17. The tree's narrow-frame tops give up 1.91 to 2.02 over x3.98 to x11.2. Whether a frame's aspect changes how the camera frames a model stays open. The tree's one wide-frame reading is cut at the top, which bounds its reach from below (at least 1.4) and agrees with the narrow frames as well. So the lock keys each fit reading on its frame's aspect until a pair of twins settles it.
+The barrel's five readings, x0.6 to x3 (a factor of five), give up 0.231 to 0.255 and down 0.238 to 0.261, each within 0.025; k × fill = up + down spans 0.477 to 0.510. The crate's two give 0.149 to 0.158 and 0.182 to 0.185. For the bush, the tops give up 0.72 to 0.79 over x2 to x6, and its hidden x3 base bounds down from below at 1.17. The tree's narrow-frame tops give up 1.91 to 2.02 over x3.98 to x11.2. Whether a frame's aspect changes how the camera frames a model stays open. The tree's one wide-frame reading is cut at the top, which bounds its reach from below (at least 1.4) and agrees with the narrow frames as well. So the lock keys each fit reading on its frame's aspect until a pair of twins settles it.
 
 This answers part of the synthesis's dissent on the fit model: fill ∝ 1/k holds for the barrel over a factor of five. The tree's spread in its first readings (k × fill from 2.79 to 3.70) came from fills read with its base hidden.
 
@@ -250,7 +251,7 @@ and while every rung beneath it holds. The being reports which rungs hold and wh
 - **Opus (core kernel and spec).** Landed: the evaluator, the ledger and the test. Next, each gated on a witness:
   - the camera estimator, once the tenth report's twins give rows. P = 2 (pitch and fovY) or 3 with a yaw offset. The focal has a closed form at fixed angles. Pitch comes from a fixed-grid scan refined by halvings, or bisection on a named foot's y where the scan shows it monotone. Its predictor is checked against `EMatrix_Math.lua` through fengari to 1e-9.
   - the Triad write as the second step: `bridge/sync/rungs.json`, `rungs_traversed`, `evidence.report`. Never a seventh flow: it would cap flow integrity at 6/7.
-  - a per-file aspect, and a per-file vertical offset, once twins give both edges of each model. The bush is the first candidate for the offset, if its twins confirm up 0.78 against down 1.17.
+  - a per-file aspect, and a per-file vertical offset, once twins give both edges of each model. The bush is the first candidate for the offset, if its x2.44 twin confirms that its down reach exceeds its up reach of 0.78.
 - **Flash (WoW).**
   - Deploy v1.8.8 through H005 and H009.
   - The owner's procedure (H009, re-requested 17:32Z): Clear; let the chat fade or move it; stand still for each twin; step and stop before each scene press; in 11, turn so props stand on both sides of the centre.
@@ -276,7 +277,7 @@ and while every rung beneath it holds. The being reports which rungs hold and wh
 
 1. **The reading is the node.** Every rung, at every scale, is one declaration plus rows. A value moves only when a counted reading moves it. A constant with no row behind it fails `npm test`. Landed.
 2. **The camera gets its first paired reading:** the pose at every shutter, and an overlay-off twin, with no saved choice written. Landed in v1.8.8; waits for the tenth report.
-3. **The fits converge on twins.** Every fit step draws its file at the value in use and takes a twin, so both edges are read objectively (`tools/frame_fill.py twin`). Then the aspect per file (the crate first), then a vertical offset where the reaches differ (the bush).
+3. **The fits converge on twins.** Every fit step draws its file at the value in use and takes a twin (`tools/frame_fill.py twin`). Every value in use is now one at which a twin can see both edges: estimates and trials keep a margin, and the bush left x2, where its base touched the frame. Then the aspect per file (the crate first), then a vertical offset where the reaches differ (the bush).
 4. **Then the Triad reads the verdicts as data** (the second step), after owner ruling 7.
 5. **Not on the vector:**
    - a node per density;
@@ -309,7 +310,7 @@ Landed on `francois/serene-euler-51wj3e` (addon v1.8.8), each piece with its tes
   - every hash checked against `origin/owner/reports` when that ref is present;
   - every row counted or refused once.
 - **The addon, v1.8.8:**
-  - **`EMatrix_Terrain.lua`.** The fits are written back: barrel 0.53, crate 0.38, and the tree and canopy04 5.6 (trials); bush and jar unchanged. `FIT_STATUS` puts a status in every test line in place of "measured from your reports": "estimated, not confirmed" for the barrel and the crate, "read at this value, undecided" for the bush and the jar, and "a trial value" for the tree and canopy04. The stale rule comment is replaced. `ASPECT_RULES` and `HEIGHT_DEFAULT` are tables the test reads. The probe names every drawable placement. The pitch and the focal print "(saved default, not measured)" or "(your setting, not measured)". `Terrain.Snapshot` and `Terrain.HideForShot` are new. The layout keeps each slot's drawn rectangle. A terrain test hides the world overlay's copies. The test gains an `aspect <a>|auto` knob.
+  - **`EMatrix_Terrain.lua`.** The fits are written back: barrel 0.53 and crate 0.38 (estimates), and the bush 2.44 and the tree and canopy04 5.6 (trials); the jar unchanged. `FIT_STATUS` puts a status in every test line in place of "measured from your reports": "estimated, not confirmed" for the barrel and the crate, "read at this value, undecided" for the jar, and "a trial value" for the bush, the tree and canopy04. The stale rule comment is replaced. `ASPECT_RULES` and `HEIGHT_DEFAULT` are tables the test reads. The probe names every drawable placement. The pitch and the focal print "(saved default, not measured)" or "(your setting, not measured)". `Terrain.Snapshot` and `Terrain.HideForShot` are new. The layout keeps each slot's drawn rectangle. A terrain test hides the world overlay's copies. The test gains an `aspect <a>|auto` knob.
   - **`EMatrix_World.lua`.** `World.HideFor(reason, on)` hides each copy (copies may live under nameplates), and the layout skips while any reason holds. Neither touches the saved choice.
   - **`EMatrix_Report.lua`.** Twelve steps plus Save and Clear. Each shot records the pose at its shutter silently, with the facing's spread since the press. Twin steps (1, 3 to 11) take a second shot with the drawings hidden: 0.25 s after the first, hide, 0.5 s, shoot, 0.25 s, show. A press during a twin, Save, Clear or hiding the panel marks it not taken, with that reason, and shows the drawings at once. Every fit step resets the aspect knob first, and the scene steps end any test first.
   - The version is 1.8.8 in the core and the three manifests.
@@ -352,7 +353,7 @@ Landed on `francois/serene-euler-51wj3e` (addon v1.8.8), each piece with its tes
    - steps 1 and 10 and 11 each hold `pose` and `twin.pose` from their own shutters, equal at rest, with a facing spread near 0;
    - each pose lists every drawable placement (15 at the start pose) with its foot, its top and its drawn rectangle;
    - the probe and status lines say "(saved default, not measured)";
-   - the crate's and barrel's test lines say "estimated ... not confirmed", the bush's and jar's "read at this value ... undecided", and the tree's and canopy04's "a trial value".
+   - the crate's and barrel's test lines say "estimated ... not confirmed", the jar's "read at this value ... undecided", and the bush's, the tree's and canopy04's "a trial value".
 3. **In the pictures:**
    - each twin shows no copy and no red frame;
    - no player figure stands in the red frames of the fit steps. If one still does, it is the real player, and that is recorded.
@@ -369,4 +370,4 @@ LANDED becomes `used` when the shots map to rows and the verdicts match the read
 
 ## Next round's ASK
 
-"The camera's first verdict: fit pitch and fovY (and a yaw offset only if the horizontal residual fails) on the tenth report's twins. Test it on a held-out placement. Then read the six fits' twins: a per-file aspect for the crate, and for the bush whether its reaches differ enough to need a vertical offset." If the twins cannot be read, the ASK is instead what the twin needs: a turned pose, the chat moved, or a closer zoom notch.
+"The camera's first verdict: fit pitch and fovY (and a yaw offset only if the horizontal residual fails) on the tenth report's twins. Test it on a held-out placement. Then read the six fits' twins: a per-file aspect for the crate, and from the bush's x2.44 twin whether its reaches differ enough to need a vertical offset." If the twins cannot be read, the ASK is instead what the twin needs: a turned pose, the chat moved, or a closer zoom notch.

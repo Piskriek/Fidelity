@@ -1,6 +1,6 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, first committed 17:36Z, revised twice after adversarial review, evidence 21:07Z, Claude in the cloud) — start here
+## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, first committed 17:36Z, revised three times after adversarial review, evidence 22:01Z, Claude in the cloud) — start here
 
 **The owner's idea** was a node per density or fidelity rung, looping back to the fidelity process, taking his camera settings into account, with "a polynomial time algorithm" (`docs/council/2026-11-04-rungs/OWNER-INPUT.md`). Twelve voices ran, each verified, then three synthesis angles and a judge (`JUDGED.json`). Argon's Bentov packet was weighed as a candidate lens, and the gradient-equivalence note was applied.
 
@@ -9,13 +9,18 @@
 **The director's second reading of all 35 camera-distance fit shots** overturned three first readings made by eye. The reading used ticked crops and brightened zooms; the bush and tree readings were corrected after two reviews re-read them.
 - The barrel fills 0.83 at x0.6, not 1.
 - The tree's canopy is cut at the frame top at x2.8, in the narrow and the wide frame alike.
-- The bush at x2, said to fill its frame, has twigs reaching 0.10 to 0.12 below the frame's top and stems touching its bottom in all seven x2 shots. Undecided, since the touching edge may be cut. Its one measured base (x3, stems to 0.89) gives reaches of up 0.78 and down 1.17. By those, no camera factor alone fills its frame; the twins decide whether it needs a vertical offset.
+- The bush at x2, said to fill its frame, has twigs reaching 0.10 to 0.12 below the frame's top and stems touching its bottom in all seven x2 shots. That is undecided, and can never be decided at x2, since the touching edge may be cut. Its base, hidden at x3, reaches at least 0.89 there, so its down reach is at least 1.17 against up 0.78. It moves to a trial at x2.44, where its twin sees both edges. By those bounds no camera factor alone fills its frame (at most 0.83).
 
 The jar's base was hidden behind the world overlay's copy of the player. Each file reaches a fixed distance above and below the frame's mid-line at x1; the barrel's five readings agree within 0.025 over a factor of five in k. The proposal puts the larger reach 0.02 inside the frame, so the next reading sees two edges. Whether a frame's aspect changes the framing stays open, so a fit reading counts only in the aspect it was taken in.
 
 **Where this stands.** None of the fits holds yet. **The claim that the props stand where the real objects stand is withdrawn** until the projection holds on an overlay-off twin, since no scene shot ever carried its pose. The map data, the axis, the load and the PlayerModel frame hold.
 
-**The reviews.** First pass: five reviewers (the evaluator, the Lua, the data, the documents, the tests), each checked by a skeptic, confirmed 34 of 39 findings. Second pass: five skeptics and a regression hunter verified the fixes. They found 28 sound, 6 partly open, and new defects in the fixes. All are addressed:
+**The reviews.**
+- First pass: five reviewers (the evaluator, the Lua, the data, the documents, the tests), each checked by a skeptic, confirmed 34 of 39 findings.
+- Second pass: five skeptics and a regression hunter verified the fixes. They found 28 sound, 6 partly open, and new defects in the fixes.
+- Final pass over the second revision: nine more, demonstrated: an untestable refusal pair, canPass judged before rounding, negative gaps admitted, the bush's hidden base recorded as seen, the bush's x2 step undecidable, and three test gaps.
+
+All are addressed:
 - A touching edge no longer passes a fit, and the twin tool can no longer make a cut model hold.
 - Proposals keep a margin, and doubling applies when every reading reached an edge.
 - Precision is required.
@@ -26,7 +31,7 @@ The jar's base was hidden behind the world overlay's copy of the player. Each fi
 - The lock and precedence tests that the first revision dropped are restored.
 - Every adjacent pair of refusal reasons is pinned.
 - The supersede reasons are honest (a hidden panel says so).
-- The bush's x3 base is read to its stems and the wide tree is clipped.
+- The bush's hidden x3 base is recorded as a bound, the wide tree as clipped.
 - The aspect-effect claim is withdrawn.
 - The judge's synthesis is committed.
 
@@ -36,12 +41,12 @@ The jar's base was hidden behind the world overlay's copy of the player. Each fi
 - **`tools/rung-ledger.test.mjs`:** 18 tests, including:
   - forty stacked diamonds (2^40 paths) take 121 decisions and a re-check 92;
   - 300 random cases where the re-check equals a fresh pass, with reused ids and strays;
-  - every refusal reason, and every adjacent pair in their order;
+  - every refusal reason, and every adjacent pair one row can carry, in their order;
   - the lock;
   - the owner's precedence.
 - **`docs/council/2026-11-04-rungs/JUDGED.json`** and **`judge/`:** the judge's scores, synthesis and camera computations.
 - **v1.8.8:**
-  - fits written back: barrel 0.53, crate 0.38, and the tree and canopy04 5.6 as trials. Each carries the ledger's status in place of "measured from your reports": estimated, read and undecided, or a trial value;
+  - fits written back: barrel 0.53 and crate 0.38 as estimates; the bush 2.44 and the tree and canopy04 5.6 as trials. Each carries the ledger's status in place of "measured from your reports": estimated, read and undecided, or a trial value;
   - the probe names every drawable placement;
   - the pitch and the focal say "(saved default, not measured)";
   - every shot records the pose and every placement's prediction at its shutter, silently;
@@ -52,7 +57,7 @@ The jar's base was hidden behind the world overlay's copy of the player. Each fi
 - **`tools/frame_fill.py`:** `twin` reads a fit twin into the ledger's fields and flags dim edges for the eye.
 - **H009**, re-requested 17:32Z for the tenth report.
 
-**Evidence (21:07Z, Linux, Node 22):**
+**Evidence (22:01Z, Linux, Node 22):**
 - `npm test`: `# tests 203 # pass 202 # fail 0 # skipped 1`;
 - the ledger: 18/18;
 - headless: 68/68;
