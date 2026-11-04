@@ -25,10 +25,32 @@ local cursorX, cursorY = 960, 540
 local now = 0
 
 local Region = {}
+-- Strict widget surface (council O1 attack 8, O3 attacks 1 to 3, 04 Nov 2026). A method the stub
+-- does not model must be listed here as KNOWN (the client has it; a harmless no-op here) or
+-- ABSENT (the owner's Classic client lacks it, per /fide diag, or only a ModelScene has it; nil
+-- here, so the addon takes the path the client takes). Any other CamelCase name raises, so a
+-- misspelled or invented API call fails the tests instead of passing as a no-op. Lower-case and
+-- "__" names are data fields and read as nil, as on any table.
+local KNOWN = {}
+for name in ([[
+    EnableMouse SetFrameStrata GetFrameStrata SetClampedToScreen SetMovable RegisterForDrag StartMoving StopMovingOrSizing
+    RegisterEvent UnregisterEvent SetScale GetScale SetModelScale SetCamera SetAnimation SetSequence SetUnit SetModel SetLight
+    SetFacing SetPosition SetCamDistanceScale SetPortraitZoom SetCameraPosition SetParent GetParent SetAlpha GetAlpha
+    Show Hide IsShown SetScript GetScript SetSize SetWidth SetHeight GetWidth GetHeight SetPoint ClearAllPoints SetAllPoints
+    GetEffectiveScale GetCenter GetLeft GetTop GetObjectType CreateTexture SetTexture SetColorTexture SetTexCoord SetBlendMode
+    SetVertexColor SetFrameLevel GetFrameLevel GetModelFileID IsVisible GetName SetModelByUnit
+]]):gmatch("%S+") do KNOWN[name] = true end
+local ABSENT = {}
+for name in ("SetDefaultModelPosition GetActiveCamera CreateActor AddCamera SetActiveCamera SetTarget SetYaw SetZoomDistance SetRotation UnitFrame"):gmatch("%S+") do ABSENT[name] = true end
 Region.__index = function(t, k)
     local v = Region[k]
     if v ~= nil then return v end
-    return function() end -- unknown methods are harmless no-ops
+    if ABSENT[k] then return nil end
+    if KNOWN[k] then return function() end end
+    if type(k) == "string" and k:match("^[A-Z]") then
+        error("unknown widget method '" .. k .. "': the stub allows only methods the client has (add it to KNOWN or ABSENT in tools/ematrix_headless.lua)", 2)
+    end
+    return nil
 end
 
 local created = {}
@@ -286,6 +308,28 @@ test("ADDON_LOADED builds the grid closed, with defaults merged into an old save
     check(#lastErrors() == 0, table.concat(lastErrors(), " | "))
 end)
 
+test("cell rotations: balanced, no diagonal lattice, no uniform 2x2 block (the old hash was (c - r) mod 4 in disguise)", function()
+    local counts, at = { [0] = 0, 0, 0, 0 }, {}
+    for r = 1, 9 do
+        for c = 1, 15 do
+            local h, uv = M.GetCellRotation(c, r)
+            check(h == math.floor(h) and h >= 0 and h <= 3 and uv == M.ROT_UV8[h], "rotation " .. tostring(h) .. " at " .. c .. "," .. r)
+            counts[h] = counts[h] + 1
+            at[c .. "," .. r] = h
+        end
+    end
+    for h = 0, 3 do check(counts[h] >= 20, "orientation " .. h .. " appears " .. counts[h] .. " times") end
+    for a = 0, 3 do for b = 0, 3 do for k = 0, 3 do
+        local fits = true
+        for r = 1, 9 do for c = 1, 15 do if (a * c + b * r + k) % 4 ~= at[c .. "," .. r] then fits = false end end end
+        check(not fits, string.format("rotations follow (%dc + %dr + %d) mod 4: a lattice", a, b, k))
+    end end end
+    for r = 1, 8 do for c = 1, 14 do
+        local h = at[c .. "," .. r]
+        check(not (at[(c + 1) .. "," .. r] == h and at[c .. "," .. (r + 1)] == h and at[(c + 1) .. "," .. (r + 1)] == h), "uniform 2x2 block at " .. c .. "," .. r)
+    end end
+end)
+
 test("math: parallax keeps the screen plane fixed and splits signs by depth", function()
     check(M.ParallaxShift(0.5, 0) == 0, "z = 0 must not move")
     check(M.ParallaxShift(0.5, 1.0) > 0 and M.ParallaxShift(0.5, 0.5) > 0, "behind the screen moves with the eye")
@@ -349,6 +393,9 @@ test("opening leaves the microlens array visible at lensAlpha", function()
         local c = ns.cells[i]
         check(c.flapTex.texture:find("Window") and near(c.flapTex.alpha, 0.35), "cell " .. i .. " alpha " .. c.flapTex.alpha .. " (want lens 0.35)")
         check(c.creviceTex.alpha == 0 and c.specBar.alpha == 0, "cell " .. i .. " left a crevice or glint")
+        -- the lens is never rotated: one sun over the whole array (its lit rim stays upper right)
+        local tc = c.flapTex.texcoord
+        check(tc and #tc == 4 and tc[1] == 0 and tc[2] == 1 and tc[3] == 0 and tc[4] == 1, "lens cell " .. i .. " must use identity texcoords, got " .. table.concat(tc or {}, ","))
     end
     check(near(st.openAmount, 1), "openAmount " .. st.openAmount)
     for _, w in ipairs(st.walls) do check(w.shown and near(w.alpha, 1), "a wall is not shown when open") end
@@ -433,7 +480,14 @@ test("closing returns the E-wall and hides the depth planes", function()
     step(3.0)
     local st = ns.State()
     check(not st.open and near(st.openAmount, 0), "did not close")
-    for i = 1, 135 do check(ns.cells[i].flapTex.alpha == 1 and ns.cells[i].flapTex.texture:find("Closed"), "cell " .. i .. " not closed") end
+    for i = 1, 135 do
+        local c = ns.cells[i]
+        check(c.flapTex.alpha == 1 and c.flapTex.texture:find("Closed"), "cell " .. i .. " not closed")
+        -- the E comes back in the cell's own orientation (its 8-coordinate table)
+        local tc = c.flapTex.texcoord
+        check(tc and #tc == 8, "closed cell " .. i .. " must use its 8-coordinate rotation, got " .. #(tc or {}))
+        for k = 1, 8 do check(tc[k] == c.uv8[k], "closed cell " .. i .. " coordinate " .. k .. " differs from its rotation table") end
+    end
     for _, w in ipairs(st.walls) do check(not w.shown, "wall shown while closed") end
     check(not st.reticle.mono.shown and not st.sheen.shown, "front planes shown while closed")
 end)
@@ -772,9 +826,10 @@ test("terrain overlay: culling before the cut, failed loads free the slot and re
     for k in pairs(T._failedAt) do if k:find("elwynnbush09", 1, true) then key = k end end
     check(key, "the failed key must be remembered for the retry timer")
     for i = 1, #pool do local s = pool[i]; if not s.used then check(not s.mono.shown and not s.left.shown and not s.right.shown, "an unused slot must not show a model") end end
-    local okBefore = T.loadStats.ok
+    local failedBefore = T.loadStats.failed
     step(T.RETRY_AFTER * 0.5)
-    check(not used()[bushPath] and T.loadStats.ok == okBefore + 0 or true, "no retry before RETRY_AFTER")
+    check(not used()[bushPath], "no retry before RETRY_AFTER: the bush must still be out")
+    check(T.loadStats.failed == failedBefore, "no retry before RETRY_AFTER: no new load attempt, failures " .. T.loadStats.failed .. " vs " .. failedBefore)
     failModels["elwynnbush09"] = nil
     step(T.RETRY_AFTER * 0.5 + 0.6)
     byPath = used()

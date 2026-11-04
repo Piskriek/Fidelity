@@ -1,7 +1,7 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T20:18:33Z",
+  "updated_at": "2026-11-04T04:22:29.670Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
@@ -13,7 +13,7 @@
         "git -C D:\\fidelity-repo fetch origin",
         "If D:\\fidelity-repo is on flash/wow-ematrix-polish or claude/ematrix-depth with no new local commits: git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth. If that is not a fast-forward, stop and report blocked with the output of git status; never reset, clean or checkout -f.",
         "Confirm the version is 1.7.0 or later: Select-String '## Version' D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc. If it is still 1.6.1 the PR is not merged yet: report blocked with blocked_on \"director: merge the v1.7.0 PR into claude/ematrix-depth\" and stop.",
-        "node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs D:\\fidelity-repo\\tools\\ematrix-toc.test.mjs (expect 0 fail; the Lua test needs npm install once for fengari)",
+        "node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs D:\\fidelity-repo\\tools\\ematrix-toc.test.mjs (expect 0 fail; both need npm install once, for fengari)",
         "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\FidelityEMatrix \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix\" /E (no /MIR, no /PURGE).",
         "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared and any mismatch. Expected files (15): EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, FidelityEMatrix_Vanilla.toc, FidelityEMatrix_TBC.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6). The two new manifests let the client load only its own family's map data; a client that ignores them falls back to FidelityEMatrix.toc, which loads both.",
         "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityEMatrix (or its parent AddOns folder) exists, do the same backup, copy and hash check there; report whether that client exists and its version from its .build.info if present.",
@@ -52,6 +52,27 @@
         "the prior CVar values, the /fide eye probe line, and whether the scene follows the head"
       ],
       "status": "requested"
+    },
+    {
+      "id": "H007",
+      "priority": 1,
+      "title": "Laptop daemon inventory for the director (read-only): which copy of the Apex runs, and whether the Arena sync daemon pushes to main",
+      "steps": [
+        "List every node.exe with its command line: Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | Select-Object ProcessId, CreationDate, CommandLine | Format-List",
+        "For each one, say which script it runs and from which checkout: a path under bridge\\loop (the legacy copy, started by triad.bat) or under packages\\triad-369\\src (the versioned copy). Do not stop, restart or start anything in this task.",
+        "Say whether arena_git_sync.mjs and arena_fractal_bridge.mjs are among them. If arena_git_sync.mjs runs: its full command line, its working directory, and the last 10 lines of its log if it has one (look for a log path in its command line or next to the script). If arena_fractal_bridge.mjs runs: its command line and the value of the ARENA_BRIDGE_HOST environment variable if set.",
+        "Owners of ports 5196, 8791, 5179 and 8787: Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 5196, 8791, 5179, 8787 } | Select-Object LocalAddress, LocalPort, OwningProcess",
+        "git -C D:\\fidelity-repo log --oneline -5 origin/main after git -C D:\\fidelity-repo fetch origin (read-only; no pull, no merge, no checkout)",
+        "Report everything as plain text. No tokens or key contents; command lines that contain a token must have it replaced by [REDACTED] before they go into output."
+      ],
+      "report": [
+        "The node.exe table: pid, start time, script path, which copy (bridge\\loop or packages)",
+        "Whether arena_git_sync.mjs and arena_fractal_bridge.mjs run, with the details above",
+        "The listening ports and their owning pids",
+        "The last five commits of origin/main"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-04T04:22:29.670Z"
     },
     {
       "id": "H001",

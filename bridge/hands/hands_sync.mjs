@@ -72,7 +72,9 @@ function jsonBytes(value) { return Buffer.from(`${JSON.stringify(value, null, 2)
 const PEM_BLOCK = /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g;
 const SECRET_NAME = /(token|secret|passw(?:or)?d|api[_-]?key|private[_-]?key)/i;
 const SECRET_PAIR = /(["']?)([A-Za-z0-9_.-]*(?:token|secret|passw(?:or)?d|api[_-]?key|private[_-]?key)[A-Za-z0-9_.-]*)\1([ \t]*[=:][ \t]*)(?!["']?\[REDACTED\])(?:"([^"\n]+)"|'([^'\n]+)'|([^\s"',;&]+))/gi;
-const SECRET_TOKEN = /\b(sk-or-v1-|sk-ant-|AIza|ghp_|github_pat_|xox[baprs]-)[A-Za-z0-9_-]{8,}/g;
+const SECRET_TOKEN = /\b(sk-or-v1-|sk-ant-|sk-proj-|sk-|AIza|ghp_|github_pat_|xox[baprs]-|AKIA)[A-Za-z0-9_-]{8,}/g;
+// An HTTP bearer credential: the word stays, the token goes (council O2, 04 Nov: it passed through before).
+const SECRET_BEARER = /\b(Bearer[ \t]+)(?!\[REDACTED\])[A-Za-z0-9._~+/=-]{12,}/g;
 
 /**
  * Walks a parsed JSON value and masks, inside every string, PEM private key blocks, well-known API tokens (the prefix is kept),
@@ -86,6 +88,7 @@ export function redactSecrets(value) {
   const mask = text => text
     .replace(PEM_BLOCK, () => { count++; return REDACTED; })
     .replace(SECRET_PAIR, (m, q, name, sep, dq, sq) => { count++; return `${q}${name}${q}${sep}${quote(dq, sq)}${REDACTED}${quote(dq, sq)}`; })
+    .replace(SECRET_BEARER, (m, word) => { count++; return `${word}${REDACTED}`; })
     .replace(SECRET_TOKEN, (m, prefix) => { count++; return `${prefix}${REDACTED}`; });
   const field = (k, x) => (typeof x === 'string' && x && x !== REDACTED && SECRET_NAME.test(k) ? (count++, REDACTED) : walk(x));
   const walk = v => (typeof v === 'string' ? mask(v) : Array.isArray(v) ? v.map(walk) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, field(k, x)])) : v);
@@ -115,7 +118,8 @@ function isForbiddenGit(call) {
   if (sub === 'reset' || sub === 'clean' || sub === 'restore') return true;
   if (sub === 'checkout') return has('-f', '--force');
   if (sub === 'stash') return args[0] === 'drop';
-  if (sub === 'push') return has('-f', '--force', '--force-with-lease', '--force-if-includes');
+  // a push is forbidden when forced, mirrored, or aimed at main by any spelling (main, :main, +HEAD:main, refs/heads/main)
+  if (sub === 'push') return has('-f', '--force', '--force-with-lease', '--force-if-includes', '--mirror') || args.some(a => a.startsWith('+') || /(^|:|\/)main$/.test(a));
   if (sub === 'branch') return has('-D') || (has('-d', '--delete') && has('-f', '--force'));
   if (sub === 'pull' || sub === 'merge') return !args.includes('--ff-only');
   return false;

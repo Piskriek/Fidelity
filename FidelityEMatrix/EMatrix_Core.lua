@@ -20,7 +20,7 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.7.1"
+local VERSION = "1.7.2"
 local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
@@ -257,6 +257,21 @@ ns.FaceModel = FaceModel
 ns.EyeGain = EyeGain
 ns.LIGHTS = { mono = LIGHT_MONO, red = LIGHT_RED, cyan = LIGHT_CYAN }
 
+-- The E is drawn in its cell's fixed orientation (cell.uv8). The lens is not: its sun-lit rim
+-- must stay on the upper right in every cell (one sun over the whole array), so the window
+-- texture always takes identity coordinates. Only re-applied when the face actually changes.
+local function ShowFace(cell, window)
+    if cell.face == window then return end
+    cell.face = window
+    if window then
+        cell.flapTex:SetTexture(TEX_WINDOW)
+        cell.flapTex:SetTexCoord(0, 1, 0, 1)
+    else
+        cell.flapTex:SetTexture(TEX_CLOSED)
+        cell.flapTex:SetTexCoord(unpack(cell.uv8))
+    end
+end
+
 -- ============================================================================
 -- 1. Master Frame & Layer Architecture
 -- ============================================================================
@@ -483,6 +498,7 @@ function CreateMatrixGrid()
             flapTex:SetTexCoord(unpack(uv8))
             flapTex:SetAlpha(1.0)
             cell.flapTex = flapTex
+            cell.face = false -- closed: the E in its own orientation
 
             -- specBar: thin golden-white flash at the flip midpoint
             local specBar = frameGrid:CreateTexture(nil, "OVERLAY", nil, 3)
@@ -772,21 +788,21 @@ local function OnUpdateDriver(self, dt)
                     if opening then
                         if isFlipped then
                             -- E -> lens: fade from the full bezel down to the lens alpha
-                            cell.flapTex:SetTexture(TEX_WINDOW)
+                            ShowFace(cell, true)
                             local k = math.min(1.0, (u - 0.5) * 2.0)
                             cell.flapTex:SetAlpha(1.0 + (lens - 1.0) * k)
                             cell.isWindow = true
                         else
-                            cell.flapTex:SetTexture(TEX_CLOSED)
+                            ShowFace(cell, false)
                             cell.flapTex:SetAlpha(1.0)
                         end
                     else
                         if isFlipped then
-                            cell.flapTex:SetTexture(TEX_CLOSED)
+                            ShowFace(cell, false)
                             cell.flapTex:SetAlpha(math.min(1.0, (u - 0.5) * 2.0))
                             cell.isWindow = false
                         else
-                            cell.flapTex:SetTexture(TEX_WINDOW)
+                            ShowFace(cell, true)
                             cell.flapTex:SetAlpha(lens)
                         end
                     end
@@ -799,10 +815,10 @@ local function OnUpdateDriver(self, dt)
 
                     if opening then
                         -- OPEN: the microlens array stays visible at lensAlpha (0 = seamless)
-                        cell.flapTex:SetTexture(TEX_WINDOW)
+                        ShowFace(cell, true)
                         cell.flapTex:SetAlpha(lens)
                     else
-                        cell.flapTex:SetTexture(TEX_CLOSED)
+                        ShowFace(cell, false)
                         cell.flapTex:SetAlpha(1.0)
                     end
                     cell.settled = true

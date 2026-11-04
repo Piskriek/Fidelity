@@ -1,0 +1,96 @@
+// tools/council.test.mjs
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { briefFor, checkRound, loopHealth, newRound, parseArgs, STEER_HEADINGS, WORD_LIMIT } from './council.mjs';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const tool = path.join(here, 'council.mjs');
+const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'council-'));
+const report = (lines = 10) => `# Report\n\nThesis paragraph.\n\n${'word '.repeat(lines)}\n\n| a | b |\n| :-- | :-- |\n| 1 | 2 |\n`;
+const steer = () => `# Steer\n\n${STEER_HEADINGS.map(h => `${h}\n\ntext\n`).join('\n')}`;
+const landed = status => `# Landed\n\n## News back\n\nStatus: ${status}\n\nevidence line\n`;
+
+test('new scaffolds a round with ROUND.json, one brief per voice and a README', () => {
+  const root = tmp();
+  const opts = parseArgs(['new', 'textures', '--target', 'the microlens texture repeats', '--date', '2026-11-04', '--root', root, '--builders', 'fractal fidelity;data bridges', '--opposers', 'the overlays are a dead end']);
+  const round = newRound(opts);
+  assert.equal(round.voices.length, 3);
+  assert.deepEqual(round.voices.map(v => v.id), ['B1', 'B2', 'O1']);
+  assert.equal(round.voices[2].report, 'O1-the-overlays-are-a-dead-end.md');
+  const dir = path.join(root, '2026-11-04-textures');
+  for (const f of ['ROUND.json', 'README.md', 'BRIEF-B1.md', 'BRIEF-B2.md', 'BRIEF-O1.md']) assert.ok(fs.existsSync(path.join(dir, f)), f);
+  const b1 = briefFor(round.voices[0], round), o1 = briefFor(round.voices[2], round);
+  assert.match(b1, /builders' council \(ASK\)/);
+  assert.match(b1, /Your lens: fractal fidelity/);
+  assert.match(o1, /opposing council \(DECISION\)/);
+  assert.match(o1, /Thesis to defend: the overlays are a dead end/);
+  assert.match(b1, new RegExp(`at most ${WORD_LIMIT} words`));
+  assert.throws(() => newRound(opts), /scaffolded once/);
+  assert.throws(() => parseArgs(['new', '--target', 'x', '--builders', 'a']), /needs a <slug>/);
+  assert.throws(() => parseArgs(['new', 'x', '--builders', 'a']), /needs --target/);
+  assert.throws(() => parseArgs(['new', 'x', '--target', 't']), /needs --builders/);
+  assert.throws(() => parseArgs(['bogus']), /command must be/);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('check walks the four steps: reports, STEER, LANDED; the round is healthy only when all are there', () => {
+  const root = tmp();
+  const opts = parseArgs(['new', 'r', '--target', 't', '--date', '2026-11-04', '--root', root, '--builders', 'lens', '--opposers', 'thesis', '--no-briefs']);
+  newRound(opts);
+  const dir = opts.dir;
+  assert.ok(!fs.existsSync(path.join(dir, 'BRIEF-B1.md')), '--no-briefs writes no briefs');
+  let c = checkRound(dir);
+  assert.equal(c.healthy, false);
+  assert.deepEqual(c.steps, { ask: false, decision: false, change: false, newsBack: false });
+  assert.ok(c.problems.some(p => /B1: report .* missing/.test(p)) && c.problems.some(p => /STEER.md missing/.test(p)) && c.problems.some(p => /LANDED.md missing/.test(p)));
+  fs.writeFileSync(path.join(dir, 'B1-lens.md'), report());
+  fs.writeFileSync(path.join(dir, 'O1-thesis.md'), report(WORD_LIMIT + 50));
+  fs.writeFileSync(path.join(dir, 'STEER.md'), '# Steer\n\n## Vector\n\nonly one heading\n');
+  fs.writeFileSync(path.join(dir, 'LANDED.md'), landed('pending'));
+  c = checkRound(dir);
+  assert.equal(c.steps.ask, true);
+  assert.equal(c.steps.decision, true);
+  assert.equal(c.steps.change, false, 'a STEER without every heading is not a CHANGE');
+  assert.equal(c.steps.newsBack, false, 'pending news is not news back');
+  assert.ok(c.warnings.some(w => /O1: .* words/.test(w)), 'over the word limit is a warning, not a failure');
+  assert.ok(c.problems.some(p => /STEER.md lacks "## First step"/.test(p)));
+  fs.writeFileSync(path.join(dir, 'STEER.md'), steer());
+  fs.writeFileSync(path.join(dir, 'LANDED.md'), landed('changed'));
+  c = checkRound(dir);
+  assert.equal(c.healthy, true);
+  assert.equal(c.status, 'changed');
+  assert.deepEqual(c.problems, []);
+  const out = execFileSync(process.execPath, [tool, 'check', dir], { encoding: 'utf8' });
+  assert.match(out, /HEALTHY \(closed\).*NEWS BACK ok \(changed\)/);
+  fs.rmSync(root, { recursive: true, force: true });
+});
+
+test('--all reports the loop: healthy with a closed newest round or a young open one, unhealthy when the newest round has been open too long', () => {
+  const root = tmp();
+  newRound(parseArgs(['new', 'old', '--target', 't', '--date', '2026-10-01', '--root', root, '--builders', 'a', '--opposers', 'b', '--no-briefs']));
+  let h = loopHealth(root, new Date('2026-11-04T12:00:00Z'));
+  assert.equal(h.healthy, false);
+  assert.match(h.reason, /open 34 days/);
+  newRound(parseArgs(['new', 'young', '--target', 't', '--date', '2026-11-03', '--root', root, '--builders', 'a', '--opposers', 'b', '--no-briefs']));
+  h = loopHealth(root, new Date('2026-11-04T12:00:00Z'));
+  assert.equal(h.healthy, true);
+  assert.match(h.reason, /is open, 1 day\(s\) old/);
+  assert.equal(h.rounds[0].round.slug, 'young', 'newest first');
+  const dir = path.join(root, '2026-11-03-young');
+  fs.writeFileSync(path.join(dir, 'B1-a.md'), report());
+  fs.writeFileSync(path.join(dir, 'O1-b.md'), report());
+  fs.writeFileSync(path.join(dir, 'STEER.md'), steer());
+  fs.writeFileSync(path.join(dir, 'LANDED.md'), landed('used'));
+  h = loopHealth(root, new Date('2026-12-25T12:00:00Z'));
+  assert.equal(h.healthy, true, 'a closed newest round keeps the loop healthy however old');
+  assert.match(h.reason, /is closed \(used\)/);
+  const out = execFileSync(process.execPath, [tool, 'check', '--all', '--root', root], { encoding: 'utf8' });
+  assert.match(out, /loop: HEALTHY/);
+  assert.equal(loopHealth(tmp()).reason, 'no rounds yet');
+  fs.rmSync(root, { recursive: true, force: true });
+});

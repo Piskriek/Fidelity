@@ -325,3 +325,24 @@ test('parseArgs applies the defaults and rejects bad command lines', () => {
   assert.throws(() => parseArgs(['--role', 'laptop', '--heartbeat', 'soon']), UsageError);
   assert.throws(() => parseArgs(['--role', 'laptop', '--transport', 'file:']), UsageError);
 });
+
+test('council O2 gaps: bearer credentials, sk-proj and AWS keys are masked; a push aimed at main is forbidden by any spelling', () => {
+  const { value, count } = redactSecrets({
+    a: 'Authorization: Bearer abcdefghijklmnopqrstuvwxyz',
+    b: 'OPENAI_KEY=sk-proj-abcdefghijklmnopqrstu',
+    c: 'aws AKIAIOSFODNN7EXAMPLE in a log line',
+    d: 'curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.e30.abc" https://x',
+    e: 'the word Bearer alone, and sk-short, stay',
+  });
+  assert.equal(value.a, 'Authorization: Bearer [REDACTED]');
+  assert.match(value.b, /^OPENAI_KEY=\[REDACTED\]$|^OPENAI_KEY=sk-proj-\[REDACTED\]$/);
+  assert.equal(value.c, 'aws AKIA[REDACTED] in a log line');
+  assert.equal(value.d, 'curl -H "Authorization: Bearer [REDACTED]" https://x');
+  assert.equal(value.e, 'the word Bearer alone, and sk-short, stay');
+  assert.ok(count >= 4, `count ${count}`);
+  const hits = forbiddenRepoSteps({ tasks: [{ id: 'H', steps: [
+    'git push origin main', 'git push origin +HEAD:main', 'git push origin HEAD:refs/heads/main', 'git push --mirror origin',
+    'git push origin francois/serene-euler-51wj3e', 'git push -u origin claude/ematrix-depth', 'git -C D:\\fidelity-repo push origin HEAD:maintenance',
+  ] }] });
+  assert.deepEqual(hits.map(h => h.step), [1, 2, 3, 4], JSON.stringify(hits));
+});

@@ -1,0 +1,45 @@
+{
+  "schema": "fidelity-council-round-v1",
+  "date": "2026-11-04",
+  "slug": "councils",
+  "target": "Improve fidelity with fractals (the owner: an algorithm so the textures do not repeat is the easy example); the builders explore the bridges we can build, the opposers attack the ones built; then steer the vector",
+  "created_at": "2026-11-04T04:13:05.501Z",
+  "voices": [
+    {
+      "id": "B1",
+      "side": "builder",
+      "lens": "fractal fidelity",
+      "report": "B1-fractal-fidelity.md"
+    },
+    {
+      "id": "B2",
+      "side": "builder",
+      "lens": "data bridges",
+      "report": "B2-data-bridges.md"
+    },
+    {
+      "id": "B3",
+      "side": "builder",
+      "lens": "perception",
+      "report": "B3-perception.md"
+    },
+    {
+      "id": "O1",
+      "side": "opposer",
+      "lens": "the world and terrain overlays cannot deliver a synced textured 3D re-render with the Classic API and the headless tests hide it",
+      "report": "O1-overlays.md"
+    },
+    {
+      "id": "O2",
+      "side": "opposer",
+      "lens": "the 4-node holon is more ritual than instrument",
+      "report": "O2-holon.md"
+    },
+    {
+      "id": "O3",
+      "side": "opposer",
+      "lens": "the test suite proves the stubs not the product",
+      "report": "O3-toolchain.md"
+    }
+  ]
+}

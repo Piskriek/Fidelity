@@ -30,8 +30,14 @@ function EMatrix_Math.GetCellRotation(col, row)
     end
     local c = math.floor(col)
     local r = math.floor(row)
-    -- Hash constants from spatial hashing / hash primes
-    local h = (c * 73856093 + r * 19349663) % 4
+    -- A mixed integer hash. The old (c * 73856093 + r * 19349663) % 4 reduced to (c - r) mod 4,
+    -- because the two multipliers are 1 and 3 modulo 4, so the four orientations formed one
+    -- diagonal lattice over the 15x9 grid: the first visible repeat (council B1, 04 Nov 2026).
+    -- This form fits no (a*c + b*r + k) mod 4 over the grid, is balanced 33/33/33/36 and never
+    -- gives a uniform 2x2 block; every intermediate stays below 2^53, so the game's doubles
+    -- (Lua 5.1) and the test harness (Lua 5.3 integers) agree.
+    local a = (c * 73856093) % 1000003
+    local h = ((a * 19349663 + r * 83492791) % 1000003) % 4
     if h < 0 then h = h + 4 end
     return h, ROT_UV8[h]
 end

@@ -1,6 +1,20 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## EMatrix v1.7.1: the first in-game evidence and the response (04 Nov 2026, 03:52Z, Claude in the cloud) — start here
+## Council round 2026-11-04: the compassion loop as councils, v1.7.2 (04 Nov 2026, 04:25Z, Claude in the cloud) — start here
+
+**The owner (04 Nov):** "improve the fidelity even more with fractals; an algorithm so the textures do not repeat is the easy example; set up a haiku council to explore the bridges we can build, and an opposing council who explore the ones we have built, then steer your vector." Then: "the councils keep the loop healthy; this should be built into the fractals; this is the compassion loop."
+
+**Built in.** The loop now runs as councils at any scale: `.agents/skills/compassion-loop/SKILL.md` (ASK, builders; DECISION, opposers; CHANGE, the steer; NEWS BACK, the landing), `node tools/council.mjs new|check` (scaffolds a round, reports a round's and the loop's health), rounds under `docs/council/<date>-<slug>/`, and a pointer in `AGENTS.md`. The first round is `docs/council/2026-11-04/`: six haiku voices (B1 fractal fidelity, B2 data bridges, B3 perception; O1 overlays, O2 holon, O3 toolchain), `STEER.md` and `LANDED.md`.
+
+**What the round found, verified by the director against the code:** the first repeat was in the code, `GetCellRotation` was `(c - r) mod 4` in disguise, so the 135 E cells formed one diagonal lattice (B1); a copy over a world that keeps drawing its twin reads as a double image once it moves, about 33/20/8 px at the defaults (B3, O1); the camera is constants (O1); the stub answered yes to every unknown method, so guarded branches ran paths the client never takes (O1, O3); the laptop's `triad.bat` runs the legacy `bridge/loop` copy with hard-coded "resonant", "latency 42" and "passed: true", and an unauthenticated localhost POST can set off `git push origin main` through `arena_git_sync.mjs` (O2); the hands redaction let Bearer, `sk-proj-` and AWS keys through and the guard missed pushes aimed at main (O2); a check in the newest test code could not fail (O3).
+
+**Landed (v1.7.2):** the mixing hash with the lens cells pinned to identity texcoords (one sun over the array), tested on the real Lua in both harnesses; the strict widget stub (`KNOWN`, `ABSENT`, raise otherwise) with the always-true check, the zero-GC regex and the "decimetres" label fixed; the redaction and the push-to-main guard; H007 (a read-only inventory of the laptop's daemons) in the hands snapshot. Evidence at 04:25Z: `npm test` 165 tests, 164 pass, 0 fail, 1 skipped (the real-tile ADT test, `EMATRIX_TILES` unset; not the Windows serve test as an earlier note here said); headless 56/56 under the strict stub; math 12/12; head tracker 10/10.
+
+**The vector** (`docs/council/2026-11-04/STEER.md`): fractal fidelity pays inside the window (B1's list, in order); the overlays stay honest portraits with no default change until the owner runs B3's protocol; real depth must come from the rendering path, which is the next round's ASK; the holon is made honest in O2's order (H007 first); the toolchain gets a fengari-driven ring/flip test, a Lua 5.1 run and `/fide selftest`. **Forbidden until verified:** overlay default changes, any "synced", "parallax works" or "3D" claim, merging to main by hand, quoting "resonant" or 0.99 as a measurement.
+
+**What closes the round:** deploy v1.7.2 with the four commands below, paste the login line and the probes, run P0 to P6 from `B3-perception.md`, and look at the box: no diagonal stripes of one orientation in the E wall, every open lens lit from the upper right. `node tools/council.mjs check --all` says the loop is healthy while this round is younger than seven days; `LANDED.md` turns from `pending` to `used`, `changed` or `nofit` on the owner's word.
+
+## EMatrix v1.7.1: the first in-game evidence and the response (04 Nov 2026, 03:52Z, Claude in the cloud)
 
 **The evidence.** The owner's screenshot of v1.6.1 on the TBC Anniversary client (Northshire, 04 Nov): the login line printed "full-screen depth scene ON"; white, untextured copies of the kobolds hung under their nameplates at three to four times the size of the real units (which are about 35 px tall at that range), each with a hollow hexagon beside it; no copy of the player at the bottom centre; no terrain props at all; no visible parallax. The owner's words: "not synced up, only mobs render an untextured version of themselves, no parallax or 3d effect yet".
 
@@ -15,7 +29,7 @@ git -C D:\fidelity-repo checkout francois/serene-euler-51wj3e
 Rename-Item "D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix" "FidelityEMatrix.bak-$(Get-Date -Format yyyyMMdd-HHmm)"
 robocopy D:\fidelity-repo\FidelityEMatrix "D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix" /E
 ```
-Then `/reload` and paste, in this order: the login line; `/fide diag` (the SetLight form line); `/fide world status`; `/fide terrain probe`; `/fide terrain status`; `/fide status`. Then try `/fide world frame dressup` and back to `player`, and say which one is textured. Move the mouse to the screen edge: the copies should leave their units by up to 60 px (far ones more than near ones); `/fide world parallax 240` doubles that. If the copies are still the wrong size, `/fide world height 1.2` (kobolds) or `3`.
+Then `/reload` and paste, in this order: the login line; `/fide diag` (the SetLight form line); `/fide world status`; `/fide terrain probe`; `/fide terrain status`; `/fide status`. Then try `/fide world frame dressup` and back to `player`, and say which one is textured. Move the mouse to the screen edge: the copies should leave their units, far ones more than near ones; with the defaults (eye capped at `parallaxStrength` 0.5, gain 120 px) the arithmetic gives about 33 px far, 20 px mid, 8 px near (council B3 corrected an earlier "up to 60 px" here); `/fide world parallax 240` doubles that. If the copies are still the wrong size, `/fide world height 1.2` (kobolds) or `3`.
 
 ## EMatrix v1.7.0: the review fixes (03 Nov 2026, Claude in the cloud)
 

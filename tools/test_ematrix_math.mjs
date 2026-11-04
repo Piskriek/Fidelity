@@ -2,15 +2,17 @@
 // tools/test_ematrix_math.mjs
 // Verification suite for FidelityEMatrix:
 //   1. Ring sequence metrics (Ring 0 == 1 cell, Ring 1 == 8 cells, monotonic Chebyshev wavefront distance)
-//   2. 8-corner SetTexCoord rotation table invariants & deterministic PRNG
+//   2. 8-corner SetTexCoord rotation table invariants; the cell-rotation hash run from the REAL Lua (no lattice)
 //   3. Scoreboard flip visual math (scaleY squash, specular glint peak, temporary crevice alpha)
 //   4. TGA texture assets header, byte-size, and alpha punch verification (Closed, Window, Nebula Backplate)
 //   5. Zero-GC idle script detachment verification in EMatrix_Core.lua
+// Needs `npm install` once (fengari, Lua 5.3 in JavaScript) for test 2.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import fengari from 'fengari';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,12 +63,26 @@ function calculateRingDistance(x, y, ox, oy) {
   return (1.0 - w) * cheb + w * euclid;
 }
 
-function getCellRotation(col, row) {
-  const c = Math.floor(col);
-  const r = Math.floor(row);
-  let h = ((c * 73856093 + r * 19349663) % 4);
-  if (h < 0) h += 4;
-  return h;
+/**
+ * The REAL EMatrix_Math.GetCellRotation, run through fengari (a JavaScript copy of the hash cannot
+ * catch an edit to the Lua, and the old copy hid that the hash was (c - r) mod 4 in disguise).
+ */
+function luaCellRotation() {
+  const { lua, lauxlib, lualib, to_luastring } = fengari;
+  const L = lauxlib.luaL_newstate();
+  lualib.luaL_openlibs(L);
+  const src = fs.readFileSync(mathLuaPath, 'utf8');
+  if (lauxlib.luaL_loadbuffer(L, to_luastring(src), null, to_luastring('@EMatrix_Math.lua')) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+  if (lua.lua_pcall(L, 0, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+  return (c, r) => {
+    lua.lua_getfield(L, -1, to_luastring('GetCellRotation'));
+    lua.lua_pushnumber(L, c);
+    lua.lua_pushnumber(L, r);
+    if (lua.lua_pcall(L, 2, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+    const h = lua.lua_tonumber(L, -1);
+    lua.lua_pop(L, 1);
+    return h;
+  };
 }
 
 function calculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration) {
@@ -186,19 +202,31 @@ runTest('ROT_UV8 table contains 4 valid 8-corner orientation mappings in [0, 1]'
   }
 });
 
-runTest('Deterministic PRNG distribution across 135 cells', () => {
+runTest('Cell rotations from the real Lua: balanced, no diagonal lattice, no uniform 2x2 block', () => {
+  const rot = luaCellRotation();
   const counts = [0, 0, 0, 0];
+  const grid = [];
   for (let r = 1; r <= 9; r++) {
     for (let c = 1; c <= 15; c++) {
-      const rot = getCellRotation(c, r);
-      assert.ok(rot >= 0 && rot <= 3);
-      counts[rot]++;
+      const h = rot(c, r);
+      assert.ok(Number.isInteger(h) && h >= 0 && h <= 3, `rotation ${h} at (${c}, ${r})`);
+      counts[h]++;
+      grid.push([c, r, h]);
     }
   }
-
-  // All 4 orientations should be well-represented
-  for (let rot = 0; rot <= 3; rot++) {
-    assert.ok(counts[rot] >= 20, `Orientation ${rot} count must be >= 20 (got ${counts[rot]})`);
+  for (let h = 0; h <= 3; h++) {
+    assert.ok(counts[h] >= 20, `Orientation ${h} count must be >= 20 (got ${counts[h]})`);
+  }
+  // The old hash was (c - r) mod 4 in disguise (its multipliers are 1 and 3 modulo 4), so the
+  // 135 cells formed one diagonal lattice: no (a*c + b*r + k) mod 4 may fit the whole grid.
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let k = 0; k < 4; k++) {
+    assert.ok(!grid.every(([c, r, h]) => ((a * c + b * r + k) % 4) === h), `rotations follow (${a}c + ${b}r + ${k}) mod 4: a lattice`);
+  }
+  // No 2x2 block of one orientation (four identical neighbours read as a repeat)
+  const at = new Map(grid.map(([c, r, h]) => [`${c},${r}`, h]));
+  for (let r = 1; r < 9; r++) for (let c = 1; c < 15; c++) {
+    const h = at.get(`${c},${r}`);
+    assert.ok(!(at.get(`${c + 1},${r}`) === h && at.get(`${c},${r + 1}`) === h && at.get(`${c + 1},${r + 1}`) === h), `uniform 2x2 block at (${c}, ${r})`);
   }
 });
 
@@ -328,8 +356,9 @@ runTest('EMatrix_Core.lua contains SetScript("OnUpdate", nil) for zero idle CPU'
     'The idle check must detach from the driver frame (falling back to the box)'
   );
 
-  // Verify no per-frame table instantiations inside OnUpdateDriver
-  const driverMatch = coreSrc.match(/local function OnUpdateDriver[\s\S]*?end\n/);
+  // Verify no per-frame table instantiations inside OnUpdateDriver. The body runs to the function's
+  // own `end` at column 0 (an inline `end` inside it must not cut the match short: council O3).
+  const driverMatch = coreSrc.match(/local function OnUpdateDriver[\s\S]*?\nend\n/);
   assert.ok(driverMatch, 'OnUpdateDriver function must be defined');
   const driverBody = driverMatch[0];
   assert.ok(!driverBody.includes('C_Timer.After'), 'Zero-GC invariant: no C_Timer.After allowed in driver');
