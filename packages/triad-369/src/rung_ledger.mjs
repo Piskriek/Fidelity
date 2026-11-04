@@ -12,31 +12,39 @@
 // addon's constants answer to them.
 //
 // The algorithm, each step once per rung, in a topological order:
-//   0. validate: every number in a row must be finite, or the row is refused (never coerced);
-//   1. order: Kahn's sort of the rests-on graph; a cycle is an error that names its rungs;
-//   2. keys: key(r) = hash(r's context, and each direct base's id and key), chained: O(R + E*P);
-//   3. admit: a row counts for its rung only if it is measured, by an admissible witness that is
-//      not one of the rung's echoes, with its artifact's SHA256 in that report's manifest, taken in
-//      the context now in use (the lock), not in the future and not stale. Every refusal keeps its
-//      reason. A more precise reading of the same artifact by the same class of witness supersedes;
+//   0. validate: a row must carry an observation, a finite operating point where its rung is tested
+//      at a value, and only finite numbers; otherwise it is refused with its reason, never coerced;
+//   1. order: Kahn's sort of the rests-on graph; a cycle is an error that names the rungs on it;
+//   2. keys: key(r) = hash(r's context and value, and each direct base's id and key), chained;
+//   3. admit: a row counts for its rung only if its id is new, it is measured, by an admissible
+//      witness that is not one of the rung's echoes, with its artifact's SHA256 in that report's
+//      manifest, taken in the context now in use (the lock), not in the future and not stale.
+//      Every refusal keeps its reason. Of two readings of the same artifact at the same operating
+//      point by the same class of witness, the more precise one (then the later one) supersedes;
 //   4. decide: blocked if a base does not hold, unmeasured with no admitted row, else 5 and 6;
 //   5. estimate: only proposes the next value to try, never decides (for a fit, from its reaches);
-//   6. test, on the kept readings at the value now in use: holds if all pass, fails if all fail,
-//      contested if they disagree, fitted if none can decide. The owner's readings take precedence;
+//   6. test, on the kept readings at the value now in use. A reading decides only when it clears the
+//      tolerance by its own precision: it passes when its residual plus its precision is within the
+//      tolerance and fails when its residual minus its precision is outside it. Holds if all deciding
+//      readings pass, fails if all fail, contested if they disagree, fitted if none can decide. The
+//      owner's readings take precedence;
 //   7. frontier: the rungs in use that do not hold while every base does: the next ask.
-// A full pass is O(R + E*P + M log M) for R rungs, E edges, P context fields and M rows. A re-check
-// after a change repeats steps 4 to 6 for the changed rungs and their descendants only (recheck).
+// Cost, for R rungs, E edges, P context fields per rung and M rows: order O(R + E); keys
+// O(R P log P + E); admit O(M P); supersede, estimates and tests O(M log M); a full pass
+// O((R + M) P log P + E + M log M). A re-check after a change re-decides only the changed rungs and
+// their descendants (recheck, one BFS); it still re-sorts and re-keys the whole table, O(R P log P + E).
 //
 // What it refuses to emit: a count, a percentage, a density, an awareness level. The output is a
 // verdict per rung and a frontier; whether any count of held rungs may be shown is the owner's call.
 
 export const VERDICTS = Object.freeze(['holds', 'fitted', 'fails', 'contested', 'unmeasured', 'blocked']);
-export const REFUSALS = Object.freeze(['rung', 'non-finite', 'kind', 'echo', 'witness', 'manifest', 'key', 'future', 'stale', 'shutter']);
+export const REFUSALS = Object.freeze(['rung', 'duplicate', 'non-finite', 'kind', 'echo', 'witness', 'manifest', 'key', 'future', 'stale', 'shutter']);
 export const VALUE_EPS = 0.005; // a reading counts as taken at the value in use within this (values print with 2 decimals)
 export const K_MIN = 0.25, K_MAX = 16.0; // the addon's clamp on a camera factor (EMatrix_Terrain.lua CameraDistanceFor)
 
 const finite = Number.isFinite;
 const round2 = v => Math.round(v * 100) / 100;
+const round3 = v => Math.round(v * 1000) / 1000;
 
 // ---------------------------------------------------------------------------------------------
 // Rung kinds: who may witness each, what never counts, and how one reading passes or fails.
@@ -62,35 +70,44 @@ export const KINDS = Object.freeze({
 
 function pass(residual = null) { return { result: 'pass', residual }; }
 function fail(residual = null, why = '') { return { result: 'fail', residual, why }; }
+function untestable(why) { return { result: 'untestable', residual: null, why }; }
+
+/** A residual against tau, allowing for the reading's own precision p: only a clear pass or a clear fail decides. */
+function decide(residual, p, tau, failWhy) {
+  if (residual - p > tau) return fail(residual, failWhy);
+  if (residual + p <= tau) return pass(residual);
+  return untestable(`within the reading's precision (${p}) of the tolerance (${tau})`);
+}
 
 /**
  * One fit reading at the value in use. The frame is the test frame /fide terrain test draws, 0.4 of
- * the screen tall; top and bottom are the gaps from its edges to the model, as fractions of its
- * height, or 'clipped' (the model runs past that edge) or 'hidden' (something covers that edge).
- * A reading that recorded only a fill (the first readings, edges not recorded) is tested on it.
+ * the screen tall. top and bottom are the gaps from its edges to the model's outermost part, as
+ * fractions of its height; 'touches' when the model reaches that edge and whether it is cut there
+ * cannot be seen (a gap of 0); 'clipped' when it visibly runs past it; 'hidden' when something covers
+ * it. One edge seen gives a lower bound on 1 - fill, so it can fail a reading but never pass one. A
+ * reading that recorded only a fill (the first readings, edges not recorded) is tested on it.
  */
 export function fitTest(row, tau) {
   const o = row.observed || {};
-  const { top, bottom } = o;
-  if (top === 'clipped' || bottom === 'clipped') return fail(null, 'the model runs past the frame edge');
-  if (typeof top === 'number' && typeof bottom === 'number') {
-    const residual = top + bottom; // 1 - fill
-    return residual <= tau ? pass(residual) : fail(residual, `fills ${round2(1 - residual)} of its frame`);
+  const p = finite(row.precision) ? row.precision : 0;
+  if (o.top === 'clipped' || o.bottom === 'clipped') return fail(null, 'the model runs past the frame edge');
+  const gap = e => (e === 'touches' ? 0 : e);
+  const top = gap(o.top), bottom = gap(o.bottom);
+  if (typeof top === 'number' && typeof bottom === 'number') return decide(top + bottom, p, tau, `fills ${round2(1 - top - bottom)} of its frame`);
+  if (typeof top === 'number' || typeof bottom === 'number') {
+    const seen = typeof top === 'number' ? top : bottom;
+    if (seen - p > tau) return fail(seen, `a gap of ${seen} at one edge alone exceeds the tolerance`);
+    return untestable('occluded: an edge of the model was hidden');
   }
-  if (typeof top === 'number' && top > tau) return fail(top, `a gap of ${top} at the top alone exceeds the tolerance`);
-  if (typeof bottom === 'number' && bottom > tau) return fail(bottom, `a gap of ${bottom} at the bottom alone exceeds the tolerance`);
-  if (top === undefined && bottom === undefined && typeof o.fill === 'number') {
-    const residual = Math.abs(1 - o.fill);
-    return residual <= tau ? pass(residual) : fail(residual, `fills ${o.fill} of its frame`);
-  }
-  return { result: 'untestable', residual: null, why: 'occluded: an edge of the model was hidden' };
+  if (o.top === undefined && o.bottom === undefined && typeof o.fill === 'number') return decide(Math.abs(1 - o.fill), p, tau, `fills ${o.fill} of its frame`);
+  return untestable('occluded: no edge of the model was seen');
 }
 
 /** A projection or height reading: observed.residual (normalized by the prop's projected height). */
 function residualTest(row, tau) {
   const r = row.observed && row.observed.residual;
-  if (typeof r !== 'number') return { result: 'untestable', residual: null, why: 'no residual recorded' };
-  return Math.abs(r) <= tau ? pass(Math.abs(r)) : fail(Math.abs(r), 'outside the tolerance');
+  if (typeof r !== 'number') return untestable('no residual recorded');
+  return decide(Math.abs(r), finite(row.precision) ? row.precision : 0, tau, 'outside the tolerance');
 }
 
 function median(xs) {
@@ -103,30 +120,41 @@ function median(xs) {
  * The fit's estimate: only a proposal. A PlayerModel frame centres the model's bounds on its
  * mid-line and draws it at 1/k (CLAUDE.md section 1), so each file has two reaches at camera x1,
  * in frame heights: up = k (0.5 - top) above the mid-line and down = k (0.5 - bottom) below it.
- * Both are invariant in k (the barrel's three readings, x0.6 to x3, agree within 0.015), as k x fill = up + down
- * is. The proposal is the smallest k at which neither edge is clipped, 2 max(up, down): there the
- * model's base sits at the frame's bottom when down >= up, where the prop's projected foot is
- * anchored. When every reading overflowed, the proposal doubles the largest k read (at most six
- * doublings inside the clamp). With an edge never seen, nothing is proposed: the next reading must
- * see both edges. The width reach gives the frame aspect the model needs at the proposal.
+ * Both are invariant in k (the barrel's five readings, x0.6 to x3, agree within 0.025), as
+ * k x fill = up + down is. An edge that touches or runs past the frame gives only a lower bound,
+ * 0.5 k, on its reach. The proposal is the smallest k at which neither edge is clipped,
+ * 2 max(up, down): there the model's base sits at the frame's bottom when down >= up, where the
+ * prop's projected foot is anchored. canPass says whether that k can pass at all: a model whose
+ * reaches differ by more than the tolerance allows needs a vertical offset no k gives. When every
+ * reading overflowed, the proposal doubles the largest k read (at most six doublings inside the
+ * clamp). With an edge never measured, nothing is proposed: the next reading must see both edges.
+ * The width reach gives the frame aspect the model needs at the proposal.
  */
 export function estimateFit(rows, rung, tau) {
   const ups = [], downs = [], widths = [], fills = [];
-  let clippedK = -Infinity, allClipped = rows.length > 0;
+  let upLow = 0, downLow = 0, clippedK = -Infinity, allClipped = rows.length > 0;
+  const aspect = rung.context && rung.context.aspect;
   for (const row of rows) {
     const o = row.observed || {}, k = row.value;
     if (typeof o.top === 'number') ups.push(k * (0.5 - o.top));
+    else if (o.top === 'touches' || o.top === 'clipped') upLow = Math.max(upLow, 0.5 * k);
     if (typeof o.bottom === 'number') downs.push(k * (0.5 - o.bottom));
-    if (typeof o.width === 'number' && finite(rung.context && rung.context.aspect)) widths.push(k * o.width * rung.context.aspect);
+    else if (o.bottom === 'touches' || o.bottom === 'clipped') downLow = Math.max(downLow, 0.5 * k);
+    if (typeof o.width === 'number' && finite(aspect)) widths.push(k * o.width * aspect);
     if (o.top === undefined && o.bottom === undefined && typeof o.fill === 'number') fills.push(k * o.fill);
     const clipped = o.top === 'clipped' || o.bottom === 'clipped';
     if (clipped) clippedK = Math.max(clippedK, k); else allClipped = false;
   }
   if (ups.length && downs.length) {
-    const up = median(ups), down = median(downs), big = Math.max(up, down);
-    const k = Math.min(Math.max(2 * big, K_MIN), K_MAX);
-    const fillAt = (up + down) / (2 * big);
-    const out = { value: round2(k), rule: 'twice the larger reach', reaches: { up: round3(up), down: round3(down) }, fillAt: round3(fillAt), canPass: fillAt >= 1 - tau };
+    const up = Math.max(median(ups), upLow), down = Math.max(median(downs), downLow);
+    const want = 2 * Math.max(up, down);
+    const k = Math.min(Math.max(want, K_MIN), K_MAX);
+    const unclipped = k >= want - 1e-9; // the clamp at K_MAX would leave it clipped
+    const fillAt = unclipped ? (up + down) / k : null;
+    const out = {
+      value: round2(k), rule: 'twice the larger reach', reaches: { up: round3(up), down: round3(down) },
+      fillAt: fillAt === null ? null : round3(fillAt), canPass: unclipped && fillAt >= 1 - tau,
+    };
     if (widths.length) out.aspectNeeded = round3(median(widths) / k);
     return out;
   }
@@ -134,13 +162,44 @@ export function estimateFit(rows, rung, tau) {
   if (fills.length && !ups.length && !downs.length) return { value: round2(median(fills)), rule: 'k x fill (edges not recorded)' };
   return null;
 }
-const round3 = v => Math.round(v * 1000) / 1000;
 
 // ---------------------------------------------------------------------------------------------
 // Order, keys, descendants
 // ---------------------------------------------------------------------------------------------
 
-/** Kahn's topological sort of the rests-on graph. Throws on an unknown base or a cycle, naming the rungs. */
+/** The rungs that lie on a cycle of the leftover subgraph: its strongly connected components with more than one rung, or a rung resting on itself. */
+function onCycles(ids, out) {
+  const index = new Map(), low = new Map(), onStack = new Set(), stack = [], found = [];
+  let next = 0;
+  for (const start of ids) {
+    if (index.has(start)) continue;
+    const work = [[start, 0]];
+    index.set(start, next); low.set(start, next); next++; stack.push(start); onStack.add(start);
+    while (work.length) {
+      const top = work[work.length - 1];
+      const [v, i] = top;
+      const succ = out.get(v).filter(w => ids.has(w));
+      if (i < succ.length) {
+        top[1]++;
+        const w = succ[i];
+        if (!index.has(w)) { index.set(w, next); low.set(w, next); next++; stack.push(w); onStack.add(w); work.push([w, 0]); }
+        else if (onStack.has(w)) low.set(v, Math.min(low.get(v), index.get(w)));
+      } else {
+        work.pop();
+        if (work.length) { const u = work[work.length - 1][0]; low.set(u, Math.min(low.get(u), low.get(v))); }
+        if (low.get(v) === index.get(v)) {
+          const comp = [];
+          let w;
+          do { w = stack.pop(); onStack.delete(w); comp.push(w); } while (w !== v);
+          if (comp.length > 1 || out.get(v).includes(v)) found.push(...comp);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/** Kahn's topological sort of the rests-on graph. Throws on an unknown base or a cycle, naming the rungs on it. */
 export function order(rungs) {
   const byId = new Map();
   for (const r of rungs) {
@@ -167,8 +226,10 @@ export function order(rungs) {
     }
   }
   if (seq.length !== rungs.length) {
-    const left = rungs.filter(r => indeg.get(r.id) > 0).map(r => r.id);
-    throw new Error(`cycle among rungs: ${left.join(', ')}`);
+    const left = new Set(rungs.filter(r => indeg.get(r.id) > 0).map(r => r.id));
+    const ring = onCycles(left, out);
+    const order = rungs.map(r => r.id).filter(id => ring.includes(id));
+    throw new Error(`cycle among rungs: ${order.join(', ')}`);
   }
   return { order: seq, out };
 }
@@ -238,11 +299,19 @@ function sameContext(rung, row) {
   return true;
 }
 
+/** The rows whose id an earlier row already took: refused as 'duplicate'. */
+export function duplicatesOf(rows) {
+  const seen = new Set(), dupes = new Set();
+  for (const row of rows) { if (seen.has(row.id)) dupes.add(row); else seen.add(row.id); }
+  return dupes;
+}
+
 /**
  * Admits or refuses each row for its rung. Returns { byRung: Map id -> rows, refused: [{ id, rung, reason }] }.
  * manifests: { [report stamp]: { [file]: SHA256 } }. now: the caller's clock, in stampTime's convention.
+ * The checks run in the order of REFUSALS, and the first that fails names the refusal.
  */
-export function admit(rows, rungs, { now, manifests = {} } = {}) {
+export function admit(rows, rungs, { now, manifests = {}, dupes = duplicatesOf(rows) } = {}) {
   const byId = new Map(rungs.map(r => [r.id, r]));
   const byRung = new Map(rungs.map(r => [r.id, []]));
   const refused = [];
@@ -251,7 +320,11 @@ export function admit(rows, rungs, { now, manifests = {} } = {}) {
     const rung = byId.get(row.rung);
     const why = reason => refused.push({ id: row.id, rung: row.rung, reason });
     if (!rung) { why('rung'); continue; }
+    if (dupes.has(row)) { why('duplicate'); continue; }
     const kind = KINDS[rung.kind] || KINDS.check;
+    if (row.observed === null || typeof row.observed !== 'object' || Array.isArray(row.observed)) { why('non-finite'); continue; }
+    if ((kind.atValue || kind.estimate) && (typeof row.value !== 'number' || !finite(row.value))) { why('non-finite'); continue; }
+    if (row.precision !== undefined && row.precision !== null && typeof row.precision !== 'number') { why('non-finite'); continue; }
     if (!numbersIn([row.value, row.precision, row.observed, row.context]).every(finite)) { why('non-finite'); continue; }
     const at = stampTime(row.at);
     if (at === null) { why('non-finite'); continue; }
@@ -270,20 +343,24 @@ export function admit(rows, rungs, { now, manifests = {} } = {}) {
   return { byRung, refused };
 }
 
-/** Within one rung: per artifact and witness class, the most precise reading (ties: the later row) supersedes the others. */
+/**
+ * Within one rung, readings of the same artifact (and line) at the same operating point by the same
+ * class of witness are one reading: the most precise of them (ties: the later row) supersedes the others.
+ */
 function supersede(rows) {
-  const best = new Map();
-  const superseded = [];
+  const best = new Map(); // group -> index of the current winner
+  const by = new Array(rows.length).fill(-1); // index of the row that superseded this one
+  const prec = r => (finite(r.precision) ? r.precision : Infinity);
   rows.forEach((row, i) => {
-    const g = `${row.artifact.report}/${row.artifact.file}/${row.witness}`;
-    const cur = best.get(g);
-    const p = finite(row.precision) ? row.precision : Infinity;
-    if (!cur) { best.set(g, { row, i, p }); return; }
-    if (p < cur.p || (p === cur.p && i > cur.i)) { superseded.push({ id: cur.row.id, by: row.id }); best.set(g, { row, i, p }); }
-    else superseded.push({ id: row.id, by: cur.row.id });
+    const a = row.artifact || {};
+    const g = [a.report, a.file, a.line ?? '', row.witness, row.value ?? ''].join('|');
+    const j = best.get(g);
+    if (j === undefined) { best.set(g, i); return; }
+    if (prec(row) <= prec(rows[j])) { by[j] = i; best.set(g, i); } else by[i] = j;
   });
-  const gone = new Set(superseded.map(x => x.id)); // a Set, so this stays linear in the rung's rows
-  const kept = rows.filter(r => !gone.has(r.id));
+  const superseded = [];
+  const kept = [];
+  rows.forEach((row, i) => (by[i] < 0 ? kept.push(row) : superseded.push({ id: row.id, by: rows[by[i]].id })));
   return { kept, superseded };
 }
 
@@ -291,7 +368,8 @@ function supersede(rows) {
 // Decide
 // ---------------------------------------------------------------------------------------------
 
-function decideOne(rung, rows, baseVerdicts) {
+function decideOne(rung, rows, baseVerdicts, counter) {
+  counter.n++;
   const kind = KINDS[rung.kind] || KINDS.check;
   const tau = finite(rung.tolerance) ? rung.tolerance : 0.1;
   const v = { rung: rung.id, kind: rung.kind, value: rung.value === undefined ? null : rung.value, tolerance: tau, inUse: rung.inUse !== false };
@@ -306,7 +384,7 @@ function decideOne(rung, rows, baseVerdicts) {
   const newest = [...kept].sort((a, b) => stampTime(a.at) - stampTime(b.at)).pop();
   const evidence = x => ({ witness: x.witness, reader: x.row.reader, artifact: x.row.artifact, at: x.row.at });
   const base = {
-    ...v, admitted: kept.map(r => r.id), superseded,
+    ...v, admitted: kept.map(r => r.id), superseded, readAtValue: atValue.length > 0,
     untestable: results.filter(x => x.result === 'untestable').map(x => ({ id: x.id, reason: x.why })),
     estimate, report: newest.artifact.report,
   };
@@ -325,7 +403,7 @@ function decideOne(rung, rows, baseVerdicts) {
 
 /**
  * The full pass. Returns { order, keys, verdicts: Map id -> verdict, frontier: [ids], decided, refused }.
- * opts: { now, manifests }. decided counts the rungs decided in this pass (each exactly once).
+ * opts: { now, manifests }. decided counts the decisions actually made (decideOne's calls).
  */
 export function evaluate(rungs, rows, opts = {}) {
   const { order: seq } = order(rungs);
@@ -334,44 +412,45 @@ export function evaluate(rungs, rows, opts = {}) {
   const byId = new Map(rungs.map(r => [r.id, r]));
   const verdicts = new Map();
   const status = new Map();
-  let decided = 0;
+  const counter = { n: 0 };
   for (const id of seq) {
-    const d = decideOne(byId.get(id), byRung.get(id), status);
-    decided++;
+    const d = decideOne(byId.get(id), byRung.get(id), status, counter);
     d.key = keys.get(id);
     verdicts.set(id, d);
     status.set(id, d.verdict);
   }
-  return { order: seq, keys, verdicts, frontier: frontierOf(rungs, verdicts), decided, refused };
+  return { order: seq, keys, verdicts, frontier: frontierOf(rungs, verdicts), decided: counter.n, refused };
 }
 
 /**
  * The incremental re-check: after rows were added or a rung's context or value changed, re-decides
  * only the changed rungs, the rungs whose key changed, and their descendants (one BFS); every other
- * verdict is reused from previous. decided counts the rungs re-decided.
+ * verdict is reused from previous. Rows naming no rung, and rows reusing an id, are refused afresh.
+ * decided counts the decisions actually made.
  */
 export function recheck(rungs, rows, previous, changed, opts = {}) {
   const { order: seq } = order(rungs);
   const keys = rungKeys(rungs, seq);
+  const byId = new Map(rungs.map(r => [r.id, r]));
   const moved = [...changed];
   for (const [id, k] of keys) if (previous.keys.get(id) !== k) moved.push(id);
   const dirty = descendants(rungs, moved);
-  const dirtyRungs = rungs.filter(r => dirty.has(r.id));
-  const dirtyRows = rows.filter(r => dirty.has(r.rung));
-  const { byRung, refused } = admit(dirtyRows, dirtyRungs, opts);
-  const byId = new Map(rungs.map(r => [r.id, r]));
+  const dupes = duplicatesOf(rows);
+  const recheckRows = rows.filter(r => dirty.has(r.rung) || !byId.has(r.rung) || dupes.has(r));
+  const { byRung, refused } = admit(recheckRows, rungs, { ...opts, dupes });
   const verdicts = new Map();
   const status = new Map();
-  let decided = 0;
+  const counter = { n: 0 };
   for (const id of seq) {
     let d;
-    if (dirty.has(id)) { d = decideOne(byId.get(id), byRung.get(id), status); d.key = keys.get(id); decided++; }
+    if (dirty.has(id)) { d = decideOne(byId.get(id), byRung.get(id), status, counter); d.key = keys.get(id); }
     else d = previous.verdicts.get(id);
     verdicts.set(id, d);
     status.set(id, d.verdict);
   }
-  const keptRefusals = previous.refused.filter(x => !dirty.has(x.rung));
-  return { order: seq, keys, verdicts, frontier: frontierOf(rungs, verdicts), decided, refused: [...keptRefusals, ...refused] };
+  const fresh = new Set(refused.map(x => x.id + '|' + x.rung));
+  const keptRefusals = previous.refused.filter(x => byId.has(x.rung) && !dirty.has(x.rung) && x.reason !== 'duplicate' && !fresh.has(x.id + '|' + x.rung));
+  return { order: seq, keys, verdicts, frontier: frontierOf(rungs, verdicts), decided: counter.n, refused: [...keptRefusals, ...refused] };
 }
 
 function frontierOf(rungs, verdicts) {
@@ -405,7 +484,7 @@ export function readTerrainConstants(src) {
   const fitByFile = {};
   for (const m of block('FIT_BY_FILE').matchAll(/([a-z0-9_]+)\s*=\s*([0-9.]+)/g)) fitByFile[m[1]] = Number(m[2]);
   const fitStatus = {};
-  for (const m of block('FIT_STATUS').matchAll(/([a-z0-9_]+)\s*=\s*\{\s*"([a-z]+)",\s*"([0-9-]+)"\s*\}/g)) fitStatus[m[1]] = { verdict: m[2], report: m[3] };
+  for (const m of block('FIT_STATUS').matchAll(/([a-z0-9_]+)\s*=\s*\{\s*"([a-z]+)",\s*"([0-9-]+)"(?:,\s*"([a-z]+)")?\s*\}/g)) fitStatus[m[1]] = { verdict: m[2], report: m[3], how: m[4] || null };
   const pairs = text => [...text.matchAll(/\{\s*([0-9.]+),\s*([0-9.]+)\s*\}/g)].map(m => [Number(m[1]), Number(m[2])]);
   const words = text => [...text.matchAll(/\{\s*"([a-z]+)",\s*([0-9.]+)\s*\}/g)].map(m => [m[1], Number(m[2])]);
   const aspectDefault = Number((src.match(/local ASPECT_DEFAULT = ([0-9.]+)/) || [])[1]);
@@ -424,7 +503,7 @@ const ruleFor = (rules, dflt, file) => { for (const [word, v] of rules) if (file
  * The terrain's rung table: map data, axis, load, the frame kinds, one fit per file (the files the
  * addon has a fit for, and any file the ledger has readings of), the projection at the start pose
  * and one height per fitted file. Relative position is not a rung: it is projection, fit and height
- * together, plus the owner's word. ctx: { build, loader, pose }.
+ * together, plus the owner's word.
  */
 export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', files = [], tolerance = 0.1 } = {}) {
   const frameKind = c.frameOrder[0];
@@ -448,9 +527,4 @@ export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', f
     rungs.push({ id: 'height:' + file, kind: 'height', restsOn: ['projection:' + pose, 'fit:' + file], tolerance, context: { pose } });
   }
   return rungs;
-}
-
-/** The rows' report manifests as { [stamp]: { [file]: SHA256 } }, from a ledger's manifests block. */
-export function manifestsOf(ledger) {
-  return ledger.manifests || {};
 }

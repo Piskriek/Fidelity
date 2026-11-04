@@ -276,29 +276,35 @@ end
 -- projected foot is anchored. Every value answers to readings in docs/rungs/ledger.json: the test
 -- tools/rung-ledger.test.mjs fails for a value with no reading behind it, and FIT_STATUS carries the
 -- ledger's verdict on each (packages/triad-369/src/rung_ledger.mjs decides it).
--- What the readings show (council round 2026-11-04-rungs: the director's second reading of every fit
--- shot, on crops ticked every 5% of the frame): the frame centres the model's bounds on its mid-line
--- and draws it at 1/k, so a file reaches a fixed distance above and below the mid-line at x1 (the
--- barrel's three readings, x0.6 to x3, agree within 0.015). The proposal is twice the larger reach,
--- the smallest k at which nothing is clipped. The barrel filled 0.83 of its frame at x0.6 (now x0.51);
--- the crate filled 0.80 at x0.42 with its planks past both side edges (now x0.37; a frame about 1.85
--- as wide as tall would hold it); canopy04 overflowed at x2.8 (doubled to x5.6). The bush's top sits a
--- quarter below the frame's top at x2 in five shots, so x2 fails, and its base was never seen, so no k
--- is proposed; the jar's and the tree's bases were hidden behind the world overlay's copy of the
--- player. None is confirmed yet: the next report's twins read both edges of every model.
+-- What the readings show (council round 2026-11-04-rungs: the director's second reading of all 35
+-- camera-distance fit shots, on crops ticked every 5% of the frame, the bush and tree tops corrected
+-- after the round's review re-read them brightened): the frame centres the model's bounds on its
+-- mid-line and draws it at 1/k, so a file reaches a fixed distance above and below the mid-line at
+-- x1 (the barrel's five readings, x0.6 to x3, agree within 0.025). The proposal is twice the larger
+-- reach, the smallest k at which nothing is clipped. The barrel filled 0.83 of its frame at x0.6 (now
+-- x0.51); the crate filled 0.80 at x0.42 with its planks past both side edges (now x0.37; a frame
+-- about 1.85 as wide as tall would hold it); canopy04 overflowed at x2.8 (a trial at x5.6). At x2 the
+-- bush's twigs reach 0.10 to 0.12 below the frame's top and its stems run to the bottom edge: within
+-- the readings' precision of the tolerance, so undecided; its reaches (up 0.78, down at least 1.0)
+-- mean no k alone fills its frame, which needs a vertical offset. The jar's and the tree's bases were
+-- hidden behind the world overlay's copy of the player. None is confirmed: the next report's twins
+-- read both edges of every model.
 local REF_HEIGHT = 2.5
 local FIT_BY_FILE = { elwynnbush09 = 2.0, elwynntreemid01 = 2.8, westfallbarrel01 = 0.51, jar01 = 0.37, westfallcrate = 0.37, elwynntreecanopy04 = 5.6 }
--- The ledger's verdict on each value above, and the report that decided it (holds, fitted, fails, contested).
+-- The ledger's verdict on each value above (holds, fitted, fails, contested), the report it cites, and
+-- for a fitted value where the value came from: "estimated" (the evaluator's proposal from the
+-- readings), "read" (readings at this value exist but none could decide) or "trial" (a step after
+-- an overflow, not an estimate).
 local FIT_STATUS = {
-    elwynnbush09 = { "fails", "20261104-1247" },
-    elwynntreemid01 = { "fitted", "20261104-1321" },
-    westfallbarrel01 = { "fitted", "20261104-1247" },
-    jar01 = { "fitted", "20261104-1321" },
-    westfallcrate = { "fitted", "20261104-1321" },
-    elwynntreecanopy04 = { "fitted", "20261104-1321" },
+    elwynnbush09 = { "fitted", "20261104-1247", "read" },
+    elwynntreemid01 = { "fitted", "20261104-1321", "read" },
+    westfallbarrel01 = { "fitted", "20261104-1247", "estimated" },
+    jar01 = { "fitted", "20261104-1321", "read" },
+    westfallcrate = { "fitted", "20261104-1321", "estimated" },
+    elwynntreecanopy04 = { "fitted", "20261104-1321", "trial" },
 }
 -- (nominal height, the fit in use), ascending: an unmeasured file takes an interpolation between them,
--- a guess. canopy04's x5.6 is a bracket step after an overflow, not a fit, so it steers no other canopy.
+-- a guess. canopy04's x5.6 is a trial step after an overflow, not a fit, so it steers no other canopy.
 local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.37 }, { 1.2, 0.51 }, { 2.5, 2.0 }, { 14, 2.8 } }
 local function FileKey(path)
     local p = tostring(path or ""):lower():gsub("\\", "/")
@@ -330,7 +336,9 @@ local function CameraDistanceFor(heightYd, path)
 end
 local STATUS_TEXT = {
     holds = "a fit confirmed in report %s",
-    fitted = "a fit estimated from report %s, not confirmed",
+    estimated = "a fit estimated from report %s, not confirmed",
+    read = "a fit read at this value in report %s, undecided",
+    trial = "a trial value after report %s (it overflowed there), not a fit yet",
     fails = "a fit that failed in report %s, to be re-read",
     contested = "a fit contested in report %s",
 }
@@ -339,7 +347,10 @@ local function FitSource(path)
     local key = path and FileKey(path) or nil
     if key and OwnerFit(key) then return "your saved fit" end
     local st = key and FIT_BY_FILE[key] and FIT_STATUS[key]
-    if st then return string.format(STATUS_TEXT[st[1]] or (st[1] .. " in report %s"), st[2]) end
+    if st then
+        local text = (st[1] == "fitted" and STATUS_TEXT[st[3] or ""]) or STATUS_TEXT[st[1]] or (st[1] .. " in report %s")
+        return string.format(text, st[2])
+    end
     return "an interpolation between measured files, a guess"
 end
 

@@ -107,17 +107,17 @@ end
 -- with the overlays' drawings hidden (for a test step: the model's frame and its red marks only).
 -- The fit steps draw each measured file at the fit in use, the frontier of docs/rungs/ledger.json.
 Report.STEPS = {
-    { key = "scene",     label = "1 Scene + twin",              cmds = { "terrain on", "world on", "box hide" }, shot = true, twin = true },
+    { key = "scene",     label = "1 Scene + twin",              cmds = { "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true },
     { key = "checks",    label = "2 Checks + shot",             cmds = { "status", "cells", "bind status", "world status", "terrain status", "terrain probe", "eye probe", "diag" }, shot = true },
     { key = "bush",      label = "3 Bush at its fit + twin",    cmds = { "terrain test own", "terrain test aspect auto", "terrain test pick bush09", "terrain test" }, shot = true, twin = true },
-    { key = "tree",      label = "4 Tree at its fit + twin",    cmds = { "terrain test pick treemid", "terrain test" }, shot = true, twin = true },
-    { key = "barrel",    label = "5 Barrel at its fit + twin",  cmds = { "terrain test pick westfallbarrel", "terrain test" }, shot = true, twin = true },
-    { key = "jar",       label = "6 Jar at its fit + twin",     cmds = { "terrain test pick jar01", "terrain test" }, shot = true, twin = true },
-    { key = "crate",     label = "7 Crate at its fit + twin",   cmds = { "terrain test pick westfallcrate", "terrain test" }, shot = true, twin = true },
+    { key = "tree",      label = "4 Tree at its fit + twin",    cmds = { "terrain test aspect auto", "terrain test pick treemid", "terrain test" }, shot = true, twin = true },
+    { key = "barrel",    label = "5 Barrel at its fit + twin",  cmds = { "terrain test aspect auto", "terrain test pick westfallbarrel", "terrain test" }, shot = true, twin = true },
+    { key = "jar",       label = "6 Jar at its fit + twin",     cmds = { "terrain test aspect auto", "terrain test pick jar01", "terrain test" }, shot = true, twin = true },
+    { key = "crate",     label = "7 Crate at its fit + twin",   cmds = { "terrain test aspect auto", "terrain test pick westfallcrate", "terrain test" }, shot = true, twin = true },
     { key = "cratewide", label = "8 Crate, wide frame + twin",  cmds = { "terrain test pick westfallcrate", "terrain test aspect 1.85" }, shot = true, twin = true },
     { key = "canopy",    label = "9 Canopy04 at its fit + twin", cmds = { "terrain test aspect auto", "terrain test pick canopy04", "terrain test" }, shot = true, twin = true },
     { key = "walk",      label = "10 Test off, scene + twin",   cmds = { "terrain test pick any", "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true },
-    { key = "turn",      label = "11 Turn, scene + twin",       cmds = { "terrain on", "world on", "box hide" }, shot = true, twin = true },
+    { key = "turn",      label = "11 Turn, scene + twin",       cmds = { "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true },
     { key = "bound",     label = "12 Box, bind on + shot",      cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
     { key = "save",      label = "Save (reload UI)",            save = true },
     { key = "clear",     label = "Clear report",                clear = true },
@@ -236,6 +236,8 @@ function Report.Command(args, say)
     end
     if sub ~= "show" and sub ~= "hide" and sub ~= "toggle" then say("Usage: /fide report <show|hide|toggle|clear|status>"); return end
     local show = (sub == "show") or (sub == "toggle" and not p:IsShown())
+    -- the panel's OnUpdate drives the shots: hiding it mid-twin would leave the drawings hidden
+    if not show then Supersede() end
     if show then p:Show() else p:Hide() end
     if show then
         say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about a second and a half; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")

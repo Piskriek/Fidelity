@@ -14,9 +14,10 @@ This tool makes the reading repeatable and states its precision:
   twin      The model's edges from a pair of shots of one test frame, the second with the test
             frame hidden and everything else unchanged (v1.8.8's twin steps take this pair): the
             model is the longest run of rows where the two differ inside the frame (a unit walking
-            past is a shorter run). Prints the gaps at the top and the bottom, the width, and
-            'clipped' or 'overflow' where the model touches an edge: the fields of a ledger row
-            (docs/rungs/ledger.json).
+            past is a shorter run), with the frame's red marks masked out. Prints the gaps from
+            the frame's top and bottom edges, the width, and 'touches' or 'overflow' where the
+            model reaches an edge (whether it is cut there no pair of shots can show): the fields
+            of a ledger row (docs/rungs/ledger.json).
 
 An automatic fill from one shot was tried and dropped: the test models are lit dimly and the
 dimmed world is not uniformly darker, so a brightness threshold read a frame-filling bush as 0.075.
@@ -120,6 +121,18 @@ def largest_run(idx, gap=8):
     return best
 
 
+def red_mask(a):
+    """The test frame's red marks (edges and mid-line, drawn at 0.75 alpha) in shot `a`, dilated by a pixel."""
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    m = (r > 150) & (g < 120) & (b < 120) & ((r - g) > 70)
+    d = m.copy()
+    d[1:, :] |= m[:-1, :]
+    d[:-1, :] |= m[1:, :]
+    d[:, 1:] |= m[:, :-1]
+    d[:, :-1] |= m[:, 1:]
+    return d
+
+
 def cmd_twin(with_model, without):
     a = np.asarray(Image.open(with_model).convert("RGB")).astype(int)
     b = np.asarray(Image.open(without).convert("RGB")).astype(int)
@@ -128,23 +141,28 @@ def cmd_twin(with_model, without):
         return 2
     f = find_frame(a)
     top, bottom, left, right = f if f else known_frame(a.shape[0], a.shape[1])
-    t, bt, l, r = top + 3, bottom - 3, left + 3, right - 3
-    diff = np.abs(a[t:bt + 1, l:r + 1] - b[t:bt + 1, l:r + 1]).max(axis=2) > 40
-    fh, fw = bt - t + 1, r - l + 1
+    H, W = bottom - top + 1, right - left + 1
+    region = (slice(top, bottom + 1), slice(left, right + 1))
+    diff = np.abs(a[region] - b[region]).max(axis=2) > 40
+    # the twin hides the red marks with the model, so they differ too: they are not the model
+    diff &= ~red_mask(a[region])
     run = largest_run(np.where(diff.mean(axis=1) >= 0.01)[0])
     if run is None:
-        print(f"twin: no difference inside the frame rows {top}-{bottom}: nothing drawn, or the pair is not a twin")
+        print(f"twin: no difference inside the frame rows {top}-{bottom} beyond its marks: nothing drawn, or the pair is not a twin")
         return 1
     s, e = int(run[0]), int(run[1])
     crun = largest_run(np.where(diff[s:e + 1].mean(axis=0) >= 0.01)[0])
-    c0, c1 = (int(crun[0]), int(crun[1])) if crun else (0, fw - 1)
-    top_gap, bottom_gap = s / fh, (fh - 1 - e) / fh
-    touches = {"top": s <= 2, "bottom": e >= fh - 3, "sides": c0 <= 2 or c1 >= fw - 3}
-    edge = lambda gap, hit: "clipped" if hit else round(gap, 3)
-    print(f"twin: frame rows {top}-{bottom} cols {left}-{right} | model rows {t + s}-{t + e} cols {l + c0}-{l + c1}"
-          f" | top {edge(top_gap, touches['top'])} bottom {edge(bottom_gap, touches['bottom'])}"
-          f" width {'overflow' if touches['sides'] else round((c1 - c0 + 1) / fw, 3)} fill {round((e - s + 1) / fh, 3)}"
-          f" | precision about {round(2 / fh, 3)} of the frame (ledger fields: top, bottom, width)")
+    c0, c1 = (int(crun[0]), int(crun[1])) if crun else (0, W - 1)
+    # gaps from the frame's own edges; within 4 px of an edge (its 2-px mark and a pixel either side)
+    # the model reaches it, and whether it is cut there cannot be seen: 'touches'
+    near = 4
+    top_gap, bottom_gap = s / H, (H - 1 - e) / H
+    edge = lambda gap_px, gap: "touches" if gap_px <= near else round(gap, 3)
+    sides = c0 <= near or c1 >= W - 1 - near
+    width = "overflow" if sides else round((c1 - c0 + 1) / W, 3)
+    print(f"twin: frame rows {top}-{bottom} cols {left}-{right} | model rows {top + s}-{top + e} cols {left + c0}-{left + c1}"
+          f" | top {edge(s, top_gap)} bottom {edge(H - 1 - e, bottom_gap)} width {width} fill {round((e - s + 1) / H, 3)}"
+          f" | precision about {round(2 / H, 3)} of the frame (ledger fields: top, bottom, width)")
     return 0
 
 
