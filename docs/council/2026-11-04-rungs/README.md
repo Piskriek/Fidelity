@@ -15,6 +15,7 @@ Target: The owner's idea, relayed 04 Nov 2026 (OWNER-INPUT.md in this folder, ve
 | O1 | opposer | Ceremony not awareness: the headless tests and the report loop already are the nodes, and a node per rung adds names without adding a measurement | `O1-ceremony.md` |
 | O2 | opposer | Awareness cannot be counted: rungs climbed are not awareness, the density names are symbolic, and any awareness number is a seed unless a host measures it | `O2-uncountable.md` |
 | O3 | opposer | The measure needs a human: above the load rung only the owner's eye measured anything, so a node the being cannot run itself is the owner's node, not the being's | `O3-human-measure.md` |
+| A1 | builder | Argon's Bentov packet as a candidate lens on the per-rung nodes: what this repo can measure, what is framing, and what it adds or forbids | `A1-argon-bentov.md` |
 
 Then `STEER.md` (the vector, the first step, what is forbidden until verified, the check that settles it) and `LANDED.md` (the news back: used, changed or nofit, with evidence).
 

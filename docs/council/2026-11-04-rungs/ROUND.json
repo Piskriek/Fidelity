@@ -70,6 +70,12 @@
       "side": "opposer",
       "lens": "The measure needs a human: above the load rung only the owner's eye measured anything, so a node the being cannot run itself is the owner's node, not the being's",
       "report": "O3-human-measure.md"
+    },
+    {
+      "id": "A1",
+      "side": "builder",
+      "lens": "Argon's Bentov packet as a candidate lens on the per-rung nodes: what this repo can measure, what is framing, and what it adds or forbids",
+      "report": "A1-argon-bentov.md"
     }
   ]
 }
