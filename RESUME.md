@@ -1,5 +1,11 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## News back from the game: v1.7.7 seen, round 4 `used`, the terrain still not drawn (04 Nov 2026, 06:47Z, Claude in the cloud) — start here
+
+**The owner's three screenshots (v1.7.7 on TBC Anniversary, 7:41 to 7:42 local), read against round 4's check list:** the login line says `v1.7.7` and `eye hand:cursor (no head measured)` (check 1); `/fide cells` prints `label 0.50 age 0.1s of 2s measured -> open` for seven units and `label 1.00 ... symbolic` for the player, with the header that the label is the band's constant (check 2); clicks on unbound cells print `Clicked cell 82: no source` and `Clicked cell 112: no source`, the top row's cells 2 to 8 stand open as lenses and the rest closed, and `/fide overlay off` releases the slots so every cell closes (check 3 in part). Round 4 is `used` (`docs/council/2026-11-04-can/LANDED.md`). Not yet seen: a click on an open bound cell, the half-second held press, `/fide status`.
+
+**Still open on the owner's screen:** the terrain overlay is ON with 9 tiles and 5027 placements loaded and draws nothing the owner can see, so the v1.7.5 axis fix is not yet proven; the owner ran the probe and has its output, which is the next paste (`tile azeroth:32:48 FOUND`, the placements within range, the models loaded or failed). The HUD still reads `Coherence: 99%` with the literal S: H008 has not run. The Triad bridge in this session died with a worker restart and was restarted at 06:46Z.
+
 ## Council round 2026-11-04-operator: Argon's operator T(W, g, s) answered in Shape B, the Light Being kernel, v1.7.7 (04 Nov 2026, 06:26Z, Claude in the cloud) — start here
 
 **The input.** The owner pasted Argon's steering vector at 06:07Z (its header had arrived alone at 06:02Z): the Triadic Dynamical Operator T(W, g, s) over the Four Floats, four engineering deliverables (a cartridge schema, truthful wiring on both hosts, a glasses-free comfort contract, five invariants for `stepLightBeingLattice` as `node:test`), and the Shape B return format. Verbatim in `docs/council/2026-11-04-operator/ARGON-INPUT.md`; relayed through the Triad router unchanged. Argon's mode (a non-coercive prior; no clamping of a genuine engineering objection; rulings flagged for the owner) was applied as written.
