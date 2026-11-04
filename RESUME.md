@@ -1,5 +1,15 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## The fifth report measures the camera: a 2.5 yd bush fits its frame at x2; v1.8.4 sets the rule from that (04 Nov 2026, 09:43Z, Claude in the cloud) — start here
+
+**The fifth report (v1.8.3, 11:26 local, `origin/owner/reports`, `reports/20261104-1134/`, twelve screenshots over two passes).** The live scene (button 1) shows the map's barrel, jars and crate drawn on the ground beside the kobolds, where the real ones stand, at a believable size, and the tree as a rectangular block of canopy up-left of centre: the PlayerModel's viewport clips a model that is still too close. The bush test measured the camera: at the rule's x1 and at x0.5 the bush overflowed its frame (a close-up of leaves), **at x2 it fitted the frame whole**, and at model scale 0.3 it sat small at the frame's foot. So one camera distance frames about 1.25 yd of height, and the model's base sits at the frame's bottom, which is where the props are anchored (their projected foot). The owner skipped x4 and the bound box; the report file still holds every run (Clear was not pressed).
+
+**Landed as v1.8.4:** the reference height is 1.25 yd (measured, not assumed): a 2.5 yd bush gets camera x2, a 14 yd tree x11.2, a 16 yd canopy x12.8, a 1.2 yd barrel x0.96; the clamp is 0.25 to 16; the test takes `pick <word>` (the first loaded prop whose path holds the word, so a tree can be sized by eye) and `pick any`; the panel: 1 the scene, 2 the checks, 3 the bush by the rule, 4 and 5 the bush at x1 and x3, 6 a tree by the rule, 7 the tree at x16, 8 off, 9 the scene again, 10 the bound box. Headless 66/66 (the canopy x12.8, the bush x2, the clamp at 16, pick by keyword). H009 re-requested for v1.8.4.
+
+**Evidence (09:43Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4.
+
+**Open after this:** the nominal heights are a keyword table (`HEIGHT_RULES`: tree 14, canopy 16, bush 2.5, barrel 1.2); the files' real extents would need the M2 bounding boxes, which the generator does not read; the frame's aspect (0.8 wide) clips wide canopies; the eye's parallax across the props and the stereo pair are unverified.
+
 ## The fourth report: the terrain draws in the game; v1.8.3 sizes each prop's camera by its height (04 Nov 2026, 09:15Z, Claude in the cloud) — start here
 
 **The fourth report (v1.8.2, 10:58 local, `origin/owner/reports`, `reports/20261104-1059/`).** With both overlays on, screenshot 1 shows the map's 14 yd tree drawn over the world: its foliage fills the right side of the screen at the place the probe projected it (`elwynntreemid01.m2 ... screen 1499,293 depth 13.3 height 1013 px`). The bush on a PlayerModel frame fills its frame again; the plain Model frame still draws nothing. `/fide terrain status`: `props drawn 15 | models loaded 45 failed 0 | errors 0`, `frames PlayerModel`; the world overlay: eight actors on PlayerModel frames. **The terrain pipeline is proven end to end on the owner's screen:** the map data (round 1), the axis (the probe), the loader (the reports), the frame kind (the third report), the draw (this one).

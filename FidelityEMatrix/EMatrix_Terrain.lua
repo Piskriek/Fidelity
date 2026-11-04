@@ -247,15 +247,16 @@ end
 --- No SetCamera here: every prop had SetCamera(0) from v1.6 to v1.7.9 and none was ever visible
 --- on the owner's client, including the client's own question-mark model (the 09:35 report), and a
 --- doodad file has no camera 0 to select. The test's "cam 0" variant puts the call back on purpose.
--- A PlayerModel frame frames whatever it loads as if it were a character: the bush (2.5 yd) filled
--- its frame at the default camera (the owner's fourth report, 10:58 local) while the 14 yd tree was
--- seen from inside its canopy. So the camera backs off in proportion to the model's nominal height.
--- Needs in-game verification: the fourth run's sizing is the first look at it.
-local REF_HEIGHT = 2.5
+-- A PlayerModel frame frames whatever it loads as if it were a character at one camera distance,
+-- so the camera backs off in proportion to the model's nominal height. The reference is measured:
+-- in the owner's fifth report (v1.8.3, 11:26 local) the 2.5 yd bush overflowed its frame at x1 and
+-- x0.5, fitted it whole at x2, and sat small at its foot at model scale 0.3, so one camera
+-- distance frames about 1.25 yd of height and the model's base sits at the frame's bottom.
+local REF_HEIGHT = 1.25
 local function CameraDistanceFor(heightYd)
     local h = tonumber(heightYd) or REF_HEIGHT
     if h <= 0 then h = REF_HEIGHT end
-    return math.min(math.max(h / REF_HEIGHT, 0.25), 8.0)
+    return math.min(math.max(h / REF_HEIGHT, 0.25), 16.0)
 end
 
 local function SettleModel(model, x, heightYd)
@@ -365,12 +366,19 @@ local KNOWN_MODEL = "interface/buttons/talktomequestionmark.m2"
 local lastInfo = { props = 0, buildings = 0, tile = nil, groundZ = nil, pitch = nil }
 local ApplyBackdrop -- defined with the enable/disable commands below
 
-local function TestSlot()
+--- The pool slot a test press draws: the first loaded one, or the first whose model path holds
+--- `pick` (a keyword such as "tree" or "barrel"), so each kind of prop can be sized by eye.
+local function TestSlot(pick)
+    local first = nil
     for i = 1, MAX_PROPS do
         local s = pool[i]
-        if s and s.used and s.entry and s.mono then return s end
+        if s and s.used and s.entry and s.mono then
+            if not pick then return s end
+            first = first or s
+            if tostring(s.entry[2]):lower():find(pick, 1, true) then return s end
+        end
     end
-    return nil
+    return first
 end
 
 local VARIANT_LABEL = { default = "default (camera distance from the model's height)", cam = "camera", z = "SetPosition x", scale = "model scale", camdist = "camera distance scale", nolight = "no light applied" }
@@ -388,7 +396,7 @@ local function NewTestFrame(kind)
 end
 
 local function ApplyTest(say)
-    local s = TestSlot()
+    local s = TestSlot(testMode.pick)
     if not s then
         say("terrain test: no loaded prop yet (turn the overlay on near placements, wait a second, then try again)")
         return false
@@ -430,8 +438,8 @@ local function ApplyTest(say)
     lastInfo.props = 1
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
-    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera distance x%.2f), %s (file id %s), %d px tall at the screen centre, strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist 0.5, camdist 2, camdist 4, scale 0.3, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
-        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height), loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
+    say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera distance x%.2f by the rule%s), %s (file id %s), %d px tall at the screen centre, strata %s level %s, visible %s; the box is hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, scale <s>, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
+        knob, actual, which, testMode.known and REF_HEIGHT or (s.height or REF_HEIGHT), CameraDistanceFor(testMode.known and REF_HEIGHT or s.height), testMode.pick and (", picked by \"" .. testMode.pick .. "\"") or "", loaded and "loaded" or "did NOT load", fileId, hPx, strata, level, visible)
     return true
 end
 
@@ -634,7 +642,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|scale <s>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|scale <s>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -678,7 +686,7 @@ function Terrain.Command(args, say)
         end
         if not enabled then say("terrain test needs the overlay on: /fide terrain on, stand near placements, then /fide terrain test"); return end
         local prev = testMode or {}
-        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata }
+        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata, pick = prev.pick }
         if what == "cam" and n then testMode.variant, testMode.value = "cam", math.floor(n)
         elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
@@ -686,11 +694,13 @@ function Terrain.Command(args, say)
         elseif what == "nolight" then testMode.variant = "nolight"
         elseif what == "known" then testMode.known = true
         elseif what == "own" then testMode.known = false
+        elseif what == "pick" and args[4] then
+            if args[4] == "any" then testMode.pick = nil else testMode.pick = args[4]:lower() end
         elseif what == "frame" and FRAME_KINDS[args[4] or ""] then testMode.frame = args[4]
         elseif what == "strata" and (args[4] == "background" or args[4] == "medium" or args[4] == "high") then
             if args[4] == "background" then testMode.strata = nil else testMode.strata = args[4]:upper() end
         elseif what and what ~= "default" then say(USAGE); return end
-        if not TestSlot() then Refresh() end -- the overlay may have come on this very frame: scan now
+        if not TestSlot(testMode.pick) then Refresh() end -- the overlay may have come on this very frame: scan now
         if not ApplyTest(say) then testMode = nil end
         return
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return

@@ -764,8 +764,8 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     local bush = byPath["world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"]
     check(tree and bush, "tree and bush must be in the pool")
     check(tree.mono.kind == "PlayerModel" and bush.mono.kind == "PlayerModel" and T.FrameKind() == "PlayerModel", "props are PlayerModel frames: a plain Model frame draws nothing on the owner's client (the 10:23 report), got " .. tostring(tree.mono.kind))
-    check(near(tree.mono.camDistance, 16 / 2.5, 1e-9) and near(bush.mono.camDistance, 1, 1e-9) and tree.mono.modelScale == 1, "the camera backs off in proportion to the nominal height (a 16 yd canopy x6.4, a 2.5 yd bush x1), got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
-    check(T.CameraDistanceFor(100) == 8 and T.CameraDistanceFor(0.1) == 0.25 and T.CameraDistanceFor(nil) == 1, "the camera distance is clamped and defaults to the reference height")
+    check(near(tree.mono.camDistance, 16 / 1.25, 1e-9) and near(bush.mono.camDistance, 2, 1e-9) and tree.mono.modelScale == 1, "the camera backs off in proportion to the nominal height (a 16 yd canopy x12.8, the 2.5 yd bush x2 as the owner's fifth report measured), got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
+    check(T.CameraDistanceFor(100) == 16 and T.CameraDistanceFor(0.1) == 0.25 and T.CameraDistanceFor(nil) == 1, "the camera distance is clamped and defaults to the reference height")
     check(not byPath["world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2"], "the 150 yd tree must be outside the radius")
     check(tree.mono.model == "world\\azeroth\\elwynn\\passivedoodads\\trees\\elwynntreecanopy03.m2", "model must be loaded by its path (verified), got " .. tostring(tree.mono.model))
     check(tree.mono.animation == 0, "a loaded prop must start its idle animation")
@@ -828,6 +828,10 @@ test("terrain test: every press draws on a brand-new frame of the asked kind, th
     check(f7.modelScale == 5 and f7.position[1] == 0 and f7.model ~= f6.model, "scale 5 on a new frame of the prop's own model")
     slash("terrain test camdist 2")
     check(newest().camDistance == 2 and newest().modelScale == 1, "camdist 2 sets the camera distance scale on a new frame, got " .. tostring(newest().camDistance))
+    slash("terrain test pick canopy"); slash("terrain test")
+    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 16 / 1.25, 1e-9), "pick canopy draws the canopy at its own rule, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
+    slash("terrain test pick any"); slash("terrain test")
+    check(tostring(newest().model):find("bush", 1, true) or tostring(newest().model):find("canopy", 1, true), "pick any goes back to the first loaded prop")
     slash("terrain test off")
     for _, f in ipairs(frames) do check(not f.shown, "off hides every test frame") end
     check(_G.FidelityEMatrixFrame.shown, "off shows the box again")
