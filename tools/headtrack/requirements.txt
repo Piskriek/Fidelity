@@ -1,3 +1,3 @@
-opencv-python>=4.8
+opencv-python>=4.8,<5  # OpenCV 5 removed cv2.CascadeClassifier and its Haar files
 numpy>=1.24
 vgamepad>=0.1.0

@@ -30,7 +30,10 @@ stream. Nothing runs on the phone but a camera app.
    iPhone, any IP-camera app with an MJPEG address works the same way.
 2. In the app set the video to **1280 x 720**, then start the server. The app shows the phone's address.
 3. Stand the phone **centred on the TV** (on top of it or just below it), looking at the sofa, not tilted.
-4. On the laptop: `python tools\headtrack\headtrack.py --source http://<phone ip>:8080/video --no-gamepad --room --show`
+4. On the laptop, once: `python -m venv .venv` and `.venv\Scripts\pip install "opencv-python>=4.8,<5" numpy`. OpenCV 5
+   (5.0.0, July 2026) removed the Haar face finder (`cv2.CascadeClassifier` and its cascade files), so the tracker
+   needs OpenCV 4; `requirements.txt` pins it, and the tracker says so if it meets OpenCV 5.
+   Then: `.venv\Scripts\python tools\headtrack\headtrack.py --source http://<phone ip>:8080/video --no-gamepad --room --show`
    - `--room` searches the full picture for faces from 24 px wide (a face three metres from a phone is about 26 to
      55 px at 1280 x 720) and follows **the person straight ahead**: of several faces it takes the one nearest the
      picture's centre line, then keeps that person (continuity beats size) until they are lost for a moment.
@@ -39,6 +42,14 @@ stream. Nothing runs on the phone but a camera app.
    - It prints, at the start, the smallest face it can find.
 5. Sit normally for the 2 s calibration; `head.json` then follows the player, and the twin's `/live` page and its
    head-coupled window read it.
+
+DroidCam (Android and iPhone) works the same way: its stream is `http://<phone ip>:4747/video`, or
+`/video/force/1280x720` for 720p; it serves one program at a time, so close its page in the browser first.
+
+Checked here (05 Nov) with a 1280 x 720 MJPEG stream served over HTTP the way such an app serves one, a 44 px face
+swaying in the middle and a 72 px face still at the side: with `--room` the face was found in all 227 frames
+(22.6 a second) and `x` rose and fell with the sway, the middle person's, not the larger one's; with the defaults
+none of 228 frames had a face. Not yet run with a phone in a real room.
 
 The phone, the laptop and the TV only need the same Wi-Fi. One camera gives the direction to the head and a rough
 distance from the face's size, for one person at a time.
@@ -95,5 +106,6 @@ them, run the tracker with `--map triggers` and `/fide eye stick` the axes `/fid
 
 ## Tests
 
-`python -m unittest tools/headtrack/test_headmath.py` (pure math, no camera). `check_pad.py` needs
+`python -m unittest tools/headtrack/test_headmath.py tools/headtrack/test_headtrack_io.py` (pure math and the head.json
+write, which retries a rename Windows refuses while another program has the file open; no camera). `check_pad.py` needs
 the driver; `headtrack.py --source synthetic --duration 3 --no-gamepad` needs only numpy.

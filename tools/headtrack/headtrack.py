@@ -151,6 +151,9 @@ class HaarDetector:
 
     def __init__(self, scale_width: int = 320, min_face: int = 30):
         import cv2
+        if not hasattr(cv2, "CascadeClassifier"):  # OpenCV 5 removed the Haar face finder and its cascade files
+            raise RuntimeError(f"OpenCV {cv2.__version__} has no Haar face finder (OpenCV 5 removed it): "
+                               "pip install \"opencv-python>=4.8,<5\"")
         self.cv2 = cv2
         path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
         self.cascade = cv2.CascadeClassifier(path)
@@ -203,11 +206,22 @@ class PadOutput:
             pass
 
 
-def write_json_atomic(path: str, payload: dict):
+def write_json_atomic(path: str, payload: dict, attempts: int = 5, wait: float = 0.005):
+    """Write a new copy, then rename it over the old one, so a reader never sees half a file. Windows refuses the
+    rename (WinError 5, access denied) while another program has the old file open, such as the twin server reading
+    it every 30 ms or an antivirus scan of the new copy: the rename is tried again a few milliseconds later, up to
+    `attempts` times in all (about 50 ms at most), before the error goes to the caller."""
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(payload, f)
-    os.replace(tmp, path)
+    for i in range(attempts):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if i == attempts - 1:
+                raise
+            time.sleep(wait * (i + 1))
 
 
 # ---------------------------------------------------------------------------------------------
