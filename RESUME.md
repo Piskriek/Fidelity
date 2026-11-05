@@ -1,6 +1,27 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## The tenth report, the owner's eight rulings, v1.8.9 and the second step (05 Nov 2026, Claude in the cloud) — start here
+## The Fidelity Twin: Northshire outside the game (05 Nov 2026, Claude in the cloud) — start here
+
+**The owner asked to try the external scene.** He suggested a standalone engine fed by telemetry from WoW in place of the in-addon overlay: exact camera control, true 3D with no cropped squares, head tracking straight into the view, room for GPU fractals; the trade-off is a separate window.
+
+**What landed** (`apps/wow-twin/`, `tools/twin/`; run `npm run twin`, open http://127.0.0.1:5203; `apps/wow-twin/README.md`):
+- **The ground:** all nine Northshire tiles' heights, from the addon's own map data. The test checks that the height under the tenth report's pose is the ground the client recorded there.
+- **Stand-ins:** every one of the 5,027 placements as a simple shape for its kind, at its position, turn and scale. These are not the game's models. The 43 buildings are wire columns (not drawn).
+- **The game's camera at any recorded shutter pose, over the report's own screenshot.** The camera is the addon's `BuildCamera` line for line. The test reproduces all 336 feet the client recorded at the tenth report's shutters, through the shared module and through a three.js camera. Cyan crosses mark predicted feet, yellow circles the director's blind feet.
+  - At the saved default the camp's stand-ins float above the real camp. With the proposal (pitch 12.8°, fovY 53.8°, not confirmed) they stand on it.
+- **A head-coupled window:** the screen as a window. `head.json` from `tools/headtrack/headtrack.py --no-gamepad` moves the eye, with no virtual pad needed; "mouse as head" tries it without a webcam.
+- **Free orbit.**
+- **A live pose:** any source can `POST /api/pose`, and the viewer follows.
+- **Shots matched to files in time order:** a file named a second late goes to the right shot, and a twin that overwrote its first shot is marked.
+
+Checked in headless Chromium here: four views and the window mode at two head positions, with no page errors. `tools/twin.test.mjs` passes 6/6.
+
+**Open, for the owner:**
+- **Which live source feeds the pose from WoW.** An addon cannot open a socket. His ladder puts the game's own files before the screen, so the order is: the chat log under `/chatlog` (to be tried in the game), then a pixel strip read by a screen capture.
+- **No live creatures:** the API gives world positions only for the player and party.
+- **H011** asks the laptop to run the twin beside WoW with the head tracker.
+
+## The tenth report, the owner's eight rulings, v1.8.9 and the second step (05 Nov 2026, Claude in the cloud)
 
 **What came back:** `reports/20261105-0530` on `origin/owner/reports` (`d7839c8`). It holds 21 shots on v1.8.8 at the kobold camp north of the Abbey, the saved report and the MANIFEST, and every hash matches. The owner's rulings on the round's eight questions came with it. So did two notes: from Argon, how to decompose the camera's error; from the owner, that the copy of his character did not run when he ran. The full account is in `docs/council/2026-11-04-rungs/LANDED.md` (status **changed**, revised after the round's review), and `STEER.md` ends with the answered rulings, the news back and the next ASK.
 

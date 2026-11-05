@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fidelity Twin</title>
+<link rel="stylesheet" href="/app/style.css">
+<script type="importmap">{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }</script>
+</head>
+<body>
+<div id="stagewrap"><div id="stage"><img id="backdrop" alt=""><canvas id="view"></canvas><canvas id="overlay"></canvas></div></div>
+<aside id="panel">
+  <h1>Fidelity Twin</h1>
+  <p class="note">Northshire from the addon's own map data: the ground from its heights, every placement as a stand-in shape (not the game's models), outside the game, so the camera is ours.</p>
+  <label for="report">Report</label><select id="report"></select>
+  <label for="step">Step (a recorded shutter pose)</label><select id="step"></select>
+  <label for="shot">Backdrop</label>
+  <select id="shot"><option value="twin">the twin shot (overlays hidden)</option><option value="first">the first shot (overlays drawn)</option><option value="none">none</option></select>
+  <label for="camera">Camera</label>
+  <select id="camera"><option value="game">the game's camera at the pose</option><option value="window">head-coupled window at the pose</option><option value="free">free orbit</option></select>
+  <label for="lens">Pitch and field of view</label>
+  <select id="lens"><option value="default">the saved default</option><option value="proposal">the tenth report's proposal (not confirmed)</option></select>
+  <label for="opacity">Backdrop opacity</label><input id="opacity" type="range" min="0" max="1" step="0.05" value="0.7">
+  <label for="terrain">Terrain</label>
+  <select id="terrain"><option value="wire">wire</option><option value="solid">solid</option><option value="off">off</option></select>
+  <div class="row">
+    <label><input type="checkbox" id="props" checked> stand-ins</label>
+    <label><input type="checkbox" id="feet" checked> feet</label>
+    <label><input type="checkbox" id="mousehead"> mouse as head</label>
+  </div>
+  <div id="status"></div>
+</aside>
+<script type="module" src="/app/main.js"></script>
+</body>
+</html>

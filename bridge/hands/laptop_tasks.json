@@ -1,7 +1,7 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-05T06:02:04.871Z",
+  "updated_at": "2026-11-05T07:44:58.173Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
@@ -124,6 +124,27 @@
         "the prior CVar values, the /fide eye probe line, and whether the scene follows the head"
       ],
       "status": "requested"
+    },
+    {
+      "id": "H011",
+      "priority": 1,
+      "title": "Try the Fidelity Twin on the laptop: Northshire outside the game (the map's ground and placements in a browser window, the game's camera at a recorded pose, a head-coupled window from the head tracker), run it beside WoW and report what the owner sees",
+      "steps": [
+        "git -C D:\\fidelity-repo fetch origin, then git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e. If D:\\fidelity-repo\\node_modules\\three is missing, run npm ci --no-audit --no-fund in D:\\fidelity-repo (it installs from the lockfile and changes no tracked file).",
+        "Start the twin: node D:\\fidelity-repo\\tools\\twin\\server.mjs (it prints twin: http://127.0.0.1:5203). Open that address in a browser on the laptop. Leave the server running while the owner looks.",
+        "Ask the owner to look at three views (the panel on the right switches them): (1) Camera: the game's camera at the pose, Backdrop: the twin shot; switch Pitch and field of view between the saved default and the tenth report's proposal and watch the camp's stand-ins move onto the real camp. (2) Camera: free orbit, Terrain: solid: drag to orbit Northshire. (3) Camera: head-coupled window: tick mouse as head and move the mouse over the view.",
+        "If the head tracker is set up (H006): run it so that it writes head.json without the virtual pad: python D:\\fidelity-repo\\tools\\headtrack\\headtrack.py --no-gamepad --show, untick mouse as head, and ask the owner to move his head in the head-coupled window.",
+        "Take two screenshots of the browser window (the game's camera with the proposal, and the head-coupled window) and ask the owner for one line each: whether the twin's Northshire looks like the place, and whether the head-coupled window moves the right way when he moves his head.",
+        "Stop the server (Ctrl+C). Nothing was written."
+      ],
+      "report": [
+        "The fetch and merge output, and whether npm ci ran",
+        "The server's first line",
+        "The two screenshots (paths), or why not",
+        "The owner's two lines"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-05T07:44:58.173Z"
     },
     {
       "id": "H007",

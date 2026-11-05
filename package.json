@@ -29,6 +29,7 @@
     "ematrix:atlas": "node tools/gen_e_atlas.mjs",
     "ematrix:mapdata": "node tools/ematrix_mapdata.mjs",
     "ematrix:fetch": "node tools/ematrix_fetch_tiles.mjs",
+    "twin": "node tools/twin/server.mjs",
     "headtrack:test": "python -m unittest tools/headtrack/test_headmath.py"
   },
   "dependencies": {
