@@ -109,8 +109,12 @@ Open http://127.0.0.1:5203/live. It shows a WoW picture you can look into: the g
   transformers.js 3.8.1. It is the model's estimate from the picture alone: the game gives its depth to nothing
   outside it, and the page says so.
   - The model loads once from Hugging Face (about 30 to 50 MB), then from the browser's cache.
-  - It runs on the graphics card through WebGPU where the browser has it, otherwise on the processor. Headless
-    Chromium here, on the processor, takes 4 to 7 s a picture at 518 px wide; on a graphics card it should be far
+  - It runs on the graphics card through WebGPU: in half precision where the card has it (`shader-f16`), in full
+    precision on any other card, and on the processor only when the browser has no WebGPU card. The status panel
+    names the card and why anything was skipped. `?gpu=low-power` asks for the integrated graphics, so a laptop's
+    Intel chip can take the model while the game keeps the discrete card; `?device=wasm` forces the processor.
+  - Measured: headless Chromium here, on the processor, 4 to 7 s a picture at 518 px wide. The owner's laptop (an
+    i7-6700HQ beside WoW, before full precision on the card was tried): 18.9 s. On a graphics card it should be far
     faster, but that is not measured yet.
   - A live window is estimated again whenever the model is free, while the picture itself updates at video rate,
     so depth lags fast camera turns.

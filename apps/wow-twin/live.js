@@ -27,7 +27,7 @@ for (const [k, el] of [['depth', ui.depthamt], ['focus', ui.focus], ['gain', ui.
 
 const state = {
   el: null, fw: 16, fh: 9, label: '', live: false, stream: null, stamp: 0,
-  depth: null, dw: 0, dh: 0, stride: 1, depthStamp: 0, est: null, device: '', loading: '', busy: false, ms: 0, frames: 0, error: '',
+  depth: null, dw: 0, dh: 0, stride: 1, depthStamp: 0, est: null, device: '', loading: '', busy: false, ms: 0, frames: 0, error: '', fallbacks: [],
   head: null, headAt: 0, mouse: { x: 0, y: 0 },
   testHead: OPT.has('head') ? OPT.get('head').split(',').map(Number) : null, // ?head=x,y,z holds the head still (for checks)
 };
@@ -72,12 +72,30 @@ function layout() {
 // ---------------------------------------------------------------------------------------------
 // The depth model: loaded on first use, on the graphics card (WebGPU) when there is one, else on the processor
 // ---------------------------------------------------------------------------------------------
+// ?gpu=low-power asks for the integrated graphics (a laptop's Intel chip, say, while the game has the discrete card);
+// the default asks for the most capable card
+const GPU_PREF = OPT.get('gpu') === 'low-power' ? 'low-power' : 'high-performance';
+async function graphicsCard() {
+  if (!navigator.gpu) return null;
+  try {
+    const a = await navigator.gpu.requestAdapter({ powerPreference: GPU_PREF });
+    if (!a) return null;
+    const i = a.info || {};
+    return { f16: a.features.has('shader-f16'), name: [i.vendor, i.architecture, i.description].filter(Boolean).join(' ') || 'unnamed' };
+  } catch { return null; }
+}
 async function estimator() {
   if (state.est) return state.est;
-  state.loading = 'loading the depth model (about 30 to 50 MB, once)';
+  state.loading = 'loading the depth model (about 30 to 100 MB, once)';
   const tf = await import(TRANSFORMERS);
-  const want = OPT.get('device') || (navigator.gpu ? 'webgpu' : 'wasm');
-  const tries = want === 'webgpu' ? [['webgpu', 'fp16'], ['wasm', 'q8']] : [['wasm', 'q8']];
+  const gpu = (OPT.get('device') || 'webgpu') === 'webgpu' ? await graphicsCard() : null;
+  if (gpu && tf.env && tf.env.backends && tf.env.backends.onnx) {
+    tf.env.backends.onnx.webgpu = tf.env.backends.onnx.webgpu || {};
+    tf.env.backends.onnx.webgpu.powerPreference = GPU_PREF; // the same card the check above found
+  }
+  // half precision only where the card has it (shader-f16); full precision on any other card; the processor last
+  const tries = gpu ? [...(gpu.f16 ? [['webgpu', 'fp16']] : []), ['webgpu', 'fp32'], ['wasm', 'q8']] : [['wasm', 'q8']];
+  state.fallbacks = [];
   let last = null;
   for (const [device, dtype] of tries) {
     try {
@@ -85,9 +103,17 @@ async function estimator() {
         device, dtype,
         progress_callback: p => { if (p.status === 'progress' && /\.onnx$/.test(p.file || '')) state.loading = `loading the depth model: ${Math.round(p.progress || 0)}%`; },
       });
-      state.est = est; state.device = `${device === 'webgpu' ? 'graphics card (WebGPU)' : 'processor (WebAssembly)'}, ${dtype}`; state.loading = '';
+      state.est = est;
+      state.device = device === 'webgpu'
+        ? `graphics card (WebGPU: ${gpu.name}), ${dtype}${gpu.f16 ? '' : ' (this card has no fp16)'}`
+        : `processor (WebAssembly), ${dtype}${gpu ? '' : ' (no WebGPU graphics card in this browser)'}`;
+      state.loading = '';
       return est;
-    } catch (e) { last = e; console.warn(`the depth model did not start on ${device}: ${e.message}`); }
+    } catch (e) {
+      last = e;
+      state.fallbacks.push(`${device} ${dtype}: ${String(e.message || e).slice(0, 80)}`);
+      console.warn(`the depth model did not start on ${device} ${dtype}: ${e.message}`);
+    }
   }
   state.loading = '';
   throw last || new Error('the depth model did not start');
@@ -268,10 +294,11 @@ function frame() {
   ui.status.textContent = [
     state.el ? `picture: ${state.label} (${state.fw} x ${state.fh})` : 'no picture yet',
     state.loading || (state.error ? `depth: ${state.error}` : state.est ? `depth: estimated by the model on the ${state.device}, ${state.ms.toFixed(0)} ms a picture${state.live ? `, ${state.frames} so far` : ''}` : 'depth: the model starts with the first picture'),
+    state.fallbacks && state.fallbacks.length && state.est ? `(tried first: ${state.fallbacks.join('; ')})` : '',
     state.depth ? 'the depth is the model\'s estimate from the picture, not the game\'s' : 'flat until the model answers',
     `head: ${h.source}`,
     magic.on ? `Magic Eye, ${magic.cross ? 'crossed' : 'parallel'} eyes (M leaves, C switches); one repeat ${magic.period} px` : 'M: Magic Eye of the depth; F: full screen',
-  ].join('\n');
+  ].filter(Boolean).join('\n');
   requestAnimationFrame(frame);
 }
 
