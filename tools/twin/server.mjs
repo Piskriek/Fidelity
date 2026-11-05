@@ -73,7 +73,9 @@ export function cleanLiveStatus(s) {
     renderFps: num(s.renderFps, 1000), captureFps: num(s.captureFps, 1000),
     depthDevice: str(s.depthDevice, 160), depthMs: num(s.depthMs, 600000), depthFrames: num(s.depthFrames, 1e9), depthPerSecond: num(s.depthPerSecond, 1000),
     depthBreakdown: str(s.depthBreakdown, 300), depthNote: str(s.depthNote, 160), depthError: str(s.depthError, 200),
-    head: str(s.head, 160), headPerSecond: num(s.headPerSecond, 1000), headAgeMs: num(s.headAgeMs, 1e9),
+    depthP50: num(s.depthP50, 600000), depthP90: num(s.depthP90, 600000), worstFrameMs: num(s.worstFrameMs, 600000),
+    head: str(s.head, 160), headPerSecond: num(s.headPerSecond, 1000), headAgeMs: num(s.headAgeMs, 1e9), headAgeP90: num(s.headAgeP90, 1e9),
+    headLost: num(s.headLost, 1e12), headFrames: num(s.headFrames, 1e12),
     magic: s.magic === true, fullscreen: s.fullscreen === true, width: num(s.width, 100000), height: num(s.height, 100000),
   };
 }
@@ -93,7 +95,9 @@ export function startTwin(opts = {}) {
   const forwardHead = text => {
     try {
       const h = JSON.parse(text);
-      if ([h.x, h.y, h.z].every(Number.isFinite)) send('head', { x: h.x, y: h.y, z: h.z, at: typeof h.at === 'string' ? h.at.slice(0, 40) : null, fps: Number.isFinite(h.fps) ? h.fps : null });
+      const n = v => (Number.isFinite(v) ? v : null);
+      // t: when the tracker's picture arrived (ms since 1970), for the page's measure of the head's age
+      if ([h.x, h.y, h.z].every(Number.isFinite)) send('head', { x: h.x, y: h.y, z: h.z, at: typeof h.at === 'string' ? h.at.slice(0, 40) : null, fps: n(h.fps), t: n(h.t), frames: n(h.frames), lost: n(h.lost) });
     } catch { /* a half-written file: the next poll reads it whole */ }
   };
   // or another machine's tracker (headtrack.py --serve): its newest head, fetched one request at a time

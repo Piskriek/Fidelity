@@ -31,8 +31,11 @@ const state = {
   head: null, headAt: 0, mouse: { x: 0, y: 0 }, note: '', noteAt: 0,
   testHead: OPT.has('head') ? OPT.get('head').split(',').map(Number) : null, // ?head=x,y,z holds the head still (for checks)
 };
-// counts since the last status: pictures drawn, captured window pictures, head updates, depth maps (sendStatus)
-const meter = { t: performance.now(), drawn: 0, captured: 0, heads: 0, depths: 0 };
+// counts since the last status: pictures drawn, captured window pictures, head updates, depth maps, the longest gap
+// between two drawn pictures, the head's age at each drawn picture; and the last 30 depth times (sendStatus)
+const meter = { t: performance.now(), drawn: 0, captured: 0, heads: 0, depths: 0, lastDraw: 0, worst: 0, headAges: [], depthTimes: [] };
+const whole = v => (v === null ? null : Math.round(v));
+const quantile = (a, q) => { if (!a.length) return null; const b = a.slice().sort((x, y) => x - y); return b[Math.min(b.length - 1, Math.floor(q * b.length))]; };
 
 // ---------------------------------------------------------------------------------------------
 // The surface
@@ -171,6 +174,7 @@ async function estimate() {
     if (stamp !== state.stamp) return; // the picture changed while the model was busy
     state.depth = d.data; state.dw = d.width; state.dh = d.height; state.stride = d.channels || 1;
     state.depthStamp++; state.frames++; state.error = ''; meter.depths++;
+    meter.depthTimes.push(state.ms); if (meter.depthTimes.length > 30) meter.depthTimes.shift();
     updateSurface();
     window.__depth = { ms: state.ms, device: state.device, dw: d.width, dh: d.height, frames: state.frames, stride: state.stride, depth: d.data }; // for the browser check
   } catch (e) {
@@ -347,10 +351,12 @@ function sendStatus() {
     renderFps: rate(meter.drawn), captureFps: state.live ? rate(meter.captured) : null,
     depthDevice: state.device || null, depthMs: state.frames ? Math.round(state.ms) : null, depthFrames: state.frames, depthPerSecond: rate(meter.depths),
     depthBreakdown: remote && state.frames ? state.breakdown : null, depthNote: state.loading || null, depthError: state.error || null,
-    head: headOffset().source, headPerSecond: rate(meter.heads), headAgeMs: state.headAt ? Math.round(now - state.headAt) : null,
+    depthP50: whole(quantile(meter.depthTimes, 0.5)), depthP90: whole(quantile(meter.depthTimes, 0.9)), worstFrameMs: meter.worst ? Math.round(meter.worst) : null,
+    head: headOffset().source, headPerSecond: rate(meter.heads), headAgeMs: quantile(meter.headAges, 0.5), headAgeP90: quantile(meter.headAges, 0.9),
+    headLost: state.head && Number.isFinite(state.head.lost) ? state.head.lost : null, headFrames: state.head && Number.isFinite(state.head.frames) ? state.head.frames : null,
     magic: magic.on, fullscreen: !!document.fullscreenElement, width: canvas.width, height: canvas.height,
   };
-  meter.t = now; meter.drawn = meter.captured = meter.heads = meter.depths = 0;
+  meter.t = now; meter.drawn = meter.captured = meter.heads = meter.depths = meter.worst = 0; meter.headAges = [];
   window.__live = status;
   fetch('/api/live-status', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(status) }).catch(() => { /* the twin stopped */ });
 }
@@ -360,8 +366,17 @@ setInterval(sendStatus, 2000);
 // The loop
 // ---------------------------------------------------------------------------------------------
 function frame() {
+  const now = performance.now();
   meter.drawn++;
+  if (meter.lastDraw) meter.worst = Math.max(meter.worst, now - meter.lastDraw);
+  meter.lastDraw = now;
   const h = headOffset();
+  if (h.source === 'head tracker' && meter.headAges.length < 1000) {
+    // how old the head is when it is drawn: from the picture the tracker saw (t, this machine's clock, when the tracker
+    // runs here) or else from its arrival in this page
+    const age = Number.isFinite(state.head.t) && Math.abs(Date.now() - state.head.t) < 10000 ? Date.now() - state.head.t : now - state.headAt;
+    meter.headAges.push(Math.max(0, Math.round(age)));
+  }
   if (state.live && !state.busy) estimate(); // a live window: the model runs again as soon as it is free
   if (magic.on) drawMagic();
   else { placeEye(h); renderer.render(scene, camera); }

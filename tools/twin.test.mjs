@@ -285,7 +285,7 @@ test('the server: the viewer, three.js, the map, the camera, the reports and sho
 });
 
 test('the head from a tracker on another machine (--head http://...): each new head reaches the page, and a tracker that goes away breaks nothing', async () => {
-  let body = JSON.stringify({ x: 0.3, y: -0.1, z: 0, at: '2026-11-05T16:00:00', fps: 24 });
+  let body = JSON.stringify({ x: 0.3, y: -0.1, z: 0, at: '2026-11-05T16:00:00', fps: 24, t: 1793894400000, frames: 50, lost: 2 });
   const tracker = http.createServer((req, res) => {
     if (req.url !== '/head.json') { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'content-type': 'application/json' }); res.end(body);
@@ -300,7 +300,8 @@ test('the head from a tracker on another machine (--head http://...): each new h
   const waitFor = async re => { for (let i = 0; i < 80 && !re.test(events.join('')); i++) await new Promise(r => setTimeout(r, 25)); return events.join(''); };
   try {
     assert.match(await waitFor(/event: hello/), new RegExp(`"head":"${url.replace(/[./]/g, c => '\\' + c)}"`), 'the page is told where the head comes from');
-    assert.match(await waitFor(/"x":0\.3/), /event: head\ndata: \{"x":0.3,"y":-0.1,"z":0,"at":"2026-11-05T16:00:00","fps":24\}/);
+    assert.match(await waitFor(/"x":0\.3/), /event: head\ndata: \{"x":0.3,"y":-0.1,"z":0,"at":"2026-11-05T16:00:00","fps":24,"t":1793894400000,"frames":50,"lost":2\}/,
+      'the head, when its picture arrived (t, for the page\'s measure of its age) and the tracker\'s counts');
     const before = events.join('').split('event: head').length;
     await new Promise(r => setTimeout(r, 200));
     assert.equal(events.join('').split('event: head').length, before, 'the same head is not sent twice');
@@ -411,11 +412,11 @@ test('the page\'s own numbers reach the twin and come back for the room launcher
   try {
     assert.deepEqual(JSON.parse((await get(t.port, '/api/live-status')).body), { status: null }, 'nothing before the page speaks');
     assert.equal((await get(t.port, '/favicon.ico')).status, 204, 'the browser\'s icon request is answered (no 404 in the page\'s console)');
-    const sent = { picture: 'a captured window, live (1920 x 1080)', live: true, renderFps: 59.8, captureFps: 29.6, depthDevice: 'graphics card (WebGPU: nvidia ampere), fp16', depthMs: 61, depthFrames: 120, depthPerSecond: 14.5, head: 'head tracker', headPerSecond: 26.4, headAgeMs: 12, magic: false, fullscreen: true, width: 1920, height: 1080, secret: 'dropped' };
+    const sent = { picture: 'a captured window, live (1920 x 1080)', live: true, renderFps: 59.8, captureFps: 29.6, depthDevice: 'graphics card (WebGPU: nvidia ampere), fp16', depthMs: 61, depthFrames: 120, depthPerSecond: 14.5, depthP50: 60, depthP90: 75, worstFrameMs: 21, head: 'head tracker', headPerSecond: 26.4, headAgeMs: 12, headAgeP90: 30, headLost: 3, headFrames: 400, magic: false, fullscreen: true, width: 1920, height: 1080, secret: 'dropped' };
     assert.equal((await get(t.port, '/api/live-status', 'POST', JSON.stringify(sent))).status, 200);
     const back = JSON.parse((await get(t.port, '/api/live-status')).body);
     assert.ok(back.ageMs >= 0 && back.ageMs < 5000, `age ${back.ageMs}`);
-    for (const k of ['picture', 'live', 'renderFps', 'captureFps', 'depthDevice', 'depthMs', 'depthFrames', 'depthPerSecond', 'head', 'headPerSecond', 'headAgeMs', 'magic', 'fullscreen', 'width', 'height']) assert.deepEqual(back.status[k], sent[k], k);
+    for (const k of Object.keys(sent).filter(k => k !== 'secret')) assert.deepEqual(back.status[k], sent[k], k);
     assert.equal(back.status.secret, undefined, 'unknown fields are dropped');
     // numbers out of range or not numbers become null, long strings are cut short
     assert.equal((await get(t.port, '/api/live-status', 'POST', JSON.stringify({ renderFps: -1, captureFps: 'fast', depthMs: 1e12, head: 'h'.repeat(500), live: 'yes' }))).status, 200);

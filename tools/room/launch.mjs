@@ -65,7 +65,8 @@ export function describeHead(head, ageMs) {
   if (!(head.restWidth > 0)) return 'head: waiting to see your face (sit as you normally would, facing the phone)';
   const r = `rest x ${Number(head.restX).toFixed(2)} y ${Number(head.restY).toFixed(2)}, face ${Math.round(head.restWidth)} px`;
   const off = Math.abs(head.restX) > 0.6 || Math.abs(head.restY) > 0.6 ? '; your face is near the edge of the phone\'s picture: re-aim it and restart' : '';
-  return `head: tracking (${r}), ${Number(head.fps).toFixed(1)} pictures a second, now x ${Number(head.x).toFixed(2)} y ${Number(head.y).toFixed(2)}${off}`;
+  const lost = Number.isFinite(head.lost) && head.frames > 0 ? `; ${head.lost} of ${head.frames} pictures without a face` : '';
+  return `head: tracking (${r}), ${Number(head.fps).toFixed(1)} pictures a second, now x ${Number(head.x).toFixed(2)} y ${Number(head.y).toFixed(2)}${lost}${off}`;
 }
 
 const rate = v => (Number.isFinite(v) ? (v >= 10 ? String(Math.round(v)) : v.toFixed(1)) : '?');
@@ -74,13 +75,13 @@ const rate = v => (Number.isFinite(v) ? (v >= 10 ? String(Math.round(v)) : v.toF
 export function describePage(st, ageMs, port = 5203) {
   if (!st) return `page: not open yet (in Chrome on this PC: http://localhost:${port}/live)`;
   if (!(ageMs <= 6000)) return `page: no word from it for ${Math.round(ageMs / 1000)} s (closed, minimized, or behind another tab: Chrome stops drawing a page nobody sees)`;
-  const parts = [`drawing ${rate(st.renderFps)} pictures a second${st.width && st.height ? ` at ${st.width} x ${st.height}` : ''}${st.fullscreen ? ', full screen' : ''}${st.magic ? ', the Magic Eye' : ''}`];
+  const parts = [`drawing ${rate(st.renderFps)} pictures a second${st.width && st.height ? ` at ${st.width} x ${st.height}` : ''}${st.fullscreen ? ', full screen' : ''}${st.magic ? ', the Magic Eye' : ''}${Number.isFinite(st.worstFrameMs) ? ` (the longest gap ${st.worstFrameMs} ms)` : ''}`];
   parts.push(st.live ? `the window captured at ${rate(st.captureFps)} pictures a second` : st.picture ? `a still picture, ${st.picture}` : 'no picture yet (click "Capture a window (live)")');
   if (st.depthError) parts.push(`depth: ${st.depthError}`);
   else if (st.depthNote) parts.push(`depth: ${st.depthNote}`);
-  else if (Number.isFinite(st.depthMs)) parts.push(`depth ${Math.round(st.depthMs)} ms a picture on the ${st.depthDevice || 'model'}${st.live ? `, ${rate(st.depthPerSecond)} a second` : ''}`);
+  else if (Number.isFinite(st.depthMs)) parts.push(`depth ${Math.round(st.depthMs)} ms a picture${Number.isFinite(st.depthP50) && Number.isFinite(st.depthP90) ? ` (of the last 30: median ${st.depthP50}, 90% within ${st.depthP90})` : ''} on the ${st.depthDevice || 'model'}${st.live ? `, ${rate(st.depthPerSecond)} a second` : ''}`);
   else parts.push('depth: waiting for the first picture');
-  parts.push(`head: ${st.head || '?'}${st.headPerSecond > 0 ? `, ${rate(st.headPerSecond)} updates a second` : ''}`);
+  parts.push(`head: ${st.head || '?'}${st.headPerSecond > 0 ? `, ${rate(st.headPerSecond)} updates a second` : ''}${Number.isFinite(st.headAgeMs) ? `, ${st.headAgeMs} ms old when drawn${Number.isFinite(st.headAgeP90) ? ` (90% within ${st.headAgeP90})` : ''}` : ''}`);
   return `page: ${parts.join('; ')}${st.depthBreakdown ? `\n    where a depth picture's time goes: ${st.depthBreakdown}` : ''}`;
 }
 
