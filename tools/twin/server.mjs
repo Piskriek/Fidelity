@@ -6,6 +6,7 @@
 //   npm run twin                      then open http://127.0.0.1:5203
 //                                     (or http://127.0.0.1:5203/live: a WoW picture or window you can look into)
 //   node tools/twin/server.mjs --port 5203 --family tbc --head tools/headtrack/head.json --ref origin/owner/reports
+//   --head http://192.168.0.5:5204/head.json reads the head from a tracker on another machine (headtrack.py --serve 5204)
 //
 // It listens on 127.0.0.1 only, needs no package beyond the repo's, and writes nothing. It reads nothing from
 // the game: the map data and the reports are files the addon and the laptop already produce.
@@ -31,13 +32,14 @@ export function parseArgs(argv) {
     if (['--port', '--family', '--head', '--ref'].includes(a) && (v === undefined || v.startsWith('--'))) throw new Error(`twin: ${a} needs a value`);
     if (a === '--port') { o.port = Number(v); i++; }
     else if (a === '--family') { o.family = v; i++; }
-    else if (a === '--head') { o.head = path.resolve(v); i++; }
+    else if (a === '--head') { o.head = /^http:\/\//i.test(v) ? v : path.resolve(v); i++; } // a file, or another machine's tracker (--serve)
     else if (a === '--ref') { o.ref = v; i++; }
     else throw new Error(`twin: unknown argument ${a}`);
   }
   if (!Number.isInteger(o.port) || o.port < 0 || o.port > 65535) throw new Error('twin: --port needs a port number');
   if (!/^(tbc|vanilla)$/.test(o.family)) throw new Error('twin: --family is tbc or vanilla');
   if (!/^[\w./-]+$/.test(o.ref) || o.ref.startsWith('-')) throw new Error('twin: --ref is a git ref');
+  if (/^http:\/\//i.test(o.head)) { let u; try { u = new URL(o.head); } catch { throw new Error('twin: --head is a file or an http:// address'); } if (u.username || u.password) throw new Error('twin: --head takes no credentials'); }
   return o;
 }
 
@@ -69,16 +71,41 @@ export function startTwin(opts = {}) {
   // the head tracker writes head.json about every three frames: forward each new version (the timers start
   // once the server listens, so a failed start leaves nothing running)
   let headStamp = '', headTimer = null, keepAlive = null;
+  const forwardHead = text => {
+    try {
+      const h = JSON.parse(text);
+      if ([h.x, h.y, h.z].every(Number.isFinite)) send('head', { x: h.x, y: h.y, z: h.z, at: typeof h.at === 'string' ? h.at.slice(0, 40) : null, fps: Number.isFinite(h.fps) ? h.fps : null });
+    } catch { /* a half-written file: the next poll reads it whole */ }
+  };
+  // or another machine's tracker (headtrack.py --serve): its newest head, fetched one request at a time
+  const headUrl = /^http:\/\//i.test(o.head) ? o.head : null;
+  const headAgent = headUrl ? new http.Agent({ keepAlive: true, maxSockets: 1 }) : null;
+  let headBusy = false;
+  const pollHeadUrl = () => {
+    if (headBusy) return;
+    headBusy = true;
+    let done = false;
+    const finish = () => { if (!done) { done = true; headBusy = false; } };
+    const req = http.get(headUrl, { agent: headAgent, timeout: 500 }, res => {
+      if (res.statusCode !== 200) { res.resume(); finish(); return; }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', c => { if (body.length < 65536) body += c; });
+      res.on('end', () => { finish(); if (body !== headStamp) { headStamp = body; forwardHead(body); } });
+      res.on('error', finish);
+    });
+    req.on('timeout', () => req.destroy());
+    req.on('error', finish);
+    req.on('close', finish);
+  };
   const pollHead = () => {
+    if (headUrl) return pollHeadUrl();
     let st;
     try { st = fs.statSync(o.head); } catch { return; }
     const stamp = `${st.mtimeMs}:${st.size}`;
     if (stamp === headStamp) return;
     headStamp = stamp;
-    try {
-      const h = JSON.parse(fs.readFileSync(o.head, 'utf8'));
-      if ([h.x, h.y, h.z].every(Number.isFinite)) send('head', { x: h.x, y: h.y, z: h.z, at: typeof h.at === 'string' ? h.at.slice(0, 40) : null, fps: Number.isFinite(h.fps) ? h.fps : null });
-    } catch { /* a half-written file: the next poll reads it whole */ }
+    try { forwardHead(fs.readFileSync(o.head, 'utf8')); } catch { /* gone between the stat and the read */ }
   };
 
   const reply = (res, code, type, body) => { res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' }); res.end(body); };
@@ -165,7 +192,7 @@ export function startTwin(opts = {}) {
       }
       if (p === '/events') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
-        res.write(`event: hello\ndata: ${JSON.stringify({ head: path.relative(ROOT, o.head), family: o.family })}\n\n`);
+        res.write(`event: hello\ndata: ${JSON.stringify({ head: headUrl || path.relative(ROOT, o.head), family: o.family })}\n\n`);
         clients.add(res);
         req.on('close', () => clients.delete(res));
         return;
@@ -187,7 +214,7 @@ export function startTwin(opts = {}) {
       keepAlive = setInterval(() => { for (const res of clients) res.write(': keep-alive\n\n'); }, 15000);
       resolve({
         server, port,
-        close: () => new Promise(r => { clearInterval(headTimer); clearInterval(keepAlive); for (const c of clients) c.end(); server.close(() => r()); }),
+        close: () => new Promise(r => { clearInterval(headTimer); clearInterval(keepAlive); if (headAgent) headAgent.destroy(); for (const c of clients) c.end(); server.close(() => r()); }),
       });
     });
   });

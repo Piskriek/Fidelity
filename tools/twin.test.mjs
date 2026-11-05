@@ -284,6 +284,39 @@ test('the server: the viewer, three.js, the map, the camera, the reports and sho
   assert.throws(() => parseArgs(['--ref', '-x']), /git ref/, 'a ref may not look like an option');
 });
 
+test('the head from a tracker on another machine (--head http://...): each new head reaches the page, and a tracker that goes away breaks nothing', async () => {
+  let body = JSON.stringify({ x: 0.3, y: -0.1, z: 0, at: '2026-11-05T16:00:00', fps: 24 });
+  const tracker = http.createServer((req, res) => {
+    if (req.url !== '/head.json') { res.writeHead(404); res.end(); return; }
+    res.writeHead(200, { 'content-type': 'application/json' }); res.end(body);
+  });
+  await new Promise(r => tracker.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${tracker.address().port}/head.json`;
+  assert.equal(parseArgs(['--head', url]).head, url, 'an address is kept as it is, not made a path');
+  assert.throws(() => parseArgs(['--head', 'http://user:pw@127.0.0.1:1/head.json']), /no credentials/);
+  const t = await startTwin({ port: 0, head: url });
+  const events = [];
+  const req = http.get({ host: '127.0.0.1', port: t.port, path: '/events' }, res => { res.setEncoding('utf8'); res.on('data', c => events.push(c)); });
+  const waitFor = async re => { for (let i = 0; i < 80 && !re.test(events.join('')); i++) await new Promise(r => setTimeout(r, 25)); return events.join(''); };
+  try {
+    assert.match(await waitFor(/event: hello/), new RegExp(`"head":"${url.replace(/[./]/g, c => '\\' + c)}"`), 'the page is told where the head comes from');
+    assert.match(await waitFor(/"x":0\.3/), /event: head\ndata: \{"x":0.3,"y":-0.1,"z":0,"at":"2026-11-05T16:00:00","fps":24\}/);
+    const before = events.join('').split('event: head').length;
+    await new Promise(r => setTimeout(r, 200));
+    assert.equal(events.join('').split('event: head').length, before, 'the same head is not sent twice');
+    body = JSON.stringify({ x: -0.2, y: 0, z: 0.1 });
+    assert.match(await waitFor(/"x":-0\.2/), /"x":-0.2,"y":0,"z":0.1/, 'a new head is sent');
+    await new Promise(r => tracker.close(r)); // the tracker goes away: the twin goes on serving
+    tracker.closeAllConnections?.();
+    await new Promise(r => setTimeout(r, 200));
+    assert.equal((await get(t.port, '/api/camera')).status, 200);
+  } finally {
+    req.destroy();
+    await t.close();
+    if (tracker.listening) await new Promise(r => tracker.close(r));
+  }
+});
+
 test('the server survives bad requests, answers only this machine and its own page, and leaks no internals', async () => {
   const t = await startTwin({ port: 0 });
   try {

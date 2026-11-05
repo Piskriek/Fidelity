@@ -56,5 +56,27 @@ class WriteJsonTests(unittest.TestCase):
         self.assertEqual(calls["n"], 1)
 
 
+class HeadServerTests(unittest.TestCase):
+    def test_another_machine_reads_the_newest_head_and_nothing_else(self):
+        import urllib.error
+        import urllib.request
+        server = headtrack.HeadServer(0, host="127.0.0.1")
+        try:
+            url = f"http://127.0.0.1:{server.port}"
+            with urllib.request.urlopen(url + "/head.json", timeout=5) as r:
+                self.assertEqual(json.load(r), {}, "nothing yet: an empty object")
+            server.update({"x": 0.25, "y": -0.1, "z": 0.0, "frames": 12})
+            with urllib.request.urlopen(url + "/head.json?t=1", timeout=5) as r:
+                self.assertEqual(r.headers["Content-Type"], "application/json")
+                self.assertEqual(r.headers["Cache-Control"], "no-store")
+                self.assertEqual(json.load(r), {"x": 0.25, "y": -0.1, "z": 0.0, "frames": 12})
+            for other in ("/", "/head.json.tmp", "/../head.json", "/etc/passwd"):
+                with self.assertRaises(urllib.error.HTTPError) as e:
+                    urllib.request.urlopen(url + other, timeout=5)
+                self.assertEqual(e.exception.code, 404, other)
+        finally:
+            server.close()
+
+
 if __name__ == "__main__":
     unittest.main()

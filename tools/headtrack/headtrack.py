@@ -265,6 +265,59 @@ class PadOutput:
             pass
 
 
+class HeadServer:
+    """The newest head over HTTP (GET /head.json), for a twin on another machine: the tracker can run where there is
+    processor to spare (say the 3080 PC, beside the phone's stream) and the laptop's twin reads it with
+    `--head http://<this machine>:<port>/head.json`. Read-only; it serves the numbers head.json holds, nothing else."""
+
+    def __init__(self, port: int, host: str = "0.0.0.0"):
+        import http.server
+        self.body = b"{}"
+        outer = self
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                if self.path.split("?")[0] != "/head.json":
+                    self.send_error(404)
+                    return
+                body = outer.body
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *a):
+                pass
+
+        self.httpd = http.server.ThreadingHTTPServer((host, port), Handler)
+        self.httpd.daemon_threads = True
+        self.port = self.httpd.server_address[1]
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+
+    def update(self, payload: dict):
+        self.body = json.dumps(payload).encode("utf-8")
+
+    def close(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+
+
+def lan_address() -> str:
+    """This machine's address on its network, as another machine would use it (no packet is sent)."""
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("192.0.2.1", 9))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except OSError:
+        return "<this machine>"
+
+
 def write_json_atomic(path: str, payload: dict, attempts: int = 5, wait: float = 0.005):
     """Write a new copy, then rename it over the old one, so a reader never sees half a file. Windows refuses the
     rename (WinError 5, access denied) while another program has the old file open, such as the twin server reading
@@ -308,6 +361,8 @@ def main(argv=None) -> int:
     ap.add_argument("--detect-width", type=int, default=320,
                     help="shrink each frame to this width before the face search (0 = search the full frame)")
     ap.add_argument("--min-face", type=int, default=30, help="the smallest face searched for, in the searched picture's pixels (at least 24)")
+    ap.add_argument("--serve", type=int, default=0, metavar="PORT",
+                    help="also serve the newest head at http://<this machine>:PORT/head.json, for a twin on another machine")
     ap.add_argument("--room", action="store_true",
                     help="a camera at a TV, watching a sofa: search the full frame for faces from 24 px and follow the "
                          "person straight ahead (--detect-width 0 --min-face 24 --pick center); stream at 1280x720")
@@ -319,6 +374,10 @@ def main(argv=None) -> int:
     synthetic = isinstance(source, SyntheticSource)
     detector = None if synthetic else HaarDetector(args.detect_width, args.min_face)
     pad = None if args.no_gamepad else PadOutput(args.map)
+    served = HeadServer(args.serve) if args.serve else None
+    if served is not None:
+        print(f"headtrack: serving the head at http://{lan_address()}:{served.port}/head.json "
+              f"(on the laptop: npm run twin -- --head http://{lan_address()}:{served.port}/head.json)", flush=True)
     mirror = not args.no_mirror
     smoother = Smoother()
     rest_x, rest_y, rest_width = 0.0, 0.0, 0.0           # calibrated rest pose (normalized centre, px width)
@@ -406,11 +465,14 @@ def main(argv=None) -> int:
             ticks += 1
             if pad is not None:
                 pad.write(*axes)
-            if ticks % 3 == 0:
+            if served is not None or ticks % 3 == 0:  # the file every third turn; the network copy every turn
                 payload = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4), "z": round(axes[2], 4),
                            "restX": round(rest_x, 4), "restY": round(rest_y, 4), "restWidth": round(rest_width, 1),
                            "frames": frames, "lost": lost, "stale": stale, "jsonErrors": json_errors,
                            "fps": round(frames / max(1e-6, time.time() - started), 1), "source": args.source, "map": args.map}
+                if served is not None:
+                    served.update(payload)
+            if ticks % 3 == 0:
                 try:
                     write_json_atomic(args.out, payload)
                 except OSError as e:  # a reader holding the file (Windows), disk full, folder gone: the pad feed goes on
@@ -427,6 +489,8 @@ def main(argv=None) -> int:
         pass
     finally:
         source.close()
+        if served is not None:
+            served.close()
         if pad is not None:
             pad.close()
         if cv2 is not None:

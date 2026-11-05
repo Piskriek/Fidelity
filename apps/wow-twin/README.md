@@ -12,7 +12,8 @@ npm run twin
 
 Then open http://127.0.0.1:5203. The server listens on this machine only, needs nothing beyond the repo's
 packages (three.js is already a dependency), and writes nothing. Options: `--port`, `--family tbc|vanilla`,
-`--head <head.json>`, `--ref <git ref of the reports>` (default `origin/owner/reports`).
+`--head <head.json>` (or `http://<machine>:<port>/head.json` from a tracker on another machine run with
+`--serve`), `--ref <git ref of the reports>` (default `origin/owner/reports`).
 
 ## What it draws, and what each thing is
 

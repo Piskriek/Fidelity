@@ -65,6 +65,22 @@ the background reading, the reopening and the window search.
 The phone, the laptop and the TV only need the same Wi-Fi. One camera gives the direction to the head and a rough
 distance from the face's size, for one person at a time.
 
+## The tracker on another machine (when WoW needs the laptop's processor)
+
+WoW and the face search compete for the laptop's processor: the owner's runs searched a 720p picture in 3.1 s there,
+against 58 ms here. The tracker can run on another machine on the same network, the 3080 PC say, and hand the
+head to the laptop's twin over the network:
+
+1. On the other machine (the repo and a `.venv` with OpenCV 4, as above):
+   `.venv\Scripts\python tools\headtrack\headtrack.py --source http://<phone ip>:4747/video --no-gamepad --room --serve 5204`.
+   It prints the address it serves, such as `http://192.168.0.5:5204/head.json`. Windows asks the first time whether
+   Python may use the network: allow it on private networks.
+2. On the laptop: `npm run twin -- --head http://192.168.0.5:5204/head.json`. The page's status panel then says
+   `head: head tracker` while the other machine tracks you.
+
+The phone must be reachable from that machine, so put it on the same Wi-Fi. The server answers only `GET /head.json`,
+with the numbers head.json holds.
+
 ## What the pad carries
 
 | `--map` | x (left/right) | y (up/down) | depth |
@@ -117,6 +133,7 @@ them, run the tracker with `--map triggers` and `/fide eye stick` the axes `/fid
 
 ## Tests
 
-`python -m unittest tools/headtrack/test_headmath.py tools/headtrack/test_headtrack_io.py` (pure math and the head.json
-write, which retries a rename Windows refuses while another program has the file open; no camera). `check_pad.py` needs
+`python -m unittest tools/headtrack/test_headmath.py tools/headtrack/test_headtrack_io.py` (pure math, the head.json
+write, which retries a rename Windows refuses while another program has the file open, and the `--serve` server;
+no camera). `check_pad.py` needs
 the driver; `headtrack.py --source synthetic --duration 3 --no-gamepad` needs only numpy.
