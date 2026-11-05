@@ -8,7 +8,7 @@
 <script type="importmap">{ "imports": { "three": "/vendor/three/build/three.module.js", "three/addons/": "/vendor/three/examples/jsm/" } }</script>
 </head>
 <body>
-<div id="stagewrap"><div id="stage"><img id="backdrop" alt=""><canvas id="view"></canvas><canvas id="overlay"></canvas></div></div>
+<div id="stagewrap"><div id="stage"><img id="backdrop" alt=""><canvas id="view"></canvas><canvas id="magic"></canvas><canvas id="overlay"></canvas></div></div>
 <aside id="panel">
   <h1>Fidelity Twin</h1>
   <p class="note">Northshire from the addon's own map data: the ground from its heights, every placement as a stand-in shape (not the game's models), outside the game, so the camera is ours.</p>
@@ -27,6 +27,7 @@
     <label><input type="checkbox" id="props" checked> stand-ins</label>
     <label><input type="checkbox" id="feet" checked> feet</label>
     <label><input type="checkbox" id="mousehead"> mouse as head</label>
+    <label title="M toggles it, C switches to crossed eyes"><input type="checkbox" id="magiceye"> Magic Eye (M)</label>
   </div>
   <div id="status"></div>
 </aside>

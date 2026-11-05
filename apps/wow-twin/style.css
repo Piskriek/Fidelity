@@ -17,3 +17,4 @@ body { display: flex; }
 #status { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; white-space: pre-line; }
 .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 @media (max-width: 760px) { body { flex-direction: column; } #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); } }
+#magic { display: none; image-rendering: pixelated; pointer-events: none; }

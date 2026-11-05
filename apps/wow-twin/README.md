@@ -69,6 +69,20 @@ between you and the screen until the two pictures become three; the middle one i
 `stereo.py selftest` checks the encoding: the background repeats at the full separation, and a raised square at
 the shorter one, centred on it.
 
+**Live, in any camera:** press **M** (or open with `?magic=1`) and the view itself becomes a Magic Eye picture.
+It is redrawn from the depth whenever the view moves; **C** (or `?cross=1`) switches to crossed eyes.
+- The pattern never changes, so eyes that have locked on stay locked while you orbit, step through the report or
+  move your head in the window.
+- Two dots at the top drift apart to the background's repeat: aim until they look like three.
+- The building columns stay out of the picture (they mark placements, they are not walls), and so does the player
+  wherever the camera stands at its shoulder.
+- The encoder is [`tools/twin/stereogram.mjs`](../../tools/twin/stereogram.mjs), the same algorithm as
+  `stereo.py`; `tools/twin.test.mjs` checks that every link holds and that near comes out near for both kinds of
+  viewing. In headless Chromium the live pictures decode back to their depth within 0.013 (90th percentile).
+
+A Magic Eye, a pair and an anaglyph all ask something of the viewer: a trick of the eyes (not everyone can) or
+glasses. The head-coupled window is the one view here that asks nothing but a webcam watching them.
+
 ## A live pose
 
 Any telemetry source can send `POST /api/pose` with JSON `{ x, y, facing, z?, zoom?, pitch?, fovY? }`, using

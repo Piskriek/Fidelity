@@ -4,9 +4,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { projectPoint, toThree, threeView, cameraAtPose, windowFrustum } from '/shared/camera.mjs';
+import { patternTile, separation, stereogramInto } from '/shared/stereogram.mjs';
 
 const $ = id => document.getElementById(id);
-const ui = { report: $('report'), step: $('step'), shot: $('shot'), camera: $('camera'), lens: $('lens'), opacity: $('opacity'), terrain: $('terrain'), props: $('props'), feet: $('feet'), mousehead: $('mousehead'), status: $('status') };
+const ui = { report: $('report'), step: $('step'), shot: $('shot'), camera: $('camera'), lens: $('lens'), opacity: $('opacity'), terrain: $('terrain'), props: $('props'), feet: $('feet'), mousehead: $('mousehead'), magiceye: $('magiceye'), status: $('status') };
 const stage = $('stage'), wrap = $('stagewrap'), canvas = $('view'), overlay = $('overlay'), backdrop = $('backdrop');
 const ctx2d = overlay.getContext('2d');
 
@@ -122,6 +123,7 @@ function buildProps(doodads) {
     }
   }
 }
+let buildingMarks = null;
 function buildBuildings(wmos) {
   // a building (WMO) is not drawn: its placement is marked by a wire column, so it cannot pass for a wall
   const geo = new THREE.BoxGeometry(3, 14, 3), mat = new THREE.MeshBasicMaterial({ color: 0x9fb7ff, wireframe: true, transparent: true, opacity: 0.6 });
@@ -129,6 +131,7 @@ function buildBuildings(wmos) {
   wmos.forEach((w, i) => { const v = local(w.x, w.y, w.z); m.makeTranslation(v.x, v.y + 7, v.z); mesh.setMatrixAt(i, m); });
   mesh.instanceMatrix.needsUpdate = true;
   propGroup.add(mesh);
+  buildingMarks = mesh;
 }
 
 // the player: a column at the feet, a cone along the facing
@@ -192,6 +195,88 @@ function stereoCamera(pose) {
   camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
   return cam;
 }
+
+// ---------------------------------------------------------------------------------------------
+// The live Magic Eye (M, or ?magic=1): the current view's depth, read back each time the view changes, turned into a
+// single-image stereogram (tools/twin/stereogram.mjs, the algorithm of tools/twin/stereo.py). The pattern never
+// changes, so eyes that have locked onto it stay locked while the camera moves. C (or ?cross=1) switches to
+// crossed-eye viewing.
+// ---------------------------------------------------------------------------------------------
+const magicCanvas = $('magic'), magicCtx = magicCanvas.getContext('2d');
+const magic = { on: OPT.get('magic') === '1', cross: OPT.get('cross') === '1', strength: 0.3, started: 0, last: 0, key: '', target: null, buf: null, img: null, tile: null, tileH: 128, period: 0, ms: 0, w: 0, h: 0 };
+ui.magiceye.checked = magic.on;
+function magicSize(w, h) {
+  if (magic.w === w && magic.h === h) return;
+  magic.w = w; magic.h = h;
+  if (magic.target) magic.target.dispose();
+  magic.target = new THREE.WebGLRenderTarget(w, h);
+  magic.buf = new Uint8Array(w * h * 4);
+  magicCanvas.width = w; magicCanvas.height = h;
+  magic.img = magicCtx.createImageData(w, h);
+  magic.period = Math.min(160, Math.max(70, Math.round(w / 10))); // about a tenth of the width: narrow enough to fuse
+  magic.tile = patternTile(magic.period, magic.tileH);
+  magic.key = '';
+}
+function magicFrame() {
+  const size = renderer.getSize(new THREE.Vector2());
+  if (size.x < 2 || size.y < 2) return;
+  magicSize(Math.round(size.x), Math.round(size.y));
+  camera.updateMatrixWorld();
+  const now = performance.now();
+  const key = [...camera.matrixWorld.elements, ...camera.projectionMatrix.elements].map(v => v.toFixed(5)).join(',') + magic.cross + ui.props.checked + ui.terrain.value;
+  if (key !== magic.key && now - magic.last > 70) {
+    // the depth pass: what the view shows, as distance (near white). The building columns stay out (they mark a
+    // placement, they are not walls), and so does the player wherever the camera stands at its shoulder.
+    const prev = { override: scene.overrideMaterial, bg: scene.background, fog: scene.fog, player: player.visible, marks: buildingMarks ? buildingMarks.visible : false };
+    scene.overrideMaterial = depthMaterial; scene.background = new THREE.Color(0x000000); scene.fog = null;
+    player.visible = prev.player && ui.camera.value === 'free';
+    if (buildingMarks) buildingMarks.visible = false;
+    renderer.setRenderTarget(magic.target);
+    renderer.render(scene, camera);
+    renderer.readRenderTargetPixels(magic.target, 0, 0, magic.w, magic.h, magic.buf);
+    renderer.setRenderTarget(null);
+    scene.overrideMaterial = prev.override; scene.background = prev.bg; scene.fog = prev.fog; player.visible = prev.player;
+    if (buildingMarks) buildingMarks.visible = prev.marks;
+    const t0 = performance.now();
+    stereogramInto(magic.buf, magic.w, magic.h, { period: magic.period, strength: magic.strength, cross: magic.cross, tile: magic.tile, tileH: magic.tileH, bottomUp: true }, magic.img.data);
+    magic.ms = performance.now() - t0;
+    magic.key = key; magic.last = now;
+    window.__magic = { ms: magic.ms, period: magic.period, strength: magic.strength, cross: magic.cross, w: magic.w, h: magic.h, depth: magic.buf }; // for the browser check
+  }
+  magicCtx.putImageData(magic.img, 0, 0);
+  // the lock guide: two dots that drift apart to the background's repeat. When they look like three, the eyes have
+  // locked onto the background, and everything nearer stands out in front of it.
+  const sep = separation(0, magic.period, magic.strength, magic.cross), grow = Math.min(1, (now - magic.started) / 2500), half = (sep / 2) * grow, cx = magic.w / 2;
+  for (const x of [cx - half, cx + half]) {
+    magicCtx.beginPath(); magicCtx.arc(x, 16, 6, 0, Math.PI * 2);
+    magicCtx.fillStyle = '#000'; magicCtx.fill(); magicCtx.lineWidth = 2; magicCtx.strokeStyle = '#fff'; magicCtx.stroke();
+  }
+  if (now - magic.started < 9000) {
+    const lines = [
+      magic.cross ? 'Cross your eyes slightly until the two dots become three, then hold still.' : 'Face close, look as if far behind the screen, lean back slowly: when the two dots become three, hold still.',
+      'The pattern stays put while you look around (drag in free orbit, or move your head in the window).',
+    ];
+    magicCtx.font = '13px system-ui, sans-serif';
+    const boxW = Math.min(magic.w - 16, Math.max(...lines.map(t => magicCtx.measureText(t).width)) + 16);
+    magicCtx.fillStyle = 'rgba(0,0,0,0.7)'; magicCtx.fillRect(8, 30, boxW, 44);
+    magicCtx.fillStyle = '#fff';
+    lines.forEach((t, i) => magicCtx.fillText(t, 16, 48 + 18 * i));
+  }
+}
+function setMagic(on) {
+  magic.on = on;
+  ui.magiceye.checked = on;
+  magicCanvas.style.display = on ? 'block' : 'none';
+  canvas.style.opacity = on ? 0 : 1;
+  if (on) { magic.started = performance.now(); magic.key = ''; }
+}
+window.addEventListener('keydown', e => {
+  const typing = e.target && (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && !/^(checkbox|range)$/.test(e.target.type)));
+  if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'm' || e.key === 'M') setMagic(!magic.on);
+  else if ((e.key === 'c' || e.key === 'C') && magic.on) { magic.cross = !magic.cross; magic.started = performance.now(); magic.key = ''; }
+});
+ui.magiceye.addEventListener('change', () => setMagic(ui.magiceye.checked));
 
 function headOffset() {
   if (ui.mousehead.checked) return { x: state.mouse.x, y: state.mouse.y, z: 0, source: 'mouse' };
@@ -264,8 +349,9 @@ function frame() {
   else if (ui.camera.value === 'game' && pose) cam = gameCamera(pose);
   else if (ui.camera.value === 'window' && pose) ({ cam, head } = windowCamera(pose));
   else controls.update();
-  renderer.render(scene, camera);
-  drawOverlay(cam);
+  if (magic.on) { backdrop.style.opacity = 0; magicFrame(); } // the depth pass and its stereogram replace the colour render
+  else renderer.render(scene, camera);
+  drawOverlay(magic.on ? null : cam);
   status(head);
   requestAnimationFrame(frame);
 }
@@ -280,7 +366,8 @@ function status(head) {
     state.live ? `live pose from ${state.live.source}` : pose ? `pose: ${pose.x.toFixed(1)}, ${pose.y.toFixed(1)} facing ${pose.facing.toFixed(3)} zoom ${pose.zoom.toFixed(2)}` : 'no pose yet',
     `camera: ${ui.camera.value === 'free' ? 'free orbit' : lens}`,
     ui.camera.value === 'window' ? `head: ${head.source}${head.source !== 'none' ? ` (${head.x.toFixed(2)}, ${head.y.toFixed(2)}, ${head.z.toFixed(2)})` : ''}` : '',
-    ui.feet.checked && ui.camera.value === 'game' ? 'cyan +: each placement\'s predicted foot at this camera; yellow o: the director\'s blind feet (step 1 of the tenth report)' : '',
+    ui.feet.checked && ui.camera.value === 'game' && !magic.on ? 'cyan +: each placement\'s predicted foot at this camera; yellow o: the director\'s blind feet (step 1 of the tenth report)' : '',
+    magic.on ? `Magic Eye, ${magic.cross ? 'crossed' : 'parallel'} eyes (M leaves, C switches); one repeat ${magic.period} px; redrawn in ${magic.ms.toFixed(0)} ms when the view moves` : 'M: turn the view into a Magic Eye picture',
   ];
   ui.status.textContent = lines.filter(Boolean).join('\n');
 }
@@ -360,4 +447,4 @@ events.addEventListener('pose', e => {
   state.live = { ...base, x: p.x, y: p.y, facing: p.facing, zoom: p.zoom ?? base.zoom, pitch: p.pitch ?? base.pitch, fovY: p.fovY ?? base.fovY, ground: p.z ?? base.ground, source: p.source, props: [] };
 });
 
-boot().then(() => { layout(); requestAnimationFrame(frame); }, e => { ui.status.textContent = 'could not start: ' + e.message; });
+boot().then(() => { layout(); if (magic.on) setMagic(true); requestAnimationFrame(frame); }, e => { ui.status.textContent = 'could not start: ' + e.message; });

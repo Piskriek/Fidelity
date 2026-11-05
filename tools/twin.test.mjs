@@ -13,6 +13,7 @@ import { buildCamera, projectPoint, toThree, threeView, cameraAtPose, windowFrus
 import { readMap, tileFor, groundHeight, nominalHeight, kindOf, ROOT } from './twin/data.mjs';
 import { parseSavedVariables, reportSteps, shotNames } from './twin/savedvars.mjs';
 import { startTwin, parseArgs, cleanPose } from './twin/server.mjs';
+import { patternTile, separation, stereogramInto } from './twin/stereogram.mjs';
 import { spawn } from 'node:child_process';
 
 const REF = 'origin/owner/reports';
@@ -72,6 +73,50 @@ test('the module matches the addon\'s clamps, and the window frustum is the scre
   assert.deepEqual(toThree(1, 2, 3), [-2, 3, -1]);
 });
 
+test('the live Magic Eye: a raised square comes out nearer for parallel eyes and for crossed eyes, and a WebGL read-back is turned the right way up', () => {
+  const w = 400, h = 40, period = 60, strength = 0.4, tileH = 16; // 60 px far, 36 px near: neither a multiple of the other
+  const depth = new Uint8Array(w * h * 4); // red channel: 0 far, 255 near; a near square, off the middle row so a flip shows
+  for (let y = 8; y < 28; y++) for (let x = 150; x < 250; x++) depth[(y * w + x) * 4] = 255;
+  for (let y = 32; y < 36; y++) for (let x = 0; x < w; x++) depth[(y * w + x) * 4] = Math.round(127.5 + 127.5 * Math.sin(x / (7 + y - 32))); // rolling ground: links of every length interleave
+  let seed = 11; // and noise: depth that jumps faster than any surface, the only kind that reaches the chain's swap
+  for (let y = 36; y < 40; y++) for (let x = 0; x < w; x++) depth[(y * w + x) * 4] = (seed = (seed * 16807) % 2147483647) % 256;
+  const tile = patternTile(period, tileH);
+  const make = (d, opts) => stereogramInto(d, w, h, { period, strength, tile, tileH, smooth: 0, ...opts }, new Uint8Array(w * h * 4));
+  const px = (img, x, y) => { const i = (y * w + x) * 4; return `${img[i]},${img[i + 1]},${img[i + 2]}`; };
+  // every point from `from` to `to` (exclusive) links the two pixels centred on it, s apart: they must match
+  const repeats = (img, y, s, from, to) => { for (let x = from; x < to; x++) { const l = x - (s >> 1); if (px(img, l, y) !== px(img, l + s, y)) return false; } return true; };
+  // the algorithm's invariant: every point's two pixels match, across the whole row, edges included (where two links
+  // compete for one pixel, the chain must be followed or one of them breaks)
+  const allLinksHold = (img, y, cross) => {
+    for (let x = 0; x < w; x++) {
+      const s = separation(depth[(y * w + x) * 4] / 255, period, strength, cross), l = x - (s >> 1);
+      if (l >= 0 && l + s < w && px(img, l, y) !== px(img, l + s, y)) return false;
+    }
+    return true;
+  };
+  assert.equal(separation(0, period, strength, false), 60); assert.equal(separation(1, period, strength, false), 36);
+  assert.equal(separation(0, period, strength, true), 36); assert.equal(separation(1, period, strength, true), 60);
+
+  const par = make(depth, {});
+  assert.ok(repeats(par, 5, 60, 30, 370), 'parallel: the background repeats every 60 px');
+  assert.ok(repeats(par, 20, 36, 165, 235), 'parallel: the square repeats every 36 px (nearer), centred on it');
+  assert.ok(!repeats(par, 20, 60, 165, 235), 'and not every 60 px: the square is not on the background');
+  assert.ok(new Set(Array.from({ length: w }, (_, x) => px(par, x, 5))).size > 20, 'the pattern is varied, not one colour');
+  for (const y of [5, 8, 20, 27, 32, 35, 36, 37, 38, 39]) assert.ok(allLinksHold(par, y, false), `parallel: every link holds on row ${y}`);
+
+  const crs = make(depth, { cross: true });
+  assert.ok(repeats(crs, 5, 36, 18, 382), 'crossed: the background repeats at the shorter separation');
+  assert.ok(repeats(crs, 20, 60, 160, 240), 'crossed: the square repeats at the longer one (crossed lines of sight meet nearer)');
+  assert.ok(!repeats(crs, 20, 36, 160, 240), 'and not at the shorter one');
+  for (const y of [5, 8, 20, 27, 32, 35, 36, 37, 38, 39]) assert.ok(allLinksHold(crs, y, true), `crossed: every link holds on row ${y}`);
+
+  const flipped = new Uint8Array(w * h * 4); // the same depth with its rows in WebGL's order (bottom row first)
+  for (let y = 0; y < h; y++) flipped.set(depth.subarray(y * w * 4, (y + 1) * w * 4), (h - 1 - y) * w * 4);
+  assert.deepEqual(make(flipped, { bottomUp: true }), par);
+  assert.notDeepEqual(make(flipped, {}), par, 'reading a WebGL read-back top row first would draw the scene upside down');
+  for (let i = 3; i < par.length; i += 4) assert.equal(par[i], 255, 'opaque');
+});
+
 test('the report reader: steps, poses, and the two names a shot can have (a file can be named a second late)', { skip: !hasRef && 'origin/owner/reports is not fetched here' }, () => {
   const steps = reportSteps(tenth);
   assert.equal(steps.length, 115);
@@ -104,6 +149,8 @@ test('the server: the viewer, three.js, the map, the camera, the reports and sho
     assert.equal(page.status, 200); assert.match(page.body.toString(), /Fidelity Twin/);
     assert.equal((await get(t.port, '/app/main.js')).status, 200);
     assert.equal((await get(t.port, '/shared/camera.mjs')).status, 200);
+    assert.equal((await get(t.port, '/shared/stereogram.mjs')).status, 200);
+    assert.equal((await get(t.port, '/shared/server.mjs')).status, 404, 'only the viewer\'s two shared modules are served');
     assert.equal((await get(t.port, '/vendor/three/build/three.module.js')).status, 200);
     assert.equal((await get(t.port, '/vendor/three/package.json')).status, 404, 'only three\'s modules are served');
     for (const bad of ['/app/../package.json', '/app/%2e%2e/%2e%2e/package.json', '/app/..%2f..%2fpackage.json']) assert.ok([403, 404].includes((await get(t.port, bad)).status), bad);

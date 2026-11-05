@@ -122,7 +122,7 @@ export function startTwin(opts = {}) {
       if (req.method !== 'GET') return json(res, 405, { error: 'GET or POST /api/pose' });
       if (p === '/' || p === '/index.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'index.html');
       if (p.startsWith('/app/')) return file(res, path.join(ROOT, 'apps', 'wow-twin'), p.slice(5));
-      if (p === '/shared/camera.mjs') return file(res, path.join(ROOT, 'tools', 'twin'), 'camera.mjs');
+      if (p === '/shared/camera.mjs' || p === '/shared/stereogram.mjs') return file(res, path.join(ROOT, 'tools', 'twin'), p.slice('/shared/'.length));
       if (p.startsWith('/vendor/three/')) {
         const rel = p.slice('/vendor/three/'.length);
         if (!/^(build\/three\.module(\.min)?\.js|build\/three\.core(\.min)?\.js|examples\/jsm\/[\w/.-]+\.js)$/.test(rel)) return json(res, 404, { error: 'not served' });
