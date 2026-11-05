@@ -140,6 +140,10 @@ Checked in headless Chromium (05 Nov) with the tenth report's first scene shot:
 - the Magic Eye decodes back to the model's depth (median error 0.007);
 - no page errors.
 
+`npm run check:live` measures all of these again, each against a bound
+([`tools/checks/README.md`](../../tools/checks/README.md)); run here again on 05 Nov evening it gave the same
+numbers.
+
 `tools/twin.test.mjs` checks the geometry ([`tools/twin/relief.mjs`](../../tools/twin/relief.mjs)): from the resting
 eye every vertex lands on its own pixel; seen from a moved head a point on the glass stays, a point behind it moves
 with the head and a point in front against it; the page's three.js camera draws exactly that.

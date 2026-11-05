@@ -59,6 +59,8 @@ swaying in the middle and a 72 px face still at the side: with `--room` the face
 (22.6 a second) and `x` rose and fell with the sway, the middle person's, not the larger one's; with the defaults
 none of 228 frames had a face. With the window search: 6 ms a picture against 58 ms for the whole picture, and a
 stream that hung up every 4 s was opened again twice with the face found in all 203 pictures.
+`tools/checks/phone_stream.py` runs all of this again, with a phone that appears late and the "set my resting
+position" request, each against a bound ([`tools/checks/README.md`](../checks/README.md)).
 
 The first runs with the owner's phone (05 Nov) found his face (46 to 65 px wide) but searched the whole 720p picture
 in 3.1 s on the laptop, about fifty times slower than here, and DroidCam hung up on the slow reader; that led to
