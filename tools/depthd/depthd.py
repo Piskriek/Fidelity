@@ -166,7 +166,9 @@ def make_server(model, port: int, host: str = "0.0.0.0"):
             self.wfile.write(body)
 
         def _error(self, code, message):
-            self._send(code, json.dumps({"error": message}).encode())
+            # an error may come before the body was read: close the connection, so its bytes cannot start a next request
+            self.close_connection = True
+            self._send(code, json.dumps({"error": message}).encode(), extra={"Connection": "close"})
 
         def do_GET(self):
             if not allowed(self.client_address[0]):

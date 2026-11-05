@@ -20,7 +20,7 @@ const HALF_H = Math.tan(FOV_Y / 2);
 // (?overscan=0 draws it exactly the window's size: then the resting view is the picture to the pixel)
 const OVERSCAN = OPT.has('overscan') ? Math.max(0, Number(OPT.get('overscan')) || 0) : 0.05;
 
-const ui = { source: $('source'), capture: $('capture'), file: $('file'), depthamt: $('depthamt'), focus: $('focus'), headgain: $('headgain'), mousehead: $('mousehead'), magiceye: $('magiceye'), status: $('status') };
+const ui = { recal: $('recal'), source: $('source'), capture: $('capture'), file: $('file'), depthamt: $('depthamt'), focus: $('focus'), headgain: $('headgain'), mousehead: $('mousehead'), magiceye: $('magiceye'), status: $('status') };
 const stage = $('stage'), wrap = $('stagewrap'), canvas = $('view'), magicCanvas = $('magic'), magicCtx = magicCanvas.getContext('2d');
 if (OPT.get('chrome') === '0') $('panel').style.display = 'none';
 for (const [k, el] of [['depth', ui.depthamt], ['focus', ui.focus], ['gain', ui.headgain]]) if (OPT.has(k)) el.value = OPT.get(k);
@@ -28,7 +28,7 @@ for (const [k, el] of [['depth', ui.depthamt], ['focus', ui.focus], ['gain', ui.
 const state = {
   el: null, fw: 16, fh: 9, label: '', live: false, stream: null, stamp: 0,
   depth: null, dw: 0, dh: 0, stride: 1, depthStamp: 0, est: null, device: '', loading: '', busy: false, ms: 0, frames: 0, error: '', fallbacks: [], breakdown: '',
-  head: null, headAt: 0, mouse: { x: 0, y: 0 },
+  head: null, headAt: 0, mouse: { x: 0, y: 0 }, note: '', noteAt: 0,
   testHead: OPT.has('head') ? OPT.get('head').split(',').map(Number) : null, // ?head=x,y,z holds the head still (for checks)
 };
 
@@ -212,6 +212,17 @@ async function startCapture() {
   } catch (e) { state.error = `no capture: ${e.message}`; }
 }
 ui.capture.addEventListener('click', startCapture);
+// "set my resting position": the tracker re-measures it from the next two seconds (through the twin, when the tracker
+// runs with --serve and the twin reads it by address)
+async function recalibrate() {
+  try {
+    const r = await fetch('/api/recalibrate', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    const j = await r.json().catch(() => ({}));
+    state.note = r.ok ? 'resting position: re-measuring now; sit as you normally would for two seconds' : `resting position: not re-measured (${j.error || r.status})`;
+  } catch (e) { state.note = `resting position: not re-measured (${e.message})`; }
+  state.noteAt = performance.now();
+}
+ui.recal.addEventListener('click', recalibrate);
 ui.file.addEventListener('change', () => { const f = ui.file.files[0]; if (f) useImage(URL.createObjectURL(f), f.name); });
 wrap.addEventListener('dragover', e => e.preventDefault());
 wrap.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f && /^image\//.test(f.type)) useImage(URL.createObjectURL(f), f.name); });
@@ -314,6 +325,7 @@ window.addEventListener('keydown', e => {
   if (e.key === 'm' || e.key === 'M') setMagic(!magic.on);
   else if ((e.key === 'c' || e.key === 'C') && magic.on) { magic.cross = !magic.cross; magic.started = performance.now(); magic.key = ''; }
   else if (e.key === 'f' || e.key === 'F') { if (document.fullscreenElement) document.exitFullscreen(); else stage.requestFullscreen?.(); }
+  else if (e.key === 'r' || e.key === 'R') recalibrate();
 });
 window.addEventListener('resize', layout);
 
@@ -332,7 +344,8 @@ function frame() {
     state.fallbacks.length && state.device ? `(tried first: ${state.fallbacks.join('; ')})` : '',
     state.depth ? 'the depth is the model\'s estimate from the picture, not the game\'s' : 'flat until the model answers',
     `head: ${h.source}`,
-    magic.on ? `Magic Eye, ${magic.cross ? 'crossed' : 'parallel'} eyes (M leaves, C switches); one repeat ${magic.period} px` : 'M: Magic Eye of the depth; F: full screen',
+    state.note && performance.now() - state.noteAt < 8000 ? state.note : '',
+    magic.on ? `Magic Eye, ${magic.cross ? 'crossed' : 'parallel'} eyes (M leaves, C switches); one repeat ${magic.period} px` : 'M: Magic Eye of the depth; F: full screen; R: set my resting position',
   ].filter(Boolean).join('\n');
   requestAnimationFrame(frame);
 }

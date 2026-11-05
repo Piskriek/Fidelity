@@ -369,6 +369,42 @@ test('the depth service on another machine (--depth): the page\'s picture goes t
   }
 });
 
+test('the page\'s "set my resting position" reaches the tracker through the twin, and only that way', async () => {
+  const asked = [];
+  const tracker = http.createServer((req, res) => {
+    req.resume();
+    req.on('end', () => {
+      if (req.url === '/head.json') { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"x":0,"y":0,"z":0}'); return; }
+      asked.push(`${req.method} ${req.url} ${req.headers['content-type'] || ''}`);
+      if (req.method === 'POST' && req.url === '/calibrate') { res.writeHead(200, { 'content-type': 'application/json' }); res.end('{"ok":true}'); return; }
+      res.writeHead(404); res.end();
+    });
+  });
+  await new Promise(r => tracker.listen(0, '127.0.0.1', r));
+  const headUrl = `http://127.0.0.1:${tracker.address().port}/head.json`;
+  const plain = await startTwin({ port: 0, head: path.join(os.tmpdir(), 'no-head.json') });
+  try {
+    const r = await get(plain.port, '/api/recalibrate', 'POST', '{}', { 'content-type': 'application/json' });
+    assert.equal(r.status, 404, 'a tracker read from a file cannot be asked');
+    assert.match(JSON.parse(r.body).error, /--serve/);
+  } finally { await plain.close(); }
+  const t = await startTwin({ port: 0, head: headUrl });
+  try {
+    const r = await get(t.port, '/api/recalibrate', 'POST', '{}', { 'content-type': 'application/json' });
+    assert.equal(r.status, 200); assert.deepEqual(JSON.parse(r.body), { ok: true });
+    assert.deepEqual(asked, ['POST /calibrate application/json'], 'the tracker was asked once, at /calibrate');
+    assert.equal((await get(t.port, '/api/recalibrate', 'POST', '{}', { 'content-type': 'text/plain' })).status, 415, 'a form or text post from another page cannot');
+    assert.equal((await get(t.port, '/api/recalibrate', 'POST', '{}', { 'content-type': 'application/json', origin: 'http://evil.example' })).status, 403);
+    assert.equal(asked.length, 1, 'the refused posts never reached the tracker');
+    await new Promise(r => tracker.close(r));
+    tracker.closeAllConnections?.();
+    assert.equal((await get(t.port, '/api/recalibrate', 'POST', '{}', { 'content-type': 'application/json' })).status, 502, 'a tracker gone is a clean error');
+  } finally {
+    await t.close();
+    if (tracker.listening) await new Promise(r => tracker.close(r));
+  }
+});
+
 test('the server survives bad requests, answers only this machine and its own page, and leaks no internals', async () => {
   const t = await startTwin({ port: 0 });
   try {

@@ -81,6 +81,12 @@ class ServerTests(unittest.TestCase):
             conn.request("POST", "/depth", body=b"x", headers={"Content-Type": "text/plain"})
             r = conn.getresponse(); r.read()
             self.assertEqual(r.status, 415)
+            self.assertEqual(r.getheader("Connection"), "close", "an error closes the connection: its unread body cannot start a next request")
+            conn.close()
+            conn = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+            conn.request("POST", "/depth", body=b"\xff\xd8picture", headers={"Content-Type": "image/jpeg"})
+            r = conn.getresponse(); r.read()
+            self.assertEqual(r.status, 200, "a fresh connection after an error works")
             conn.close()
         finally:
             srv.shutdown()

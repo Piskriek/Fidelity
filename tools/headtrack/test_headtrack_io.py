@@ -77,6 +77,25 @@ class HeadServerTests(unittest.TestCase):
         finally:
             server.close()
 
+    def test_the_twin_can_ask_for_the_resting_position_again(self):
+        import http.client
+        server = headtrack.HeadServer(0, host="127.0.0.1")
+        try:
+            self.assertFalse(server.take_recalibrate(), "nothing asked yet")
+            conn = http.client.HTTPConnection("127.0.0.1", server.port, timeout=5)
+            conn.request("POST", "/calibrate", body=b"{}", headers={"Content-Type": "application/json"})
+            r = conn.getresponse()
+            self.assertEqual((r.status, json.loads(r.read())), (200, {"ok": True}))
+            self.assertTrue(server.take_recalibrate(), "the loop takes the request once")
+            self.assertFalse(server.take_recalibrate(), "and only once")
+            conn.request("POST", "/elsewhere", body=b"{}")
+            r = conn.getresponse(); r.read()
+            self.assertEqual(r.status, 404)
+            self.assertFalse(server.take_recalibrate())
+            conn.close()
+        finally:
+            server.close()
+
     def test_one_connection_serves_every_poll(self):
         import http.client
         server = headtrack.HeadServer(0, host="127.0.0.1")

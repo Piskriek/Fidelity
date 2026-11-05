@@ -184,7 +184,21 @@ export function startTwin(opts = {}) {
         });
         return;
       }
-      if (req.method !== 'GET') return json(res, 405, { error: 'GET, or POST /api/pose or /api/depth' });
+      if (req.method === 'POST' && p === '/api/recalibrate') {
+        // the page's "set my resting position": passed to the tracker (headtrack.py --serve), which re-measures it
+        if (!/^application\/json\b/i.test(String(req.headers['content-type'] || ''))) return json(res, 415, { error: 'sent as application/json' });
+        req.resume();
+        if (!headUrl) return json(res, 404, { error: 'the tracker must run with --serve, and the twin with --head http://<machine>:<port>/head.json' });
+        const up = http.request(new URL('/calibrate', headUrl), { method: 'POST', timeout: 3000, headers: { 'content-type': 'application/json', 'content-length': 2 } }, r => {
+          r.resume();
+          r.on('end', () => { if (!res.headersSent) json(res, r.statusCode === 200 ? 200 : 502, r.statusCode === 200 ? { ok: true } : { error: `the tracker answered ${r.statusCode}` }); });
+        });
+        up.on('timeout', () => up.destroy(new Error('timeout')));
+        up.on('error', () => { if (!res.headersSent) json(res, 502, { error: 'the tracker did not answer' }); });
+        up.end('{}');
+        return;
+      }
+      if (req.method !== 'GET') return json(res, 405, { error: 'GET, or POST /api/pose, /api/depth or /api/recalibrate' });
       if (p === '/api/depth') return json(res, 200, { remote: o.depth });
       if (p === '/' || p === '/index.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'index.html');
       if (p === '/live' || p === '/live.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'live.html');

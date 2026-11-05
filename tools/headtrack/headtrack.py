@@ -290,6 +290,7 @@ class HeadServer:
     def __init__(self, port: int, host: str = "0.0.0.0"):
         import http.server
         self.body = b"{}"
+        self.recalibrate = False  # set by POST /calibrate (the twin's "set my resting position"), taken by the loop
         outer = self
 
         class Handler(http.server.BaseHTTPRequestHandler):
@@ -308,6 +309,30 @@ class HeadServer:
                 self.end_headers()
                 self.wfile.write(body)
 
+            def do_POST(self):
+                # the home network only: re-measure the resting position (the owner moved, or moved the phone)
+                import ipaddress
+                try:  # read the body first: on a kept connection its bytes would otherwise start the next request
+                    n = int(self.headers.get("Content-Length", "0"))
+                except ValueError:
+                    n = 0
+                if n > 0:
+                    self.rfile.read(min(n, 4096))
+                try:
+                    ip = ipaddress.ip_address(self.client_address[0])
+                    near = ip.is_loopback or ip.is_private
+                except ValueError:
+                    near = False
+                code, body = (403, b'{"error":"the home network only"}') if not near else \
+                    (200, b'{"ok":true}') if self.path.split("?")[0] == "/calibrate" else (404, b'{"error":"POST /calibrate"}')
+                if code == 200:
+                    outer.recalibrate = True
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
             def log_message(self, *a):
                 pass
 
@@ -319,6 +344,10 @@ class HeadServer:
 
     def update(self, payload: dict):
         self.body = json.dumps(payload).encode("utf-8")
+
+    def take_recalibrate(self) -> bool:
+        asked, self.recalibrate = self.recalibrate, False
+        return asked
 
     def close(self):
         self.httpd.shutdown()
@@ -479,7 +508,9 @@ def main(argv=None) -> int:
                 last_face = None  # lost beyond the hold: the next face is picked by the --pick rule again
             if key == ord("q"):
                 break
-            if key == ord("c"):
+            if key == ord("c") or (served is not None and served.take_recalibrate()):
+                if key != ord("c"):
+                    print("headtrack: re-measuring the resting position (asked from the twin): sit as you normally would", flush=True)
                 rest_x, rest_y, rest_width = 0.0, 0.0, 0.0
                 cal_samples, cal_until = [], time.time() + args.calibrate_seconds
             ticks += 1
