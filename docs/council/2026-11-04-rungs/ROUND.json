@@ -1,0 +1,81 @@
+{
+  "schema": "fidelity-council-round-v1",
+  "date": "2026-11-04",
+  "slug": "rungs",
+  "target": "The owner's idea, relayed 04 Nov 2026 (OWNER-INPUT.md in this folder, verbatim): with each density or fidelity rung a Light Being climbs, awareness increases, so the being needs one more node, an input, output, test and measure node, for each level of fidelity it operates in, and those nodes must loop back to the fidelity process. Find the missing element in the gradient beings' logic that this points at, specify the node per rung and its loop back, and take the owner's camera settings (the ninth report) into account. Builders read the nine owner reports as a worked ladder and the code the beings already have. Opposers check whether a node per rung adds a measurement or only a name.",
+  "created_at": "2026-11-04T11:46:28.751Z",
+  "voices": [
+    {
+      "id": "B1",
+      "side": "builder",
+      "lens": "The ladder from the record: the nine owner reports read as rungs climbed, each with the node it needed, who measured it, and what was written back",
+      "report": "B1-ladder.md"
+    },
+    {
+      "id": "B2",
+      "side": "builder",
+      "lens": "Control and observability: a rung node as sensor, actuator, comparator and estimator, and the closed loop that makes a rung's parameter converge",
+      "report": "B2-control.md"
+    },
+    {
+      "id": "B3",
+      "side": "builder",
+      "lens": "The fractal engine's IRungNode and the seven density rungs: what the interface lacks for input, output, test and measure, and how a node reports up the ladder",
+      "report": "B3-irungnode.md"
+    },
+    {
+      "id": "B4",
+      "side": "builder",
+      "lens": "Evidence and the witness: who measures at each rung, the evidence kinds, and why a measure must come from outside the rung it tests",
+      "report": "B4-witness.md"
+    },
+    {
+      "id": "B5",
+      "side": "builder",
+      "lens": "The camera rung: yaw, pitch, zoom and field of view on the owner's settings, each an unmeasured parameter with its own node and loop back",
+      "report": "B5-camera.md"
+    },
+    {
+      "id": "B6",
+      "side": "builder",
+      "lens": "Calibration as learning: each rung a parameter fit from a measured residual, the fit table as learned state, awareness as calibrated rungs",
+      "report": "B6-calibration.md"
+    },
+    {
+      "id": "B7",
+      "side": "builder",
+      "lens": "The holon and the fidelity process: how per-rung nodes report into the Triad, replace the connectivity-derived rung and the hard-coded D3, and loop back",
+      "report": "B7-holon.md"
+    },
+    {
+      "id": "B8",
+      "side": "builder",
+      "lens": "Argon's frame and the compassion loop translated: awareness rising per density, the return loop, one asks and the other permits, as an honest mechanism with the framing labelled",
+      "report": "B8-argon.md"
+    },
+    {
+      "id": "O1",
+      "side": "opposer",
+      "lens": "Ceremony not awareness: the headless tests and the report loop already are the nodes, and a node per rung adds names without adding a measurement",
+      "report": "O1-ceremony.md"
+    },
+    {
+      "id": "O2",
+      "side": "opposer",
+      "lens": "Awareness cannot be counted: rungs climbed are not awareness, the density names are symbolic, and any awareness number is a seed unless a host measures it",
+      "report": "O2-uncountable.md"
+    },
+    {
+      "id": "O3",
+      "side": "opposer",
+      "lens": "The measure needs a human: above the load rung only the owner's eye measured anything, so a node the being cannot run itself is the owner's node, not the being's",
+      "report": "O3-human-measure.md"
+    },
+    {
+      "id": "A1",
+      "side": "builder",
+      "lens": "Argon's Bentov packet as a candidate lens on the per-rung nodes: what this repo can measure, what is framing, and what it adds or forbids",
+      "report": "A1-argon-bentov.md"
+    }
+  ]
+}

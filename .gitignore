@@ -7,3 +7,4 @@ dist
 .gemini/
 .venv-headtrack/
 tools/headtrack/head.json
+__pycache__/

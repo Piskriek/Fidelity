@@ -20,8 +20,8 @@
 local ADDON_NAME, ns = ...
 local Math = (ns and ns.Math) or _G.EMatrix_Math
 
-local VERSION = "1.6.1"
-local CONFIG_VERSION = 2 -- bumped when saved defaults must change for existing installs
+local VERSION = "1.8.9"
+local CONFIG_VERSION = 2 -- recorded in the save; a migration may add keys, never override a choice
 
 -- Configuration & Constants
 local COLS = 15
@@ -48,6 +48,8 @@ local BACKPLATE_ZOOM = 0.86   -- visible fraction of the backplate (room to slid
 local WALL_BASE, WALL_GAIN, WALL_MIN, WALL_MAX = 30, 0.9, 8, 58
 local RETICLE_SIZE = 150
 local OPEN_RATE = 2.5         -- openAmount per second (walls, glass, reticle fade)
+local DEPTH_GAIN = 0.6        -- parallax gain change per unit of eye depth (leaning in = stronger parallax)
+local EYE_GAIN_MIN, EYE_GAIN_MAX = 0.4, 1.8
 
 -- SavedVariables defaults (merged into the saved table at ADDON_LOADED)
 local DEFAULTS = {
@@ -68,16 +70,21 @@ local DEFAULTS = {
     sideSign = 1,
     turnSign = 1,
     worldOverlay = true,      -- EMatrix_World: live actors re-rendered over the game (the default experience)
+    worldFrameType = "player", -- "player" (PlayerModel, textured for any unit) | "dressup" (DressUpModel, v1.6.1: white NPCs in the game)
+    worldParallaxPx = 120,    -- screen pixels per unit of eye the copies shift (0 = they stay on their units)
+    worldUnitHeight = 1.8,    -- yards: nominal height of a nameplate unit, sized as focal * height / distance
     terrainOverlay = true,    -- EMatrix_Terrain: map placements re-rendered with depth (the default experience)
     boxHidden = true,         -- the scoreboard window is a side show: /fide box shows it
+    bindCells = false,        -- when on, a bound cell's face follows its source and an unbound cell stays closed ("no source"); off: the draw is unchanged
     configVersion = 0,
     -- Eye source. "gamepad": the webcam head tracker (tools/headtrack) feeds a virtual gamepad;
     -- the addon reads one stick for left/right + up/down and one axis for distance.
     eyeSource = "cursor",     -- "cursor" | "gamepad" (falls back to the cursor when no pad answers)
     eyeStick = 2,             -- index into GetDeviceMappedState().sticks (1 = left, 2 = right on an Xbox pad)
-    eyeDepthAxis = 0,         -- index into .axes for head distance, 0 = off (/fide eye probe shows the axes)
+    eyeDepthAxis = 0,         -- index into .axes for head distance (the tracker's left trigger: leaning in presses it, rest and sitting back read 0), 0 = off
     eyeGain = 1.0,            -- stick units -> eye units
     eyeInvertX = false,       -- flip left/right if the head goes the wrong way
+    eyeInvertY = false,       -- flip up/down if the head goes the wrong way
     eyeCalX = 0, eyeCalY = 0, eyeCalZ = 0, -- rest position, set by /fide eye calibrate
 }
 FidelityEMatrix_Config = FidelityEMatrix_Config or {}
@@ -93,11 +100,10 @@ local function MergeDefaults()
     for k, v in pairs(DEFAULTS) do
         if FidelityEMatrix_Config[k] == nil then FidelityEMatrix_Config[k] = v end
     end
+    -- A migration only records the version. Keys missing from an older save got the current
+    -- defaults above (the full-screen scene, box hidden); a key the owner set stays as set, so an
+    -- update never overrides a choice (v1.5 did, and lost "/fide overlay off" on upgrade).
     if (tonumber(FidelityEMatrix_Config.configVersion) or 0) < CONFIG_VERSION then
-        -- v1.5: the full-screen scene becomes the default for everyone, box hidden
-        FidelityEMatrix_Config.worldOverlay = true
-        FidelityEMatrix_Config.terrainOverlay = true
-        FidelityEMatrix_Config.boxHidden = true
         FidelityEMatrix_Config.configVersion = CONFIG_VERSION
     end
     if FidelityEMatrix_Config.stereoMode == "anaglyph" or FidelityEMatrix_Config.stereoMode == "sbs"
@@ -130,8 +136,86 @@ local animTime = 0.0
 local currentFacing = 0.0
 local smoothEyeX, smoothEyeY, smoothEyeZ = 0.0, 0.0, 0.0
 local lastPad, padSeen = nil, false -- the last mapped gamepad state, for /fide eye probe
-local appliedEyeX, appliedEyeY, appliedOpen = nil, nil, nil
+local appliedEyeX, appliedEyeY, appliedEyeZ, appliedOpen = nil, nil, nil, nil
 local lastClickTime = 0.0
+
+local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
+
+-- ============================================================================
+-- 0a. Cell sources: the binding registry (council round 2026-11-04-bridges, B1)
+-- The entity's rule: a cell is honest only when a NAMED source drives it with a MEASURED value
+-- that is FRESH, carrying an evidence kind from packages/triad-369/src/evidence.mjs
+-- (measured | symbolic | not_measured). The registry records that per cell; the draw follows
+-- it only when the saved gate `bindCells` is on (off by default, so nothing changes on screen
+-- until the owner turns it on). Callers pass the time they measured at (GetTime()), not an age.
+-- ============================================================================
+local FRESH_SECONDS = 2.0        -- the default window; a source may state its own (the flows' 180 s: council round 4, B1)
+local cellSources = {}           -- cell index -> { source, value, at, kind, window }
+local sourceCount = 0            -- cells with a record (keeps the driver alive while the gate is on: round 4, B3 and O2)
+local bindAge = 0                -- seconds since the bound cells were last applied to the draw
+local KINDS = { measured = true, symbolic = true, not_measured = true }
+
+local function Now() return (GetTime and GetTime()) or 0 end
+
+--- Records that `source` drives cell `index` with `value` in [0, 1], measured at `at` (on the
+--- same clock as Now(), i.e. GetTime()), of `kind`, fresh for `window` seconds (FRESH_SECONDS when
+--- nil). The value is the source's label for its state (an actor's band: near 1.0, mid 0.5,
+--- far 0.2), not a reading; the reading is the source's own (the range check's answer).
+local function BindCell(index, source, value, at, kind, window)
+    index = tonumber(index)
+    if not index or index < 1 or index > TOTAL_CELLS or index ~= math.floor(index) then return false end
+    if type(source) ~= "string" or source == "" then return false end
+    if not KINDS[kind] then kind = "not_measured" end
+    value = tonumber(value) or 0
+    window = tonumber(window)
+    if not window or window <= 0 then window = FRESH_SECONDS end
+    local rec = cellSources[index]
+    if not rec then
+        rec = {}; cellSources[index] = rec; sourceCount = sourceCount + 1
+        -- the first record with the gate on must wake the driver, or it is never applied
+        if sourceCount == 1 and Cfg("bindCells") and CheckIdleCondition then CheckIdleCondition() end
+    end
+    rec.source, rec.value, rec.at, rec.kind, rec.window = source, Clamp(value, 0, 1), tonumber(at) or Now(), kind, window
+    return true
+end
+
+local function ReleaseCell(index)
+    index = tonumber(index)
+    if index and cellSources[index] then cellSources[index] = nil; sourceCount = sourceCount - 1; return true end
+    return false
+end
+
+--- The source record of a cell, or nil ("no source").
+local function CellSource(index) return cellSources[tonumber(index) or 0] end
+
+--- A record is fresh while its age is within its window. A stamp from the future (a wall clock
+--- handed to this GetTime() registry, say) is not fresh: without the lower bound it would read
+--- fresh for ever (council round 4, B1).
+local function CellFresh(rec, now)
+    if rec == nil then return false end
+    local age = now - (rec.at or 0)
+    return age >= 0 and age <= (rec.window or FRESH_SECONDS)
+end
+local function CellOpen(rec, now) return CellFresh(rec, now) and rec.kind == "measured" and rec.value >= 0.5 end
+
+--- Counts: recorded sources, and those fresh and measured right now.
+local function BoundCounts()
+    local now, recorded, live = Now(), 0, 0
+    for i = 1, TOTAL_CELLS do
+        local rec = cellSources[i]
+        if rec then
+            recorded = recorded + 1
+            if CellFresh(rec, now) and rec.kind == "measured" then live = live + 1 end
+        end
+    end
+    return recorded, live
+end
+
+--- Parallax gain from the eye's depth: leaning toward the screen (z > 0) strengthens every
+--- plane's shift, sitting back weakens it. 1.0 at rest. Shared with the overlays.
+local function EyeGain()
+    return Clamp(1.0 + DEPTH_GAIN * smoothEyeZ, EYE_GAIN_MIN, EYE_GAIN_MAX)
+end
 
 -- Client Diagnostics Store
 local DiagTable = {
@@ -153,6 +237,7 @@ local CheckIdleCondition
 local RunDiagnostics
 local ApplyDepthPlanes
 local ApplyBackdrop
+local ApplyBindings
 
 -- ============================================================================
 -- 0. Client Capability Probe (/fide diag)
@@ -241,7 +326,28 @@ ns.Cfg = Cfg
 ns.ApplyLight = ApplyLight
 ns.PlaceModel = PlaceModel
 ns.FaceModel = FaceModel
+ns.EyeGain = EyeGain
+ns.BindCell = BindCell
+ns.ReleaseCell = ReleaseCell
+ns.CellSource = CellSource
+ns.BoundCounts = BoundCounts
+ns.FRESH_SECONDS = FRESH_SECONDS
 ns.LIGHTS = { mono = LIGHT_MONO, red = LIGHT_RED, cyan = LIGHT_CYAN }
+
+-- The E is drawn in its cell's fixed orientation (cell.uv8). The lens is not: its sun-lit rim
+-- must stay on the upper right in every cell (one sun over the whole array), so the window
+-- texture always takes identity coordinates. Only re-applied when the face actually changes.
+local function ShowFace(cell, window)
+    if cell.face == window then return end
+    cell.face = window
+    if window then
+        cell.flapTex:SetTexture(TEX_WINDOW)
+        cell.flapTex:SetTexCoord(0, 1, 0, 1)
+    else
+        cell.flapTex:SetTexture(TEX_CLOSED)
+        cell.flapTex:SetTexCoord(unpack(cell.uv8))
+    end
+end
 
 -- ============================================================================
 -- 1. Master Frame & Layer Architecture
@@ -469,6 +575,7 @@ function CreateMatrixGrid()
             flapTex:SetTexCoord(unpack(uv8))
             flapTex:SetAlpha(1.0)
             cell.flapTex = flapTex
+            cell.face = false -- closed: the E in its own orientation
 
             -- specBar: thin golden-white flash at the flip midpoint
             local specBar = frameGrid:CreateTexture(nil, "OVERLAY", nil, 3)
@@ -510,6 +617,11 @@ function CreateMatrixGrid()
     reticleR:SetBlendMode("ADD")
 
     -- Click-picking on the master frame
+    -- A click is an input the entity names, not an event it emits (council round 4, B3 and O3):
+    -- the wave starts at the clicked cell and, with the binding draw on, one chat line says what
+    -- drives that cell. Off the grid nothing happens (the old fallback started a wave from an
+    -- invented origin). OnMouseDown only: wired to OnMouseUp as well, a press held past the
+    -- debounce ran two waves that cancelled each other.
     local function HandleMatrixClick(self, button)
         if button == "LeftButton" and not IsShiftKeyDown() then
             local now = GetTime()
@@ -518,25 +630,24 @@ function CreateMatrixGrid()
 
             pcall(function()
                 local mx, my = GetCursorPosition()
-                local s = self:GetEffectiveScale()
-                if not s or s == 0 then s = 1.0 end
-                mx, my = mx / s, my / s
-                local left = self:GetLeft() or 0
-                local top = self:GetTop() or 0
-                local col = math.floor((mx - left) / CELL_SIZE) + 1
-                local row = math.floor((top - my) / CELL_SIZE) + 1
-
-                if col >= 1 and col <= COLS and row >= 1 and row <= ROWS then
-                    TriggerScoreboardWave(col, row)
-                else
-                    TriggerScoreboardWave(8, 5)
+                local col, row = Math.CellAt(mx, my, self:GetLeft(), self:GetTop(), self:GetEffectiveScale(), CELL_SIZE, COLS, ROWS)
+                if not col then return end
+                TriggerScoreboardWave(col, row)
+                if Cfg("bindCells") then
+                    local index = (row - 1) * COLS + col
+                    local rec = cellSources[index]
+                    if rec then
+                        print(string.format("|cff00ffcc[Fidelity EMatrix]|r Clicked cell %d: %s label %.2f age %.1fs of %.0fs %s, %s",
+                            index, rec.source, rec.value, now - (rec.at or 0), rec.window or FRESH_SECONDS, rec.kind, CellOpen(rec, now) and "open" or "closed"))
+                    else
+                        print(string.format("|cff00ffcc[Fidelity EMatrix]|r Clicked cell %d: no source", index))
+                    end
                 end
             end)
         end
     end
 
     masterFrame:SetScript("OnMouseDown", HandleMatrixClick)
-    masterFrame:SetScript("OnMouseUp", HandleMatrixClick)
 
     UpdateStereoDisplay()
     CheckIdleCondition()
@@ -634,11 +745,14 @@ function ApplyDepthPlanes(eyeX, eyeY)
     if not masterFrame or not Math then return end
     local mode = StereoMode()
     local split = (mode == "sbs" or mode == "cross")
+    -- the eye's depth (head tracker) scales every plane's parallax; 1.0 without depth input
+    local gain = EyeGain()
+    local pxGain, modelGain = PX_GAIN * gain, MODEL_GAIN * gain
 
     -- Backplate (z = 1): slide the texcoord window with the eye
     if backplateTex and backplateTex:IsShown() and Cfg("backdrop") == "nebula" and not IsStereo() then
-        local px = Math.ParallaxShift(eyeX, Z_BACK) * PX_GAIN
-        local py = Math.ParallaxShift(eyeY, Z_BACK) * PX_GAIN
+        local px = Math.ParallaxShift(eyeX, Z_BACK) * pxGain
+        local py = Math.ParallaxShift(eyeY, Z_BACK) * pxGain
         -- texcoord v grows downward; a shift up on screen is a smaller v
         backplateTex:SetTexCoord(Math.BackplateTexCoords(-px * BACKPLATE_ZOOM / MATRIX_WIDTH, py * BACKPLATE_ZOOM / MATRIX_HEIGHT, BACKPLATE_ZOOM))
     end
@@ -646,12 +760,17 @@ function ApplyDepthPlanes(eyeX, eyeY)
     -- Subject (z = 0.5): sideways/up shift in model units (mono only; stereo pairs stay centred)
     if sceneMain and sceneMain:IsShown() then
         PlaceModel(sceneMain,
-            Cfg("sideSign") * Math.ParallaxShift(eyeX, Z_SUBJECT) * MODEL_GAIN,
-            Math.ParallaxShift(eyeY, Z_SUBJECT) * MODEL_GAIN)
+            Cfg("sideSign") * Math.ParallaxShift(eyeX, Z_SUBJECT) * modelGain,
+            Math.ParallaxShift(eyeY, Z_SUBJECT) * modelGain)
     end
 
+    -- With the bound draw on there is no single window, only cells that follow their sources, so
+    -- the window's walls, glass and reticle stay off (the owner saw the reticle floating over the
+    -- closed E wall, 04 Nov 2026).
+    local bound = Cfg("bindCells") and true or false
+
     -- Inner walls: see more of the far wall's opposite side as the eye moves
-    local wallsOn = (not split) and openAmount > 0.001
+    local wallsOn = (not split) and openAmount > 0.001 and not bound
     if wallL then
         if wallsOn then
             local l, r, t, b = Math.WallWidths(eyeX, eyeY, WALL_BASE, WALL_GAIN, WALL_MIN, WALL_MAX)
@@ -664,11 +783,11 @@ function ApplyDepthPlanes(eyeX, eyeY)
     end
 
     -- Cover glass (z = -0.15) and pop-out reticle (z = -0.4): move against the eye
-    local frontOn = (not split) and openAmount > 0.001
+    local frontOn = (not split) and openAmount > 0.001 and not bound
     if sheenTex then
         if frontOn and mode ~= "anaglyph" then
             sheenTex:SetPoint("CENTER", frameFront, "CENTER",
-                Math.ParallaxShift(eyeX, Z_GLASS) * PX_GAIN, Math.ParallaxShift(eyeY, Z_GLASS) * PX_GAIN)
+                Math.ParallaxShift(eyeX, Z_GLASS) * pxGain, Math.ParallaxShift(eyeY, Z_GLASS) * pxGain)
             sheenTex:SetAlpha(0.9 * openAmount)
             sheenTex:Show()
         else
@@ -676,8 +795,8 @@ function ApplyDepthPlanes(eyeX, eyeY)
         end
     end
     if reticleMono then
-        local rx = Math.ParallaxShift(eyeX, Z_POP) * PX_GAIN
-        local ry = Math.ParallaxShift(eyeY, Z_POP) * PX_GAIN
+        local rx = Math.ParallaxShift(eyeX, Z_POP) * pxGain
+        local ry = Math.ParallaxShift(eyeY, Z_POP) * pxGain
         if frontOn and mode == "anaglyph" then
             -- Crossed disparity: the left (red) image sits right of the right (cyan) one -> in front
             local d = Cfg("stereoPixels") + 1
@@ -696,27 +815,41 @@ function ApplyDepthPlanes(eyeX, eyeY)
         end
     end
 
-    appliedEyeX, appliedEyeY, appliedOpen = eyeX, eyeY, openAmount
+    appliedEyeX, appliedEyeY, appliedEyeZ, appliedOpen = eyeX, eyeY, smoothEyeZ, openAmount
 end
 
 -- ============================================================================
 -- 3b. Eye from a gamepad (the head tracker's virtual pad)
 -- ============================================================================
-local function Clamp(v, lo, hi) if v < lo then return lo elseif v > hi then return hi end return v end
-
---- Returns stickX, stickY, depthAxis from the active gamepad, or nil when there is none.
+--- Returns stickX, stickY, depthAxis from the active gamepad, or nil and the reason when there
+--- is none (the reason is what /fide eye probe prints).
+local padWhy = "not read yet"
 local function ReadGamepadEye()
-    if not (C_GamePad and C_GamePad.GetDeviceMappedState) then return nil end
+    if not (C_GamePad and C_GamePad.GetDeviceMappedState) then padWhy = "C_GamePad.GetDeviceMappedState is not in this client"; return nil end
     local id = C_GamePad.GetActiveDeviceID and C_GamePad.GetActiveDeviceID() or nil
     local ok, st = pcall(C_GamePad.GetDeviceMappedState, id)
-    if not ok or type(st) ~= "table" or type(st.sticks) ~= "table" then return nil end
+    if not ok then padWhy = "GetDeviceMappedState errored: " .. tostring(st); return nil end
+    if type(st) ~= "table" or type(st.sticks) ~= "table" then padWhy = "no mapped state (no active device: is GamePadEnable 1 and the tracker running?)"; return nil end
+    lastPad, padSeen = st, true
     local s = st.sticks[Cfg("eyeStick")]
-    if not s or type(s.x) ~= "number" or type(s.y) ~= "number" then return nil end
+    if not s or type(s.x) ~= "number" or type(s.y) ~= "number" then padWhy = string.format("the pad reports %d stick(s); eyeStick %d is missing (/fide eye stick <n>)", #st.sticks, Cfg("eyeStick")); return nil end
     local z = 0
     local da = Cfg("eyeDepthAxis")
     if da and da > 0 and type(st.axes) == "table" and type(st.axes[da]) == "number" then z = st.axes[da] end
-    lastPad, padSeen = st, true
+    padWhy = "ok"
     return s.x, s.y, z
+end
+
+--- What drives the eye right now, for the login line and /fide status. The pointer is a hand
+--- that stands in for the eye; only a pad that answers carries a head, and the pad has no age
+--- (council round 4, B2 and O3: the configured source is not the one in use when no pad answers).
+local function EyeLabel()
+    if (Cfg("parallaxStrength") or 0) <= 0.0 then return "none (parallax off)" end
+    if Cfg("eyeSource") == "gamepad" then
+        if ReadGamepadEye() then return "pad (head; age not measured)" end
+        return "hand:cursor (pad configured, none answers; no head measured)"
+    end
+    return "hand:cursor (no head measured)"
 end
 
 -- ============================================================================
@@ -753,21 +886,21 @@ local function OnUpdateDriver(self, dt)
                     if opening then
                         if isFlipped then
                             -- E -> lens: fade from the full bezel down to the lens alpha
-                            cell.flapTex:SetTexture(TEX_WINDOW)
+                            ShowFace(cell, true)
                             local k = math.min(1.0, (u - 0.5) * 2.0)
                             cell.flapTex:SetAlpha(1.0 + (lens - 1.0) * k)
                             cell.isWindow = true
                         else
-                            cell.flapTex:SetTexture(TEX_CLOSED)
+                            ShowFace(cell, false)
                             cell.flapTex:SetAlpha(1.0)
                         end
                     else
                         if isFlipped then
-                            cell.flapTex:SetTexture(TEX_CLOSED)
+                            ShowFace(cell, false)
                             cell.flapTex:SetAlpha(math.min(1.0, (u - 0.5) * 2.0))
                             cell.isWindow = false
                         else
-                            cell.flapTex:SetTexture(TEX_WINDOW)
+                            ShowFace(cell, true)
                             cell.flapTex:SetAlpha(lens)
                         end
                     end
@@ -780,10 +913,10 @@ local function OnUpdateDriver(self, dt)
 
                     if opening then
                         -- OPEN: the microlens array stays visible at lensAlpha (0 = seamless)
-                        cell.flapTex:SetTexture(TEX_WINDOW)
+                        ShowFace(cell, true)
                         cell.flapTex:SetAlpha(lens)
                     else
-                        cell.flapTex:SetTexture(TEX_CLOSED)
+                        ShowFace(cell, false)
                         cell.flapTex:SetAlpha(1.0)
                     end
                     cell.settled = true
@@ -800,6 +933,13 @@ local function OnUpdateDriver(self, dt)
         openAmount = Math.Approach(openAmount, target, OPEN_RATE, dt)
     end
 
+    -- 2b. Bound cells follow their sources (only with the bindCells gate on), four times a second
+    bindAge = bindAge + dt
+    if bindAge >= 0.25 then
+        bindAge = 0
+        ApplyBindings()
+    end
+
     -- 3. Eye from the cursor (raw pixels on both sides of the comparison)
     local pStr = Cfg("parallaxStrength")
     local padX, padY, padZ
@@ -807,13 +947,19 @@ local function OnUpdateDriver(self, dt)
     if padX then
         local gain = Cfg("eyeGain")
         local tx = Clamp((padX - Cfg("eyeCalX")) * gain * (Cfg("eyeInvertX") and -1 or 1), -1, 1) * pStr
-        local ty = Clamp((padY - Cfg("eyeCalY")) * gain, -1, 1) * pStr
+        local ty = Clamp((padY - Cfg("eyeCalY")) * gain * (Cfg("eyeInvertY") and -1 or 1), -1, 1) * pStr
         local tz = Clamp((padZ - Cfg("eyeCalZ")) * gain, -1, 1)
         local k = math.min(dt * 10.0, 1.0)
         smoothEyeX = smoothEyeX + (tx - smoothEyeX) * k
         smoothEyeY = smoothEyeY + (ty - smoothEyeY) * k
         smoothEyeZ = smoothEyeZ + (tz - smoothEyeZ) * k
     elseif pStr > 0.0 and GetCursorPosition then
+        -- the pointer has no depth: a depth left by a pad that stopped answering eases home,
+        -- or it would keep driving EyeGain() while the hand drives the eye (round 4, B2 and O3)
+        if smoothEyeZ ~= 0.0 then
+            smoothEyeZ = smoothEyeZ + (0.0 - smoothEyeZ) * math.min(dt * 10.0, 1.0)
+            if math.abs(smoothEyeZ) < 0.0005 then smoothEyeZ = 0.0 end
+        end
         local mx, my = GetCursorPosition()
         local es = masterFrame:GetEffectiveScale() or 1.0
         local cx, cy = masterFrame:GetCenter()
@@ -831,15 +977,16 @@ local function OnUpdateDriver(self, dt)
             smoothEyeX = smoothEyeX + (tx - smoothEyeX) * k
             smoothEyeY = smoothEyeY + (ty - smoothEyeY) * k
         end
-    elseif smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0 or appliedEyeY ~= 0 then
+    elseif smoothEyeX ~= 0 or smoothEyeY ~= 0 or smoothEyeZ ~= 0 or appliedEyeX ~= 0 or appliedEyeY ~= 0 then
         -- Parallax off: snap the eye home and force one re-apply at exactly 0, so a residue
         -- below the change threshold cannot keep the idle check from detaching OnUpdate
-        smoothEyeX, smoothEyeY = 0.0, 0.0
+        smoothEyeX, smoothEyeY, smoothEyeZ = 0.0, 0.0, 0.0
         appliedEyeX = nil
     end
 
     if appliedEyeX == nil
         or math.abs(smoothEyeX - appliedEyeX) > 0.0005 or math.abs(smoothEyeY - appliedEyeY) > 0.0005
+        or math.abs(smoothEyeZ - (appliedEyeZ or 0)) > 0.0005
         or appliedOpen ~= openAmount then
         ApplyDepthPlanes(smoothEyeX, smoothEyeY)
     end
@@ -872,9 +1019,12 @@ function CheckIdleCondition()
     local settlingEye = (pStr <= 0.0) and (smoothEyeX ~= 0 or smoothEyeY ~= 0 or appliedEyeX ~= 0)
     -- the world overlay reads the eye and facing from here, so keep the driver alive while it runs
     local worldOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
+    -- a recorded source with the binding draw on must keep being applied, or a stale source would
+    -- stay open once nothing else moves (council round 4, B3 and O2)
+    local bound = Cfg("bindCells") and sourceCount > 0
 
     local host = driverFrame or masterFrame
-    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn then
+    if waveActive or spin > 0.0 or pStr > 0.0 or openAmount ~= target or settlingEye or worldOn or bound then
         if not host:GetScript("OnUpdate") then
             host:SetScript("OnUpdate", OnUpdateDriver)
         end
@@ -915,6 +1065,30 @@ function TriggerScoreboardWave(ox, oy)
     local host = driverFrame or masterFrame
     if not host:GetScript("OnUpdate") then
         host:SetScript("OnUpdate", OnUpdateDriver)
+    end
+end
+
+--- With the `bindCells` gate on: a settled bound cell shows its source (open when fresh,
+--- measured and at least 0.5; closed otherwise) and a settled unbound cell stays closed with
+--- no glint ("no source"). The wave still animates a click; this is what it settles into.
+--- With the gate off nothing here runs, so the draw is the box the owner knows.
+function ApplyBindings()
+    if not Cfg("bindCells") or waveActive or not cells[1] then return end
+    local now = Now()
+    local lens = Cfg("lensAlpha")
+    for i = 1, TOTAL_CELLS do
+        local cell = cells[i]
+        if cell and cell.settled then
+            local open = CellOpen(cellSources[i], now)
+            if cell.face ~= open then
+                ShowFace(cell, open)
+                cell.flapTex:SetHeight(CELL_SIZE)
+                cell.specBar:SetAlpha(0.0)
+                cell.creviceTex:SetAlpha(0.0)
+                cell.isWindow = open
+            end
+            cell.flapTex:SetAlpha(open and lens or 1.0)
+        end
     end
 end
 
@@ -1033,9 +1207,13 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 FidelityEMatrix_Config.stereoPixels = math.min(math.max(math.floor(tonumber(args[3])), 0), 16)
             elseif sub == "mix" and tonumber(args[3]) then
                 FidelityEMatrix_Config.anaglyphMix = math.min(math.max(tonumber(args[3]), 0.1), 1.0)
-            else
+            elseif sub == "toggle" then
                 local order = { off = "sbs", sbs = "cross", cross = "anaglyph", anaglyph = "off" }
                 FidelityEMatrix_Config.stereoMode = order[StereoMode()] or "off"
+            else
+                -- a typo must not change the saved mode
+                Say("Usage: /fide stereo <off|sbs|cross|anaglyph|delta <0..0.3>|pixels <0..16>|mix <0.1..1>>  (now %s)", StereoMode())
+                return
             end
             UpdateStereoDisplay()
             CheckIdleCondition()
@@ -1064,6 +1242,8 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                 FidelityEMatrix_Config.eyeGain = v; Say("Eye gain: %.2f", v)
             elseif sub == "invert" then
                 FidelityEMatrix_Config.eyeInvertX = not Cfg("eyeInvertX"); Say("Eye left/right %s", Cfg("eyeInvertX") and "inverted" or "normal")
+            elseif sub == "inverty" then
+                FidelityEMatrix_Config.eyeInvertY = not Cfg("eyeInvertY"); Say("Eye up/down %s", Cfg("eyeInvertY") and "inverted" or "normal")
             elseif sub == "calibrate" then
                 local x, y, z = ReadGamepadEye()
                 if x then
@@ -1073,25 +1253,64 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
                     Say("No gamepad state to calibrate from. Is the tracker running and GamePadEnable 1 set? (/fide eye setup)")
                 end
             elseif sub == "probe" then
+                -- every step of the read, so a silent nil has a stated reason
                 local x, y, z = ReadGamepadEye()
-                if not lastPad then Say("No gamepad state: C_GamePad %s, GamePadEnable must be 1 (/fide eye setup).", C_GamePad and "present" or "MISSING"); return end
+                local id = (C_GamePad and C_GamePad.GetActiveDeviceID) and C_GamePad.GetActiveDeviceID() or nil
+                Say("Eye probe: source %s (the scene uses the %s now) | C_GamePad %s | active device %s | pad seen this session %s | read: %s",
+                    Cfg("eyeSource"), (Cfg("eyeSource") == "gamepad" and x) and "pad" or "cursor", C_GamePad and "present" or "MISSING", tostring(id), padSeen and "yes" or "no", padWhy)
+                Say("Eye probe: stick %d | depth axis %s | gain %.2f | invert x %s y %s | rest %.2f, %.2f, %.2f | parallax strength %.2f%s",
+                    Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")), tostring(Cfg("eyeInvertY")),
+                    Cfg("eyeCalX"), Cfg("eyeCalY"), Cfg("eyeCalZ"), Cfg("parallaxStrength"), Cfg("parallaxStrength") <= 0 and " (0: the pad is never read; /fide parallax 0.5)" or "")
+                if not lastPad then Say("No mapped state yet: GamePadEnable must be 1 and the tracker running (/fide eye setup)."); return end
                 local parts = {}
                 for i, s in ipairs(lastPad.sticks or {}) do parts[#parts + 1] = string.format("stick%d=(%.2f, %.2f)", i, s.x or 0, s.y or 0) end
                 for i, a in ipairs(lastPad.axes or {}) do parts[#parts + 1] = string.format("axis%d=%.2f", i, a) end
-                Say("Pad %s: %s | eye from stick %d = %s", tostring(lastPad.name), table.concat(parts, " "), Cfg("eyeStick"), x and string.format("%.2f, %.2f, z %.2f", x, y, z) or "nil")
+                Say("Pad %s: %s | eye from stick %d = %s | eye now %.2f, %.2f, z %.2f (parallax gain %.2f)", tostring(lastPad.name), table.concat(parts, " "), Cfg("eyeStick"),
+                    x and string.format("%.2f, %.2f, z %.2f", x, y, z) or ("nil: " .. padWhy), smoothEyeX, smoothEyeY, smoothEyeZ, EyeGain())
             elseif sub == "setup" then
-                Say("Head tracking setup: 1) run tools/headtrack/headtrack.py on the laptop (it creates a virtual Xbox pad). 2) /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0 (so the right stick does not swing the camera). 3) /fide eye probe, move your head, note which stick/axis moves; /fide eye stick <n>, /fide eye depth <axis>. 4) /fide eye calibrate while sitting normally, then /fide eye source gamepad.")
+                Say("Head tracking setup: 1) run tools/headtrack/headtrack.py on the laptop (it creates a virtual Xbox pad). 2) /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console GamePadCameraPitchSpeed 0 (so the right stick does not swing the camera). 3) /fide eye probe, move your head, note which stick/axis moves; /fide eye stick <n>, /fide eye depth <axis> (the left trigger: leaning in presses it). 4) /fide eye calibrate while sitting normally, then /fide eye source gamepad. /fide eye invert or inverty if a direction is wrong.")
             else
-                Say("Eye: source %s | stick %d | depth axis %s | gain %.2f | invert %s | rest %.2f, %.2f, %.2f | now %.2f, %.2f, z %.2f | pad seen %s",
-                    Cfg("eyeSource"), Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")),
+                Say("Eye: source %s | stick %d | depth axis %s | gain %.2f | invert x %s y %s | rest %.2f, %.2f, %.2f | now %.2f, %.2f, z %.2f | pad seen %s",
+                    Cfg("eyeSource"), Cfg("eyeStick"), Cfg("eyeDepthAxis") > 0 and tostring(Cfg("eyeDepthAxis")) or "off", Cfg("eyeGain"), tostring(Cfg("eyeInvertX")), tostring(Cfg("eyeInvertY")),
                     Cfg("eyeCalX"), Cfg("eyeCalY"), Cfg("eyeCalZ"), smoothEyeX, smoothEyeY, smoothEyeZ, padSeen and "yes" or "no")
-                Say("Usage: /fide eye <source cursor|gamepad | stick <1-4> | depth <axis|off> | gain <0.1-10> | invert | calibrate | probe | setup>")
+                Say("Usage: /fide eye <source cursor|gamepad | stick <1-4> | depth <axis|off> | gain <0.1-10> | invert | inverty | calibrate | probe | setup>")
+            end
+
+        elseif cmd == "cells" then
+            -- the binding registry: what drives each cell, and whether it counts
+            local recorded, live = BoundCounts()
+            local now = Now()
+            Say("Cells: %d of %d have a source, %d fresh and measured (open when the label is >= 0.5 within the source's window); binding draw %s. A cell with no source stays closed when the draw is on. The label is the source's constant for its state (an actor's band: near 1.0, mid 0.5, far 0.2), not a distance.",
+                recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off (/fide bind on)")
+            local shown = 0
+            for i = 1, TOTAL_CELLS do
+                local rec = cellSources[i]
+                if rec and shown < 12 then
+                    shown = shown + 1
+                    Say("  cell %d: %s label %.2f age %.1fs of %.0fs %s%s", i, rec.source, rec.value, now - (rec.at or 0), rec.window or FRESH_SECONDS, rec.kind, CellOpen(rec, now) and " -> open" or "")
+                end
+            end
+
+        elseif cmd == "bind" then
+            local sub = args[2] or "status"
+            if sub == "on" or sub == "off" then
+                FidelityEMatrix_Config.bindCells = (sub == "on")
+                bindAge = 1
+                appliedEyeX = nil -- the walls, glass and reticle follow the gate: re-apply the planes
+                CheckIdleCondition() -- recorded sources keep the driver alive while the gate is on
+                if not FidelityEMatrix_Config.bindCells then RefreshOpenCells() end
+                Say("Binding draw %s: %s", sub == "on" and "ON" or "off", sub == "on" and "bound cells follow their sources, unbound cells stay closed (no source)" or "the box draws as before")
+            elseif sub == "status" then
+                local recorded, live = BoundCounts()
+                Say("Binding draw %s; %d cell(s) with a source, %d fresh and measured. /fide cells lists them.", Cfg("bindCells") and "ON" or "off", recorded, live)
+            else
+                Say("Usage: /fide bind <on|off|status>")
             end
 
         elseif cmd == "box" then
             local sub = args[2] or "toggle"
+            if sub ~= "show" and sub ~= "hide" and sub ~= "toggle" then Say("Usage: /fide box <show|hide|toggle>  (now %s)", masterFrame:IsShown() and "shown" or "hidden"); return end
             local show = (sub == "show") or (sub == "toggle" and not masterFrame:IsShown())
-            if sub == "hide" then show = false end
             if show then masterFrame:Show() else masterFrame:Hide() end
             FidelityEMatrix_Config.boxHidden = not show
             Say("Scoreboard box %s (the full-screen scene is separate: /fide overlay).", show and "shown; click it to ripple it open" or "hidden")
@@ -1099,8 +1318,8 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
         elseif cmd == "overlay" or cmd == "full" then
             local sub = args[2] or "toggle"
             local anyOn = (ns.World and ns.World.IsEnabled()) or (ns.Terrain and ns.Terrain.IsEnabled())
+            if sub ~= "on" and sub ~= "off" and sub ~= "toggle" then Say("Usage: /fide overlay <on|off|toggle>  (now %s)", anyOn and "on" or "off"); return end
             local on = (sub == "on") or (sub == "toggle" and not anyOn)
-            if sub == "off" then on = false end
             if ns.World then ns.World.SetEnabled(on) end
             if ns.Terrain then ns.Terrain.SetEnabled(on) end
             FidelityEMatrix_Config.boxHidden = on
@@ -1111,6 +1330,9 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             else
                 Say("Full-screen depth scene OFF; the box is back. Click it to ripple it open.")
             end
+
+        elseif cmd == "report" then
+            if ns.Report then ns.Report.Command(args, Say) else Say("EMatrix_Report.lua did not load.") end
 
         elseif cmd == "terrain" then
             if ns.Terrain then
@@ -1177,12 +1399,29 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             local host = driverFrame or masterFrame
             print(string.format("  OnUpdate Hook: %s | Box: %s", (host and host:GetScript("OnUpdate")) and "|cff00ff00ATTACHED|r" or "|cff888888DETACHED (0.00 ms CPU)|r", (masterFrame and masterFrame:IsShown()) and "shown" or "hidden"))
             if ns.World then
-                print(string.format("  World overlay: %s, %d actor(s)", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount()))
+                local ws = ns.World.IsSuspended and ns.World.IsSuspended()
+                print(string.format("  World overlay: %s, %d actor(s), %s frames, parallax %d px%s", ns.World.IsEnabled() and "|cff00ff00ON|r" or "off", ns.World.ActorCount(), Cfg("worldFrameType"), Cfg("worldParallaxPx"), ws and (" (|cffff3333suspended after errors|r: " .. ws .. ")") or ""))
             end
             if ns.Terrain then
                 local info = ns.Terrain.Info()
-                print(string.format("  Terrain overlay: %s, %d prop(s), tile %s", ns.Terrain.IsEnabled() and "|cff00ff00ON|r" or "off", info.props or 0, tostring(info.tile)))
+                local ts = ns.Terrain.IsSuspended and ns.Terrain.IsSuspended()
+                print(string.format("  Terrain overlay: %s, %d prop(s), %d building(s) nearby, tile %s%s", ns.Terrain.IsEnabled() and "|cff00ff00ON|r" or "off", info.props or 0, info.buildings or 0, tostring(info.tile), ts and (" (|cffff3333suspended after errors|r: " .. ts .. ")") or ""))
             end
+            print(string.format("  Eye: %.2f, %.2f, z %.2f (parallax gain %.2f) from %s; configured %s", smoothEyeX, smoothEyeY, smoothEyeZ, EyeGain(), EyeLabel(), Cfg("eyeSource")))
+
+        elseif cmd == "help" and args[2] ~= "all" then
+            -- the short list: what the owner needs at the keyboard (/fide help all prints everything)
+            print("|cff00ffcc[Fidelity EMatrix]|r v" .. VERSION .. "  (|cffffcc00/fide help all|r for every command)")
+            print("  |cffffcc00/fide overlay on|off|r   the full-screen depth scene (world + terrain)")
+            print("  |cffffcc00/fide stereo anaglyph|r  red/cyan glasses; |cffffcc00/fide stereo off|r")
+            print("  |cffffcc00/fide eye setup|r        webcam head tracking; without it the mouse is the eye")
+            print("  |cffffcc00/fide report|r           the report panel: buttons run every check (the terrain probe too) and take screenshots for the director")
+            print("  |cffffcc00/fide status|r           the numbers; |cffffcc00/fide box|r shows the old window")
+            print("  |cffffcc00/fide cells|r            what drives each cell (|cffffcc00/fide bind on|r makes the box follow it)")
+
+        elseif cmd ~= "help" then
+            -- an unknown word changes nothing and says so in one line
+            Say("Unknown command '%s'. /fide help for the short list, /fide help all for everything.", tostring(args[1]))
 
         else
             print("|cff00ffcc[Fidelity EMatrix Commands]|r v" .. VERSION)
@@ -1196,10 +1435,11 @@ SlashCmdList["FIDELITYEMATRIX"] = function(msg)
             print("  |cffffcc00/fide stereo [off|sbs|cross|anaglyph]|r - Stereo 3D (tune: delta, pixels, mix)")
             print("  |cffffcc00/fide overlay <on|off>|r             - FULL-SCREEN depth scene (default): world + terrain overlays")
             print("  |cffffcc00/fide box <show|hide>|r              - The old scoreboard window (click it to ripple it open)")
-            print("  |cffffcc00/fide eye <setup|probe|calibrate|source ...>|r - Head tracking through the virtual gamepad (webcam tracker)")
-            print("  |cffffcc00/fide world <on|off|status>|r       - Re-render the live actors over the game with depth (anaglyph with glasses)")
+            print("  |cffffcc00/fide eye <setup|probe|calibrate|source|invert|inverty ...>|r - Head tracking through the virtual gamepad (webcam tracker)")
+            print("  |cffffcc00/fide world <on|off|status|frame <player|dressup>|parallax <px>|height <yd>>|r - Re-render the live actors over the game with depth")
             print("  |cffffcc00/fide terrain <on|off|status|...>|r  - Draw the map's trees, props and buildings near you as depth props")
             print("  |cffffcc00/fide calibrate <side|turn>|r       - Flip a parallax sign if it moves the wrong way")
+            print("  |cffffcc00/fide cells|r, |cffffcc00/fide bind <on|off|status>|r - The binding registry: what drives each cell; the gate that lets the box follow it")
             print("  |cffffcc00/fide diag|r                        - Client engine probe")
             print("  |cffffcc00/fide scale <0.5..2.5>|r            - Uniform UI scale")
             print("  |cffffcc00/fide status|r                      - Runtime and idle-CPU status")
@@ -1213,29 +1453,48 @@ end
 -- ============================================================================
 -- 6. AddOn Loaded Event & Cross-Client Lifecycle
 -- ============================================================================
+--- Brings the addon up and reports what actually came up (not what the save asked for). The
+--- whole path runs under pcall: a Lua error in any step prints one addon line instead of
+--- leaving half a scene with a raw client error.
+local function Bringup(reason)
+    local ok, err = pcall(function()
+        CreateMatrixGrid()
+        if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
+        if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
+        if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
+        CheckIdleCondition()
+    end)
+    if not ok then
+        print("|cffff3333[Fidelity EMatrix Error]|r v" .. VERSION .. " failed to start (" .. reason .. "): " .. tostring(err) .. ". /fide status, /fide diag.")
+        return
+    end
+    local worldOn = ns.World and ns.World.IsEnabled() or false
+    local terrainOn = ns.Terrain and ns.Terrain.IsEnabled() or false
+    local data = "no terrain module"
+    if ns.Terrain then
+        local tiles, placements, buildings = ns.Terrain.DataStats()
+        data = string.format("%s, %d tile(s), %d placements, %d buildings", ns.Terrain.BuildLabel(), tiles, placements, buildings)
+    end
+    local recorded, live = BoundCounts()
+    Say("v%s: world overlay %s (%d actor(s) now), terrain overlay %s, map data %s, box %s, eye %s, cells with a source %d of %d (%d fresh and measured), binding draw %s. |cffffcc00/fide help|r for the short list.",
+        VERSION, worldOn and "|cff00ff00ON|r" or "off", ns.World and ns.World.ActorCount() or 0, terrainOn and "|cff00ff00ON|r" or "off", data,
+        (masterFrame and masterFrame:IsShown()) and "shown" or "hidden", EyeLabel(), recorded, TOTAL_CELLS, live, Cfg("bindCells") and "ON" or "off")
+    if not worldOn and not terrainOn then
+        Say("Both overlays are off in your saved settings: |cffffcc00/fide overlay on|r for the full-screen depth scene.")
+    end
+end
+
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
 loader:RegisterEvent("PLAYER_ENTERING_WORLD")
 loader:SetScript("OnEvent", function(self, event, addon)
     if event == "ADDON_LOADED" then
         if addon == "FidelityEMatrix" or addon == ADDON_NAME then
-            CreateMatrixGrid()
-            if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
-            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
-            if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
-            CheckIdleCondition()
-            Say("v%s: full-screen depth scene %s. Move the mouse to lean. |cffffcc00/fide stereo anaglyph|r with glasses, |cffffcc00/fide overlay off|r to stop, |cffffcc00/fide box|r for the old window, |cffffcc00/fide status|r for numbers.", VERSION, (Cfg("worldOverlay") or Cfg("terrainOverlay")) and "|cff00ff00ON|r" or "off")
+            Bringup("ADDON_LOADED")
             self:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_ENTERING_WORLD" then
-        if not masterFrame then
-            CreateMatrixGrid()
-            if masterFrame and Cfg("boxHidden") then masterFrame:Hide() end
-            if ns.World and Cfg("worldOverlay") then ns.World.SetEnabled(true) end
-            if ns.Terrain and Cfg("terrainOverlay") then ns.Terrain.SetEnabled(true) end
-            CheckIdleCondition()
-            Say("v%s: full-screen depth scene on. /fide overlay off to stop, /fide box for the old window.", VERSION)
-        end
+        if not masterFrame then Bringup("PLAYER_ENTERING_WORLD") end
         self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     end
 end)
@@ -1247,6 +1506,8 @@ ns.UpdateStereoDisplay = UpdateStereoDisplay
 ns.ApplyDepthPlanes = ApplyDepthPlanes
 ns.cells = cells
 ns.DiagTable = DiagTable
+ns.MergeDefaults = MergeDefaults
+ns.VERSION = VERSION
 ns.GetEye = function() return smoothEyeX, smoothEyeY, currentFacing, smoothEyeZ end
 ns.State = function()
     return {

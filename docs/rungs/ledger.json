@@ -1,0 +1,2472 @@
+{
+ "about": "The recorded reading per rung (council round 2026-11-04-rungs). Each row is one reading: the rung it witnesses, the witness class and reader, the time (the step stamp, the client's local clock), the artifact with the SHA256 its report's MANIFEST lists, the context it was taken in, the operating point (value) and what was observed. packages/triad-369/src/rung_ledger.mjs turns the rows into verdicts; tools/rung-ledger.test.mjs makes the addon's constants answer to them. A value moves only when a counted reading moves it.",
+ "conventions": {
+  "fit.observed": "top and bottom: the gaps from the red frame's top and bottom edges to the model's outermost part (twigs and stems included, not only the dense leaves), as fractions of the frame height; 'touches' when the model reaches that edge and whether it is cut there cannot be seen, 'clipped' when it visibly runs past it, 'hidden' when something covers it. topBound and bottomBound: with that edge hidden, the largest gap the visible part allows (the model reaches at least that far). width: the model's width as a fraction of the frame width, or 'overflow'. fill: a first reading that recorded only how much of the frame the model fills.",
+  "coverage": "every camera-distance fit shot in the nine reports has a second reading (35 shots). The two model-scale shots of the fifth report (WoWScrnShot_110426_112707 and 112755) are not fit readings: they vary SetModelScale at the default camera, not the camera factor a fit is. The tenth report adds a twin reading of each fit pair it holds (the jar's pair was overwritten, the canopy04 step drew the barrel) and five projection readings of its step-1 twin.",
+  "decisive": "a reading passes only when its residual plus its precision is within the tolerance, and fails only when its residual minus its precision is outside it; a reading nearer the tolerance than its own precision decides nothing",
+  "precision": "about half a tick of the reading grid: 0.03 on a marked frame, 0.05 on the known rectangle; 0.1 for a first reading by eye",
+  "readers": {
+   "first reading, when the report landed": "the director, reading the owner's screenshots when each report landed (by eye, the whole picture)",
+   "second reading, grid crop, round 6": "the director, re-reading every fit shot in round 6 against crops with a tick every 5% (tools/frame_fill.py sheet) and 1% zooms; the bush and tree tops corrected after the round's review re-read them brightened",
+   "twin reading, round 7": "the director, reading the tenth report's overlay-off twins (owner ruling 1: the real objects read before any prediction was opened; fits with tools/frame_fill.py twin and a brightened crop for every flagged edge)"
+  },
+  "witness classes": {
+   "host": "a host API read (UnitPosition and the tile lookup, GetModelFileID), captured by the owner's panel",
+   "owner": "the owner's own word or saved value (a /fide terrain test fit press)",
+   "director": "the director's reading of the owner's screenshot (owner ruling 1 decides whether it counts)",
+   "client-visible": "the frame's own IsVisible: an echo",
+   "headless": "the stub harness: an echo"
+  },
+  "time": "the step stamp the panel records (date(), the client's local clock); never a file time and never the report-level at",
+  "projection.observed": "residual: the distance from the predicted foot (the camera in use, through EMatrix_Math.BuildCamera and ProjectPoint or its replica at the map data's own placements, which gives the client's recorded feet) to the foot read blind in an overlay-off twin, over the placement's projected height; foot, predicted and height in UI units from the bottom left; the context names the camera in use (pitch, fovY) so a confirmed change unlocks the old readings",
+  "subject": "what in the artifact a reading is of (a placement in a scene shot): two subjects read in one shot are two readings; the evaluator supersedes only readings of the same artifact, line, subject, witness class and value",
+  "camera": "the camera in use (pitch and fovY in radians) that tools/rungs-sync.mjs and the tests pass to terrainRungs: the projection's and the heights' context, so a reading counts only at the camera it was taken at"
+ },
+ "tolerance": 0.1,
+ "camera": {
+  "pitch": 0.35,
+  "fovY": 1.0,
+  "source": "the camera in use at every reading so far: the addon's saved defaults (EMatrix_Terrain.lua DEFAULTS), which every shutter pose of the tenth report records with the kind \"(saved default, not measured)\". When a report's poses show the owner's confirmed setting, the director copies the values the poses record here (a confirm writes math.rad of the degrees typed, e.g. 0.2234 and 0.9390 for 12.8 and 53.8), and the projection and the heights start unmeasured at it."
+ },
+ "rows": [
+  {
+   "id": "20261104-0935-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 09:35:01",
+   "artifact": {
+    "report": "20261104-0935",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "BC6B45781885AF3B8ADA94ED129B959BFA3200691D87367A3848A82A54803736",
+    "line": 56
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-0935-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 09:35:01",
+   "artifact": {
+    "report": "20261104-0935",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "BC6B45781885AF3B8ADA94ED129B959BFA3200691D87367A3848A82A54803736",
+    "line": 56
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-0935-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 09:35:01",
+   "artifact": {
+    "report": "20261104-0935",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "BC6B45781885AF3B8ADA94ED129B959BFA3200691D87367A3848A82A54803736",
+    "line": 64
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 45,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "20261104-0959-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 09:58:49",
+   "artifact": {
+    "report": "20261104-0959",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "28AC951920E607E7FB11B39D313EA6E0B24D35C1B57A460FB0FED1B8FC5FBC3B",
+    "line": 210
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-0959-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 09:58:49",
+   "artifact": {
+    "report": "20261104-0959",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "28AC951920E607E7FB11B39D313EA6E0B24D35C1B57A460FB0FED1B8FC5FBC3B",
+    "line": 210
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1024-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 10:23:14",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9B64F8BF4D5A9B84E6066C7C1185249314EE61B667948D4B36AB28858751E265",
+    "line": 64
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1024-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 10:23:14",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9B64F8BF4D5A9B84E6066C7C1185249314EE61B667948D4B36AB28858751E265",
+    "line": 64
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1024-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 10:23:14",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9B64F8BF4D5A9B84E6066C7C1185249314EE61B667948D4B36AB28858751E265",
+    "line": 72
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 45,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "20261104-1059-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 10:58:13",
+   "artifact": {
+    "report": "20261104-1059",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "535956585168D3E648672A2114737227A9ACCE12AB93078F3F6F65132C5F6A10",
+    "line": 218
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1059-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 10:58:13",
+   "artifact": {
+    "report": "20261104-1059",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "535956585168D3E648672A2114737227A9ACCE12AB93078F3F6F65132C5F6A10",
+    "line": 218
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1134-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 11:27:28",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "282FBF81D35474F7E8BC83D2A8D93E222C32B181A2B5AC0D71320FB8B4586DDF",
+    "line": 513
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1134-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 11:27:28",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "282FBF81D35474F7E8BC83D2A8D93E222C32B181A2B5AC0D71320FB8B4586DDF",
+    "line": 513
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1134-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 11:27:28",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "282FBF81D35474F7E8BC83D2A8D93E222C32B181A2B5AC0D71320FB8B4586DDF",
+    "line": 521
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 50,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "20261104-1200-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 11:59:46",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "8FC9A84C220163CAD18C0E6C978F863C310FAF00164D2D5A7E1C4E872576248D",
+    "line": 637
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1200-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 11:59:46",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "8FC9A84C220163CAD18C0E6C978F863C310FAF00164D2D5A7E1C4E872576248D",
+    "line": 637
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1200-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 11:59:46",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "8FC9A84C220163CAD18C0E6C978F863C310FAF00164D2D5A7E1C4E872576248D",
+    "line": 645
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 45,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "20261104-1226-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 12:24:24",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "86998DE390FE8D772956BDAF86AD0252DDC8B8AAB5406D2296A19A6AB04E1E74",
+    "line": 798
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1226-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 12:24:24",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "86998DE390FE8D772956BDAF86AD0252DDC8B8AAB5406D2296A19A6AB04E1E74",
+    "line": 798
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1226-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 12:24:24",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "86998DE390FE8D772956BDAF86AD0252DDC8B8AAB5406D2296A19A6AB04E1E74",
+    "line": 806
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 45,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "20261104-1247-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 12:46:18",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9ADB10AA8F0DA26CAA8A39D0EE95C8E01B839943007A0FFE12BC96E2515702AB",
+    "line": 1208
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1247-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 12:46:18",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9ADB10AA8F0DA26CAA8A39D0EE95C8E01B839943007A0FFE12BC96E2515702AB",
+    "line": 1208
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1247-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 12:46:18",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9ADB10AA8F0DA26CAA8A39D0EE95C8E01B839943007A0FFE12BC96E2515702AB",
+    "line": 1216
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 45,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "20261104-1321-map",
+   "rung": "map",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 13:16:58",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "41B3DC8935612EE1782316EF714C73F69D054ED0EDE92A4F3EDC7A641194783A",
+    "line": 1386
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "tile azeroth:32:48 at the Northshire Abbey door, nine tiles around"
+  },
+  {
+   "id": "20261104-1321-axis",
+   "rung": "axis",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 13:16:58",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "41B3DC8935612EE1782316EF714C73F69D054ED0EDE92A4F3EDC7A641194783A",
+    "line": 1386
+   },
+   "context": {
+    "readOrder": "north-south first"
+   },
+   "observed": {
+    "tile": "FOUND"
+   },
+   "note": "the player's own tile found where the player stands, with UnitPosition's first number read as north-south"
+  },
+  {
+   "id": "20261104-1321-load",
+   "rung": "load",
+   "kind": "measured",
+   "witness": "host",
+   "reader": "the probe, captured by the owner's panel",
+   "at": "2026-11-04 13:16:58",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "41B3DC8935612EE1782316EF714C73F69D054ED0EDE92A4F3EDC7A641194783A",
+    "line": 1394
+   },
+   "context": {
+    "build": "2.5.6.70577",
+    "loader": "path"
+   },
+   "observed": {
+    "loaded": 45,
+    "failed": 0
+   },
+   "note": "GetModelFileID answered for every placement loaded; a load, not a draw"
+  },
+  {
+   "id": "r3-102332-frame",
+   "rung": "frame:Model",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:23:31",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102332.jpg",
+    "sha256": "E816164F3B5897198F7F728F0F7AC93EAB37BBE361429CA154C2DCDD20E8319E"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": false
+   },
+   "note": "a new plain Model frame, the bush, no camera call: nothing drawn"
+  },
+  {
+   "id": "r3-102342-frame",
+   "rung": "frame:PlayerModel",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:23:41",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102342.jpg",
+    "sha256": "30051AF04D0FA9DD7D24799D0898953B53186A250C7C79185A02BEFFD5F3266B"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": true
+   },
+   "note": "a new PlayerModel frame, the same bush: drawn, filling the frame"
+  },
+  {
+   "id": "r3-102348-frame",
+   "rung": "frame:DressUpModel",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:23:47",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102348.jpg",
+    "sha256": "235D4DE296FB1B78B9E49A59F8FF2E87A4E0AE2C69F6E9B765B4A17BBC914018"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": true
+   },
+   "note": "a new DressUpModel frame, the same bush: drawn"
+  },
+  {
+   "id": "r3-102357-frame",
+   "rung": "frame:Model",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:23:56",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102357.jpg",
+    "sha256": "CD93E317E27FBB411B287887A8E4D0655C6BBEA07EC27F2A59746EAFB0ED67D0"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": false
+   },
+   "note": "Model at strata HIGH: nothing drawn"
+  },
+  {
+   "id": "r3-102402-frame",
+   "rung": "frame:Model",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:24:02",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102402.jpg",
+    "sha256": "183EFA7E5C67DD8674685C09B2FF98F738194010451BACD1E1277CB5435878D4"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": false
+   },
+   "note": "the client's own question-mark model on a Model frame: nothing drawn"
+  },
+  {
+   "id": "r3-102411-frame",
+   "rung": "frame:Model",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:24:11",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102411.jpg",
+    "sha256": "78CDF48424DFC559145E5C8C1422F4E329C4C4C785D8B1C7681AB09A02B52B63"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": false
+   },
+   "note": "Model with SetCamera(0): nothing drawn"
+  },
+  {
+   "id": "r3-102417-frame",
+   "rung": "frame:Model",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 10:24:17",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "WoWScrnShot_110426_102417.jpg",
+    "sha256": "E0A2AA3B2D820A66A766D6ED29C957209B3ED11BED947BF602CCD4EEF37AD530"
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": false
+   },
+   "note": "Model at model scale 5: nothing drawn"
+  },
+  {
+   "id": "r3-visible-echo",
+   "rung": "frame:Model",
+   "kind": "measured",
+   "witness": "client-visible",
+   "reader": "the test line's 'visible true'",
+   "at": "2026-11-04 10:23:31",
+   "artifact": {
+    "report": "20261104-1024",
+    "file": "FidelityEMatrix.lua",
+    "sha256": "9B64F8BF4D5A9B84E6066C7C1185249314EE61B667948D4B36AB28858751E265",
+    "line": 100
+   },
+   "context": {
+    "build": "2.5.6.70577"
+   },
+   "observed": {
+    "drawn": true
+   },
+   "note": "IsVisible printed 'visible true' for a Model frame that drew nothing: the frame's own report, an echo"
+  },
+  {
+   "id": "r5-112650-bush-1",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 11:26:50",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112650.jpg",
+    "sha256": "4EEEE47FDA1A1B46EDD6AA70012248219245C65D65DE0FE79AAE477066271FB0"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.0,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.1,
+   "note": "overflowed its frame, a close-up of leaves (RESUME, fifth report)"
+  },
+  {
+   "id": "r5-112655-bush-1",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 11:26:55",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112655.jpg",
+    "sha256": "91241BFAAF435E28FE8878A3C91DD9EBE574D644323C9D775AA4C0CCB4791C71"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.5,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.1,
+   "note": "overflowed its frame (RESUME, fifth report)"
+  },
+  {
+   "id": "r5-112659-bush-1",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 11:26:59",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112659.jpg",
+    "sha256": "464235D4F26CCD347EF27A067C60105F74933D609B732FD49839D87ABBA60AB4"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "fill": 1.0
+   },
+   "precision": 0.1,
+   "note": "fitted the frame whole (RESUME, fifth report)"
+  },
+  {
+   "id": "r6-115950-bush-1",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 11:59:49",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_115950.jpg",
+    "sha256": "CDCCC082C5D9168ABA5C00D7ABEC9F3EC9095E7A6FFA148063F66CFDE1B6E5ED"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "fill": 0.9
+   },
+   "precision": 0.1,
+   "note": "whole in its frame at the player's feet, with a little margin (RESUME, sixth report; the margin entered as a fill of 0.9)"
+  },
+  {
+   "id": "r7-122430-bush-1",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:24:29",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122430.jpg",
+    "sha256": "5B2CDDACF1F79A2CEF2998AC0345F5D1936292FF11683782C4E38B6E7F030E99"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "fill": 1.0
+   },
+   "precision": 0.1,
+   "note": "fills its frame top to bottom (RESUME, seventh report)"
+  },
+  {
+   "id": "r5-112650-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:26:50",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112650.jpg",
+    "sha256": "4EEEE47FDA1A1B46EDD6AA70012248219245C65D65DE0FE79AAE477066271FB0"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.0,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.05,
+   "note": "leaves at every edge of the frame (frame not marked: the known rectangle)"
+  },
+  {
+   "id": "r5-112655-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:26:55",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112655.jpg",
+    "sha256": "91241BFAAF435E28FE8878A3C91DD9EBE574D644323C9D775AA4C0CCB4791C71"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.5,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.05,
+   "note": "leaves at every edge (frame not marked)"
+  },
+  {
+   "id": "r5-112659-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:26:59",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112659.jpg",
+    "sha256": "464235D4F26CCD347EF27A067C60105F74933D609B732FD49839D87ABBA60AB4"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.11,
+    "bottom": "touches"
+   },
+   "precision": 0.05,
+   "note": "its thin dark twigs reach about 0.11 below the frame top (the dense bright leaves begin near 0.27); its stems run to the bottom edge (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r6-115950-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:59:49",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_115950.jpg",
+    "sha256": "CDCCC082C5D9168ABA5C00D7ABEC9F3EC9095E7A6FFA148063F66CFDE1B6E5ED"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.12,
+    "bottom": "touches"
+   },
+   "precision": 0.05,
+   "note": "twigs to about 0.12 below the top; stems to the bottom edge (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r6-115956-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:59:56",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_115956.jpg",
+    "sha256": "097E2197C1887EB6EDE6F0D73E41E70E68069E556A313D7B689125D34267499C"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.0,
+   "observed": {
+    "top": 0.24,
+    "bottom": "hidden",
+    "bottomBound": 0.11
+   },
+   "precision": 0.05,
+   "note": "leaf tips at about 0.24 below the top; its base is behind the player copy, but its tan stems beside the copy reach at least 0.89 of the frame (absent from 120001 and 120004, the same pose without the bush), so the gap is at most 0.11 (frame not marked). the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r7-122430-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:24:29",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122430.jpg",
+    "sha256": "5B2CDDACF1F79A2CEF2998AC0345F5D1936292FF11683782C4E38B6E7F030E99"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.11,
+    "bottom": "touches"
+   },
+   "precision": 0.03,
+   "note": "twigs to about 0.11 below the top; the stems and leaves run to the bottom edge, whether cut there cannot be seen. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r7-122553-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:52",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122553.jpg",
+    "sha256": "EE49514ED80092EED02D756E46412602A8F734ED7B1589AB2CD822AB8A5ED636"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.11,
+    "bottom": "touches"
+   },
+   "precision": 0.03,
+   "note": "as 122430. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r8-124621-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:46:20",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124621.jpg",
+    "sha256": "DB7A704ED5D8EEA9909037362A82FE4BE075ACA633EAFCDC9FE6669E3E697F40"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.105,
+    "bottom": "touches"
+   },
+   "precision": 0.03,
+   "note": "the topmost twig at 0.105 (cols 0.9 to 1.0 of the frame); stems to the bottom edge. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r7-122447-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:24:47",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122447.jpg",
+    "sha256": "35E209E82A36598CF70EFBB7BCDC1D513C455E3FA09D9F0B69D68D0BEF5C771A"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 6.0,
+   "observed": {
+    "top": 0.38,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the step was labelled for the tree, but its last test line drew the bush at x6; small, leaf tips at about 0.38, base behind the player copy. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r5-112733-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:27:33",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112733.jpg",
+    "sha256": "4AA26C0DBA790A3E266C7E55300FF833E590C831119A28F07FF4D1FE9159EB00"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.0,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.05,
+   "note": "the second pass at x1: leaves at every edge (frame not marked)"
+  },
+  {
+   "id": "r5-112748-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:27:47",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112748.jpg",
+    "sha256": "21921E28A9F5A531E9D056122BB9F12D0797DB014B2E516742F4FDBA136261CF"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.5,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.05,
+   "note": "the second pass at x0.5: leaves at every edge (frame not marked)"
+  },
+  {
+   "id": "r5-112751-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:27:50",
+   "artifact": {
+    "report": "20261104-1134",
+    "file": "WoWScrnShot_110426_112751.jpg",
+    "sha256": "118402C32E452FB11C191A5FD3C386A523BBA4227C2FCF65E381124EAAF8E4E6"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.11,
+    "bottom": "touches"
+   },
+   "precision": 0.05,
+   "note": "the second pass at x2: twigs to about 0.11, stems to the bottom edge (frame not marked)"
+  },
+  {
+   "id": "r6-115953-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 11:59:53",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_115953.jpg",
+    "sha256": "14108EEB5241E8AF9FE48425CBE58CE48B58C06296CD6B9464503D3F26F4A23C"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.0,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped"
+   },
+   "precision": 0.05,
+   "note": "x1: leaves at every edge (frame not marked)"
+  },
+  {
+   "id": "r7-122502-bush-2",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:02",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122502.jpg",
+    "sha256": "7525172C8850038194E1F83D5AE5E3D785CD2C1326BC4A9CDBB72B235972D35F"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.0,
+   "observed": {
+    "top": 0.11,
+    "bottom": "touches"
+   },
+   "precision": 0.03,
+   "note": "the second of three x2 presses: as 122430"
+  },
+  {
+   "id": "r6-120001-tree-1",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:00:00",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_120001.jpg",
+    "sha256": "EEB0DEB62BF2801022592531723B273C39347DAD0C7A8926E6F091AF4089AB44"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 11.2,
+   "observed": {
+    "fill": 0.33
+   },
+   "precision": 0.1,
+   "note": "a small whole tree, about a third of its frame (RESUME, sixth report)"
+  },
+  {
+   "id": "r7-122455-tree-1",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:24:54",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122455.jpg",
+    "sha256": "DA03769F40E01774702353DA7D18B21C5E55B12EA11464AC8C64726990472860"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.98,
+   "observed": {
+    "fill": 0.7
+   },
+   "precision": 0.1,
+   "note": "fills about 0.7 of its frame (RESUME, seventh report)"
+  },
+  {
+   "id": "r7-122514-tree-1",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:25:14",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122514.jpg",
+    "sha256": "651E4FF965B2A3CE1CC11BA672B1E71FC6AF265F42959DFE7EE746014DD44406"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 6.0,
+   "observed": {
+    "fill": 0.55
+   },
+   "precision": 0.1,
+   "note": "about 0.55 (RESUME, seventh report)"
+  },
+  {
+   "id": "r8-124636-tree-1",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:46:35",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124636.jpg",
+    "sha256": "2209386EE1D772FF82B283C1A98FE9D6BAE9AAA2648CCBC04489DA5777CC942A"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.8,
+   "observed": {
+    "fill": 1.0
+   },
+   "precision": 0.1,
+   "note": "fills the red frame top to bottom, canopy at the top edge and trunk base at the bottom (RESUME, eighth report)"
+  },
+  {
+   "id": "r6-120001-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:00:00",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_120001.jpg",
+    "sha256": "EEB0DEB62BF2801022592531723B273C39347DAD0C7A8926E6F091AF4089AB44"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 11.2,
+   "observed": {
+    "top": 0.32,
+    "bottom": "hidden"
+   },
+   "precision": 0.05,
+   "note": "the crown at about 0.32 of the known rectangle (frame not marked); trunk base behind the player copy. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r7-122455-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:24:54",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122455.jpg",
+    "sha256": "DA03769F40E01774702353DA7D18B21C5E55B12EA11464AC8C64726990472860"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.98,
+   "observed": {
+    "top": 0.02,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the dark crown reaches about 0.02 below the top (the lit leaves begin near 0.11); the trunk shows to about 0.65, then the player copy covers it. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r7-122514-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:14",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122514.jpg",
+    "sha256": "651E4FF965B2A3CE1CC11BA672B1E71FC6AF265F42959DFE7EE746014DD44406"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 6.0,
+   "observed": {
+    "top": 0.175,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the dark crown at about 0.175 (the lit leaves near 0.23); base behind the player copy. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r8-124636-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:46:35",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124636.jpg",
+    "sha256": "2209386EE1D772FF82B283C1A98FE9D6BAE9AAA2648CCBC04489DA5777CC942A"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.8,
+   "observed": {
+    "top": "clipped",
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "foliage at the frame top edge (cut there); the trunk base behind the player copy"
+  },
+  {
+   "id": "r9-131714-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 13:17:14",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "WoWScrnShot_110426_131714.jpg",
+    "sha256": "A4DCF966B8D7EC4F7E1847BE357BA89BFB16E1FB4F80F459F42CD99A5F34D318"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.5,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.8,
+   "observed": {
+    "top": "clipped",
+    "bottom": "hidden",
+    "width": "overflow"
+   },
+   "precision": 0.03,
+   "note": "v1.8.7 wide frame: the canopy meets the top edge flat across most of the frame width (cut there, as in 124636) and runs past the left edge; the trunk base behind the player copy. the review re-read this shot brightened; the director confirmed it on 1% zooms"
+  },
+  {
+   "id": "r6-120004-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:00:03",
+   "artifact": {
+    "report": "20261104-1200",
+    "file": "WoWScrnShot_110426_120004.jpg",
+    "sha256": "9FD9933005E1DC5C5898CD0C1D6ECEEB13FA939816D0D576028910E226312086"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 16.0,
+   "observed": {
+    "top": 0.4,
+    "bottom": "hidden"
+   },
+   "precision": 0.05,
+   "note": "x16: a small crown at about 0.40 of the known rectangle (frame not marked); trunk base behind the player copy"
+  },
+  {
+   "id": "r7-122505-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:05",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122505.jpg",
+    "sha256": "34E3B8C9B3868826D121A8F303A7B9408160C835802B08498B73102767703E51"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.98,
+   "observed": {
+    "top": 0.02,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the second x3.98 press: as 122455"
+  },
+  {
+   "id": "r7-122555-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:55",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122555.jpg",
+    "sha256": "34F367A188D426FC0ED9CDA9A3A0821FA5553812D4539112865306EF8C398750"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.98,
+   "observed": {
+    "top": 0.02,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the third x3.98 press: as 122455"
+  },
+  {
+   "id": "r7-122559-tree-2",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:58",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122559.jpg",
+    "sha256": "158D9FAFF5FBAC5C15F56077ACD0DC74DE5488F0CF8200866357A71BE7F3318C"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 6.0,
+   "observed": {
+    "top": 0.175,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the second x6 press: as 122514"
+  },
+  {
+   "id": "r7-122517-barrel-1",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:25:16",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122517.jpg",
+    "sha256": "60D7346CAE6092D351BC223D7261823A54FF740FC29C859E759E8761DF948041"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.49,
+   "observed": {
+    "fill": 0.4
+   },
+   "precision": 0.1,
+   "note": "fills about 0.4 (RESUME, seventh report)"
+  },
+  {
+   "id": "r7-122519-barrel-1",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:25:19",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122519.jpg",
+    "sha256": "1C0B9C6C1065C4EAB31C779F753B593ECE7D07BC7F9A5347C194B2BE8DB31445"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.0,
+   "observed": {
+    "fill": 0.2
+   },
+   "precision": 0.1,
+   "note": "about 0.2 (RESUME, seventh report)"
+  },
+  {
+   "id": "r8-124647-barrel-1",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:46:46",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124647.jpg",
+    "sha256": "5D9C83FA7AB92C6EC59E51EBAA8B17F1AA941FA2AF06BCF5CCD4D53D7AAB69A8"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.6,
+   "observed": {
+    "fill": 1.0
+   },
+   "precision": 0.1,
+   "note": "fills it too (RESUME, eighth report)"
+  },
+  {
+   "id": "r7-122517-barrel-2",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:16",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122517.jpg",
+    "sha256": "60D7346CAE6092D351BC223D7261823A54FF740FC29C859E759E8761DF948041"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.49,
+   "observed": {
+    "top": 0.345,
+    "bottom": 0.335,
+    "width": 0.37
+   },
+   "precision": 0.03,
+   "note": "the whole barrel, centred on the mid-line, 0.37 of the frame wide"
+  },
+  {
+   "id": "r7-122519-barrel-2",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:25:19",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122519.jpg",
+    "sha256": "1C0B9C6C1065C4EAB31C779F753B593ECE7D07BC7F9A5347C194B2BE8DB31445"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.0,
+   "observed": {
+    "top": 0.42,
+    "bottom": 0.415,
+    "width": 0.18
+   },
+   "precision": 0.03,
+   "note": "the whole barrel, small, centred"
+  },
+  {
+   "id": "r8-124647-barrel-2",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:46:46",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124647.jpg",
+    "sha256": "5D9C83FA7AB92C6EC59E51EBAA8B17F1AA941FA2AF06BCF5CCD4D53D7AAB69A8"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.6,
+   "observed": {
+    "top": 0.105,
+    "bottom": 0.065,
+    "width": 0.93
+   },
+   "precision": 0.03,
+   "note": "the lid's far rim at 0.105, the staves end at about 0.935; the player copy covers the base's middle but both ends show"
+  },
+  {
+   "id": "r7-122603-barrel-2",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:26:03",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122603.jpg",
+    "sha256": "A4813D749D17A310C55B962DFBBA83B73EBC5ABF22C17D2A82FAD451238BE943"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.49,
+   "observed": {
+    "top": 0.335,
+    "bottom": 0.34,
+    "width": 0.36
+   },
+   "precision": 0.03,
+   "note": "the second x1.49 press: the whole barrel, centred"
+  },
+  {
+   "id": "r7-122608-barrel-2",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:26:08",
+   "artifact": {
+    "report": "20261104-1226",
+    "file": "WoWScrnShot_110426_122608.jpg",
+    "sha256": "C7D8555C9F7B284BF92E56D5BCF7752EBD4999150CC58735C77FC12ABB744A7D"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 3.0,
+   "observed": {
+    "top": 0.415,
+    "bottom": 0.415,
+    "width": 0.18
+   },
+   "precision": 0.03,
+   "note": "the second x3 press: the whole barrel, small, centred"
+  },
+  {
+   "id": "r8-124704-jar-1",
+   "rung": "fit:jar01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:47:04",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124704.jpg",
+    "sha256": "CD29D20472093631FCD9D5AD40ED3AF55DC0D161CBCB482A4D1BCC4975F06B67"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.15,
+   "observed": {
+    "fill": 0.17
+   },
+   "precision": 0.1,
+   "note": "filled about 0.17 of its frame (RESUME, eighth report)"
+  },
+  {
+   "id": "r8-124704-jar-2",
+   "rung": "fit:jar01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:47:04",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124704.jpg",
+    "sha256": "CD29D20472093631FCD9D5AD40ED3AF55DC0D161CBCB482A4D1BCC4975F06B67"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.15,
+   "observed": {
+    "top": 0.44,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the neck's top at 0.44; the body behind the world overlay's player copy, drawn over the frame"
+  },
+  {
+   "id": "r9-131702-jar-2",
+   "rung": "fit:jar01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 13:17:01",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "WoWScrnShot_110426_131702.jpg",
+    "sha256": "EFC0CE9E8AA4243A7CD93818BE7272C8023245A306A2736FD564BA990D30DEA2"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.37,
+   "observed": {
+    "top": 0.095,
+    "bottom": "hidden"
+   },
+   "precision": 0.03,
+   "note": "the lid's tip at 0.095; the rounded base behind the player copy (the visible curve reaches about 0.89 at the sides)"
+  },
+  {
+   "id": "r8-124716-crate-1",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "first reading, when the report landed",
+   "at": "2026-11-04 12:47:15",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124716.jpg",
+    "sha256": "A71A6A5149D92799C232BEEF6CD68EAB0BAE77F3448D17162E29FE20070D9A72"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.39,
+   "observed": {
+    "fill": 0.3
+   },
+   "precision": 0.1,
+   "note": "about 0.3 (RESUME, eighth report)"
+  },
+  {
+   "id": "r8-124716-crate-2",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 12:47:15",
+   "artifact": {
+    "report": "20261104-1247",
+    "file": "WoWScrnShot_110426_124716.jpg",
+    "sha256": "A71A6A5149D92799C232BEEF6CD68EAB0BAE77F3448D17162E29FE20070D9A72"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 1.39,
+   "observed": {
+    "top": 0.386,
+    "bottom": 0.369,
+    "width": 0.61
+   },
+   "precision": 0.03,
+   "note": "the whole crate, 0.61 of the frame wide"
+  },
+  {
+   "id": "r9-131707-crate-2",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 13:17:06",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "WoWScrnShot_110426_131707.jpg",
+    "sha256": "7F70947C53F9D085FC5CFDEAB0611AAD6BD1914AE36F73E7FBFBB94CE25089C1"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.42,
+   "observed": {
+    "top": 0.145,
+    "bottom": 0.06,
+    "width": "overflow"
+   },
+   "precision": 0.03,
+   "note": "top edge at 0.145, bottom edge at 0.94, seen on both sides of the player copy; the planks run past both side edges"
+  },
+  {
+   "id": "r9-131711-canopy04-2",
+   "rung": "fit:elwynntreecanopy04",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 13:17:10",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "WoWScrnShot_110426_131711.jpg",
+    "sha256": "21000B7A9A1D81245B701E76BF918D1770095D985E937EAAB9CE377D7DD48392"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.5,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.8,
+   "observed": {
+    "top": "clipped",
+    "bottom": "hidden",
+    "width": "overflow"
+   },
+   "precision": 0.03,
+   "note": "the canopy runs past the top and left edges; the trunk base behind the player copy; x2.80 was the interpolation's end knot"
+  },
+  {
+   "id": "r9-131816-canopy04-2",
+   "rung": "fit:elwynntreecanopy04",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 13:18:15",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "WoWScrnShot_110426_131816.jpg",
+    "sha256": "7B58BF2B77B3BC2DF00701B5DCE70A2943342572B1D8DC02C96FB2B528C228AA"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.5,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.8,
+   "observed": {
+    "top": "clipped",
+    "bottom": "hidden",
+    "width": "overflow"
+   },
+   "precision": 0.03,
+   "note": "the step pressed again: as 131711"
+  },
+  {
+   "id": "r9-131819-canopy04-2",
+   "rung": "fit:elwynntreecanopy04",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "second reading, grid crop, round 6",
+   "at": "2026-11-04 13:18:19",
+   "artifact": {
+    "report": "20261104-1321",
+    "file": "WoWScrnShot_110426_131819.jpg",
+    "sha256": "3FD45516505E79CC5B3AA7E24926FD1B1259852140249A01EADCFE748E7B9642"
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.5,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.8,
+   "observed": {
+    "top": "clipped",
+    "bottom": "hidden",
+    "width": "overflow"
+   },
+   "precision": 0.03,
+   "note": "pressed a third time: as 131711"
+  },
+  {
+   "id": "r10-052846-bush-twin",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:28:45",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052846.jpg",
+    "sha256": "C1889E17B259D59608BE8611034B0C1CE4070335549BA24D72DAABC9B361FB35",
+    "twin": {
+     "file": "WoWScrnShot_110526_052847.jpg",
+     "sha256": "63CFDEFF7987F72B6D29676E1CF1EF9A3B825E8C68DCB72BE766D482DFE9E311"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.44,
+   "observed": {
+    "top": 0.166,
+    "bottom": 0.014,
+    "width": "overflow"
+   },
+   "precision": 0.01,
+   "note": "frame_fill twin: main top 0.234, low 0.166; by eye on a brightened crop the leaf tips reach row 382 (0.166); stems end near row 720 (low threshold reaches the edge, the real player's legs sit there); leaves reach both sides (tools/frame_fill.py twin on the pair; step \"3 Bush at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
+  },
+  {
+   "id": "r10-052852-tree-twin",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:28:52",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052852.jpg",
+    "sha256": "7D2D337D7817C4844B41B23051A0B197AE6F785D064A04D85CE7EFC360EF8878",
+    "twin": {
+     "file": "WoWScrnShot_110526_052853.jpg",
+     "sha256": "C9448F37842664E3893DEA77A14C379F86ACDA0AFF17308464883F9E042A3F63"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.5,
+    "build": "2.5.6.70577"
+   },
+   "value": 5.6,
+   "observed": {
+    "top": "touches",
+    "bottom": "clipped",
+    "width": 0.467
+   },
+   "precision": 0.01,
+   "note": "main top 0.101 missed the dark crown; by eye the crown tip reaches row 316 (3 px); the trunk runs flat into the bottom edge across its width (tools/frame_fill.py twin on the pair; step \"4 Tree at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
+  },
+  {
+   "id": "r10-052902-barrel-twin",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:01",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052902.jpg",
+    "sha256": "E7EFC4DEC4D6C7E073E60D40F1BEF5C07F45E97227A125A89F3DB31B1C5B0FB5",
+    "twin": {
+     "file": "WoWScrnShot_110526_052903.jpg",
+     "sha256": "EDCDCDF196E156438896BADDCFF55A5995EA9993D4B907BA05EF7C8585CB4362"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.53,
+   "observed": {
+    "top": 0.055,
+    "bottom": 0.014,
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "no low-threshold flag; top rim at row 336 by eye; its bulge is cut at both sides (aspect 0.8 < its own ~0.82) (tools/frame_fill.py twin on the pair; step \"5 Barrel at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
+  },
+  {
+   "id": "r10-052930-barrel-twin",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:30",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052930.jpg",
+    "sha256": "D6A0157D1BEA602AE2026D9E56F3AF97F5D5A3A55F2145954355AFCDF11B9D59",
+    "twin": {
+     "file": "WoWScrnShot_110526_052931.jpg",
+     "sha256": "DC02005EA1444F5CF6EAAFCBED5BF72A501208075FF8B4580026971E6DE2CFAC"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.53,
+   "observed": {
+    "top": 0.055,
+    "bottom": 0.014,
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "the step's own line says westfallbarrel01.m2 ... picked by \"canopy04\": no canopy04 is in the pool at this pose and TestSlot fell back to the first loaded slot; a repeat of the barrel (tools/frame_fill.py twin on the pair; step \"9 Canopy04 at its fit + twin (the pick fell back to the barrel)\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
+  },
+  {
+   "id": "r10-052916-crate-twin",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:16",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052916.jpg",
+    "sha256": "C1B4EE9B240FC888AF6DC218EBA471439E8100BBC988C9C5EA828106BFF984C7",
+    "twin": {
+     "file": "WoWScrnShot_110526_052917.jpg",
+     "sha256": "963558FC14EF9D2882BDC64A4A0B92CA5C66FDA375B03D410DAD4751CCBD5BB7"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.38,
+   "observed": {
+    "top": 0.116,
+    "bottom": "touches",
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "the crate's top edge is crisp at row 361; the low-threshold 0.075 was a kobold walking through the frame (tools/frame_fill.py twin on the pair; step \"7 Crate at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
+  },
+  {
+   "id": "r10-052921-crate-twin",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:20",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052921.jpg",
+    "sha256": "5C90878827D34957518EA3B297CB9D3DE0F095BF64BE35A05B1A5069BCC3F12A",
+    "twin": {
+     "file": "WoWScrnShot_110526_052922.jpg",
+     "sha256": "9E6FAD876014EDF3379C86BC81E42D00F4BCD970C972777390AB0787BCF6549A"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.85,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.38,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped",
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "planks fill the whole frame; the wide frame magnifies the model about 1.66x (row-profile match against the 0.8 shot, r 0.93, about the mid-line); frame_fill find took only the right edge (bright wood washed out the left edge's red) (tools/frame_fill.py twin on the pair; step \"8 Crate, wide frame + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
+  },
+  {
+   "id": "r10-052834-proj-C",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "westfallbarrel01 at (-8765.8, -112.51, 84.02)",
+   "at": "2026-11-05 05:28:32",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 1.784,
+    "placement": "westfallbarrel01 at (-8765.8, -112.51, 84.02) scale 1.0, 16.7 yd down the view",
+    "foot": [
+     1293.5,
+     268.0
+    ],
+    "predicted": [
+     1243.9,
+     346.3
+    ],
+    "height": 51.9
+   },
+   "precision": 0.158,
+   "note": "blind object C (\"upright banded barrel, camp right\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
+  },
+  {
+   "id": "r10-052834-proj-K",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynnbush09 at (-8788.98, -183.04, 81.51)",
+   "at": "2026-11-05 05:28:32",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 3.311,
+    "placement": "elwynnbush09 at (-8788.98, -183.04, 81.51) scale 1.12, 85.3 yd down the view",
+    "foot": [
+     1028.8,
+     529.5
+    ],
+    "predicted": [
+     1011.8,
+     615.6
+    ],
+    "height": 26.5
+   },
+   "precision": 0.309,
+   "note": "blind object K (\"dark round bush at the base of trunk L\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
+  },
+  {
+   "id": "r10-052834-proj-L",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynntreecanopy02 at (-8796.11, -191.17, 82.01)",
+   "at": "2026-11-05 05:28:32",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 0.597,
+    "placement": "elwynntreecanopy02 at (-8796.11, -191.17, 82.01) scale 1.104, 93.3 yd down the view",
+    "foot": [
+     1065.6,
+     533.6
+    ],
+    "predicted": [
+     1044.1,
+     628.3
+    ],
+    "height": 162.6
+   },
+   "precision": 0.05,
+   "note": "blind object L (\"big trunk (1240-1360)\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
+  },
+  {
+   "id": "r10-052834-proj-G",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynntreemid01 at (-8758.38, -195.06, 85.52)",
+   "at": "2026-11-05 05:28:32",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 0.694,
+    "placement": "elwynntreemid01 at (-8758.38, -195.06, 85.52) scale 1.0, 93.0 yd down the view",
+    "foot": [
+     709.9,
+     571.3
+    ],
+    "predicted": [
+     726.5,
+     659.4
+    ],
+    "height": 129.1
+   },
+   "precision": 0.063,
+   "note": "blind object G (\"small yellow-green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
+  },
+  {
+   "id": "r10-052834-proj-F",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynntreemid01 at (-8752.57, -212.05, 87.01)",
+   "at": "2026-11-05 05:28:32",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 0.792,
+    "placement": "elwynntreemid01 at (-8752.57, -212.05, 87.01) scale 1.034, 108.0 yd down the view",
+    "foot": [
+     675.5,
+     586.9
+    ],
+    "predicted": [
+     678.9,
+     678.2
+    ],
+    "height": 115.2
+   },
+   "precision": 0.071,
+   "note": "blind object F (\"small green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
+  }
+ ],
+ "manifests": {
+  "20261104-0935": {
+   "FidelityEMatrix.lua": "BC6B45781885AF3B8ADA94ED129B959BFA3200691D87367A3848A82A54803736"
+  },
+  "20261104-0959": {
+   "FidelityEMatrix.lua": "28AC951920E607E7FB11B39D313EA6E0B24D35C1B57A460FB0FED1B8FC5FBC3B"
+  },
+  "20261104-1024": {
+   "FidelityEMatrix.lua": "9B64F8BF4D5A9B84E6066C7C1185249314EE61B667948D4B36AB28858751E265",
+   "WoWScrnShot_110426_102332.jpg": "E816164F3B5897198F7F728F0F7AC93EAB37BBE361429CA154C2DCDD20E8319E",
+   "WoWScrnShot_110426_102342.jpg": "30051AF04D0FA9DD7D24799D0898953B53186A250C7C79185A02BEFFD5F3266B",
+   "WoWScrnShot_110426_102348.jpg": "235D4DE296FB1B78B9E49A59F8FF2E87A4E0AE2C69F6E9B765B4A17BBC914018",
+   "WoWScrnShot_110426_102357.jpg": "CD93E317E27FBB411B287887A8E4D0655C6BBEA07EC27F2A59746EAFB0ED67D0",
+   "WoWScrnShot_110426_102402.jpg": "183EFA7E5C67DD8674685C09B2FF98F738194010451BACD1E1277CB5435878D4",
+   "WoWScrnShot_110426_102411.jpg": "78CDF48424DFC559145E5C8C1422F4E329C4C4C785D8B1C7681AB09A02B52B63",
+   "WoWScrnShot_110426_102417.jpg": "E0A2AA3B2D820A66A766D6ED29C957209B3ED11BED947BF602CCD4EEF37AD530"
+  },
+  "20261104-1059": {
+   "FidelityEMatrix.lua": "535956585168D3E648672A2114737227A9ACCE12AB93078F3F6F65132C5F6A10"
+  },
+  "20261104-1134": {
+   "FidelityEMatrix.lua": "282FBF81D35474F7E8BC83D2A8D93E222C32B181A2B5AC0D71320FB8B4586DDF",
+   "WoWScrnShot_110426_112650.jpg": "4EEEE47FDA1A1B46EDD6AA70012248219245C65D65DE0FE79AAE477066271FB0",
+   "WoWScrnShot_110426_112655.jpg": "91241BFAAF435E28FE8878A3C91DD9EBE574D644323C9D775AA4C0CCB4791C71",
+   "WoWScrnShot_110426_112659.jpg": "464235D4F26CCD347EF27A067C60105F74933D609B732FD49839D87ABBA60AB4",
+   "WoWScrnShot_110426_112733.jpg": "4AA26C0DBA790A3E266C7E55300FF833E590C831119A28F07FF4D1FE9159EB00",
+   "WoWScrnShot_110426_112748.jpg": "21921E28A9F5A531E9D056122BB9F12D0797DB014B2E516742F4FDBA136261CF",
+   "WoWScrnShot_110426_112751.jpg": "118402C32E452FB11C191A5FD3C386A523BBA4227C2FCF65E381124EAAF8E4E6"
+  },
+  "20261104-1200": {
+   "FidelityEMatrix.lua": "8FC9A84C220163CAD18C0E6C978F863C310FAF00164D2D5A7E1C4E872576248D",
+   "WoWScrnShot_110426_115950.jpg": "CDCCC082C5D9168ABA5C00D7ABEC9F3EC9095E7A6FFA148063F66CFDE1B6E5ED",
+   "WoWScrnShot_110426_115956.jpg": "097E2197C1887EB6EDE6F0D73E41E70E68069E556A313D7B689125D34267499C",
+   "WoWScrnShot_110426_115953.jpg": "14108EEB5241E8AF9FE48425CBE58CE48B58C06296CD6B9464503D3F26F4A23C",
+   "WoWScrnShot_110426_120001.jpg": "EEB0DEB62BF2801022592531723B273C39347DAD0C7A8926E6F091AF4089AB44",
+   "WoWScrnShot_110426_120004.jpg": "9FD9933005E1DC5C5898CD0C1D6ECEEB13FA939816D0D576028910E226312086"
+  },
+  "20261104-1226": {
+   "FidelityEMatrix.lua": "86998DE390FE8D772956BDAF86AD0252DDC8B8AAB5406D2296A19A6AB04E1E74",
+   "WoWScrnShot_110426_122430.jpg": "5B2CDDACF1F79A2CEF2998AC0345F5D1936292FF11683782C4E38B6E7F030E99",
+   "WoWScrnShot_110426_122553.jpg": "EE49514ED80092EED02D756E46412602A8F734ED7B1589AB2CD822AB8A5ED636",
+   "WoWScrnShot_110426_122447.jpg": "35E209E82A36598CF70EFBB7BCDC1D513C455E3FA09D9F0B69D68D0BEF5C771A",
+   "WoWScrnShot_110426_122502.jpg": "7525172C8850038194E1F83D5AE5E3D785CD2C1326BC4A9CDBB72B235972D35F",
+   "WoWScrnShot_110426_122455.jpg": "DA03769F40E01774702353DA7D18B21C5E55B12EA11464AC8C64726990472860",
+   "WoWScrnShot_110426_122514.jpg": "651E4FF965B2A3CE1CC11BA672B1E71FC6AF265F42959DFE7EE746014DD44406",
+   "WoWScrnShot_110426_122505.jpg": "34E3B8C9B3868826D121A8F303A7B9408160C835802B08498B73102767703E51",
+   "WoWScrnShot_110426_122555.jpg": "34F367A188D426FC0ED9CDA9A3A0821FA5553812D4539112865306EF8C398750",
+   "WoWScrnShot_110426_122559.jpg": "158D9FAFF5FBAC5C15F56077ACD0DC74DE5488F0CF8200866357A71BE7F3318C",
+   "WoWScrnShot_110426_122517.jpg": "60D7346CAE6092D351BC223D7261823A54FF740FC29C859E759E8761DF948041",
+   "WoWScrnShot_110426_122519.jpg": "1C0B9C6C1065C4EAB31C779F753B593ECE7D07BC7F9A5347C194B2BE8DB31445",
+   "WoWScrnShot_110426_122603.jpg": "A4813D749D17A310C55B962DFBBA83B73EBC5ABF22C17D2A82FAD451238BE943",
+   "WoWScrnShot_110426_122608.jpg": "C7D8555C9F7B284BF92E56D5BCF7752EBD4999150CC58735C77FC12ABB744A7D"
+  },
+  "20261104-1247": {
+   "FidelityEMatrix.lua": "9ADB10AA8F0DA26CAA8A39D0EE95C8E01B839943007A0FFE12BC96E2515702AB",
+   "WoWScrnShot_110426_124621.jpg": "DB7A704ED5D8EEA9909037362A82FE4BE075ACA633EAFCDC9FE6669E3E697F40",
+   "WoWScrnShot_110426_124636.jpg": "2209386EE1D772FF82B283C1A98FE9D6BAE9AAA2648CCBC04489DA5777CC942A",
+   "WoWScrnShot_110426_124647.jpg": "5D9C83FA7AB92C6EC59E51EBAA8B17F1AA941FA2AF06BCF5CCD4D53D7AAB69A8",
+   "WoWScrnShot_110426_124704.jpg": "CD29D20472093631FCD9D5AD40ED3AF55DC0D161CBCB482A4D1BCC4975F06B67",
+   "WoWScrnShot_110426_124716.jpg": "A71A6A5149D92799C232BEEF6CD68EAB0BAE77F3448D17162E29FE20070D9A72"
+  },
+  "20261104-1321": {
+   "FidelityEMatrix.lua": "41B3DC8935612EE1782316EF714C73F69D054ED0EDE92A4F3EDC7A641194783A",
+   "WoWScrnShot_110426_131714.jpg": "A4DCF966B8D7EC4F7E1847BE357BA89BFB16E1FB4F80F459F42CD99A5F34D318",
+   "WoWScrnShot_110426_131702.jpg": "EFC0CE9E8AA4243A7CD93818BE7272C8023245A306A2736FD564BA990D30DEA2",
+   "WoWScrnShot_110426_131707.jpg": "7F70947C53F9D085FC5CFDEAB0611AAD6BD1914AE36F73E7FBFBB94CE25089C1",
+   "WoWScrnShot_110426_131711.jpg": "21000B7A9A1D81245B701E76BF918D1770095D985E937EAAB9CE377D7DD48392",
+   "WoWScrnShot_110426_131816.jpg": "7B58BF2B77B3BC2DF00701B5DCE70A2943342572B1D8DC02C96FB2B528C228AA",
+   "WoWScrnShot_110426_131819.jpg": "3FD45516505E79CC5B3AA7E24926FD1B1259852140249A01EADCFE748E7B9642"
+  },
+  "20261105-0530": {
+   "FidelityEMatrix.lua": "9D12183CF12058EDB1FA19F01E5A6CF88DA839C828A75A6EA71EB64FF89D4F5F",
+   "WoWScrnShot_110526_052833.jpg": "B042683FF943D8E94424A0B593156E95B89AA329FE56710985144B5F46B1FE73",
+   "WoWScrnShot_110526_052834.jpg": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10",
+   "WoWScrnShot_110526_052838.jpg": "E78849D23EFB8787F8165B589A1622BE645809AA3CAB1042CD1168A9C966F2CE",
+   "WoWScrnShot_110526_052846.jpg": "C1889E17B259D59608BE8611034B0C1CE4070335549BA24D72DAABC9B361FB35",
+   "WoWScrnShot_110526_052847.jpg": "63CFDEFF7987F72B6D29676E1CF1EF9A3B825E8C68DCB72BE766D482DFE9E311",
+   "WoWScrnShot_110526_052852.jpg": "7D2D337D7817C4844B41B23051A0B197AE6F785D064A04D85CE7EFC360EF8878",
+   "WoWScrnShot_110526_052853.jpg": "C9448F37842664E3893DEA77A14C379F86ACDA0AFF17308464883F9E042A3F63",
+   "WoWScrnShot_110526_052902.jpg": "E7EFC4DEC4D6C7E073E60D40F1BEF5C07F45E97227A125A89F3DB31B1C5B0FB5",
+   "WoWScrnShot_110526_052903.jpg": "EDCDCDF196E156438896BADDCFF55A5995EA9993D4B907BA05EF7C8585CB4362",
+   "WoWScrnShot_110526_052907.jpg": "3748FD744791EBA3704B340288E616BE352D0D209804004D256CCA781D37B374",
+   "WoWScrnShot_110526_052916.jpg": "C1B4EE9B240FC888AF6DC218EBA471439E8100BBC988C9C5EA828106BFF984C7",
+   "WoWScrnShot_110526_052917.jpg": "963558FC14EF9D2882BDC64A4A0B92CA5C66FDA375B03D410DAD4751CCBD5BB7",
+   "WoWScrnShot_110526_052921.jpg": "5C90878827D34957518EA3B297CB9D3DE0F095BF64BE35A05B1A5069BCC3F12A",
+   "WoWScrnShot_110526_052922.jpg": "9E6FAD876014EDF3379C86BC81E42D00F4BCD970C972777390AB0787BCF6549A",
+   "WoWScrnShot_110526_052930.jpg": "D6A0157D1BEA602AE2026D9E56F3AF97F5D5A3A55F2145954355AFCDF11B9D59",
+   "WoWScrnShot_110526_052931.jpg": "DC02005EA1444F5CF6EAAFCBED5BF72A501208075FF8B4580026971E6DE2CFAC",
+   "WoWScrnShot_110526_052937.jpg": "A0C0BF069CA1848406D70F789B2614CE4266A8A3BD41FCDD51EDF9E12B439FDB",
+   "WoWScrnShot_110526_052938.jpg": "FB33BC829FDE1F286ED0A9025ADF7906C082C5A80A184222CC6F31E733743131",
+   "WoWScrnShot_110526_052946.jpg": "AD499E1877DC945BD75E7534BE092FC9F65AE066B6E653BA37E1ADB69D9C9660",
+   "WoWScrnShot_110526_052947.jpg": "41448EE807B52FB878D18B806E8B568AB26022559350938735941A44A363B5BC",
+   "WoWScrnShot_110526_052952.jpg": "5471496C9C79AD44AC322340ECBCF9634C3862F0973121EAA7B9B6C2712B5659"
+  }
+ },
+ "proposals": {
+  "projection:abbey-door": {
+   "report": "20261105-0530",
+   "pitch": 0.2242,
+   "fovY": 0.9394,
+   "yawOffset": -0.0001,
+   "command": "/fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm",
+   "rule": "pitch and fovY fitted by weighted least squares (Levenberg-Marquardt) on the blind feet of every matched placement but the held-out one, at the map data's own placements, each weighted by its reading precision (at least 10 px) and its origin uncertainty; zoom frozen at its read (4.55); a yaw offset freed only if the horizontal residual fails (freed as a check, it fits -0.0001 rad)",
+   "fittedOn": [
+    "C westfallbarrel01",
+    "D westfallcrate",
+    "B gnolltent02",
+    "A gnolltent02",
+    "K elwynnbush09",
+    "L elwynntreecanopy02",
+    "F elwynntreemid01"
+   ],
+   "heldOut": {
+    "label": "G",
+    "placement": "elwynntreemid01 at (-8758.38, -195.06, 85.52)",
+    "residual": 0.12,
+    "precision": 0.064,
+    "result": "undecided",
+    "why": "chosen before any fitted residual was computed (the sharpest trunk base). Its blind foot was read 9.5 px left of the trunk centre a pixel check found after unsealing, and the sapling F's 7 px right of its own, so the reader's floor of 10 px is the precision: the residual lies within it of the tolerance, and the test decides nothing. Both fitted predictions fall right of their trunk centres by a similar 7 to 9 px, a shift a small yaw could take up; the re-read positions cannot count (owner ruling 1), so the next report's blind feet, read as the trunk's two pixel edges on a zoomed crop, decide."
+   },
+   "status": "not confirmed: the held-out test was undecided; printed as an ask, applied only by the owner's confirmed command (owner ruling 4)",
+   "script": "docs/council/2026-11-04-rungs/judge/fit10.py (blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, holds the readings frozen before unsealing)"
+  }
+ }
+}

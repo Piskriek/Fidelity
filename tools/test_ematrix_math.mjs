@@ -2,15 +2,17 @@
 // tools/test_ematrix_math.mjs
 // Verification suite for FidelityEMatrix:
 //   1. Ring sequence metrics (Ring 0 == 1 cell, Ring 1 == 8 cells, monotonic Chebyshev wavefront distance)
-//   2. 8-corner SetTexCoord rotation table invariants & deterministic PRNG
+//   2. 8-corner SetTexCoord rotation table invariants; the cell-rotation hash run from the REAL Lua (no lattice)
 //   3. Scoreboard flip visual math (scaleY squash, specular glint peak, temporary crevice alpha)
 //   4. TGA texture assets header, byte-size, and alpha punch verification (Closed, Window, Nebula Backplate)
 //   5. Zero-GC idle script detachment verification in EMatrix_Core.lua
+// Needs `npm install` once (fengari, Lua 5.3 in JavaScript) for test 2.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import fengari from 'fengari';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,21 +63,28 @@ function calculateRingDistance(x, y, ox, oy) {
   return (1.0 - w) * cheb + w * euclid;
 }
 
-function getCellRotation(col, row) {
-  const c = Math.floor(col);
-  const r = Math.floor(row);
-  let h = ((c * 73856093 + r * 19349663) % 4);
-  if (h < 0) h += 4;
-  return h;
+/**
+ * The REAL EMatrix_Math, run through fengari: returns call(name, ...numbers) -> first number result.
+ * A JavaScript copy of a formula cannot catch an edit to the Lua; the old hash copy hid that the
+ * hash was (c - r) mod 4 in disguise, and the old flip-progress copy hid a 16 ms flip.
+ */
+function luaMath() {
+  const { lua, lauxlib, lualib, to_luastring } = fengari;
+  const L = lauxlib.luaL_newstate();
+  lualib.luaL_openlibs(L);
+  const src = fs.readFileSync(mathLuaPath, 'utf8');
+  if (lauxlib.luaL_loadbuffer(L, to_luastring(src), null, to_luastring('@EMatrix_Math.lua')) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+  if (lua.lua_pcall(L, 0, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+  return (name, ...args) => {
+    lua.lua_getfield(L, -1, to_luastring(name));
+    for (const a of args) lua.lua_pushnumber(L, a);
+    if (lua.lua_pcall(L, args.length, 1, 0) !== lua.LUA_OK) throw new Error(lua.lua_tojsstring(L, -1));
+    const v = lua.lua_tonumber(L, -1);
+    lua.lua_pop(L, 1);
+    return v;
+  };
 }
-
-function calculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration) {
-  if (flipDuration <= 0) return 1.0;
-  const u = (waveAge * waveSpeed - ringDist) / flipDuration;
-  if (u < 0.0) return 0.0;
-  if (u > 1.0) return 1.0;
-  return u;
-}
+function luaCellRotation() { const call = luaMath(); return (c, r) => call('GetCellRotation', c, r); }
 
 function getFlipVisuals(u) {
   if (u <= 0.0) return { scaleY: 1.0, specAlpha: 0.0, isFlipped: false, creviceAlpha: 0.0 };
@@ -186,19 +195,36 @@ runTest('ROT_UV8 table contains 4 valid 8-corner orientation mappings in [0, 1]'
   }
 });
 
-runTest('Deterministic PRNG distribution across 135 cells', () => {
+runTest('Cell rotations from the real Lua: balanced, no diagonal lattice, no uniform 2x2 block', () => {
+  const rot = luaCellRotation();
   const counts = [0, 0, 0, 0];
+  const grid = [];
   for (let r = 1; r <= 9; r++) {
     for (let c = 1; c <= 15; c++) {
-      const rot = getCellRotation(c, r);
-      assert.ok(rot >= 0 && rot <= 3);
-      counts[rot]++;
+      const h = rot(c, r);
+      assert.ok(Number.isInteger(h) && h >= 0 && h <= 3, `rotation ${h} at (${c}, ${r})`);
+      counts[h]++;
+      grid.push([c, r, h]);
     }
   }
-
-  // All 4 orientations should be well-represented
-  for (let rot = 0; rot <= 3; rot++) {
-    assert.ok(counts[rot] >= 20, `Orientation ${rot} count must be >= 20 (got ${counts[rot]})`);
+  for (let h = 0; h <= 3; h++) {
+    assert.ok(counts[h] >= 20, `Orientation ${h} count must be >= 20 (got ${counts[h]})`);
+  }
+  // The game's Lua 5.1 computes in doubles; fengari's integers are 32-bit and would wrap the hash
+  // (council B3). This JavaScript double-model reference exists only to catch that divergence.
+  const doubleModel = (c, r) => { const a = (c * 73856093) % 1000003; return ((a * 19349663 + r * 83492791) % 1000003) % 4; };
+  for (const [c, r, h] of grid) assert.equal(h, doubleModel(c, r), `harness and game disagree at (${c}, ${r}): the Lua must compute in doubles`);
+  assert.deepEqual(counts, [33, 33, 33, 36], `the game's distribution is 33/33/33/36, got ${counts}`);
+  // The old hash was (c - r) mod 4 in disguise (its multipliers are 1 and 3 modulo 4), so the
+  // 135 cells formed one diagonal lattice: no (a*c + b*r + k) mod 4 may fit the whole grid.
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let k = 0; k < 4; k++) {
+    assert.ok(!grid.every(([c, r, h]) => ((a * c + b * r + k) % 4) === h), `rotations follow (${a}c + ${b}r + ${k}) mod 4: a lattice`);
+  }
+  // No 2x2 block of one orientation (four identical neighbours read as a repeat)
+  const at = new Map(grid.map(([c, r, h]) => [`${c},${r}`, h]));
+  for (let r = 1; r < 9; r++) for (let c = 1; c < 15; c++) {
+    const h = at.get(`${c},${r}`);
+    assert.ok(!(at.get(`${c + 1},${r}`) === h && at.get(`${c},${r + 1}`) === h && at.get(`${c + 1},${r + 1}`) === h), `uniform 2x2 block at (${c}, ${r})`);
   }
 });
 
@@ -206,6 +232,18 @@ runTest('Deterministic PRNG distribution across 135 cells', () => {
 // TEST 3: Scoreboard Vertical Flip Visual Transforms & Crevice Alpha
 // ============================================================================
 runTest('Flip visual math produces vertical squash, specular flash peak at u=0.5, and zero settled crevice', () => {
+  // Flip progress from the REAL Lua: the front reaches a cell at ringDist / waveSpeed seconds and the
+  // flip then lasts flipDuration SECONDS (the old form made it flipDuration / waveSpeed = 16 ms: one frame).
+  const call = luaMath();
+  const speed = 16, dur = 0.26;
+  assert.equal(call('CalculateFlipProgress', 0.0, speed, 0, dur), 0.0, 'centre cell: not started at t = 0');
+  assert.ok(Math.abs(call('CalculateFlipProgress', dur / 2, speed, 0, dur) - 0.5) < 1e-9, 'centre cell: half way at half the duration');
+  assert.equal(call('CalculateFlipProgress', dur, speed, 0, dur), 1.0, 'centre cell: done after flipDuration seconds');
+  assert.equal(call('CalculateFlipProgress', 8 / speed, speed, 8, dur), 0.0, 'ring 8: the front arrives at 8 / speed seconds');
+  assert.ok(Math.abs(call('CalculateFlipProgress', 8 / speed + dur / 2, speed, 8, dur) - 0.5) < 1e-9, 'ring 8: half way half a duration later');
+  assert.equal(call('CalculateFlipProgress', 1.0, speed, 0, 0), 1.0, 'a zero duration is an instant flip');
+  assert.equal(call('CalculateFlipProgress', 1.0, 0, 0, dur), 0.0, 'a zero speed never arrives');
+
   // At u = 0.0 (unflipped / Closed):
   const v0 = getFlipVisuals(0.0);
   assert.equal(v0.scaleY, 1.0);
@@ -317,17 +355,51 @@ runTest('EMatrix_Core.lua contains SetScript("OnUpdate", nil) for zero idle CPU'
   assert.ok(fs.existsSync(coreLuaPath), `Missing ${coreLuaPath}`);
   const coreSrc = fs.readFileSync(coreLuaPath, 'utf8');
 
-  // Verify explicit script detachment when idle
+  // Verify explicit script detachment when idle. Since v1.5.0 the OnUpdate lives on the
+  // always-shown driver frame (host = driverFrame or masterFrame), not on the box itself.
   assert.ok(
-    coreSrc.includes('masterFrame:SetScript("OnUpdate", nil)'),
-    'Core must explicitly detach OnUpdate via SetScript("OnUpdate", nil) when idle'
+    coreSrc.includes('host:SetScript("OnUpdate", nil)'),
+    'Core must explicitly detach OnUpdate via host:SetScript("OnUpdate", nil) when idle'
+  );
+  assert.ok(
+    /local host = driverFrame or masterFrame/.test(coreSrc),
+    'The idle check must detach from the driver frame (falling back to the box)'
   );
 
-  // Verify no per-frame table instantiations inside OnUpdateDriver
-  const driverMatch = coreSrc.match(/local function OnUpdateDriver[\s\S]*?end\n/);
+  // Verify no per-frame table instantiations inside OnUpdateDriver. The body runs to the function's
+  // own `end` at column 0 (an inline `end` inside it must not cut the match short: council O3).
+  const driverMatch = coreSrc.match(/local function OnUpdateDriver[\s\S]*?\nend\n/);
   assert.ok(driverMatch, 'OnUpdateDriver function must be defined');
   const driverBody = driverMatch[0];
   assert.ok(!driverBody.includes('C_Timer.After'), 'Zero-GC invariant: no C_Timer.After allowed in driver');
+});
+
+// ============================================================================
+// TEST 6: The click resolves to a cell through the frame's scale (council round 4, B3)
+// ============================================================================
+runTest('CellAt maps cursor pixels to a grid cell through the effective scale, nil off the grid', () => {
+  const call = luaMath();
+  // frame left 720, top 684 (UI units), 32 px cells, 15 x 9: cell (3, 2) spans x 784..816, y 652..620
+  assert.equal(call('CellAt', 800, 636, 720, 684, 1, 32, 15, 9), 3, 'col 3 at scale 1');
+  assert.equal(call('CellAt', 1000, 795, 720, 684, 1.25, 32, 15, 9), 3, 'the same cell when the cursor pixels are 1.25 x the UI units');
+  assert.equal(call('CellAt', 736, 668, 720, 684, 1, 32, 15, 9), 1, 'col 1 at the top-left cell');
+  assert.equal(call('CellAt', 100, 100, 720, 684, 1, 32, 15, 9), 0, 'off the grid: nil (read back as 0)');
+  assert.equal(call('CellAt', 800, 636, 720, 684, 0, 32, 15, 9), 3, 'a zero scale falls back to 1');
+  const coreSrc = fs.readFileSync(coreLuaPath, 'utf8');
+  assert.ok(coreSrc.includes('masterFrame:SetScript("OnMouseDown", HandleMatrixClick)'), 'the click is wired to OnMouseDown');
+  assert.ok(!coreSrc.includes('SetScript("OnMouseUp"'), 'and not to OnMouseUp as well (a held press ran two waves)');
+  assert.ok(!/TriggerScoreboardWave\(8, 5\)/.test(coreSrc), 'no invented wave origin for a click off the grid');
+});
+
+// ============================================================================
+// TEST 7: The flip clock never returns NaN (council round 5, O1)
+// ============================================================================
+runTest('CalculateFlipProgress returns 0, not NaN, for a non-finite age or ring', () => {
+  const call = luaMath();
+  assert.equal(call('CalculateFlipProgress', NaN, 16, 0, 0.26), 0, 'NaN age');
+  assert.equal(call('CalculateFlipProgress', 1, 16, NaN, 0.26), 0, 'NaN ring');
+  assert.equal(call('CalculateFlipProgress', Infinity, 16, Infinity, 0.26), 0, 'two infinities');
+  assert.equal(call('CalculateFlipProgress', 0.13, 16, 0, 0.26), 0.5, 'a finite age still flips');
 });
 
 // ============================================================================

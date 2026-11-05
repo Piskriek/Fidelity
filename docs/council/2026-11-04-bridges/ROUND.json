@@ -1,0 +1,45 @@
+{
+  "schema": "fidelity-council-round-v1",
+  "date": "2026-11-04",
+  "slug": "bridges",
+  "target": "Vector steering and bridge checks, given the council's definition of the entity (docs/council/2026-11-04-entity/STEER.md section 2: a field of cells, each honest only when a named, measured, fresh source drives it). Builders steer: how the per-cell binding is built, which channels can carry a source into a cell, and the order of everything on the table. Opposers check the bridges we have: the WoW inputs, the holon's flows, and the chain from this repo to the owner's screen.",
+  "created_at": "2026-11-04T04:50:49.424Z",
+  "voices": [
+    {
+      "id": "B1",
+      "side": "builder",
+      "lens": "Binding architect",
+      "report": "B1-binding-architect.md"
+    },
+    {
+      "id": "B2",
+      "side": "builder",
+      "lens": "Channel builder",
+      "report": "B2-channel-builder.md"
+    },
+    {
+      "id": "B3",
+      "side": "builder",
+      "lens": "Vector steering",
+      "report": "B3-vector-steering.md"
+    },
+    {
+      "id": "O1",
+      "side": "opposer",
+      "lens": "Bridge check, the WoW inputs: none of the addon's inputs is a named, measured, fresh source fit to open a cell",
+      "report": "O1-bridge-check-the-wow-inputs-none-of-the-.md"
+    },
+    {
+      "id": "O2",
+      "side": "opposer",
+      "lens": "Bridge check, the holon's flows: the six flows are four views of one SSH link plus two self-checks, so a cell bound to a flow shows a ritual, not a measurement",
+      "report": "O2-bridge-check-the-holon-s-flows-the-six-f.md"
+    },
+    {
+      "id": "O3",
+      "side": "opposer",
+      "lens": "Bridge check, the chain to the owner: the path from this repo to the owner's screen is broken at the laptop task, the branch and the missing pastes, so nothing landed here is verified",
+      "report": "O3-bridge-check-the-chain-to-the-owner-the-.md"
+    }
+  ]
+}

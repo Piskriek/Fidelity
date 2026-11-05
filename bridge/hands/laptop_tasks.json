@@ -1,31 +1,104 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-03T19:26:39Z",
-  "note": "Live copy on Node 2. Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
+  "updated_at": "2026-11-05T07:44:58.173Z",
+  "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
     {
-      "id": "H005",
-      "requested_at": "2026-11-03T19:26:39Z",
+      "id": "H010",
       "priority": 0,
-      "title": "Deploy the FidelityEMatrix branch tip (v1.6.1 or later) to the TBC Anniversary client and WoW Forever when present; owner runs /fide terrain probe",
+      "title": "Collect the owner's eleventh report on v1.8.9 (step 11 at a turned pose, every twin in its own second, the copy of the character walking and running) and, separately, the WoW Forever report from the dwarf starting zone: deploy v1.8.9, have the owner press the panel (Clear, then 1 to 12, then Save), copy the screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (the existing worktree, never main) and push",
       "steps": [
-        "git -C D:\\fidelity-repo fetch origin",
-        "If D:\\fidelity-repo is on flash/wow-ematrix-polish or claude/ematrix-depth with no new local commits: git -C D:\\fidelity-repo merge --ff-only origin/claude/ematrix-depth. If that is not a fast-forward, stop and report blocked with the output of git status; never reset, clean or checkout -f.",
-        "node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs (expect 0 fail)",
-        "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\FidelityEMatrix \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix\" /E (no /MIR, no /PURGE).",
-        "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared and any mismatch. Expected files: EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6).",
-        "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityEMatrix (or its parent AddOns folder) exists, do the same backup, copy and hash check there; report whether that client exists and its version from its .build.info if present.",
-        "Report the version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc (## Version) and the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
-        "Owner, after /reload (the scene is on by itself): stand at the Northshire Abbey door and paste the output of /fide terrain probe, /fide terrain status, /fide world status and /fide status. The probe prints position, tile, ground, camera, the first six placements with screen positions, and how many models loaded or failed. Set status blocked with blocked_on \"owner: paste the probe output\" until the owner reports; Claude relays the owner's answer into this file as a new requested_at when needed."
+        "First deploy v1.8.9 of FidelityEMatrix the H005 way (git -C D:\\fidelity-repo fetch origin, git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; 16 files; the toc must say 1.8.9).",
+        "Tell the owner, in these words: The tenth report gave the camera its first verdict: at the saved default every prop stood about 100 px below where the overlay put it. Its twin proposes pitch 12.8 and fovY 53.8 degrees, not yet confirmed (its held-out test was undecided). If you want this report to test that proposal, type /fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm before pressing 1; if not, type nothing and the twins re-test the default. Either way: /reload, stand where the tenth report stood (by the kobold camp north of the Abbey, facing the camp), /fide report, press Clear report, and let the chat text fade or drag the chat frame down. Press 1 and stand still for about three seconds (two screenshots, the second with the overlays hidden, now always in different seconds). Press 2 to 9 one at a time and stand still after each; at this spot step 9 is expected to say that no loaded placement holds canopy04 and to draw nothing (that is a correct answer, not a fault). Before 10, take a step and stop. Before 11, turn about 45 degrees so that props stand on both sides of the screen centre, clear of the chat and the panel, then stand still and press 11 (if you did not turn, the chat now says so; turn and press 11 again). Press 12, then Save (reload UI). Keep the camera options as they were; if one changed, add a screenshot of them.",
+        "Ask the owner for three lines: whether the second shot of each pair showed no drawn copies and no red frame; whether the copy of his character now walks and runs with him (v1.8.9 plays its unit's motion); and which camera he chose (the proposal confirmed, or the default). Wait for the owner to say they are done.",
+        "Find the report file: D:\\World of Warcraft\\_anniversary_\\WTF\\Account\\<the account folder>\\SavedVariables\\FidelityEMatrix.lua. It must contain FidelityEMatrix_Report with steps; read its at field. If it has no steps, stop and report blocked with blocked_on \"owner: press the report buttons and Save (reload UI)\".",
+        "Collect the screenshots: every file in D:\\World of Warcraft\\_anniversary_\\Screenshots\\ modified at or after that at time (if in doubt, the last two hours). List them with size and mtime. Skip any single file over 8 MB and name it in the report instead.",
+        "Prepare the reports worktree as H009 did: git -C D:\\fidelity-reports fetch origin and git -C D:\\fidelity-reports pull --ff-only origin owner/reports (create the worktree the H009 way if D:\\fidelity-reports is missing).",
+        "Copy into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm, the report's at time; a new folder>\\: the screenshots, the FidelityEMatrix.lua SavedVariables file, and a MANIFEST.txt listing every file with its size, mtime and Get-FileHash -Algorithm SHA256, plus the addon version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc and the client build from .build.info.",
+        "The WoW Forever report, separately: ask the owner where the WoW Forever client is installed and whether FidelityEMatrix was installed in it for the new character in the dwarf starting zone. If it was: copy that install's WTF\\Account\\<account>\\SavedVariables\\FidelityEMatrix.lua and the screenshots of that session into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm>-forever\\ with its own MANIFEST.txt (sizes, mtimes, SHA256, the addon version that install loaded, and that install's client build and product from its .build.info). If it was not installed there, do not install it without the owner's word: report what the owner tested in WoW Forever in one line instead.",
+        "git -C D:\\fidelity-reports add reports && git -C D:\\fidelity-reports commit -m \"report: owner screenshots and saved report <yyyymmdd-hhmm> (v1.8.9 run 11) and the WoW Forever report\" && git -C D:\\fidelity-reports push -u origin owner/reports",
+        "If that push is rejected as non-fast-forward: git -C D:\\fidelity-reports pull --ff-only origin owner/reports and then git -C D:\\fidelity-reports push -u origin owner/reports. The branch is always owner/reports and the push is always plain: no other branch, no forcing of any kind.",
+        "Report the folder names, the file lists with sizes, the commit hash and the push output. The director fetches origin/owner/reports and reads the lines there."
       ],
       "report": [
-        "The merge result (new HEAD) and both test summary lines",
-        "The backup folder name, the robocopy summary line, the hash comparison count and any mismatch, for each client",
-        "The toc version and commit",
-        "After the owner check: the full probe/status output verbatim"
+        "The deploy's hash count (expect 16) and version line",
+        "The report's at time and its number of steps; the camera the owner chose",
+        "The screenshot list with sizes and any skipped file (expect two per twin step: 1 and 3 to 11, each pair with two different file names)",
+        "The WoW Forever folder, or the owner's line on what was tested there",
+        "The commit hash on owner/reports and the push output",
+        "The owner's three lines"
       ],
-      "status": "requested"
+      "status": "requested",
+      "requested_at": "2026-11-05T06:02:04.871Z"
+    },
+    {
+      "id": "H009",
+      "priority": 0,
+      "title": "Collect the owner's tenth report on v1.8.8 (the camera's first paired reading: every scene step records the pose at its shutter and takes an overlay-off twin; every fit step draws its file at the fit in use and takes a twin of the test frame): deploy it, have the owner press the panel (Clear, then 1 to 12, then Save), copy the newest WoW screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (the existing worktree, never main) and push",
+      "steps": [
+        "First deploy v1.8.8 of FidelityEMatrix the H005 way (git -C D:\\fidelity-repo fetch origin, git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; 16 files; the toc must say 1.8.8). Then tell the owner: /reload, stand at the Abbey door where the earlier reports began, /fide report, press Clear report, then let the chat text fade or drag the chat frame down, so the kobold camp at the lower left is not under it. Press 1 and stand still for about a second and a half: it takes two screenshots, the second with the overlays hidden. Press 2 to 9 one at a time, waiting for each chat line, and stand still after each (3 to 9 each take a second shot with the test frame hidden). Before 10 and again before 11, take a step and stop, or hold the right mouse button a moment, so the camera settles behind the character; before 11 also turn so that props (the barrels, the bushes, a tree) stand on both sides of the screen centre, clear of the chat and the panel; then press and stand still. Press 12, then Save (reload UI). Keep the camera settings as they were in the ninth report; if one has changed, add a screenshot of the camera options. Ask the owner to say in one line whether the second shot of each pair showed no drawn copies and no red frame, and whether anything moved between the two shots. Wait for the owner to say they are done.",
+        "Find the report file: D:\\World of Warcraft\\_anniversary_\\WTF\\Account\\<the account folder>\\SavedVariables\\FidelityEMatrix.lua. It must contain FidelityEMatrix_Report with steps; read its at field (the report's start time). If it has no steps, stop and report blocked with blocked_on \"owner: press the report buttons and Save (reload UI)\".",
+        "Collect the screenshots: every file in D:\\World of Warcraft\\_anniversary_\\Screenshots\\ modified at or after that at time (if in doubt, the last two hours). List them with size and mtime. Skip any single file over 8 MB and name it in the report instead.",
+        "Prepare the reports worktree (never touch the deploy checkout's branch): if D:\\fidelity-reports does not exist, run git -C D:\\fidelity-repo fetch origin, then git -C D:\\fidelity-repo worktree add -B owner/reports D:\\fidelity-reports origin/owner/reports if that remote branch exists, else git -C D:\\fidelity-repo worktree add -b owner/reports D:\\fidelity-reports origin/francois/serene-euler-51wj3e. If it exists: git -C D:\\fidelity-reports fetch origin and git -C D:\\fidelity-reports pull --ff-only origin owner/reports (ignore the error if the remote branch does not exist yet).",
+        "Copy into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm, the report's at time; a new folder, the first run's 20261104-0935 stays>\\: the screenshots, the FidelityEMatrix.lua SavedVariables file, and a MANIFEST.txt listing every file with its size, mtime and Get-FileHash -Algorithm SHA256, plus the addon version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc and the client build from .build.info.",
+        "git -C D:\\fidelity-reports add reports && git -C D:\\fidelity-reports commit -m \"report: owner screenshots and saved report <yyyymmdd-hhmm>\" && git -C D:\\fidelity-reports push -u origin owner/reports",
+        "If that push is rejected as non-fast-forward: git -C D:\\fidelity-reports pull --ff-only origin owner/reports and then git -C D:\\fidelity-reports push -u origin owner/reports. The branch is always owner/reports and the push is always plain: no other branch, no forcing of any kind.",
+        "Report the folder name, the file list with sizes, the commit hash and the push output. The director fetches origin/owner/reports and reads the lines there."
+      ],
+      "report": [
+        "The deploy's hash count (expect 16) and version line",
+        "The report's at time and its number of steps",
+        "The screenshot list with sizes and any skipped file (expect two per twin step: 1 and 3 to 11)",
+        "The commit hash on owner/reports and the push output",
+        "The owner's one line"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-04T17:32:00.846Z"
+    },
+    {
+      "id": "H008",
+      "priority": 0,
+      "title": "Deploy the FidelityWoW addon (packages/wow-syntropic, the Syntropic Flow HUD) from branch francois/serene-euler-51wj3e: its HUD now labels seeds, and its kinematics no longer flags a false teleport at a zone crossing",
+      "steps": [
+        "git -C D:\\fidelity-repo fetch origin && git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e (the checkout is already on that branch after H005; if the merge is not a fast-forward, stop and report blocked with git status; never reset, clean, restore or checkout -f)",
+        "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\packages\\wow-syntropic \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW\" /E (no /MIR, no /PURGE).",
+        "Verify the copy: for every file under D:\\fidelity-repo\\packages\\wow-syntropic, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityWoW; report the count compared and any mismatch. Expected: Core.lua, Kinematics.lua, SomaticFlow.lua, UI.lua, FidelityWoW.toc and whatever else the folder holds (list them).",
+        "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityWoW exists, do the same there.",
+        "Report the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
+        "Owner, after /reload: the Fidelity Syntropic Flow panel must read \"Coherence: seed | Strain: not measured\", the FTLE line \"seed\" until you have moved and a number after, and the footer \"S=seed(0.20,0.50,0.95,0.20)\". Then walk across a zone line (Northshire into Elwynn) and type /fidelity audit: it must not say DEVIANT on its own. Paste the panel and the audit."
+      ],
+      "report": [
+        "The merge result and the commit",
+        "The backup folder name, the robocopy summary, the hash count and any mismatch",
+        "After the owner check: the panel text and the audit output verbatim"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-04T05:42:29.860Z"
+    },
+    {
+      "id": "H005",
+      "priority": 0,
+      "title": "Deploy FidelityEMatrix v1.7.5 from branch francois/serene-euler-51wj3e (the branch the owner already runs) to the TBC Anniversary client and WoW Forever when present; owner pastes the check list",
+      "steps": [
+        "git -C D:\\fidelity-repo fetch origin",
+        "git -C D:\\fidelity-repo status --short (report it; if the tree is dirty, stop and report blocked with that output; never reset, clean, restore or checkout -f)",
+        "git -C D:\\fidelity-repo checkout francois/serene-euler-51wj3e (a plain checkout of the branch; it creates the tracking branch the first time) then git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e. If the merge is not a fast-forward, stop and report blocked with the output of git status.",
+        "Confirm the version: Select-String '## Version' D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc must say 1.7.5 or later; otherwise report blocked with blocked_on \"director: the branch tip is not v1.7.5\" and stop.",
+        "npm --prefix D:\\fidelity-repo install (once; fengari) then node D:\\fidelity-repo\\tools\\test_ematrix_math.mjs (expect 12 passed, 0 failed) and node --test D:\\fidelity-repo\\tools\\ematrix-lua.test.mjs D:\\fidelity-repo\\tools\\ematrix-toc.test.mjs (expect 0 fail)",
+        "Back up the live addon first: rename D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix.bak-<yyyymmdd-hhmm> if it exists. Then copy: robocopy D:\\fidelity-repo\\FidelityEMatrix \"D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix\" /E (no /MIR, no /PURGE).",
+        "Verify the copy: for every file under D:\\fidelity-repo\\FidelityEMatrix, Get-FileHash -Algorithm SHA256 must equal the hash of the same relative path under D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix; report the count of files compared (expect 15) and any mismatch. Expected files: EMatrix_Core.lua, EMatrix_Math.lua, EMatrix_World.lua, EMatrix_Terrain.lua, FidelityEMatrix.toc, FidelityEMatrix_Vanilla.toc, FidelityEMatrix_TBC.toc, Data\\EMatrix_Data_Azeroth_tbc.lua, Data\\EMatrix_Data_Azeroth_vanilla.lua, Media\\*.tga (6).",
+        "If D:\\World of Warcraft\\_forever_\\Interface\\AddOns\\FidelityEMatrix (or its parent AddOns folder) exists, do the same backup, copy and hash check there; report whether that client exists and its version from its .build.info if present.",
+        "Report the version from the toc and the commit (git -C D:\\fidelity-repo rev-parse --short HEAD).",
+        "Owner, after /reload: paste the one login line (it says v1.7.5 and what came up, including cells with a source), /fide diag, /fide world status, /fide terrain probe (at the Northshire Abbey door), /fide terrain status, /fide status. Then /fide box show and click the box: say whether each cell visibly squashes and flashes as the wave crosses it (the flip now lasts 0.26 s; before it was one frame), whether the E wall still shows diagonal stripes of one orientation (it must not), and from which side the closed E tiles look lit (upper left is the known defect the atlas will fix). Set status blocked with blocked_on \"owner: paste the login line, the probes and the box observations\" until the owner reports."
+      ],
+      "report": [
+        "git status before, the checkout and merge result (new HEAD), the toc version, all test summary lines",
+        "The backup folder name, the robocopy summary line, the hash comparison count (expect 15) and any mismatch, for each client",
+        "After the owner check: the login line and the probe/status output verbatim, then the three box observations"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-04T04:58:14.485Z"
     },
     {
       "id": "H006",
@@ -51,6 +124,48 @@
         "the prior CVar values, the /fide eye probe line, and whether the scene follows the head"
       ],
       "status": "requested"
+    },
+    {
+      "id": "H011",
+      "priority": 1,
+      "title": "Try the Fidelity Twin on the laptop: Northshire outside the game (the map's ground and placements in a browser window, the game's camera at a recorded pose, a head-coupled window from the head tracker), run it beside WoW and report what the owner sees",
+      "steps": [
+        "git -C D:\\fidelity-repo fetch origin, then git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e. If D:\\fidelity-repo\\node_modules\\three is missing, run npm ci --no-audit --no-fund in D:\\fidelity-repo (it installs from the lockfile and changes no tracked file).",
+        "Start the twin: node D:\\fidelity-repo\\tools\\twin\\server.mjs (it prints twin: http://127.0.0.1:5203). Open that address in a browser on the laptop. Leave the server running while the owner looks.",
+        "Ask the owner to look at three views (the panel on the right switches them): (1) Camera: the game's camera at the pose, Backdrop: the twin shot; switch Pitch and field of view between the saved default and the tenth report's proposal and watch the camp's stand-ins move onto the real camp. (2) Camera: free orbit, Terrain: solid: drag to orbit Northshire. (3) Camera: head-coupled window: tick mouse as head and move the mouse over the view.",
+        "If the head tracker is set up (H006): run it so that it writes head.json without the virtual pad: python D:\\fidelity-repo\\tools\\headtrack\\headtrack.py --no-gamepad --show, untick mouse as head, and ask the owner to move his head in the head-coupled window.",
+        "Take two screenshots of the browser window (the game's camera with the proposal, and the head-coupled window) and ask the owner for one line each: whether the twin's Northshire looks like the place, and whether the head-coupled window moves the right way when he moves his head.",
+        "Stop the server (Ctrl+C). Nothing was written."
+      ],
+      "report": [
+        "The fetch and merge output, and whether npm ci ran",
+        "The server's first line",
+        "The two screenshots (paths), or why not",
+        "The owner's two lines"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-05T07:44:58.173Z"
+    },
+    {
+      "id": "H007",
+      "priority": 1,
+      "title": "Laptop daemon inventory for the director (read-only): which copy of the Apex runs, and whether the Arena sync daemon pushes to main",
+      "steps": [
+        "List every node.exe with its command line: Get-CimInstance Win32_Process -Filter \"Name='node.exe'\" | Select-Object ProcessId, CreationDate, CommandLine | Format-List",
+        "For each one, say which script it runs and from which checkout: a path under bridge\\loop (the legacy copy, started by triad.bat) or under packages\\triad-369\\src (the versioned copy). Do not stop, restart or start anything in this task.",
+        "Say whether arena_git_sync.mjs and arena_fractal_bridge.mjs are among them. If arena_git_sync.mjs runs: its full command line, its working directory, and the last 10 lines of its log if it has one (look for a log path in its command line or next to the script). If arena_fractal_bridge.mjs runs: its command line and the value of the ARENA_BRIDGE_HOST environment variable if set.",
+        "Owners of ports 5196, 8791, 5179 and 8787: Get-NetTCPConnection -State Listen | Where-Object { $_.LocalPort -in 5196, 8791, 5179, 8787 } | Select-Object LocalAddress, LocalPort, OwningProcess",
+        "git -C D:\\fidelity-repo log --oneline -5 origin/main after git -C D:\\fidelity-repo fetch origin (read-only; no pull, no merge, no checkout)",
+        "Report everything as plain text. No tokens or key contents; command lines that contain a token must have it replaced by [REDACTED] before they go into output."
+      ],
+      "report": [
+        "The node.exe table: pid, start time, script path, which copy (bridge\\loop or packages)",
+        "Whether arena_git_sync.mjs and arena_fractal_bridge.mjs run, with the details above",
+        "The listening ports and their owning pids",
+        "The last five commits of origin/main"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-04T04:22:29.670Z"
     },
     {
       "id": "H001",

@@ -30,8 +30,16 @@ function EMatrix_Math.GetCellRotation(col, row)
     end
     local c = math.floor(col)
     local r = math.floor(row)
-    -- Hash constants from spatial hashing / hash primes
-    local h = (c * 73856093 + r * 19349663) % 4
+    -- A mixed integer hash. The old (c * 73856093 + r * 19349663) % 4 reduced to (c - r) mod 4,
+    -- because the two multipliers are 1 and 3 modulo 4, so the four orientations formed one
+    -- diagonal lattice over the 15x9 grid: the first visible repeat (council B1, 04 Nov 2026).
+    -- This form fits no (a*c + b*r + k) mod 4 over the grid, is balanced 33/33/33/36 and never
+    -- gives a uniform 2x2 block. The literals are floats on purpose: the game's Lua 5.1 computes
+    -- in doubles (exact below 2^53, and every intermediate here is), while the fengari harness
+    -- (Lua 5.3) has 32-bit integers that would wrap a * 19349663 (council B3, 04 Nov 2026);
+    -- float operands keep both in doubles, so the harness computes the numbers the game draws.
+    local a = (c * 73856093.0) % 1000003
+    local h = ((a * 19349663.0 + r * 83492791.0) % 1000003) % 4
     if h < 0 then h = h + 4 end
     return h, ROT_UV8[h]
 end
@@ -82,9 +90,17 @@ end
 --- @return number u Normalized flip progress clamped in [0, 1]
 function EMatrix_Math.CalculateFlipProgress(waveAge, waveSpeed, ringDist, flipDuration)
     if not waveAge or not waveSpeed or not ringDist or not flipDuration then return 0.0 end
+    -- a NaN or infinite age or distance made u NaN, which slipped through both clamps below
+    -- (council round 2026-11-04-operator, O1; the kernel's invariant 3): no flip, never NaN
+    if waveAge ~= waveAge or waveSpeed ~= waveSpeed or ringDist ~= ringDist or flipDuration ~= flipDuration then return 0.0 end
+    if waveAge == math.huge or waveAge == -math.huge or ringDist == math.huge or ringDist == -math.huge then return 0.0 end
     if flipDuration <= 0.0 then return 1.0 end
+    if waveSpeed <= 0.0 then return 0.0 end
 
-    local u = (waveAge * waveSpeed - ringDist) / flipDuration
+    -- The front reaches this cell at ringDist / waveSpeed seconds; the flip then takes
+    -- flipDuration SECONDS. (The old form divided cells by seconds, so a flip lasted
+    -- flipDuration / waveSpeed = 16 ms, one frame: council B2, 04 Nov 2026.)
+    local u = (waveAge - ringDist / waveSpeed) / flipDuration
     if u < 0.0 then return 0.0 end
     if u > 1.0 then return 1.0 end
     return u
@@ -147,6 +163,19 @@ function EMatrix_Math.EyeFromCursor(mx, my, cx, cy, halfW, halfH, strength)
     if not finite(halfH) or halfH <= 0 then halfH = 1 end
     if not finite(strength) or strength < 0 then strength = 0 end
     return clamp((mx - cx) / halfW, -1.0, 1.0) * strength, clamp((my - cy) / halfH, -1.0, 1.0) * strength
+end
+
+--- The grid cell under a screen point: cursor pixels (GetCursorPosition) against the frame's left
+--- and top edges in UI units, through the frame's effective scale. Nil off the grid.
+--- @return number|nil col, number|nil row
+function EMatrix_Math.CellAt(mx, my, left, top, scale, cellSize, cols, rows)
+    if not (finite(mx) and finite(my) and finite(left) and finite(top)) then return nil end
+    if not finite(scale) or scale <= 0 then scale = 1.0 end
+    if not finite(cellSize) or cellSize <= 0 then return nil end
+    local col = math.floor((mx / scale - left) / cellSize) + 1
+    local row = math.floor((top - my / scale) / cellSize) + 1
+    if col < 1 or col > (cols or 0) or row < 1 or row > (rows or 0) then return nil end
+    return col, row
 end
 
 --- Visible widths of the four inner walls of the box. Seen from the right you see more of the

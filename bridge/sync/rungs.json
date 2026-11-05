@@ -1,0 +1,127 @@
+{
+  "about": "The verdicts of docs/rungs/ledger.json, written by tools/rungs-sync.mjs through packages/triad-369/src/rung_ledger.mjs. The Apex copies them into its rungs_traversed and DECISION slots as data (owner ruling 7): no HUD change, no seventh flow, no re-test. awareness names the set of rungs that hold (owner ruling 3): a list, never a number on screen.",
+  "asOf": "2026-11-05 05:29:30",
+  "source": {
+    "ledger": "docs/rungs/ledger.json",
+    "sha256": "0C296D8779E9ED4BE64D4A505B6A54B9FF914C875E4CD5DAF012B703337C10CB",
+    "addon": "1.8.9",
+    "build": "2.5.6.70577"
+  },
+  "awareness": [
+    "map",
+    "axis",
+    "load",
+    "frame:PlayerModel",
+    "frame:DressUpModel",
+    "fit:westfallbarrel01"
+  ],
+  "frontier": [
+    "fit:elwynnbush09",
+    "fit:elwynntreecanopy04",
+    "fit:elwynntreemid01",
+    "fit:jar01",
+    "fit:westfallcrate",
+    "projection:abbey-door"
+  ],
+  "verdicts": [
+    {
+      "rung": "map",
+      "verdict": "holds",
+      "report": "20261104-1321"
+    },
+    {
+      "rung": "axis",
+      "verdict": "holds",
+      "report": "20261104-1321"
+    },
+    {
+      "rung": "load",
+      "verdict": "holds",
+      "report": "20261104-1321"
+    },
+    {
+      "rung": "projection:abbey-door",
+      "verdict": "fails",
+      "report": "20261105-0530",
+      "residual": 0.792
+    },
+    {
+      "rung": "frame:PlayerModel",
+      "verdict": "holds",
+      "report": "20261104-1024"
+    },
+    {
+      "rung": "frame:DressUpModel",
+      "verdict": "holds",
+      "report": "20261104-1024"
+    },
+    {
+      "rung": "frame:Model",
+      "verdict": "fails",
+      "report": "20261104-1024"
+    },
+    {
+      "rung": "fit:elwynnbush09",
+      "verdict": "fails",
+      "report": "20261105-0530",
+      "residual": 0.18000000000000002
+    },
+    {
+      "rung": "fit:elwynntreecanopy04",
+      "verdict": "fitted",
+      "report": "20261104-1321"
+    },
+    {
+      "rung": "fit:elwynntreemid01",
+      "verdict": "fitted",
+      "report": "20261105-0530"
+    },
+    {
+      "rung": "fit:jar01",
+      "verdict": "fitted",
+      "report": "20261104-1321"
+    },
+    {
+      "rung": "fit:westfallbarrel01",
+      "verdict": "holds",
+      "report": "20261105-0530",
+      "residual": 0.069
+    },
+    {
+      "rung": "fit:westfallcrate",
+      "verdict": "fails",
+      "report": "20261105-0530",
+      "residual": 0.116
+    },
+    {
+      "rung": "height:elwynnbush09",
+      "verdict": "blocked",
+      "report": null
+    },
+    {
+      "rung": "height:elwynntreecanopy04",
+      "verdict": "blocked",
+      "report": null
+    },
+    {
+      "rung": "height:elwynntreemid01",
+      "verdict": "blocked",
+      "report": null
+    },
+    {
+      "rung": "height:jar01",
+      "verdict": "blocked",
+      "report": null
+    },
+    {
+      "rung": "height:westfallbarrel01",
+      "verdict": "blocked",
+      "report": null
+    },
+    {
+      "rung": "height:westfallcrate",
+      "verdict": "blocked",
+      "report": null
+    }
+  ]
+}

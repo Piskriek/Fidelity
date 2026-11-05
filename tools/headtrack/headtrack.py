@@ -2,17 +2,21 @@
 """Webcam head tracker -> virtual gamepad (+ head.json) for FidelityEMatrix's head-coupled parallax.
 
 The game addon cannot read a camera, but it can read a gamepad (C_GamePad). This script finds your
-face in the webcam, turns its position and size into left/right, up/down and distance, and feeds
-them to a virtual Xbox 360 pad through the ViGEm driver (right stick = x/y, left trigger = depth).
-It also writes head.json next to itself for the other Fidelity daemons.
+face in the webcam, turns its position and size into left/right, up/down and distance relative to
+your calibrated rest pose, and feeds them to a virtual Xbox 360 pad through the ViGEm driver
+(right stick = x/y, left trigger = "closer" depth: it rests at 0, leaning in presses it, sitting
+back does nothing). It also writes head.json next to itself for the other Fidelity daemons.
+The left stick is never used: with GamePadEnable 1 it walks the character.
 
     python headtrack.py                      # default camera 0, right stick + left trigger
     python headtrack.py --source 1           # another camera index
     python headtrack.py --source frames:D:\\path\\to\\dir   # newest .jpg/.png written by another daemon
     python headtrack.py --source http://127.0.0.1:8080/stream.mjpg   # an MJPEG stream
+    python headtrack.py --source http://192.168.0.20:8080/video --no-gamepad --room   # a phone at the TV (an IP-camera app)
     python headtrack.py --source synthetic --duration 5    # no camera: a moving fake face (for tests)
-    python headtrack.py --show               # preview window; press c to calibrate rest, q to quit
+    python headtrack.py --show               # preview window; press c to recalibrate the rest pose, q to quit
     python headtrack.py --no-gamepad         # head.json only
+    python headtrack.py --map triggers       # x/y on the two triggers around TRIGGER_CENTRE, no depth
 
 In the game: /console GamePadEnable 1, /console GamePadCameraYawSpeed 0, /console
 GamePadCameraPitchSpeed 0, then /fide eye setup. Requirements: requirements.txt (OpenCV with its
@@ -26,58 +30,145 @@ import json
 import math
 import os
 import sys
+import threading
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from headmath import Smoother, face_to_axes, pick_largest, to_trigger  # noqa: E402
+from headmath import (Smoother, average_rest, face_to_axes, normalize_face, pick_center, pick_tracked, search_scale, search_window,  # noqa: E402
+                      size_band, smallest_face,
+                      to_depth_trigger, to_trigger)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+# A source returns this when it has nothing new yet (as opposed to None: a frame could not be read).
+# The main loop then keeps its last axes: no smoother update, no "lost face", the pad is still fed.
+NO_FRAME = object()
+
+# Follow the face nearest to the last one when it moved less than this fraction of the frame width.
+TRACK_MAX_JUMP = 0.25
 
 
 # ---------------------------------------------------------------------------------------------
 # Frame sources
 # ---------------------------------------------------------------------------------------------
 class CameraSource:
-    def __init__(self, spec: str, width: int, height: int):
+    """A camera index or a stream address. A stream (an IP-camera app on a phone) is read by a background thread
+    that keeps only the newest picture: a face search slower than the stream then never builds a backlog, which would
+    both delay the head and make the app drop the connection. A stream that ends or stalls for `reopen_after` seconds
+    is opened again."""
+
+    def __init__(self, spec: str, width: int, height: int, reopen_after: float = 2.0):
         import cv2  # lazy: not needed for synthetic runs or tests
         self.cv2 = cv2
-        index = int(spec) if spec.isdigit() else spec
-        self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW) if isinstance(index, int) and os.name == "nt" else cv2.VideoCapture(index)
-        if isinstance(index, int):
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.spec, self.width, self.height, self.reopen_after = spec, width, height, reopen_after
+        self.index = int(spec) if spec.isdigit() else spec
+        self.stream = not isinstance(self.index, int)
+        self.cap = self._open()
         if not self.cap.isOpened():
-            raise RuntimeError(f"could not open camera/stream {spec!r} (is another program holding it? try --source frames:<dir>)")
+            if not self.stream:
+                raise RuntimeError(f"could not open camera/stream {spec!r} (is another program holding it? try --source frames:<dir>)")
+            # a phone that is not there yet (asleep, its app closed, still joining the Wi-Fi): keep trying, do not give up
+            print(f"headtrack: waiting for the stream at {spec} (is the phone's camera app open, on the same Wi-Fi?)", flush=True)
+        self.received, self.reopened, self.tries = 0, 0, 0
+        self._latest, self._fresh, self._stop = None, False, False
+        if self.stream:
+            self._lock = threading.Lock()
+            self._thread = threading.Thread(target=self._pump, daemon=True)
+            self._thread.start()
+
+    def _open(self):
+        cv2 = self.cv2
+        if isinstance(self.index, int):
+            cap = cv2.VideoCapture(self.index, cv2.CAP_DSHOW) if os.name == "nt" else cv2.VideoCapture(self.index)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            return cap
+        # 5 s to connect and 5 s for a picture, so a phone that vanished is noticed instead of waited on for ever
+        timeouts = [getattr(cv2, "CAP_PROP_OPEN_TIMEOUT_MSEC", None), 5000, getattr(cv2, "CAP_PROP_READ_TIMEOUT_MSEC", None), 5000]
+        if None not in timeouts:
+            try:
+                return cv2.VideoCapture(self.index, cv2.CAP_FFMPEG, timeouts)
+            except (cv2.error, TypeError):
+                pass
+        return cv2.VideoCapture(self.index)
+
+    def _pump(self):
+        last_ok = time.time()
+        while not self._stop:
+            ok, frame = self.cap.read() if self.cap.isOpened() else (False, None)
+            if ok:
+                if self.received == 0 and self.tries:
+                    print("headtrack: the stream is up", flush=True)
+                last_ok = time.time()
+                with self._lock:
+                    self._latest, self._fresh = frame, True
+                    self.received += 1
+            elif time.time() - last_ok > self.reopen_after:
+                self.cap.release()
+                time.sleep(0.5)
+                self.cap = self._open()
+                last_ok = time.time()
+                if self.received:  # it had been delivering: it stopped, and is opened again
+                    self.reopened += 1
+                    print(f"headtrack: the stream stopped; opened it again ({self.reopened})", flush=True)
+                else:  # never there yet: keep waiting, saying so now and then
+                    self.tries += 1
+                    if self.tries % 10 == 0:
+                        print(f"headtrack: still waiting for the stream ({self.tries} tries)", flush=True)
+            else:
+                time.sleep(0.02)
 
     def read(self):
-        ok, frame = self.cap.read()
-        return frame if ok else None
+        if not self.stream:
+            ok, frame = self.cap.read()
+            return frame if ok else None
+        with self._lock:
+            if not self._fresh:
+                return NO_FRAME  # nothing newer than the last picture yet
+            self._fresh = False
+            return self._latest
 
     def close(self):
+        self._stop = True
+        if self.stream:
+            self._thread.join(timeout=2.0)
         self.cap.release()
 
 
 class FramesDirSource:
-    """Newest image file in a directory (what a vision daemon that owns the camera can write)."""
+    """Newest image file in a directory (what a vision daemon that owns the camera can write).
+
+    `read` returns NO_FRAME when there is nothing new: no file, the newest one already read (by
+    name and mtime, so a daemon overwriting one file is still followed and an older file is not
+    re-read when the newest is deleted), one younger than MIN_FILE_AGE (it may still be being
+    written) or one OpenCV cannot decode yet (retried next tick). None of those is a lost face.
+    """
+    MIN_FILE_AGE = 0.05  # seconds
 
     def __init__(self, directory: str):
         import cv2
         self.cv2 = cv2
         self.directory = directory
-        self.last = None
+        self.last = ("", 0.0)  # (path, mtime) of the frame read last
         if not os.path.isdir(directory):
             raise RuntimeError(f"frames directory not found: {directory}")
 
     def read(self):
         files = glob.glob(os.path.join(self.directory, "*.jpg")) + glob.glob(os.path.join(self.directory, "*.png"))
         if not files:
-            return None
-        newest = max(files, key=os.path.getmtime)
-        if newest == self.last:
-            time.sleep(0.01)
-            return None
-        self.last = newest
-        return self.cv2.imread(newest)
+            return NO_FRAME
+        try:
+            newest = max(files, key=os.path.getmtime)
+            mtime = os.path.getmtime(newest)
+        except OSError:  # a file vanished between the glob and the stat
+            return NO_FRAME
+        if (newest, mtime) == self.last or mtime < self.last[1] or time.time() - mtime < self.MIN_FILE_AGE:
+            return NO_FRAME
+        frame = self.cv2.imread(newest)
+        if frame is None:
+            return NO_FRAME
+        self.last = (newest, mtime)
+        return frame
 
     def close(self):
         pass
@@ -119,21 +210,40 @@ def open_source(spec: str, width: int, height: int):
 # Face detection (OpenCV's bundled Haar cascade: no model download)
 # ---------------------------------------------------------------------------------------------
 class HaarDetector:
-    def __init__(self, scale_width: int = 320):
+    """scale_width: the frame is shrunk to this width before the search (0 = never shrunk); min_face: the smallest
+    face searched for, in the shrunk picture's pixels (the cascade's own window is 24). Shrunk to 320 with 30 px,
+    the default, a face must be 60 px wide in a 640 px picture: right for a webcam at a desk, too big for a couch
+    three metres from a phone, where a face is 25 to 55 px wide in a 1280 px picture (--room)."""
+
+    def __init__(self, scale_width: int = 320, min_face: int = 30):
         import cv2
+        if not hasattr(cv2, "CascadeClassifier"):  # OpenCV 5 removed the Haar face finder and its cascade files
+            raise RuntimeError(f"OpenCV {cv2.__version__} has no Haar face finder (OpenCV 5 removed it): "
+                               "pip install \"opencv-python>=4.8,<5\"")
         self.cv2 = cv2
         path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
         self.cascade = cv2.CascadeClassifier(path)
         if self.cascade.empty():
             raise RuntimeError(f"Haar cascade not found at {path}")
         self.scale_width = scale_width
+        self.min_face = max(24, int(min_face))
 
-    def detect(self, frame):
+    def detect(self, frame, near=None):
+        """Faces in the picture as (x, y, w, h). With `near` (the last face's box), only a window around it is searched,
+        at full resolution and for sizes close to it: a fraction of the work of the whole picture."""
         h, w = frame.shape[:2]
-        s = self.scale_width / float(w) if w > self.scale_width else 1.0
+        if near is not None:
+            x0, y0, x1, y1 = search_window(near, w, h)
+            lo, hi = size_band(max(near[2], near[3]))
+            if x1 - x0 >= lo and y1 - y0 >= lo:
+                gray = self.cv2.cvtColor(frame[y0:y1, x0:x1], self.cv2.COLOR_BGR2GRAY)
+                faces = self.cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(lo, lo), maxSize=(hi, hi))
+                return [(x + x0, y + y0, fw, fh) for (x, y, fw, fh) in faces]
+            return []
+        s = search_scale(w, self.scale_width)
         small = self.cv2.resize(frame, (int(w * s), int(h * s))) if s != 1.0 else frame
         gray = self.cv2.cvtColor(small, self.cv2.COLOR_BGR2GRAY)
-        faces = self.cascade.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=4, minSize=(30, 30))
+        faces = self.cascade.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=4, minSize=(self.min_face, self.min_face))
         return [(x / s, y / s, fw / s, fh / s) for (x, y, fw, fh) in faces]
 
 
@@ -141,6 +251,14 @@ class HaarDetector:
 # Outputs
 # ---------------------------------------------------------------------------------------------
 class PadOutput:
+    """ViGEm virtual Xbox 360 pad.
+
+    rightstick (default): x/y on the right stick, depth on the left trigger as `to_depth_trigger`
+    (rest 0, only leaning in presses it). triggers: x on the left and y on the right trigger
+    around TRIGGER_CENTRE (both rest half-pressed; the addon's /fide eye calibrate subtracts that),
+    no depth. The left stick is never driven: it walks the character.
+    """
+
     def __init__(self, mapping: str):
         import vgamepad as vg  # lazy: needs the ViGEmBus driver
         self.vg = vg
@@ -148,14 +266,12 @@ class PadOutput:
         self.mapping = mapping
 
     def write(self, x: float, y: float, z: float):
-        if self.mapping == "leftstick":
-            self.pad.left_joystick_float(x_value_float=x, y_value_float=y)
-        elif self.mapping == "triggers":
+        if self.mapping == "triggers":
             self.pad.left_trigger_float(value_float=to_trigger(x))
             self.pad.right_trigger_float(value_float=to_trigger(y))
-        else:  # rightstick (default): x/y on the right stick, depth on the left trigger
+        else:  # rightstick
             self.pad.right_joystick_float(x_value_float=x, y_value_float=y)
-            self.pad.left_trigger_float(value_float=to_trigger(z))
+            self.pad.left_trigger_float(value_float=to_depth_trigger(z))
         self.pad.update()
 
     def close(self):
@@ -166,11 +282,107 @@ class PadOutput:
             pass
 
 
-def write_json_atomic(path: str, payload: dict):
+class HeadServer:
+    """The newest head over HTTP (GET /head.json), for a twin on another machine: the tracker can run where there is
+    processor to spare (say the 3080 PC, beside the phone's stream) and the laptop's twin reads it with
+    `--head http://<this machine>:<port>/head.json`. Read-only; it serves the numbers head.json holds, nothing else."""
+
+    def __init__(self, port: int, host: str = "0.0.0.0"):
+        import http.server
+        self.body = b"{}"
+        self.recalibrate = False  # set by POST /calibrate (the twin's "set my resting position"), taken by the loop
+        outer = self
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.1"   # one connection for every poll
+            disable_nagle_algorithm = True  # and each answer sent at once (Windows otherwise can hold it up to 200 ms)
+
+            def do_GET(self):
+                if self.path.split("?")[0] != "/head.json":
+                    self.send_error(404)
+                    return
+                body = outer.body
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Cache-Control", "no-store")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def do_POST(self):
+                # the home network only: re-measure the resting position (the owner moved, or moved the phone)
+                import ipaddress
+                try:  # read the body first: on a kept connection its bytes would otherwise start the next request
+                    n = int(self.headers.get("Content-Length", "0"))
+                except ValueError:
+                    n = 0
+                if n > 0:
+                    self.rfile.read(min(n, 4096))
+                try:
+                    ip = ipaddress.ip_address(self.client_address[0])
+                    near = ip.is_loopback or ip.is_private
+                except ValueError:
+                    near = False
+                code, body = (403, b'{"error":"the home network only"}') if not near else \
+                    (200, b'{"ok":true}') if self.path.split("?")[0] == "/calibrate" else (404, b'{"error":"POST /calibrate"}')
+                if code == 200:
+                    outer.recalibrate = True
+                self.send_response(code)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *a):
+                pass
+
+        self.httpd = http.server.ThreadingHTTPServer((host, port), Handler)
+        self.httpd.daemon_threads = True
+        self.port = self.httpd.server_address[1]
+        self.thread = threading.Thread(target=self.httpd.serve_forever, daemon=True)
+        self.thread.start()
+
+    def update(self, payload: dict):
+        self.body = json.dumps(payload).encode("utf-8")
+
+    def take_recalibrate(self) -> bool:
+        asked, self.recalibrate = self.recalibrate, False
+        return asked
+
+    def close(self):
+        self.httpd.shutdown()
+        self.httpd.server_close()
+
+
+def lan_address() -> str:
+    """This machine's address on its network, as another machine would use it (no packet is sent)."""
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("192.0.2.1", 9))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except OSError:
+        return "<this machine>"
+
+
+def write_json_atomic(path: str, payload: dict, attempts: int = 5, wait: float = 0.005):
+    """Write a new copy, then rename it over the old one, so a reader never sees half a file. Windows refuses the
+    rename (WinError 5, access denied) while another program has the old file open, such as the twin server reading
+    it every 30 ms or an antivirus scan of the new copy: the rename is tried again a few milliseconds later, up to
+    `attempts` times in all (about 50 ms at most), before the error goes to the caller."""
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(payload, f)
-    os.replace(tmp, path)
+    for i in range(attempts):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError:
+            if i == attempts - 1:
+                raise
+            time.sleep(wait * (i + 1))
 
 
 # ---------------------------------------------------------------------------------------------
@@ -182,46 +394,104 @@ def main(argv=None) -> int:
     ap.add_argument("--fps", type=float, default=30.0)
     ap.add_argument("--gain", type=float, default=1.0)
     ap.add_argument("--deadzone", type=float, default=0.02)
-    ap.add_argument("--map", default="rightstick", choices=["rightstick", "leftstick", "triggers"])
+    ap.add_argument("--map", default="rightstick", choices=["rightstick", "triggers"])
     ap.add_argument("--no-mirror", action="store_true", help="do not mirror left/right")
     ap.add_argument("--no-gamepad", action="store_true", help="write head.json only")
     ap.add_argument("--out", default=os.path.join(HERE, "head.json"))
-    ap.add_argument("--show", action="store_true", help="preview window (c = calibrate rest width, q = quit)")
-    ap.add_argument("--calibrate-seconds", type=float, default=2.0, help="average the face width over this long at start")
+    ap.add_argument("--show", action="store_true", help="preview window (c = recalibrate the rest pose, q = quit)")
+    ap.add_argument("--calibrate-seconds", type=float, default=2.0,
+                    help="average the face centre and width (the rest pose) over this long at start")
+    ap.add_argument("--stale-seconds", type=float, default=2.0,
+                    help="frames:<dir> only: drift back to rest when no new frame has arrived for this long")
     ap.add_argument("--duration", type=float, default=0.0, help="stop after this many seconds (0 = run until quit)")
+    ap.add_argument("--pick", default="largest", choices=["largest", "center"],
+                    help="whom to follow when there are several faces: the largest (nearest the camera) or the one "
+                         "nearest the picture's centre line (straight in front of a camera centred on the screen)")
+    ap.add_argument("--detect-width", type=int, default=320,
+                    help="shrink each frame to this width before the face search (0 = search the full frame)")
+    ap.add_argument("--min-face", type=int, default=30, help="the smallest face searched for, in the searched picture's pixels (at least 24)")
+    ap.add_argument("--serve", type=int, default=0, metavar="PORT",
+                    help="also serve the newest head at http://<this machine>:PORT/head.json, for a twin on another machine")
+    ap.add_argument("--room", action="store_true",
+                    help="a camera at a TV, watching a sofa: search the full frame for faces from 24 px and follow the "
+                         "person straight ahead (--detect-width 0 --min-face 24 --pick center); stream at 1280x720")
     args = ap.parse_args(argv)
+    if args.room:
+        args.detect_width, args.min_face, args.pick = 0, 24, "center"
 
     source = open_source(args.source, args.width, args.height)
     synthetic = isinstance(source, SyntheticSource)
-    detector = None if synthetic else HaarDetector()
+    detector = None if synthetic else HaarDetector(args.detect_width, args.min_face)
     pad = None if args.no_gamepad else PadOutput(args.map)
+    served = HeadServer(args.serve) if args.serve else None
+    if served is not None:
+        print(f"headtrack: serving the head at http://{lan_address()}:{served.port}/head.json "
+              f"(on the laptop: npm run twin -- --head http://{lan_address()}:{served.port}/head.json)", flush=True)
+    mirror = not args.no_mirror
     smoother = Smoother()
-    rest_width, cal_samples, cal_until = 0.0, [], time.time() + args.calibrate_seconds
+    rest_x, rest_y, rest_width = 0.0, 0.0, 0.0           # calibrated rest pose (normalized centre, px width)
+    cal_samples, cal_until = [], time.time() + args.calibrate_seconds
     frame_interval = 1.0 / max(1.0, args.fps)
-    started, last, frames, lost = time.time(), time.time(), 0, 0
+    started = last = last_frame_at = time.time()
+    frames, lost, stale, json_errors = 0, 0, 0, 0
+    read_s, search_s, searched = 0.0, 0.0, 0  # where the time goes: waiting for the camera, searching for faces
+    full_s, full_searches, ticks = 0.0, 0, 0     # whole-picture searches (no face near the last one); loop turns
+    last_face, axes, said_size = None, (0.0, 0.0, 0.0), False
     cv2 = None
     if args.show:
         import cv2 as _cv2
         cv2 = _cv2
-    print(f"headtrack: source={args.source} map={args.map} gamepad={'off' if pad is None else 'on'} out={args.out}", flush=True)
+    print(f"headtrack: source={args.source} map={args.map} gamepad={'off' if pad is None else 'on'} out={args.out} "
+          f"pick={args.pick} search={args.detect_width or 'full frame'} min face={max(24, args.min_face)}px", flush=True)
     try:
         while True:
             now = time.time()
             dt, last = now - last, now
+            t_read = time.time()
             frame = source.read()
-            if frame is None:
+            read_s += time.time() - t_read
+            key = -1
+            if frame is NO_FRAME:
+                if now - last_frame_at > args.stale_seconds:  # the source went quiet: drift back to rest
+                    axes = smoother.update(dt, None)
+                    stale += 1
+                if cv2 is not None:  # keep the preview window answering q / c between frames
+                    key = cv2.waitKey(1) & 0xFF
+            elif frame is None:
                 axes = smoother.update(dt, None)
                 lost += 1
             else:
+                last_frame_at = now
                 h, w = frame.shape[:2]
-                face = source.synthetic_face() if synthetic else pick_largest(detector.detect(frame))
-                if face is not None and (now < cal_until or rest_width <= 0):
-                    cal_samples.append(face[2])
-                    if now >= cal_until or len(cal_samples) >= 60:
-                        rest_width = sum(cal_samples) / len(cal_samples)
-                        print(f"headtrack: rest face width {rest_width:.1f}px", flush=True)
-                target = face_to_axes(face, w, h, rest_width if rest_width > 0 else (face[2] if face else 1.0),
-                                      args.gain, args.deadzone, mirror=not args.no_mirror)
+                if not said_size:
+                    said_size = True
+                    print(f"headtrack: {w}x{h} frames; the smallest face it can find is {smallest_face(w, args.detect_width, args.min_face):.0f} px wide", flush=True)
+                acquire = (lambda fs, fw=w: pick_center(fs, fw)) if args.pick == "center" else None
+                t_search = time.time()
+                if synthetic:
+                    face = source.synthetic_face()
+                else:
+                    faces = detector.detect(frame, near=last_face) if last_face is not None else []
+                    if not faces:  # no face near the last one (or none yet): search the whole picture
+                        t_full = time.time()
+                        faces = detector.detect(frame)
+                        full_s += time.time() - t_full
+                        full_searches += 1
+                    face = pick_tracked(faces, last_face, TRACK_MAX_JUMP * w, acquire)
+                search_s += time.time() - t_search
+                searched += 1
+                frames += 1
+                if face is not None:
+                    last_face = face
+                if rest_width <= 0:  # calibrating: average the rest pose, output rest meanwhile
+                    if face is not None:
+                        cal_samples.append(normalize_face(face[0] + face[2] * 0.5, face[1] + face[3] * 0.5, w, h, mirror) + (face[2],))
+                        if now >= cal_until or len(cal_samples) >= 60:
+                            rest_x, rest_y, rest_width = average_rest(cal_samples)
+                            print(f"headtrack: rest pose x {rest_x:+.2f} y {rest_y:+.2f}, face width {rest_width:.1f}px", flush=True)
+                    target = None if face is None else (0.0, 0.0, 0.0)
+                else:
+                    target = face_to_axes(face, w, h, rest_width, args.gain, args.deadzone, mirror=mirror, rest_x=rest_x, rest_y=rest_y)
                 axes = smoother.update(dt, target)
                 if target is None:
                     lost += 1
@@ -229,20 +499,38 @@ def main(argv=None) -> int:
                     if face is not None:
                         x, y, fw, fh = (int(v) for v in face)
                         cv2.rectangle(frame, (x, y), (x + fw, y + fh), (0, 255, 200), 2)
-                    cv2.putText(frame, f"x {axes[0]:+.2f} y {axes[1]:+.2f} z {axes[2]:+.2f}", (10, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 200), 2)
+                    status = "calibrating" if rest_width <= 0 else f"rest {rest_x:+.2f} {rest_y:+.2f} {rest_width:.0f}px"
+                    cv2.putText(frame, f"x {axes[0]:+.2f} y {axes[1]:+.2f} z {axes[2]:+.2f}  {status}", (10, 24),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 200), 2)
                     cv2.imshow("Fidelity head tracker (c = calibrate, q = quit)", frame)
                     key = cv2.waitKey(1) & 0xFF
-                    if key == ord("q"):
-                        break
-                    if key == ord("c"):
-                        rest_width, cal_samples, cal_until = 0.0, [], time.time() + args.calibrate_seconds
-            frames += 1
+            if smoother.lost_for > smoother.hold:
+                last_face = None  # lost beyond the hold: the next face is picked by the --pick rule again
+            if key == ord("q"):
+                break
+            if key == ord("c") or (served is not None and served.take_recalibrate()):
+                if key != ord("c"):
+                    print("headtrack: re-measuring the resting position (asked from the twin): sit as you normally would", flush=True)
+                rest_x, rest_y, rest_width = 0.0, 0.0, 0.0
+                cal_samples, cal_until = [], time.time() + args.calibrate_seconds
+            ticks += 1
             if pad is not None:
                 pad.write(*axes)
-            if frames % 3 == 0:
-                write_json_atomic(args.out, {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4),
-                                             "z": round(axes[2], 4), "restWidth": round(rest_width, 1), "frames": frames, "lost": lost,
-                                             "fps": round(frames / max(1e-6, time.time() - started), 1), "source": args.source, "map": args.map})
+            if served is not None or ticks % 3 == 0:  # the file every third turn; the network copy every turn
+                payload = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4), "z": round(axes[2], 4),
+                           "restX": round(rest_x, 4), "restY": round(rest_y, 4), "restWidth": round(rest_width, 1),
+                           "frames": frames, "lost": lost, "stale": stale, "jsonErrors": json_errors,
+                           "fps": round(frames / max(1e-6, time.time() - started), 1), "source": args.source, "map": args.map}
+                if served is not None:
+                    served.update(payload)
+            if ticks % 3 == 0:
+                try:
+                    write_json_atomic(args.out, payload)
+                except OSError as e:  # a reader holding the file (Windows), disk full, folder gone: the pad feed goes on
+                    json_errors += 1
+                    if json_errors == 1:
+                        print(f"headtrack: WARNING cannot write {args.out} ({e}); the pad feed continues, further failures are only counted",
+                              file=sys.stderr, flush=True)
             if args.duration and time.time() - started >= args.duration:
                 break
             sleep = frame_interval - (time.time() - now)
@@ -252,11 +540,22 @@ def main(argv=None) -> int:
         pass
     finally:
         source.close()
+        if served is not None:
+            served.close()
         if pad is not None:
             pad.close()
         if cv2 is not None:
             cv2.destroyAllWindows()
-    print(f"headtrack: {frames} frames, {lost} without a face, {frames / max(1e-6, time.time() - started):.1f} fps", flush=True)
+    elapsed = max(1e-6, time.time() - started)
+    print(f"headtrack: {frames} frames, {lost} without a face, {stale} stale, {json_errors} head.json write errors, "
+          f"{frames / elapsed:.1f} fps", flush=True)
+    if getattr(source, "stream", False):
+        print(f"headtrack: the stream delivered {source.received} pictures ({source.received / elapsed:.1f} a second) and was "
+              f"opened again {source.reopened} times; the tracker used the newest each time", flush=True)
+    if searched and detector is not None:  # (a synthetic source hands over its face: nothing is searched)
+        print(f"headtrack: per frame, {1000 * read_s / max(1, ticks):.0f} ms waiting for the camera and "
+              f"{1000 * search_s / searched:.0f} ms searching for faces; {full_searches} of {searched} searched the whole "
+              f"picture ({1000 * full_s / max(1, full_searches):.0f} ms each), the rest only near the last face", flush=True)
     return 0
 
 

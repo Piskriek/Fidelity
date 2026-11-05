@@ -1,0 +1,6 @@
+# The rung ledger and its snapshot are hashed and compared as text: keep them LF in every checkout,
+# so a Windows clone (core.autocrlf) hashes the same bytes as git stores (tools/rungs-sync.mjs).
+docs/rungs/ledger.json text eol=lf
+bridge/sync/rungs.json text eol=lf
+# The director's blind records are cited by SHA256: never convert their line endings.
+docs/council/2026-11-04-rungs/judge/blind10_*.json -text

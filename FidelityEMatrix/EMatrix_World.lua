@@ -13,8 +13,12 @@
 --          map's placements from the game's own tiles instead).
 --
 -- Depth bands -> z (the same scale as the window): near 0.15, mid 0.5, far 1.2, unknown 0.5.
+-- A band change must be seen on BAND_CONFIRM consecutive scans before the copy switches, so a
+-- unit hovering at a band edge does not jump in size every scan.
 -- Parallax and the anaglyph pair spread use ParallaxShift(eye, z) like everything else.
 -- Stereo here is anaglyph only: a side-by-side pair cannot be laid over a single mono world.
+-- The copies face the camera and turn only with the eye; they never spin with the window's
+-- turntable.
 
 local ADDON_NAME, ns = ...
 local Math = ns.Math or _G.EMatrix_Math
@@ -23,63 +27,87 @@ ns.World = World
 
 local MAX_ACTORS = 8          -- actors drawn (each is up to 3 model frames)
 local REFRESH_INTERVAL = 0.25 -- seconds between nameplate scans (parallax tracks every frame)
-local PX_GAIN = 60            -- screen pixels per unit of ParallaxShift (same as the window)
 local STEREO_REF_Z = 0.5      -- depth at which the pair offset equals stereoPixels
 local HEAD_OFFSET = 6         -- pixels from the nameplate's bottom down to the model's top
-local BAND = {                -- { z, model height in pixels }
-    near = { 0.15, 230 },
-    mid = { 0.50, 150 },
-    far = { 1.20, 95 },
-    unknown = { 0.50, 150 },
+local FACING_TILT = 0.55      -- radians the copy turns per unit of eye offset (as the window)
+local BAND_CONFIRM = 2        -- scans a new band must be seen before the actor switches (hysteresis)
+-- Each range band: parallax depth z (the window's scale) and the distance in yards from the
+-- player along the view axis that stands for the band (its middle). The copy's height on screen
+-- comes from the same camera model the terrain overlay uses: focal * unitHeight / (zoom + depth),
+-- so copies shrink with distance like the real units do (v1.6.1 used fixed pixel heights three
+-- to four times the real size, the owner's screenshot of 04 Nov).
+local BAND = {                -- { z, yards from the player }
+    near = { 0.15, 7 },
+    mid = { 0.50, 18 },
+    far = { 1.20, 45 },
+    unknown = { 0.50, 18 },
 }
-local PLAYER_Z, PLAYER_HEIGHT = 0.15, 300
+local PLAYER_Z, PLAYER_HEIGHT_YD = 0.15, 2.0
+local FRAME_TYPES = {         -- the frame type that takes SetUnit for a copy; /fide world frame switches
+    player = { "PlayerModel", "DressUpModel" },   -- the standard for 3D portraits of any unit (default)
+    dressup = { "DressUpModel", "PlayerModel" },  -- v1.6.1's choice: textured for the player, white for NPCs in the game
+}
 
 local overlay                 -- full-screen frame under the UI
-local pool = {}               -- actor slots: { unit, plate, mono, left, right, z, h, used }
+local pool = {}               -- actor slots: { unit, plate, band, mono, left, right, z, h, used }
+local generation = 0          -- bumped when the pool is rebuilt (frame names stay unique)
 local refreshAge = 0
 local enabled = false
+local suspended = nil         -- reason text while the overlay stopped itself after errors (saved choice untouched)
 local errors = { count = 0, last = nil }
 World.errors = errors
+local hiddenFor = {}          -- reasons the copies are hidden for a moment: "test" (a terrain test frame is up), "shot" (the report's overlay-off twin)
 
 local function Cfg(k) return ns.Cfg(k) end
 
---- A frame's centre in UIParent coordinates. Only for frames an addon may measure (NOT nameplates).
-local function CenterInUI(frame)
-    if not frame or not frame.GetCenter then return nil end
-    local ok, x, y = pcall(frame.GetCenter, frame)
-    if not ok or not x or not y then return nil end
-    local fs = frame.GetEffectiveScale and frame:GetEffectiveScale() or 1
-    local us = UIParent and UIParent.GetEffectiveScale and UIParent:GetEffectiveScale() or 1
-    if not fs or fs == 0 or not us or us == 0 then return x, y end
-    return x * fs / us, y * fs / us
+--- The camera's focal length (UI units) and zoom (yards): the size of every copy follows them.
+local function CameraScale()
+    local sh = GetScreenHeight() or 1080
+    local fov = FidelityEMatrix_Config and tonumber(FidelityEMatrix_Config.terrainFovY) or 1.0
+    if not fov or fov < 0.1 or fov > 3.0 then fov = 1.0 end
+    local zoom = GetCameraZoom and GetCameraZoom() or 8
+    if type(zoom) ~= "number" or zoom ~= zoom or zoom < 0.5 then zoom = 8 end
+    return (sh * 0.5) / math.tan(fov * 0.5), zoom
 end
-World.CenterInUI = CenterInUI
+World.CameraScale = CameraScale
 
 -- ---------------------------------------------------------------------------
 -- Actor pool
 -- ---------------------------------------------------------------------------
 local function NewModel(name)
-    local okDM, m = pcall(CreateFrame, "DressUpModel", name, overlay)
-    if not (okDM and m) then
-        local okPM, pm = pcall(CreateFrame, "PlayerModel", name, overlay)
-        if not (okPM and pm) then return nil end
-        m = pm
+    local kinds = FRAME_TYPES[Cfg("worldFrameType")] or FRAME_TYPES.player
+    for _, kind in ipairs(kinds) do
+        local ok, m = pcall(CreateFrame, kind, name, overlay)
+        if ok and m then
+            m:SetFrameLevel(2)
+            m:EnableMouse(false)
+            m:Hide()
+            return m
+        end
     end
-    m:SetFrameLevel(2)
-    m:EnableMouse(false)
-    m:Hide()
-    return m
+    return nil
 end
 
 local function GetSlot(i)
     local s = pool[i]
     if s then return s end
     s = { used = false, z = 0.5, h = 150 }
-    s.mono = NewModel("FidelityEMatrix_World" .. i)
-    s.left = NewModel("FidelityEMatrix_WorldL" .. i)
-    s.right = NewModel("FidelityEMatrix_WorldR" .. i)
+    local tag = generation > 0 and ("G" .. generation .. "_") or ""
+    s.mono = NewModel("FidelityEMatrix_World" .. tag .. i)
+    s.left = NewModel("FidelityEMatrix_WorldL" .. tag .. i)
+    s.right = NewModel("FidelityEMatrix_WorldR" .. tag .. i)
     pool[i] = s
     return s
+end
+
+--- A copy lives under its nameplate: the client then scales it with the plate's distance scaling
+--- and hides it with the plate. Released copies go back under the overlay.
+local function Parent(model, parent)
+    if not model or not model.SetParent then return end
+    if model.__parent == parent then return end
+    pcall(model.SetParent, model, parent)
+    model.__parent = parent
+    model:SetFrameLevel(2)
 end
 
 local function SetUnitOn(model, unit)
@@ -90,9 +118,42 @@ local function SetUnitOn(model, unit)
         ns.PlaceModel(model, 0, 0)
         ns.FaceModel(model, 0)
     end)
-    -- idle animation (0) so the copy breathes like the original
+    -- idle animation (0) so the copy breathes like the original; Motion() moves it on from there
     pcall(function() if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end end)
+    model.__anim = 0
+    model.__anchorPlate = nil -- a new unit is anchored afresh
     return ok
+end
+
+-- The copy plays its unit's motion: a PlayerModel given a unit shows the unit standing, whatever the
+-- unit does, so the copy stood still while the owner ran (his report, 05 Nov 2026). The unit's speed
+-- (GetUnitSpeed, yards per second) picks the animation: stand, walk below RUN_FROM, run at or above it,
+-- and swim idle or swim for the player in water. Only a change is applied: setting the same animation
+-- again restarts its loop.
+local ANIM = { stand = 0, walk = 4, run = 5, swimIdle = 41, swim = 42 }
+local RUN_FROM = 4.5 -- yd/s: walking is 2.5, running 7
+local function MotionOf(unit)
+    local speed = 0
+    if GetUnitSpeed then
+        local ok, v = pcall(GetUnitSpeed, unit)
+        if ok and type(v) == "number" then speed = v end
+    end
+    local swimming = unit == "player" and IsSwimming and IsSwimming() or false
+    if swimming then return speed > 0 and ANIM.swim or ANIM.swimIdle, speed end
+    if speed <= 0 then return ANIM.stand, speed end
+    return speed >= RUN_FROM and ANIM.run or ANIM.walk, speed
+end
+local function Animate(model, anim)
+    if not model or model.__anim == anim then return end
+    local ok = pcall(function()
+        if model.SetAnimation then model:SetAnimation(anim) elseif model.SetSequence then model:SetSequence(anim) else error("no animation call") end
+    end)
+    if ok then model.__anim = anim end
+end
+local function Motion(s)
+    if not (s and s.used and s.unit) then return end
+    local anim = MotionOf(s.unit)
+    Animate(s.mono, anim); Animate(s.left, anim); Animate(s.right, anim)
 end
 
 -- ---------------------------------------------------------------------------
@@ -100,16 +161,31 @@ end
 -- ---------------------------------------------------------------------------
 local scratch = {} -- reused: { unit, plate, band }
 
+--- The range band of a unit. "unknown" means the client did not answer (the API is missing or
+--- the calls errored), which is a "not measured", not a distance.
 local function RangeBand(unit)
     if not CheckInteractDistance then return "unknown" end
     local ok3, near = pcall(CheckInteractDistance, unit, 3)
     if ok3 and near then return "near" end
     local ok4, mid = pcall(CheckInteractDistance, unit, 4)
     if ok4 and mid then return "mid" end
-    if ok3 and ok4 and near == false and mid == false then return "far" end
+    -- out of range the client answers nil (older clients) or false: both mean "not within"
+    if ok3 and ok4 then return "far" end
     return "unknown"
 end
 World.RangeBand = RangeBand
+
+-- Each actor slot is a SOURCE for the cell with the same index (the binding registry in
+-- EMatrix_Core: council round 2026-11-04-bridges). The value is the band's closeness (near 1.0,
+-- mid 0.5, far 0.2); the kind is "measured" when the range check answered, "not_measured" when
+-- it did not, and "symbolic" for the player's own slot, whose presence is not a measurement.
+local BAND_VALUE = { near = 1.0, mid = 0.5, far = 0.2, unknown = 0.0, player = 1.0 }
+local function PublishSlot(i, s)
+    if not ns.BindCell then return end
+    if not s.used then ns.ReleaseCell(i); return end
+    local kind = (s.band == "player") and "symbolic" or (s.band == "unknown") and "not_measured" or "measured"
+    ns.BindCell(i, "actor:" .. tostring(s.unit) .. ":" .. tostring(s.band), BAND_VALUE[s.band] or 0, (GetTime and GetTime()) or 0, kind)
+end
 
 function World.Scan()
     for i = #scratch, 1, -1 do scratch[i] = nil end
@@ -138,7 +214,12 @@ end
 -- ---------------------------------------------------------------------------
 -- Layout: anchor each actor to its nameplate (or the screen for the player), shifted by parallax
 -- ---------------------------------------------------------------------------
+--- Re-anchors only when something changed: ClearAllPoints + SetPoint every frame for every
+--- actor is needless layout work while the eye is still.
 local function Anchor(model, s, dx, dy)
+    local plate = s.plate or UIParent
+    if model.__anchorPlate == plate and model.__anchorX == dx and model.__anchorY == dy and model.__anchorH == s.h then return end
+    model.__anchorPlate, model.__anchorX, model.__anchorY, model.__anchorH = plate, dx, dy, s.h
     model:ClearAllPoints()
     model:SetSize(s.h * 0.75, s.h)
     if s.plate then
@@ -149,17 +230,20 @@ local function Anchor(model, s, dx, dy)
     end
 end
 
-function World.Layout(eyeX, eyeY, facing)
+function World.Layout(eyeX, eyeY)
     if not overlay then return end
+    if next(hiddenFor) then return end -- hidden for a test frame or a twin shot: the scan runs on, nothing is shown
     local anaglyph = Cfg("stereoMode") == "anaglyph"
     local px, delta = Cfg("stereoPixels"), Cfg("stereoDelta")
     local turnSign = Cfg("turnSign")
+    local gain = Cfg("worldParallaxPx") * (ns.EyeGain and ns.EyeGain() or 1)
+    -- the copy faces the camera and turns with the eye only (the window's turntable is not ours)
+    local turn = -turnSign * eyeX * FACING_TILT
     for i = 1, MAX_ACTORS do
         local s = pool[i]
         if s and s.used then
-            local shiftX = Math.ParallaxShift(eyeX, s.z) * PX_GAIN
-            local shiftY = Math.ParallaxShift(eyeY, s.z) * PX_GAIN
-            local turn = facing - turnSign * eyeX * 0.55
+            local shiftX = Math.ParallaxShift(eyeX, s.z) * gain
+            local shiftY = Math.ParallaxShift(eyeY, s.z) * gain
             local pair = px * Math.ParallaxShift(1, s.z) / Math.ParallaxShift(1, STEREO_REF_Z)
             if anaglyph then
                 if s.mono then s.mono:Hide() end
@@ -189,38 +273,87 @@ local function HideSlot(s)
     s.used = false
     s.unit = nil
     s.plate = nil
-    if s.mono then s.mono:Hide() end
-    if s.left then s.left:Hide() end
-    if s.right then s.right:Hide() end
+    s.band = nil
+    s.nextBand, s.nextBandSeen = nil, nil
+    if s.mono then s.mono:Hide(); s.mono.__anchorPlate = nil; Parent(s.mono, overlay) end
+    if s.left then s.left:Hide(); s.left.__anchorPlate = nil; Parent(s.left, overlay) end
+    if s.right then s.right:Hide(); s.right.__anchorPlate = nil; Parent(s.right, overlay) end
 end
 
+--- The band to use for a slot this scan: a change must be seen BAND_CONFIRM scans in a row.
+local function ConfirmBand(s, band)
+    if not s.band or s.band == band then
+        s.nextBand, s.nextBandSeen = nil, nil
+        return band
+    end
+    if s.nextBand == band then s.nextBandSeen = s.nextBandSeen + 1 else s.nextBand, s.nextBandSeen = band, 1 end
+    if s.nextBandSeen >= BAND_CONFIRM then
+        s.nextBand, s.nextBandSeen = nil, nil
+        return band
+    end
+    return s.band
+end
+
+local refreshCount = 0
+
 local function Refresh()
+    refreshCount = refreshCount + 1
     local found = World.Scan()
     local n = math.min(#found, MAX_ACTORS)
+    local focal, zoom = CameraScale()
+    local unitHeight = Cfg("worldUnitHeight")
+    -- Stable slots: a unit keeps its slot while it stays among the nearest, so no SetUnit churn
+    -- when the sort order shifts. Slots whose unit left are released (and hidden) first, then the
+    -- newcomers take the free slots.
     for i = 1, MAX_ACTORS do
         local s = GetSlot(i)
-        local f = found[i]
-        if i <= n and f then
-            if f.band == "player" then
-                s.z, s.h = PLAYER_Z, PLAYER_HEIGHT
-            else
-                local b = BAND[f.band] or BAND.unknown
-                s.z, s.h = b[1], b[2]
+        if s.used then
+            local keep = nil
+            for j = 1, n do
+                local f = found[j]
+                if not f.slot and f.unit == s.unit and f.plate == s.plate then keep = f; break end
             end
-            s.band = f.band
-            if s.unit ~= f.unit or s.plate ~= f.plate or not s.used then
-                s.unit, s.plate = f.unit, f.plate
-                local ok = SetUnitOn(s.mono, f.unit)
-                SetUnitOn(s.left, f.unit); SetUnitOn(s.right, f.unit)
-                s.used = ok
-                ns.ApplyLight(s.mono, ns.LIGHTS.mono)
-                ns.ApplyLight(s.left, ns.LIGHTS.red)
-                ns.ApplyLight(s.right, ns.LIGHTS.cyan)
-            end
-        elseif s.used then
-            HideSlot(s)
+            if keep then keep.slot = s else HideSlot(s) end
         end
     end
+    for j = 1, n do
+        local f = found[j]
+        if not f.slot then
+            for i = 1, MAX_ACTORS do
+                local s = GetSlot(i)
+                if not s.used then f.slot = s; break end
+            end
+        end
+        local s = f.slot
+        if s then
+            if f.band == "player" then
+                s.z, s.h, s.band = PLAYER_Z, focal * PLAYER_HEIGHT_YD / zoom, "player"
+            else
+                local band = ConfirmBand(s, f.band)
+                local b = BAND[band] or BAND.unknown
+                s.z, s.h, s.band = b[1], focal * unitHeight / (zoom + b[2]), band
+            end
+            if not s.used then
+                s.unit, s.plate = f.unit, f.plate
+                Parent(s.mono, f.plate or overlay); Parent(s.left, f.plate or overlay); Parent(s.right, f.plate or overlay)
+                local ok = SetUnitOn(s.mono, f.unit)
+                if ok and s.left then ok = SetUnitOn(s.left, f.unit) end
+                if ok and s.right then ok = SetUnitOn(s.right, f.unit) end
+                if ok then
+                    s.used = true
+                    ns.ApplyLight(s.mono, ns.LIGHTS.mono)
+                    ns.ApplyLight(s.left, ns.LIGHTS.red)
+                    ns.ApplyLight(s.right, ns.LIGHTS.cyan)
+                else
+                    -- a copy that could not take the unit must not keep showing the last one
+                    HideSlot(s)
+                end
+            end
+        end
+    end
+    -- every scan re-stamps the slots as sources (a slot that is not used releases its cell)
+    for i = 1, MAX_ACTORS do if pool[i] then PublishSlot(i, pool[i]) end end
+    for i = 1, MAX_ACTORS do if pool[i] then Motion(pool[i]) end end
 end
 
 local function OnUpdate(self, dt)
@@ -230,15 +363,15 @@ local function OnUpdate(self, dt)
             refreshAge = 0
             Refresh()
         end
-        local eyeX, eyeY, facing = ns.GetEye()
-        World.Layout(eyeX, eyeY, facing)
+        local eyeX, eyeY = ns.GetEye()
+        World.Layout(eyeX, eyeY)
     end)
     if not ok then
         errors.count = errors.count + 1
         errors.last = tostring(err)
         if errors.count >= 3 then
-            World.SetEnabled(false)
-            print("|cffff3333[Fidelity EMatrix]|r World overlay stopped after repeated errors: " .. errors.last)
+            World.Suspend(errors.last)
+            print("|cffff3333[Fidelity EMatrix]|r World overlay stopped after repeated errors (your saved setting is unchanged; /fide world on retries): " .. errors.last)
         end
     end
 end
@@ -246,8 +379,24 @@ end
 -- ---------------------------------------------------------------------------
 -- Enable / disable / status
 -- ---------------------------------------------------------------------------
+local function Stop()
+    if not overlay then return end
+    overlay:SetScript("OnUpdate", nil)
+    for i = 1, #pool do HideSlot(pool[i]); if ns.ReleaseCell then ns.ReleaseCell(i) end end
+    overlay:Hide()
+end
+
+--- Stops the overlay after errors WITHOUT touching the saved choice, so the next login still
+--- starts it and /fide world on retries now.
+function World.Suspend(reason)
+    enabled = false
+    suspended = reason or "unknown error"
+    Stop()
+end
+
 function World.SetEnabled(on)
     enabled = on and true or false
+    suspended = nil
     FidelityEMatrix_Config.worldOverlay = enabled
     if enabled then
         errors.count = 0
@@ -262,14 +411,40 @@ function World.SetEnabled(on)
         overlay:SetScript("OnUpdate", OnUpdate)
         refreshAge = REFRESH_INTERVAL
         OnUpdate(overlay, 0)
-    elseif overlay then
-        overlay:SetScript("OnUpdate", nil)
-        for i = 1, #pool do HideSlot(pool[i]) end
-        overlay:Hide()
+    else
+        Stop()
     end
 end
 
 function World.IsEnabled() return enabled end
+function World.IsSuspended() return suspended end
+
+--- Hides every copy while any reason holds (a terrain test frame is up; the report's overlay-off twin
+--- is being taken), or lets the layout show them again once none does. A copy may live under its
+--- nameplate rather than the overlay, so each copy is hidden, not the overlay frame. The saved choice
+--- (FidelityEMatrix_Config.worldOverlay) and the enabled state are not touched, and the scan keeps
+--- running, so the copies come back current.
+function World.HideFor(reason, on)
+    hiddenFor[reason] = on and true or nil
+    if next(hiddenFor) then
+        for i = 1, #pool do
+            local s = pool[i]
+            if s.mono then s.mono:Hide() end
+            if s.left then s.left:Hide() end
+            if s.right then s.right:Hide() end
+        end
+    end
+end
+function World.IsHidden() return next(hiddenFor) ~= nil end
+
+--- Drops every copy and starts a fresh pool (after /fide world frame): frames cannot be destroyed,
+--- so the old ones stay hidden under the overlay and the new ones get a new generation tag.
+function World.Rebuild()
+    local wasOn = enabled
+    for i = #pool, 1, -1 do HideSlot(pool[i]); pool[i] = nil end
+    generation = generation + 1
+    if wasOn then refreshAge = REFRESH_INTERVAL end
+end
 
 function World.ActorCount()
     local n = 0
@@ -279,17 +454,35 @@ end
 
 function World.Command(args, say)
     local sub = args[2] or "toggle"
+    local v = tonumber(args[3])
     if sub == "on" then World.SetEnabled(true)
     elseif sub == "off" then World.SetEnabled(false)
     elseif sub == "toggle" then World.SetEnabled(not enabled)
     elseif sub == "status" then
         local bands = {}
-        for i = 1, #pool do local s = pool[i]; if s.used then bands[#bands + 1] = tostring(s.unit) .. ":" .. tostring(s.band) end end
-        say("World overlay: %s, %d actor(s) [%s], stereo %s, errors %d%s", enabled and "ON" or "off", World.ActorCount(), table.concat(bands, " "),
+        for i = 1, #pool do local s = pool[i]; if s.used then bands[#bands + 1] = string.format("%s:%s:%.0fpx", tostring(s.unit), tostring(s.band), s.h or 0) end end
+        local focal, zoom = CameraScale()
+        local kind = pool[1] and pool[1].mono and pool[1].mono.GetObjectType and pool[1].mono:GetObjectType() or "none yet"
+        say("World overlay: %s, %d actor(s) [%s], frames %s (%s), unit height %.1f yd, camera focal %.0f zoom %.1f, parallax %d px, stereo %s, errors %d%s",
+            enabled and "ON" or (suspended and ("SUSPENDED after errors: " .. suspended) or "off"), World.ActorCount(), table.concat(bands, " "),
+            tostring(kind), Cfg("worldFrameType"), Cfg("worldUnitHeight"), focal, zoom, Cfg("worldParallaxPx"),
             Cfg("stereoMode"), errors.count, errors.last and (" (last: " .. errors.last .. ")") or "")
         return
+    elseif sub == "frame" and FRAME_TYPES[args[3] or ""] then
+        FidelityEMatrix_Config.worldFrameType = args[3]
+        World.Rebuild()
+        say("World copies use %s frames first (%s). Rebuilt; /fide world status shows the type that took.", FRAME_TYPES[args[3]][1], args[3])
+        return
+    elseif sub == "parallax" and v and v >= 0 and v <= 400 then
+        FidelityEMatrix_Config.worldParallaxPx = math.floor(v)
+        say("World parallax: %d px per unit of eye (0 = copies stay on their units)", FidelityEMatrix_Config.worldParallaxPx)
+        return
+    elseif sub == "height" and v and v >= 0.5 and v <= 5 then
+        FidelityEMatrix_Config.worldUnitHeight = v
+        say("Nominal unit height: %.1f yd (copies are sized as focal * height / distance)", v)
+        return
     else
-        say("Usage: /fide world <on|off|toggle|status>")
+        say("Usage: /fide world <on|off|toggle|status|frame <player|dressup>|parallax <0..400>|height <0.5..5>>")
         return
     end
     say("World overlay %s: the player and nameplate units re-rendered over the game, anchored to their nameplates, depth from range bands%s. Terrain and scenery cannot be rebuilt here (see /fide terrain).",
@@ -300,3 +493,11 @@ end
 World._pool = pool
 World._scratch = scratch
 World._overlay = function() return overlay end
+World._refreshCount = function() return refreshCount end
+World.BAND_CONFIRM = BAND_CONFIRM
+
+-- for the headless harness
+World._MotionOf = MotionOf
+World._ANIM = ANIM
+World._SetUnitOn = SetUnitOn
+World._Motion = Motion

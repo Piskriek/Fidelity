@@ -1,5 +1,422 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## The 3D in the room: WoW's own picture in depth, the phone as the camera, the 3080 doing the heavy work (05 Nov 2026 evening, Claude in the cloud, Argon on the laptop) — start here
+
+**The owner's room** (his words and Argon's measurements): the laptop (Lenovo 80RU: i7-6700HQ, Intel HD 530 and GTX 950M, 1x1 Wi-Fi) with a Hisense TV on its HDMI in front of him; the 3080 PC (`192.168.0.5`, RTX 3080, Wi-Fi 6E) elsewhere; his phone running DroidCam (`192.168.0.4` on the home Wi-Fi); a living-room TV with a Chromecast (`192.168.0.9`). Argon (Antigravity, on the laptop) is the hands: it runs commands on the laptop and on the 3080 PC over SSH. Nothing reaches the cloud session from the house.
+
+**What landed, each measured** (commits `5e1af3d` to `1756441` on this branch):
+- **`/live`** (`npm run twin`, then http://127.0.0.1:5203/live): a report's screenshot, a captured window (live, as screen sharing does: nothing touches the game) or any picture, drawn as a surface that moves with the head. The depth of each pixel is Depth Anything V2 Small's estimate, labelled as such. Here, on the tenth report's first scene shot: the resting view matches the shot (2.6 of 255); a head 0.3 to the right slides the far trees 41 px, the camp 32 px, the near ground 18 px; M gives a Magic Eye of the depth (decodes back to it). `tools/twin/relief.mjs`, tested.
+- **The phone as the head camera** (`tools/headtrack/headtrack.py --room`): the tracker had shrunk frames to 320 px with a 30 px minimum, so it could never find a face from a sofa; `--room` searches the full frame from 24 px and follows the person straight ahead. A stream is read in the background (newest picture only), reopened when it stops, and searched near the last face. OpenCV is pinned below 5 (5.0 removed the Haar face finder).
+- **The tracker on the 3080 PC** (`--serve 5204`; the twin's `--head http://192.168.0.5:5204/head.json`): on the laptop beside WoW the search took 3.1 s a picture; on the PC it tracks at 26.8 frames a second with none lost, and the laptop's `/live` shows `head: head tracker`.
+- **The depth model on the 3080 PC** (`tools/depthd`, DirectML; the twin's `--depth http://192.168.0.5:5205`): on the laptop the page's own model took 18.9 s (processor) and 28 to 30 s (Intel graphics: Windows gives Chrome the Intel chip, and neither chip has half precision); on the 3080, 104 ms warm. The round from the laptop's page first took 1.5 s; the page now shows where each picture's time goes, and the two Python servers keep their connection and send at once (the Windows small-write stall). Measured after that change (Argon, 05 Nov): **350 ms a picture** = 107 ms making the picture on the busy laptop + 19 ms the page and its twin + 10 ms the network + 214 ms on the PC (189 ms of it the model); the first picture after a start takes about 1.1 s while DirectML warms up.
+- **The tracker waits for the phone** instead of stopping when it is not there yet. In the room it waited through 40 tries, connected when DroidCam came up, and found the owner's face; after he re-aimed the phone the rest pose read x +0.40 y +0.25 with the face 148 px wide.
+
+**Open:**
+- **The first look from his seat** (held for the night, 05 Nov, with everything running): WoW on the laptop screen in Windowed (Fullscreen), Chrome at `localhost:5203/live` on the Hisense, "Capture a window (live)" on WoW, then F; the game camera still and the head moving. Not yet seen.
+- A "set my resting position" button on `/live` (offered): today a re-aimed phone needs the tracker restarted on the PC.
+- More cameras, triangulated (the owner asked for an easy way to add them): not built.
+- **The strategy the owner authorized** ("you have permission to use the strategy", 05 Nov; `fractal_symbiotic_bridge_strategy.md`, uploaded): a mapping workflow (six readers and a critic) was running at the night's hold. HeavyMetal2 could not be attached (refused), so Argon sent `hm_bridge_reference_pack.mjs` v2.2 instead (uploaded; the `@hm/shorthand` lines `m ms mt me mc mb nem` with a CRC32 tail, the 22 archetypes, a C1 to C22 registry, log scaling, split-scale coordinates, a KL-form loss). Its own self-test passes. Probes here found, each run: the provenance (`s_src`) loses its `=` signs in its own write-and-read (`Pxd=resolution` back as `Pxdresolution`); numbers with no provenance come back labelled `measured_direct`; out-of-range values are clamped without a word; its depth-grid floats depend on units (topology 0.18 or 0.997, precision 0.002 or 0.993 for the same real depth map in 0..255 or 0..1), since it assumes metres; the split-scale position drifts up to 0.6 m over 200,000 small steps (the fine part is rounded to 32-bit each step); there is no dual operator for C20 and the CRC Argon cited (0x0CC87219) is not in the file. Plan: our own version with these fixed and tested, then design, build and review from the mapping; nothing published (the owner posts).
+- **The four floats:** Argon recommends, and the default stays, the setup measurements under their own names and the four floats `not measured`; the owner has not ruled otherwise.
+- Argon's own work on the laptop (the fractal engine at Rung 3, a Coldridge scene, Coldridge map tiles written straight into the game's AddOns folder) is uncommitted in `D:\fidelity-repo`; the laptop's copy also has two commits of its own (a merge and a Windows line-ending test fix, `2b0306d`). The twin runs from a clean worktree beside it, `D:\fidelity-twin`.
+
+## The Fidelity Twin: Northshire outside the game (05 Nov 2026, Claude in the cloud)
+
+**The owner asked to try the external scene.** He suggested a standalone engine fed by telemetry from WoW in place of the in-addon overlay: exact camera control, true 3D with no cropped squares, head tracking straight into the view, room for GPU fractals; the trade-off is a separate window.
+
+**What landed** (`apps/wow-twin/`, `tools/twin/`; run `npm run twin`, open http://127.0.0.1:5203; `apps/wow-twin/README.md`):
+- **The ground:** all nine Northshire tiles' heights, from the addon's own map data. The test checks that the height under the tenth report's pose is the ground the client recorded there.
+- **Stand-ins:** every one of the 5,027 placements as a simple shape for its kind, at its position, turn and scale. These are not the game's models. The 43 buildings are wire columns (not drawn).
+- **The game's camera at any recorded shutter pose, over the report's own screenshot.** The camera is the addon's `BuildCamera` line for line. The test reproduces all 308 feet the client recorded at the tenth report's shutters, through the shared module and through a three.js camera. Cyan crosses mark predicted feet, yellow circles the director's blind feet.
+  - At the saved default the camp's stand-ins float above the real camp. With the proposal (pitch 12.8°, fovY 53.8°, not confirmed) they stand on it.
+- **A head-coupled window:** the screen as a window. `head.json` from `tools/headtrack/headtrack.py --no-gamepad` moves the eye, with no virtual pad needed; "mouse as head" tries it without a webcam.
+- **Free orbit.**
+- **A live pose:** any source can `POST /api/pose`, and the viewer follows.
+- **Shots matched to files in time order:** a file named a second late goes to the right shot, and a twin that overwrote its first shot is marked.
+
+Checked in headless Chromium here: four views and the window mode at two head positions, with no page errors. `tools/twin.test.mjs` passes 6/6.
+
+**Open, for the owner:**
+- **Which live source feeds the pose from WoW.** An addon cannot open a socket. His ladder puts the game's own files before the screen, so the order is: the chat log under `/chatlog` (to be tried in the game), then a pixel strip read by a screen capture.
+- **No live creatures:** the API gives world positions only for the player and party.
+- **H011** asks the laptop to run the twin beside WoW with the head tracker.
+
+## The tenth report, the owner's eight rulings, v1.8.9 and the second step (05 Nov 2026, Claude in the cloud)
+
+**What came back:** `reports/20261105-0530` on `origin/owner/reports` (`d7839c8`). It holds 21 shots on v1.8.8 at the kobold camp north of the Abbey, the saved report and the MANIFEST, and every hash matches. The owner's rulings on the round's eight questions came with it. So did two notes: from Argon, how to decompose the camera's error; from the owner, that the copy of his character did not run when he ran. The full account is in `docs/council/2026-11-04-rungs/LANDED.md` (status **changed**, revised after the round's review), and `STEER.md` ends with the answered rulings, the news back and the next ASK.
+
+**The camera's first verdict.**
+- The step-1 overlay-off twin was read blind before any prediction was opened (owner ruling 1). The record is `judge/blind10_scene.json`, committed byte-identical; its SHA256 `cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793` was printed in the session at 03:42:10Z (self-reported time). From the next report on, the hash is committed before unsealing.
+- At the saved default (pitch 0.35 rad, fovY 1.0 rad), every matched placement stood about 100 px (of 1041) below its predicted foot, at depths from 17 to 110 yd. **The projection fails** (five readings, 0.60 to 3.31 of each prop's projected height, each far beyond the blind reader's 10 px floor).
+- A fit on seven blind feet, at the map data's own placements, gives pitch 12.85° and fovY 53.82° (yaw offset -0.0001).
+- The held-out sapling G lands 0.120 of its height from its blind foot at precision 0.064: **undecided**, so the proposal is **not confirmed**. It prints as an ask and applies only by the owner's `confirm` (ruling 4).
+- The 10 px floor is the reader's own error. After unsealing, the two sapling trunks proved 9.5 px and 7 px from their blind feet, against a stated 3 px.
+- The first write-up's "fail by 0.002, a local offset" rested on that 3 px and is withdrawn.
+- `judge/fit10.py` reproduces every number in plain Python, and checks the barrel's foot against the client's.
+
+**The fits.**
+- Barrel x0.53: **holds**, the first fit confirmed.
+- Bush x2.44 and crate x0.38: **fail**, and no camera distance alone can pass either (each reaches further below its middle than above; a vertical offset is next).
+- Tree: x5.6 in its 1.5-wide frame runs past the bottom, so a doubled trial at x11.2.
+- A wider frame magnifies the model: about 1.66× from aspect 0.8 to 1.85.
+
+**Procedure defects found and fixed in v1.8.9:**
+- the jar's twin overwrote its first shot (same second): the twin now waits until the clock is two seconds past the first shot's call (a file can be named a second late);
+- the canopy04 step drew the barrel under canopy04's name: a pick nothing matches is refused, and stays refused through the step's later presses;
+- step 11 was not turned: it now says so;
+- the copy of the character stood while the owner ran: each copy now stands, walks, runs or swims with its unit.
+
+**The rulings (05 Nov), as landed:**
+1. Twin readings count, read blind; his presses rank first.
+2. τ = 0.1.
+3. "Awareness" is a list of held rung names in `bridge/sync/rungs.json`, never a number on screen.
+4. `/fide terrain pitch|fov <deg>` only asks; `... confirm` writes and `default confirm` clears; confirmed fits may stay in `FIT_BY_FILE`.
+5. The relative-position rule, the depth sign-off, the camera options and `test fit` stay his.
+6. Camera options fixed.
+7. **Landed as the second step:** `tools/rungs-sync.mjs` writes `bridge/sync/rungs.json`, and the Apex's query reply fills `cascade_trace.rungs_traversed` (the rungs that hold) and `teacher_handshake.step_2_decision.rungs` (every verdict and the frontier). A missing file reads not_measured. There is no HUD change and no flow.
+8. Argon's Gates 1, 3, 5 and 7 stand.
+
+**Landed:**
+- `docs/rungs/ledger.json`: 93 rows (11 from the tenth report), its manifest, the camera proposal, and the `subject` convention.
+- `rung_ledger.mjs`: the camera in use is the projection's context; `subject` keeps two placements in one shot apart; the proposal is read from the addon.
+- v1.8.9: fits and statuses, the camera ask with `confirm`, the four procedure fixes, the motion of the copies.
+- `tools/frame_fill.py`: the frame's columns are read from its edges.
+- `packages/triad-369/src/rung_slots.mjs`, `tools/rungs-sync.mjs`, `bridge/sync/rungs.json`, and the Apex hook.
+- Tests: the ledger suite 20, the headless suite 70 (35 per SetLight profile), and `rung-slots.test.mjs` 5.
+- H010 asks for the eleventh report and the WoW Forever report. That one (a gnome in the dwarf starting zone) is not on `owner/reports`. The map data covers only Northshire's nine tiles, so Coldridge Valley reads MISSING until its report comes back.
+
+**The round's review:** five reviewers, each followed by a skeptic, confirmed 26 of 39 findings, and all are addressed (listed in `LANDED.md`). The largest was the held-out precision above. Others: the replica fed rounded placements; the refusal undone by the step's next press; a twin still able to share its first shot's name; the heights outside the camera lock; the uncited blind-record hash; 34 false frames from the first `find_frame` fix; self-contradicting snapshots served as judged; line endings in the snapshot's hash; and tests that could not fail.
+
+A second pass found 25 of the 26 fixes sound and seven more defects, all fixed. The largest: the Triad snapshot was always judged at the default camera, so `docs/rungs/ledger.json` now records the camera in use (`camera`) and `tools/rungs-sync.mjs` judges at it.
+
+**Evidence (05 Nov, Linux, Node 22):**
+- `npm test`: 212 tests, 211 pass, 0 fail, 1 skipped;
+- headless: 70/70;
+- `node tools/test_ematrix_math.mjs`: 14/14;
+- `node tools/rungs-sync.mjs --check`: matches.
+
+## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, first committed 17:36Z, revised three times after adversarial review, evidence 22:01Z, Claude in the cloud) — start here
+
+**The owner's idea** was a node per density or fidelity rung, looping back to the fidelity process, taking his camera settings into account, with "a polynomial time algorithm" (`docs/council/2026-11-04-rungs/OWNER-INPUT.md`). Twelve voices ran, each verified, then three synthesis angles and a judge (`JUDGED.json`). Argon's Bentov packet was weighed as a candidate lens, and the gradient-equivalence note was applied.
+
+**The answer** is in `docs/council/2026-11-04-rungs/STEER.md`. The missing element is a recorded reading per rung: the rung's operating point, paired with what a witness outside the rung saw there, kept as one row with its artifact and that artifact's MANIFEST SHA256, its time and its context. A rung holds only while such a row at the value now in use is within tolerance and every rung beneath it holds. A reading decides only when it clears the tolerance by its own precision; an edge that only touches the frame (it may be cut there) decides nothing. Every rung had its input, output and test; the row was the node it lacked. No node per density, and no awareness number.
+
+**The director's second reading of all 35 camera-distance fit shots** overturned three first readings made by eye. The reading used ticked crops and brightened zooms; the bush and tree readings were corrected after two reviews re-read them.
+- The barrel fills 0.83 at x0.6, not 1.
+- The tree's canopy is cut at the frame top at x2.8, in the narrow and the wide frame alike.
+- The bush at x2, said to fill its frame, has twigs reaching 0.10 to 0.12 below the frame's top and stems touching its bottom in all seven x2 shots. That is undecided, and can never be decided at x2, since the touching edge may be cut. Its base, hidden at x3, reaches at least 0.89 there, so its down reach is at least 1.17 against up 0.78. It moves to a trial at x2.44, where its twin sees both edges. By those bounds no camera factor alone fills its frame (at most 0.83).
+
+The jar's base was hidden behind the world overlay's copy of the player. Each file reaches a fixed distance above and below the frame's mid-line at x1; the barrel's five readings agree within 0.025 over a factor of five in k. The proposal puts the larger reach 0.02 inside the frame, so the next reading sees two edges. Whether a frame's aspect changes the framing stays open, so a fit reading counts only in the aspect it was taken in.
+
+**Where this stands.** None of the fits holds yet. **The claim that the props stand where the real objects stand is withdrawn** until the projection holds on an overlay-off twin, since no scene shot ever carried its pose. The map data, the axis, the load and the PlayerModel frame hold.
+
+**The reviews.**
+- First pass: five reviewers (the evaluator, the Lua, the data, the documents, the tests), each checked by a skeptic, confirmed 34 of 39 findings.
+- Second pass: five skeptics and a regression hunter verified the fixes. They found 28 sound, 6 partly open, and new defects in the fixes.
+- Final pass over the second revision: nine more, demonstrated: an untestable refusal pair, canPass judged before rounding, negative gaps admitted, the bush's hidden base recorded as seen, the bush's x2 step undecidable, and three test gaps.
+
+All are addressed:
+- A touching edge no longer passes a fit, and the twin tool can no longer make a cut model hold.
+- Proposals keep a margin, and doubling applies when every reading reached an edge.
+- Precision is required.
+- The field types each test reads are checked.
+- Duplicates are counted by position.
+- The re-check admits every row and finds changed rungs by content.
+- The cycle report is linear.
+- The lock and precedence tests that the first revision dropped are restored.
+- Every adjacent pair of refusal reasons is pinned.
+- The supersede reasons are honest (a hidden panel says so).
+- The bush's hidden x3 base is recorded as a bound, the wide tree as clipped.
+- The aspect-effect claim is withdrawn.
+- The judge's synthesis is committed.
+
+**Landed:**
+- **`packages/triad-369/src/rung_ledger.mjs`**, the one evaluator: Kahn order, chained 64-bit keys, admission with reasons in a fixed order, one decision per rung, estimates that only propose, the frontier, and an incremental re-check by BFS. A full pass is O((R + M)·P log P + E + M log M + N), with P ≤ 3 here.
+- **`docs/rungs/ledger.json`:** 82 readings (49 of them fit readings), every hash taken from its report's MANIFEST.
+- **`tools/rung-ledger.test.mjs`:** 18 tests, including:
+  - forty stacked diamonds (2^40 paths) take 121 decisions and a re-check 92;
+  - 300 random cases where the re-check equals a fresh pass, with reused ids and strays;
+  - every refusal reason, and every adjacent pair one row can carry, in their order;
+  - the lock;
+  - the owner's precedence.
+- **`docs/council/2026-11-04-rungs/JUDGED.json`** and **`judge/`:** the judge's scores, synthesis and camera computations.
+- **v1.8.8:**
+  - fits written back: barrel 0.53 and crate 0.38 as estimates; the bush 2.44 and the tree and canopy04 5.6 as trials. Each carries the ledger's status in place of "measured from your reports": estimated, read and undecided, or a trial value;
+  - the probe names every drawable placement;
+  - the pitch and the focal say "(saved default, not measured)";
+  - every shot records the pose and every placement's prediction at its shutter, silently;
+  - twin steps take an overlay-off second shot without writing a saved choice;
+  - a terrain test hides the world's copies;
+  - a test `aspect` knob;
+  - the panel: 1 scene + twin, 2 checks, 3 to 9 the six fits at their values plus the crate in a 1.85-wide frame, each with a twin, 10 and 11 scenes + twin, 12 the box, Save, Clear.
+- **`tools/frame_fill.py`:** `twin` reads a fit twin into the ledger's fields and flags dim edges for the eye.
+- **H009**, re-requested 17:32Z for the tenth report.
+
+**Evidence (22:01Z, Linux, Node 22):**
+- `npm test`: `# tests 203 # pass 202 # fail 0 # skipped 1`;
+- the ledger: 18/18;
+- headless: 68/68;
+- math: 14/14;
+- manifests: 4/4;
+- hands: 22/22.
+
+**What the tenth report settles:**
+- the camera's first verdict at the start pose: pitch and fovY fitted on the twins' named feet and tested on a held-out placement;
+- the six fits read from their twins with both edges seen;
+- whether hiding the world's copies clears the test frames.
+
+The owner's eight rulings are in the STEER. The first one: whether the director's reading of his screenshots counts as a measurement.
+
+## The eighth report confirms the fits; the terrain is in the game; v1.8.7 (04 Nov 2026, 11:01Z, Claude in the cloud) — start here
+
+**The eighth report (v1.8.6, 12:46 local, `origin/owner/reports`, `reports/20261104-1247/`).** The tree at its fit (x2.8) fills the red frame top to bottom, canopy at the top edge and trunk base at the bottom; the barrel at its fit (x0.6) fills it too. Both readings of the seventh report hold. The jar at the rule's x2.15 filled about 0.17 of its frame and the crate at x1.39 about 0.3, so their fits are 0.37 and 0.42: the height rule is useless for small props, as the nominal heights (the jar's default was 3 yd) are not the models'. The scenes show the barrel and the crate at the kobold camp where the real ones stand, the near tree mostly off the right edge where its placement projects (`screen 1499,293`, 1013 px tall), and a far canopy tree as a clipped block, because its frame was 0.8 as wide as tall. No saved fit yet: the owner has not used `fit`.
+
+**Landed as v1.8.7:** fits for five files (bush 2.0, tree 2.8, barrel 0.6, jar 0.37, crate 0.42, all read from the red frame); a file not yet measured interpolates between the measured heights and fits (0.7 yd 0.37 ... 2.5 yd 2.0 ... 14 yd 2.8, clamped at the ends), and the test line says so; trees and canopies get frames 1.5 as wide as tall (the camera fits the height; the width only shows more of the canopy; needs in-game verification); the jar's nominal height is 0.7 yd and the default for unknown files 1.5 yd; the panel for the ninth run: the jar and crate by their fits, the canopy and a tree in wide frames, the scene facing a big tree and facing the camp, the bound box. Headless 66/66. H009 re-requested for v1.8.7.
+
+**Where this stands.** The terrain overlay is in the game: the map's props are drawn on PlayerModel frames at their projected places, sized by measured fits, standing where the real objects stand. Each further file is one `fit` press by the owner, or one red-frame reading from a report. The frame's projection (pitch 20.1 degrees fixed, the focal from the zoom) placed the camp's props at the camp; a finer check of position against the real objects is the ninth run's scene facing a big tree.
+
+**Evidence (11:01Z, Linux, Node 22):** `npm test`: `# tests 183 # pass 182 # fail 0 # skipped 1`; headless 66/66; manifests 4/4.
+
+## The seventh report: fits per file, the model centred on the mid-line, the owner's rule of relative position; v1.8.6 (04 Nov 2026, 10:39Z, Claude in the cloud) — start here
+
+**The seventh report (v1.8.5, 12:24 local, `origin/owner/reports`, `reports/20261104-1226/`, seventeen screenshots, the test frame's edges in red).** The bush at x2 fills its frame top to bottom. The tree at x3.98 fills about 0.7 of its frame, so its fit (fill 1) is near x2.8; at x6 about 0.55. The barrel at x1.49 fills about 0.4, so its fit is near x0.6; at x3 about 0.2. The engine centres the model's bounds on the frame's mid-line: the barrel sits exactly on it, the tree's visible part above it (its bounds reach below the trunk). The nominal heights (2.5, 14, 1.2 yd) do not predict these fits, so no one rule does; the fit is a property of each file.
+
+**The owner's reading, recorded as the rule:** "It is not the size that matters, just the relative position between them compared to the mirror": a camera sweep on one model alone only scales it in a vacuum; what counts is that the props stand where the real objects stand and keep their proportions to each other and to the player. The frame's projected height carries the proportion once each model fills its frame; the base of a frame-filling model sits at the frame's bottom, which is where the prop's projected foot is anchored.
+
+**Landed as v1.8.6:** per-file camera fits, measured (`elwynnbush09` 2.0, `elwynntreemid01` 2.8, `westfallbarrel01` 0.6), keyed by the lowercase file name whatever the path's case or slashes; the owner's own fit for the picked prop saved from the test (`/fide terrain test fit <k>`, `fit clear`) into `FidelityEMatrix_Config.propFit`, re-settling the pool's copies at once; the height rule only for files not yet measured, and the test line says which of the three it used; the panel checks each kind of prop by its fit (bush, tree, barrel, then the jar and the crate by the rule), the scene twice (the second after the owner turns to the kobold camp), the bound box. Headless 66/66. H009 re-requested for v1.8.6.
+
+**Evidence (10:39Z, Linux, Node 22):** `npm test`: `# tests 183 # pass 182 # fail 0 # skipped 1`; headless 66/66; manifests 4/4.
+
+**Open after this:** fits for the other files near the abbey (the jar, the crate, the canopy trees), which the owner can set by eye with `fit`; the frame's aspect for wide canopies; the eye's parallax across the props; the stereo pair.
+
+## The sixth report: the proportional rule overshoots on the tree; v1.8.5 fits a two-point rule and marks the test frame (04 Nov 2026, 10:13Z, Claude in the cloud) — start here
+
+**The sixth report (v1.8.4, 11:59 local, `origin/owner/reports`, `reports/20261104-1200/`).** The bush by the rule (camera x2) sits whole in its frame at the player's feet, with a little margin; at x3 it is smaller and whole. The tree by the rule (x11.2) is a small whole tree, about a third of its frame; at x16 smaller still. So the proportional rule overshoots: a PlayerModel's own camera already backs off with the model's bounds, only not fully. The live scene shows the barrel, jars and crate beside the kobolds and the tree's canopy as a smaller block at the upper left (its frame still runs off the top of the screen at 1013 px). The bound box worked as before.
+
+**Landed as v1.8.5:** the camera factor is `2 * (h / 2.5) ^ 0.4`, two points: the bush (2.5 yd) fits at x2, measured; the tree's fit is about x4, estimated by eye from a third of a frame at x11.2. The rule gives a 14 yd tree x4, a 16 yd canopy x4.2, a 1.2 yd barrel x1.5, the 3 yd default x2.15. The test draws its frame's edges in red with a thin mid-line, so a picture shows whether the model is centred in its viewport or standing on its base, which decides the vertical anchor. The panel runs the bush by the rule, the tree by the rule and at x3 and x6, a barrel by the rule and at x3, then the scene and the bound box. Headless 66/66 (the rule's values and clamps, the marks shown with the test and hidden on off). H009 re-requested for v1.8.5 with one question: which tree picture and which barrel picture fit the red frame best.
+
+**Evidence (10:13Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4.
+
+**What the seventh report settles:** the exponent (three fits: bush, tree, barrel) and the anchor (where the model sits against the red frame). After that the heights themselves: the keyword table against the models' real extents.
+
+## The fifth report measures the camera: a 2.5 yd bush fits its frame at x2; v1.8.4 sets the rule from that (04 Nov 2026, 09:43Z, Claude in the cloud) — start here
+
+**The fifth report (v1.8.3, 11:26 local, `origin/owner/reports`, `reports/20261104-1134/`, twelve screenshots over two passes).** The live scene (button 1) shows the map's barrel, jars and crate drawn on the ground beside the kobolds, where the real ones stand, at a believable size, and the tree as a rectangular block of canopy up-left of centre: the PlayerModel's viewport clips a model that is still too close. The bush test measured the camera: at the rule's x1 and at x0.5 the bush overflowed its frame (a close-up of leaves), **at x2 it fitted the frame whole**, and at model scale 0.3 it sat small at the frame's foot. So one camera distance frames about 1.25 yd of height, and the model's base sits at the frame's bottom, which is where the props are anchored (their projected foot). The owner skipped x4 and the bound box; the report file still holds every run (Clear was not pressed).
+
+**Landed as v1.8.4:** the reference height is 1.25 yd (measured, not assumed): a 2.5 yd bush gets camera x2, a 14 yd tree x11.2, a 16 yd canopy x12.8, a 1.2 yd barrel x0.96; the clamp is 0.25 to 16; the test takes `pick <word>` (the first loaded prop whose path holds the word, so a tree can be sized by eye) and `pick any`; the panel: 1 the scene, 2 the checks, 3 the bush by the rule, 4 and 5 the bush at x1 and x3, 6 a tree by the rule, 7 the tree at x16, 8 off, 9 the scene again, 10 the bound box. Headless 66/66 (the canopy x12.8, the bush x2, the clamp at 16, pick by keyword). H009 re-requested for v1.8.4.
+
+**Evidence (09:43Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4.
+
+**Open after this:** the nominal heights are a keyword table (`HEIGHT_RULES`: tree 14, canopy 16, bush 2.5, barrel 1.2); the files' real extents would need the M2 bounding boxes, which the generator does not read; the frame's aspect (0.8 wide) clips wide canopies; the eye's parallax across the props and the stereo pair are unverified.
+
+## The fourth report: the terrain draws in the game; v1.8.3 sizes each prop's camera by its height (04 Nov 2026, 09:15Z, Claude in the cloud) — start here
+
+**The fourth report (v1.8.2, 10:58 local, `origin/owner/reports`, `reports/20261104-1059/`).** With both overlays on, screenshot 1 shows the map's 14 yd tree drawn over the world: its foliage fills the right side of the screen at the place the probe projected it (`elwynntreemid01.m2 ... screen 1499,293 depth 13.3 height 1013 px`). The bush on a PlayerModel frame fills its frame again; the plain Model frame still draws nothing. `/fide terrain status`: `props drawn 15 | models loaded 45 failed 0 | errors 0`, `frames PlayerModel`; the world overlay: eight actors on PlayerModel frames. **The terrain pipeline is proven end to end on the owner's screen:** the map data (round 1), the axis (the probe), the loader (the reports), the frame kind (the third report), the draw (this one).
+
+**What is wrong now is size, not presence.** A PlayerModel frames whatever it loads as if it were a character at a fixed camera distance: the 2.5 yd bush fills its frame, the 14 yd tree is seen from inside its canopy, a 1.2 yd barrel would be a small thing in the middle of its frame. The projected frame height already carries the depth; the camera inside the frame did not carry the model's extent.
+
+**Landed as v1.8.3:** after every load the camera backs off in proportion to the model's nominal height (`SetCamDistanceScale(height / 2.5)`, clamped 0.25 to 8, the bush as the reference that filled its frame; `SetModelScale(1 / that)` where a frame has no camera distance call); the test prints the nominal height and the camera factor and takes `camdist <k>` and `scale <s>` knobs; the panel's twelve buttons are the sizing run: 1 the live scene (both overlays on, box hidden), 2 the checks, 3 one bush at the centre at the rule's distance, 4 to 6 the camera at x0.5, x2, x4, 7 the model at scale 0.3, 8 off, 9 the scene again, 10 the bound box. Headless 66/66 (a 16 yd canopy gets x6.4, the bush x1; the clamp; the knob on a new frame). H009 re-requested for v1.8.3 with one question for the owner: which of 3 to 7 looked like a bush the right size, and whether the scene shows the trees, barrels and jars where the real ones stand.
+
+**Evidence (09:15Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4.
+
+**Open after this:** the model's real extent (the nominal heights are a keyword table, `HEIGHT_RULES`; the files' bounding boxes are not read), the vertical anchor inside a PlayerModel frame (the foot of the model against the projected foot of the prop), the parallax of the eye across the props, and the stereo pair.
+
+## The third report settles the terrain: a plain Model frame draws nothing on this client, a PlayerModel frame draws the same file; v1.8.2 moves every prop (04 Nov 2026, 08:35Z, Claude in the cloud) — start here
+
+**The third report (v1.8.1, 10:23 local, `origin/owner/reports`, `reports/20261104-1024/`, nine screenshots, every variant on a brand-new frame, each line saying `visible true`).** Screenshot 3 (a new PlayerModel frame, the bush, no camera call) and screenshot 4 (a new DressUpModel frame, the same file) show the bush filling the 341 px frame at the screen centre over the dimmed world. Screenshot 2 (a new plain Model frame, no camera call), 5 (Model at strata HIGH), 6 (the client's own question-mark model on a Model frame), 7 (Model with `cam 0`) and 8 (Model at scale 5) show nothing. So on Burning Crusade Classic 2.5.6 a plain `Model` frame draws nothing an addon loads by path, whatever the camera, strata, scale or file, while `PlayerModel` and `DressUpModel` frames draw it. The terrain pool was `Model` frames from v1.6 on; the camera call was never the cause.
+
+**Landed as v1.8.2:** every prop is a PlayerModel frame (DressUpModel, then Model as fallbacks, in that order); `/fide terrain status` prints `frames PlayerModel`; the terrain test's default frame kind follows the pool's; the panel's button 1 turns the terrain overlay on before its screenshot, so the first picture of the next run is the one that shows the props in the world. Headless 66/66 (the pool's frames are PlayerModel; the test's first press draws on that kind). H009 re-requested for v1.8.2.
+
+**Evidence (08:35Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4.
+
+**What the fourth report will say.** Screenshot 1, with the overlay on: the bushes, trees, barrels and jars of the map data drawn over the world at their projected places (15 within 70 yd at the Abbey door), each sized by its depth. Then the questions that follow are the ones the harness cannot answer: how a PlayerModel frames a doodad (the bush filled its frame; the model's own extent is not read yet), whether the sizes read right against the real objects they double, and the parallax of the eye across them.
+
+## The second report: the decisive variant never ran; v1.8.1 draws every test on a new frame of its own kind (04 Nov 2026, 08:10Z, Claude in the cloud) — start here
+
+**The second report (v1.8.0, 09:58 local, `origin/owner/reports`, `reports/20261104-0959/`, nine screenshots and the saved lines of both runs).** Button 2, the one variant with no camera call on the bush, fired in the same frame the overlay came on, before the first scan, and printed "no loaded prop yet" twice; its screenshot shows the box, undimmed. Buttons 3 to 8 ran on the one pool frame after `cam 0` had been applied to it (file id 189700 for the bush, 130738 for the question-mark model), and whether a camera selection persists across `SetModel` on the same frame is unknown, so the camera hypothesis is neither proven nor refuted. Nothing showed at the centre in any of them, with the box hidden and the world dimmed. Step 10 showed the bound box again with seven units measured.
+
+**Landed as v1.8.1:** every `/fide terrain test` press draws on a brand-new frame of its own kind, so no earlier knob can linger: `frame model|player|dressup` (the PlayerModel and DressUpModel frames are the kinds that do render in this addon), `strata background|medium|high`, `known` or `own`, `cam <n>`, `z <x>`, `scale <s>`, `nolight`; the pool's own frames are never touched and the layout returns on `off`; a test on an overlay that just came on scans first; the line prints the frame kind, the file id, the strata, the level and `IsVisible`. The panel's twelve buttons in the order that settles it: 2 new Model frame (no camera), 3 PlayerModel frame, 4 DressUpModel frame, 5 strata high, 6 known model, 7 cam 0, 8 scale 5, 9 off, 10 bound box. Headless 66/66 (each press a new frame of the asked kind, the pool hidden and restored, the box hidden and restored). H009 re-requested for v1.8.1 (Clear report first).
+
+**Evidence (08:10Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4; math 14/14.
+
+**What the third report will say.** If screenshot 2 shows the bush, a plain Model frame draws and the camera call was the cause. If 3 or 4 show it and 2 does not, the frame kind is the cause and the props move to that kind. If 5 shows it, the overlay's strata or level is the cause. If 6 shows the question mark and nothing else shows the bush, doodad files are the cause. If none shows anything while the line says `visible true`, the Model frames of this client draw nothing an addon loads by path, and the terrain moves to a different host (the ground height and placements as a map, or the world copies' kind of frame with creature display ids).
+
+## The first report came back; v1.8.0 drops the camera call every invisible prop had (04 Nov 2026, 07:50Z, Claude in the cloud) — start here
+
+**The loop closed end to end.** Flash deployed v1.7.9, the owner pressed the panel's buttons, Flash pushed `reports/20261104-0935/` on `origin/owner/reports` (eight screenshots, `FidelityEMatrix.lua` with the saved report, a manifest with hashes). The saved lines are the full check list in text: `Terrain overlay: ON ... props drawn 15 ... models loaded 45 failed 0`, the probe (`tile azeroth:32:48 FOUND`), `Model: YES` among the frame types, `SetCamera: YES`, eight cells bound with seven measured bands, the HUD on seed labels. The eye probe says `C_GamePad present | active device 5` but no mapped state: H006 has not run.
+
+**What the screenshots show.** With the box hidden and the world dimmed, nothing appears at the screen centre in any terrain test variant: the bush fresh, `SetPosition` 2 and -2, "cam off", scale 0.2, and the client's own question-mark model. So the Model frame draws nothing it loads, not only doodads. Two flaws in the v1.7.9 test weaken the variants: the knobs accumulated on one frame (the known model ran at scale 0.2 two units away), and "cam off" only skipped a new call while `SetCamera(0)` had already been applied at load. **The one call every prop received from v1.6 to v1.7.9, and no visible model in the addon ever gets, is `SetCamera(0)`:** it selects a camera a doodad file does not have, and the world overlay's copies and the box's subject, which do render, never call it. That is the hypothesis v1.8.0 tests.
+
+**Landed as v1.8.0:** no `SetCamera` on any prop load (position 0, facing 0, scale 1 only); every test variant starts from a fresh `SetModel` so no knob lingers, and names its one knob: `default` (no camera call), `cam 0` (the old call, on purpose), `z <x>`, `scale <s>`, `nolight`, `known`, `own`; the line says whether the file loaded and its file id. The panel has twelve buttons (1 checks; 2 fresh; 3 cam 0; 4 z 2; 5 z -2; 6 scale 5; 7 no light; 8 known model; 9 test off; 10 bound box; Save; Clear), and a button pressed within the half second marks the previous shot "not taken" instead of leaving it "pending" (the first run had a double press on 7). Headless 66/66 (no prop gets a camera call; each variant starts fresh; the supersede). H009 re-requested for v1.8.0 (forbidden-step scan empty).
+
+**Evidence (07:50Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4; math 14/14.
+
+**The check that settles it:** the second report's screenshot 2 (fresh, no camera call). If the bush appears, every prop appears with it and the terrain is in; if not, screenshots 3 to 8 say which knob makes anything appear, and the one that does becomes the rule.
+
+## v1.7.9: the owner's report panel, the terrain test that hides the box, task H009 for the laptop (04 Nov 2026, 07:18Z, Claude in the cloud) — start here
+
+**The owner's v1.7.8 screenshots (8:04 local):** with the overlay on, `Terrain overlay: ON ... props drawn 15 | models loaded 45 failed 0 | errors 0`, and nothing visible in the world. So the Model frames place and show the loaded files and render nothing the owner can see; the harness cannot tell, since it asserts the frame's size, anchor and `Show()`. The terrain test's prop was hidden behind the scoreboard box (the box sits over the screen centre above the overlay's BACKGROUND strata), so its five variants told nothing; the world did go dark, which proves the overlay frame itself is drawn. The HUD now reads `Coherence: seed | Strain: not measured` and `S=seed(...)`: **H008 is in the game.** Round 4's open-cell click line and the held press are still unseen.
+
+**Landed as v1.7.9:**
+- `/fide terrain test` hides the box while it is on and shows it again on `off`; `known` loads the client's own question-mark model (`interface/buttons/talktomequestionmark`) into the test slot: if that shows where a doodad does not, the frame draws and the doodad's camera or bounds are the question; if neither shows, the frame itself is. `off` reloads the prop's own model.
+- **The report panel** (`FidelityEMatrix/EMatrix_Report.lua`, `/fide report`): eleven buttons, top to bottom. 1 runs every check (`status`, `cells`, `bind status`, `world status`, `terrain status`, `terrain probe`, `eye probe`, `diag`) with their chat captured, colour codes stripped, into the SavedVariable `FidelityEMatrix_Report`, and takes a screenshot half a second later (`Screenshot()`, general knowledge, needs in-game verification); 2 to 7 run the terrain test and its variants (z 2, z -2, cam off, scale 0.2, known), a screenshot each; 8 ends the test; 9 shows the box with the binding draw and the world overlay on and lists the cells; Save reloads the UI so the file is written; Clear empties it. Headless: the lines are captured, the screenshot follows the delay, the box hides and returns, save reloads, clear empties (66/66).
+- **H009** for the laptop (priority 0, `bridge/hands/laptop_tasks.json`, forbidden-step scan empty): deploy v1.7.9 (16 files now), tell the owner to press the buttons and Save, then copy the newest screenshots and the `FidelityEMatrix.lua` SavedVariables file into `reports/<stamp>/` with a manifest on branch `owner/reports` in a separate worktree (`D:\fidelity-reports`), commit and push there (never the deploy branch, never main). The director fetches `origin/owner/reports` and reads the exact lines.
+
+**Evidence (07:17Z, Linux, Node 22):** `npm test`: `# tests 183` / `# pass 182` / `# fail 0` / `# skipped 1`; headless 66/66; manifests 4/4; hands 22/22; math 14/14; kernel 6/6.
+
+**Argon's note on the return loop** (relayed by the owner at 07:20Z; the Triad relay returned it unchanged) is recorded verbatim in `.agents/skills/compassion-loop/ARGON-RETURN-LOOP.md`; the skill's new section "The return loop and the one distortion trap" maps each clause to the rule that already enforces it here (with the file), names what is framing rather than code, and states the trap as a rule for the director: the council never secures itself against the owner.
+
+**The owner's procedure on v1.7.9:** `/reload`, `/fide report`, press 1 to 9 top to bottom (each takes its screenshot after half a second; the terrain test hides the box so the centre is visible), then Save (reload UI); tell Flash, who runs H009. The report's step 2 to 7 screenshots settle the Model frame question; step 1's lines are the full check list in text.
+
+## The owner's terrain probe: the axis fix proven, the loader proven, the Model frame in question; v1.7.8 adds `/fide terrain test` (04 Nov 2026, 06:55Z, Claude in the cloud) — start here
+
+**The probe (v1.7.7, the Abbey door):** `tile azeroth:32:48 FOUND, 9 tile(s) around | ground 89.1`; `15 drawable placements within 70 yd` with screen positions and heights for the six nearest; `models loaded 90, failed 0`, the last by its path. So the v1.7.5 axis fix is proven in the game, the map data is right, and `SetModel` with a path loads on this client. The status line's `props drawn 0` was taken after `/fide overlay off`, so it says nothing; with the overlay on, models loaded (the loads only happen then), were placed and shown, and the owner saw nothing. The headless harness cannot see inside a Model frame: it asserts the frame's size, anchor and `Show()`, not what the client renders in it.
+
+**Landed as v1.7.8** (the addon only): every loaded model is settled at its origin (`SetPosition(0, 0, 0)`, facing 0, the file's camera 0 when it has one, scale 1; Classic has no `SetDefaultModelPosition`), and `/fide terrain test` draws one loaded prop alone at the screen centre, 40% of the screen tall, over a dimmed world, and prints what it did; `z <x>` moves the model toward or away from the frame's camera, `cam <n|off>` picks or drops the file's camera, `scale <s>` scales it; `off` restores. Nothing else moves while the test is on. Headless: the test shows exactly one prop at the centre, the knobs reach the model, off restores the layout (64/64).
+
+**The owner's next paste:** `/fide terrain on`, then `/fide terrain status` (it must now say `props drawn N` with N above 0), then `/fide terrain test` and a screenshot. If nothing shows at the centre over the dimmed world: `/fide terrain test z 2`, `z -2`, `cam off`, `scale 0.2`, a screenshot of the first one that shows anything, then `/fide terrain test off`. That tells us the frame's view, and the next version places every prop accordingly.
+
+**Evidence (06:55Z, Linux, Node 22):** `npm test`: `# tests 181 # pass 180 # fail 0 # skipped 1`; headless 64/64; math 14/14; kernel 6/6.
+
+## News back from the game: v1.7.7 seen, round 4 `used`, the terrain still not drawn (04 Nov 2026, 06:47Z, Claude in the cloud) — start here
+
+**The owner's three screenshots (v1.7.7 on TBC Anniversary, 7:41 to 7:42 local), read against round 4's check list:** the login line says `v1.7.7` and `eye hand:cursor (no head measured)` (check 1); `/fide cells` prints `label 0.50 age 0.1s of 2s measured -> open` for seven units and `label 1.00 ... symbolic` for the player, with the header that the label is the band's constant (check 2); clicks on unbound cells print `Clicked cell 82: no source` and `Clicked cell 112: no source`, the top row's cells 2 to 8 stand open as lenses and the rest closed, and `/fide overlay off` releases the slots so every cell closes (check 3 in part). Round 4 is `used` (`docs/council/2026-11-04-can/LANDED.md`). Not yet seen: a click on an open bound cell, the half-second held press, `/fide status`.
+
+**Still open on the owner's screen:** the terrain overlay is ON with 9 tiles and 5027 placements loaded and draws nothing the owner can see, so the v1.7.5 axis fix is not yet proven; the owner ran the probe and has its output, which is the next paste (`tile azeroth:32:48 FOUND`, the placements within range, the models loaded or failed). The HUD still reads `Coherence: 99%` with the literal S: H008 has not run. The Triad bridge in this session died with a worker restart and was restarted at 06:46Z.
+
+## Council round 2026-11-04-operator: Argon's operator T(W, g, s) answered in Shape B, the Light Being kernel, v1.7.7 (04 Nov 2026, 06:26Z, Claude in the cloud) — start here
+
+**The input.** The owner pasted Argon's steering vector at 06:07Z (its header had arrived alone at 06:02Z): the Triadic Dynamical Operator T(W, g, s) over the Four Floats, four engineering deliverables (a cartridge schema, truthful wiring on both hosts, a glasses-free comfort contract, five invariants for `stepLightBeingLattice` as `node:test`), and the Shape B return format. Verbatim in `docs/council/2026-11-04-operator/ARGON-INPUT.md`; relayed through the Triad router unchanged. Argon's mode (a non-coercive prior; no clamping of a genuine engineering objection; rulings flagged for the owner) was applied as written.
+
+**The round.** Six haiku voices (B1 the kernel, B2 truthful wiring, B3 the comfort contract; O1 no gradient exists, O2 the named hosts are not here, O3 a second definition), every claim re-checked against the code. `STEER.md` is the Shape B return: **REPORT** (the contract the six sign, and nine verified push-backs), **LEAD** (the schematic and a canonical definition for the owner's sign-off, with the struck clauses listed by voice), **INSIGHTS TO ROUTE** (Opus, Flash, Argon).
+
+**What the council found, verified:** no weight block, loss, gradient, precision or E_psi exists on either host, so `Lx = tanh(alpha ||g||)` and `Aq` have no input and the vector adds five constants against its own zero-new-floats rule; the Four Floats are seeds and clocks with three formulas per name (`Vtx` is a sine of the tick; `Aq` is gated by defaults of 12/13 and a literal `passed: true`); the aperture opens on a band label, and "flux plus resonance" would close the seven cells the owner saw open; nothing anneals (the wave settles where it is sent); `CalculateFlipProgress` returned NaN for a NaN age; `apps/universe`, `bridge/roster`, `sq-jepa`, `@hm/shorthand` and `hm:universe:v2` are absent (the cartridge is one literal whose CRC32 matches none of four framings), the client is 2.5.6 not Retail; the comfort dial is partial, the lean gain reaches 1.6, and no colour, Pulfrich, frame-time or flicker term exists in the code; "1 cell = 1 holon" fails at the index.
+
+**What the code already has, which all six sign:** the ring metric is Argon's term for term (1, 8, 16, 110 from (8, 5)); R is fixed at birth; u is a clock in seconds; the zero plane holds by arithmetic; the registry's gate (fresh within its window, measured, label at least 0.5) is the honest aperture.
+
+**Landed as v1.7.7:** `packages/triad-369/src/light_being_kernel.mjs`, the kernel as pure math (`makeLattice`, `strike`, `stepLightBeingLattice`, `relaxation`, the mirrored metric, flip clock, rotation hash, parallax and stereo pair; the steering clamped and recorded, driving nothing; the Four Floats as labelled evidence, never readings; non-finite input rejected and reported), with `tools/light-being-kernel.test.mjs` asserting the five invariants against the real Lua through fengari (3 without KL, 4 as V non-increasing); the flip clock's NaN guard in `EMatrix_Math.lua` (the only addon change; test 7 of the math suite); `four_floats_kind` on everything the density bridge writes (the Apex's own label), tested.
+
+**Evidence (06:25Z, Linux, Node 22):** `npm test`: `# tests 179` / `# pass 178` / `# fail 0` / `# skipped 1`; kernel 6/6; math 14/14; headless 62/62; `node tools/council.mjs check --all`: loop healthy, rounds `operator`, `can` and `entity` open on pending landings.
+
+**Waiting for the owner:** sign, change or reject the LEAD's definition in `STEER.md`, and the three rulings inside it (one writer per Four Float; the comfort defaults: spin 0, the lean gain capped at 1.0, the reticle on the shared pair formula; whether 0.5 is the stated threshold or each source states its own). The in-game check is round 4's list, unchanged (v1.7.7 differs from v1.7.6 only by the guard). For Argon: the red-team items routed in STEER (the reworded invariants, the threshold on a label, the three formulas per float, the CRC framing, `time()` on 2.5.6, the self-stamp kind).
+
+## Council round 2026-11-04-can: what the bound entity can do, v1.7.6 (04 Nov 2026, 06:05Z, Claude in the cloud) — start here
+
+**The round.** Round 3's next ASK, run as six haiku voices under `docs/council/2026-11-04-can/` (B1 the holon on the tiles through a generated file, B2 the eye as a source, B3 the click as an event; O1 what the eight sources add, O2 a file is a snapshot, O3 the click cannot act and the cursor is not an eye). Every claim used was re-checked against the code; `STEER.md` is the ruling, `LANDED.md` is pending the owner's pastes.
+
+**The answer.** Today the entity shows one bit per cell from eight unit sources (`near` and `mid` open; `far`, `not_measured`, the symbolic player and "no source" all close), re-measured four times a second; it names its sources in text; it runs a wave from a click. The number beside a source (`1.00`, `0.50`, `0.20`) is the band's constant, a label, not a reading: the reading is the range check's yes or no. It cannot yet show a flow of the holon (no channel reaches a cell between reloads), a head (the pad carries no age; the tracker has never run in the game, H006) or act on a unit (no targeting call exists; in combat the client forbids it as far as general knowledge goes). The click is an input the entity names, not an event it emits.
+
+**The three bridges, ruled (owner's calls marked in STEER):** the flows may reach free cells only as a snapshot "as of the last `/reload`" that ages on a wall clock inside each flow's own 180 s window, after `time()` is verified on the client and the owner names the writer (the Apex into the live AddOns `Data` folder, not the repo) and signs the mapping; the head is the first source not on screen and needs an age first (B2's pad heartbeat, after H006); the click may target out of combat, opt-in, after identity is checked at click time, and a raid mark is the owner's call.
+
+**Six defects the council found in the code, verified and fixed as v1.7.6:** (1) `CellFresh` had no lower bound, so a wall-clock stamp would have read fresh for ever (B1); (2) one 2 s window for every source, so no source could state its own (B1, O2); (3) `CheckIdleCondition` counted the overlays but not the bindings, so with spin, parallax and the overlays off a stale bound cell would have stayed open (B3, O2); (4) the login line printed the configured eye source, not the one in use, and called the pointer an eye (B2, O3): now `eye hand:cursor (no head measured)`, `pad (head; age not measured)` or `none (parallax off)`; (5) a depth left by a pad that stopped answering kept driving `EyeGain()` while the hand drove the eye (B2, O3); (6) the click was wired to both mouse scripts, so a held press ran two cancelling waves, and a click off the grid started a wave from an invented origin (O3, B3, O2). Plus: `/fide cells` prints `label` and the window instead of `value`; with the gate on a click prints `Clicked cell N: <source> label L age A of Ws <kind>, open|closed` or `no source`; `Math.CellAt` resolves the cell through the frame's scale (tested at 1 and 1.25).
+
+**Evidence (06:04Z, Linux, Node 22):** `npm test`: `# tests 173` / `# pass 172` / `# fail 0` / `# skipped 1`; headless 62/62 (both SetLight profiles); math 13/13; `node tools/council.mjs check --all`: loop healthy, rounds `can` and `entity` open on pending landings.
+
+**The owner's checks on v1.7.6** (STEER §"The check that settles it"): the login line says `v1.7.6` and `eye hand:cursor (no head measured)`; `/fide cells` lines read `label 1.00 age 0.0s of 2s measured`; with `/fide bind on` a click on an open cell prints its source line, a click on a closed unbound cell prints `no source`, a click on the rim starts no wave; a half-second held press runs one wave; `/fide status` ends `from hand:cursor (no head measured); configured cursor`. Still owed: the terrain probe on v1.7.5 or later (`tile azeroth:32:48 FOUND`), the FidelityWoW HUD after H008, H006, the word on the definition.
+
+**Argon's steering vector** (the owner relayed it at 06:02Z; the Triad relay returned the text unchanged, keyword hint D7): only its header arrived (Source: owner framing plus Argon's translation; Mode: a non-coercive prior that steers toward technical closure, does not clamp genuine engineering objections, flags final rulings for the owner). Applied as written in this round's STEER. The body has not reached this session.
+
+## News back from the game: v1.7.4 seen, the terrain's cause found, v1.7.5 (04 Nov 2026, 05:45Z, Claude in the cloud) — start here
+
+**The owner's four screenshots (v1.7.4 on TBC Anniversary, 6:31 to 6:37 local), read against the three steers:**
+- **Round 3, the binding registry: `used`.** The login line counts sources; `/fide cells` lists eight with real kinds (the player `symbolic`, seven units `measured`: one `near 1.00`, six `mid 0.50`, all `age 0.0s`); with `/fide bind on` the box settles into exactly the bound state, cells 2 to 8 of the top row open, everything else closed, no glint.
+- **Round 2's in-game checks:** the flip is visible (a frame catches cells mid-squash as the wave crosses); no diagonal stripes in the E wall; the closed tiles are lit from the upper left, the known defect. The definition still waits for the owner's word.
+- **Round 1: `changed`.** The lattice break is in the game. The probe, pasted for the first time, found why the terrain draws nothing, and it was ours: `UnitPosition` was read west-east first, so the player at the Abbey door was looked up at tile `48:32` (`pos -97.6, -8763.0 ... MISSING, 0 tile(s) around, ground nil`); Northshire is `32:48`. The headless stub had copied the same wrong belief, so every test agreed with the mistake.
+
+**Landed as v1.7.5:** `UnitPosition`'s first return is the north-south coordinate (the probe's numbers are now a test that must land on tile 32:48); the window's reticle, glass and walls stay off while the bound draw is on (they floated over the closed E wall); H005 gated on 1.7.5; **H008** added: the FidelityWoW addon (`packages/wow-syntropic`) is deployed separately from the EMatrix folder, which is why the HUD still read `Coherence: 99%`, so its seed labels and the false-teleport fix are not in the game yet.
+
+**The next terrain check:** on v1.7.5, `/fide terrain probe` at the Abbey door must say `tile azeroth:32:48 FOUND` with a ground height near 80 and placements listed; then `/fide terrain status` says how many props drew and how many models loaded or failed.
+
+## Council round 2026-11-04-bridges: vector steering and bridge checks, v1.7.4 (04 Nov 2026, 05:01Z, Claude in the cloud)
+
+**The owner:** "now that you know what it is you can do a round of vector steering and bridge checks." Six haiku voices in `docs/council/2026-11-04-bridges/` (B1 binding architect, B2 channel builder, B3 vector steering; O1 the WoW inputs, O2 the holon's flows, O3 the chain to the owner); the steer is `STEER.md` there, the landing `LANDED.md` (pending the owner's pastes).
+
+**Bridge checks, verified and fixed where ours:** the HUD printed literals as readings (now `seed` / `not measured`, with the two real writers flagged `measured`); the kinematics flagged a false teleport from (0, 0) whenever the map gave no position (fixed); the density bridge read Sol's timer-written `up: true` with no age check (now `solIsUp`, 180 s floor, tested) and wrote a constant `synchronized` (now derived, tested); H005 pointed the laptop at a v1.6.1 branch whose gate would have blocked (now this branch, v1.7.4 gate, one checkout, the report carries commit and toc). Open and the owner's: run H005 and paste; H007; the legacy `bridge/loop` restart (T1).
+
+**Landed, v1.7.4: the binding registry.** The definition's switch: `ns.BindCell(index, source, value, at, kind)` with the evidence kinds `measured | symbolic | not_measured`, freshness 2 s on `GetTime()`; the world overlay publishes its eight actor slots as `actor:<token>:<band>` (near 1.0, mid 0.5, far 0.2; `measured` when the range check answered, `not_measured` when not, `symbolic` for the player); `/fide cells` lists them; the login line counts cells with a source; `/fide bind on|off` is the gate, off by default, so nothing on screen changes until the owner turns it on (on: a bound cell opens when fresh, measured and at least 0.5, every other cell stays closed with no glint). Headless tests for all of it (58/58).
+
+**Evidence (04:59Z):** `npm test` 169 tests, 168 pass, 0 fail, 1 skipped; math 12/12; both FidelityWoW copies identical; `node tools/council.mjs check --all`: three rounds open on pending landings, loop healthy.
+
+**What closes this round:** Flash runs the retargeted H005; the owner pastes the login line (`cells with a source N of 135`), `/fide cells` with a few mobs around, then `/fide box show`, `/fide bind on`, a click (the slot cells follow the mobs, the rest closed, no glint), `/fide bind off`; the HUD's `seed` labels; `/fidelity audit` after a zone crossing. Then the next ASK, "what the bound entity can do".
+
+## Council round 2026-11-04-entity: what the Weight-and-Gradient Entity is, v1.7.3 (04 Nov 2026, 04:40Z, Claude in the cloud)
+
+**The owner:** "mobs now have textures, animation and terrain bridges still broken, Flash says put on 3D glasses; we have to first get the council to tell us what they are; Argon got us started; set up a council so we have a POV of what it is, then we can explore what it can do." Argon's proposal (the "Hilbert Holon") is `docs/council/2026-11-04-entity/ARGON-INPUT.md`, verbatim.
+
+**The round:** five viewpoints as Argon named them (Architect, Somatic and Comfort Guardian, Simicist and Physics, Artist and Lens, Host-Bridge Engineer) and three opposers (a lens never lies; glasses-free 3D; the Hilbert story and the fifth metric), all haiku, one file each, in `docs/council/2026-11-04-entity/`. The Council Synthesis (Shape B) is `STEER.md` there: where they agreed and clashed, the recommended canonical definition **flagged for the owner's sign-off before it enters `PLAN_FRACTAL.md` (HeavyMetal2, not in this checkout)**, and the Wave-1 split across Opus, Argon, Flash and Codex.
+
+**What all eight agreed, each verified by the director:** no cell is bound to any measured number (a click, a clock, a fixed hash); the rainbow and the gold are baked textures; the WoW HUD's `S=(0.20, 0.50, 0.95, 0.20)`, coherence 0.99 and strain 0.00 J are literals nothing writes; an order-2 Hilbert curve is a U of U's and the E is a hand-drawn letter (kept: four true rotations, the exact 1 then 8 cascade, Euclidean from ring 3); the gate `u` is a clock, not a function of `Lx` and `Aq`, so the proposal's own table breaks the Four-Float rule; no frame alternation exists or can be a setting, so continuous parallax is the only honest default; the restorative dual is a toggle; portability cannot be settled here.
+
+**Two findings landed as v1.7.3:** a cell's flip had lasted 16 ms, one frame, because the clock divided cells by seconds (B2), so the squash animation was never visible; now `flipDuration` is seconds after the front arrives. And fengari's integers are 32-bit (B3), so the v1.7.2 hash test had checked wrapped numbers, not the game's doubles; the hash now computes in doubles on both sides and the test asserts the game's 33/33/33/36. Also verified and queued (not landed): the closed E tiles are lit from the upper left while the lens, housing and walls say upper right (B4); the fix is an atlas of four pre-lit orientations, not a sign flip, because closed cells rotate.
+
+**Evidence (04:38Z):** `npm test` 165 tests, 164 pass, 0 fail, 1 skipped; math 12/12; headless 56/56; `node tools/council.mjs check --all`: both rounds open on a pending landing, loop healthy.
+
+**What closes this round:** the owner's word on the definition (`STEER.md` §2), Flash's deploy of v1.7.3 with the pastes in `STEER.md` §"The check that settles it" (the box after the flip fix: each cell squashes and flashes as the wave passes), and Argon's rewrite or argument. Then the next ASK, "what the bound entity can do".
+
+## Council round 2026-11-04: the compassion loop as councils, v1.7.2 (04 Nov 2026, 04:25Z, Claude in the cloud)
+
+**The owner (04 Nov):** "improve the fidelity even more with fractals; an algorithm so the textures do not repeat is the easy example; set up a haiku council to explore the bridges we can build, and an opposing council who explore the ones we have built, then steer your vector." Then: "the councils keep the loop healthy; this should be built into the fractals; this is the compassion loop."
+
+**Built in.** The loop now runs as councils at any scale: `.agents/skills/compassion-loop/SKILL.md` (ASK, builders; DECISION, opposers; CHANGE, the steer; NEWS BACK, the landing), `node tools/council.mjs new|check` (scaffolds a round, reports a round's and the loop's health), rounds under `docs/council/<date>-<slug>/`, and a pointer in `AGENTS.md`. The first round is `docs/council/2026-11-04/`: six haiku voices (B1 fractal fidelity, B2 data bridges, B3 perception; O1 overlays, O2 holon, O3 toolchain), `STEER.md` and `LANDED.md`.
+
+**What the round found, verified by the director against the code:** the first repeat was in the code, `GetCellRotation` was `(c - r) mod 4` in disguise, so the 135 E cells formed one diagonal lattice (B1); a copy over a world that keeps drawing its twin reads as a double image once it moves, about 33/20/8 px at the defaults (B3, O1); the camera is constants (O1); the stub answered yes to every unknown method, so guarded branches ran paths the client never takes (O1, O3); the laptop's `triad.bat` runs the legacy `bridge/loop` copy with hard-coded "resonant", "latency 42" and "passed: true", and an unauthenticated localhost POST can set off `git push origin main` through `arena_git_sync.mjs` (O2); the hands redaction let Bearer, `sk-proj-` and AWS keys through and the guard missed pushes aimed at main (O2); a check in the newest test code could not fail (O3).
+
+**Landed (v1.7.2):** the mixing hash with the lens cells pinned to identity texcoords (one sun over the array), tested on the real Lua in both harnesses; the strict widget stub (`KNOWN`, `ABSENT`, raise otherwise) with the always-true check, the zero-GC regex and the "decimetres" label fixed; the redaction and the push-to-main guard; H007 (a read-only inventory of the laptop's daemons) in the hands snapshot. Evidence at 04:25Z: `npm test` 165 tests, 164 pass, 0 fail, 1 skipped (the real-tile ADT test, `EMATRIX_TILES` unset; not the Windows serve test as an earlier note here said); headless 56/56 under the strict stub; math 12/12; head tracker 10/10.
+
+**The vector** (`docs/council/2026-11-04/STEER.md`): fractal fidelity pays inside the window (B1's list, in order); the overlays stay honest portraits with no default change until the owner runs B3's protocol; real depth must come from the rendering path, which is the next round's ASK; the holon is made honest in O2's order (H007 first); the toolchain gets a fengari-driven ring/flip test, a Lua 5.1 run and `/fide selftest`. **Forbidden until verified:** overlay default changes, any "synced", "parallax works" or "3D" claim, merging to main by hand, quoting "resonant" or 0.99 as a measurement.
+
+**What closes the round:** deploy v1.7.2 with the four commands below, paste the login line and the probes, run P0 to P6 from `B3-perception.md`, and look at the box: no diagonal stripes of one orientation in the E wall, every open lens lit from the upper right. `node tools/council.mjs check --all` says the loop is healthy while this round is younger than seven days; `LANDED.md` turns from `pending` to `used`, `changed` or `nofit` on the owner's word.
+
+## EMatrix v1.7.1: the first in-game evidence and the response (04 Nov 2026, 03:52Z, Claude in the cloud)
+
+**The evidence.** The owner's screenshot of v1.6.1 on the TBC Anniversary client (Northshire, 04 Nov): the login line printed "full-screen depth scene ON"; white, untextured copies of the kobolds hung under their nameplates at three to four times the size of the real units (which are about 35 px tall at that range), each with a hollow hexagon beside it; no copy of the player at the bottom centre; no terrain props at all; no visible parallax. The owner's words: "not synced up, only mobs render an untextured version of themselves, no parallax or 3d effect yet".
+
+**The diagnosis, from the code.** (1) The copies were `DressUpModel` frames fed NPC units; the box's `DressUpModel` of the player was textured, so the frame type's handling of creatures is the prime suspect. `PlayerModel` is what unit-frame addons use for 3D portraits of any unit. The hexagon is probably an untextured attachment (the pick) drawn without its skin: a hypothesis. (2) The band heights were fixed pixels (95 to 230 UI units), not a camera model, so far units were drawn huge. (3) The copies' parallax gain was 60 px per unit of eye, about 16 px at full lean. (4) Why the player copy and the terrain props are missing is not visible in the picture; v1.7.0's login line and `/fide terrain probe` say.
+
+**What v1.7.1 changes** (`EMatrix_World.lua`, `EMatrix_Core.lua`): copies are `PlayerModel` frames, with `/fide world frame <player|dressup>` to compare in the game (it rebuilds the pool and `/fide world status` names the type that took); each copy is parented to its nameplate, so the client scales and hides it with the plate; heights come from the camera model the terrain uses, `focal * unitHeight / (zoom + bandDepth)` with band depths 7, 18 and 45 yd and `focal * 2 / zoom` for the player, so at 1080p and zoom 10 a far copy is about 32 px, a mid one 64, a near one 105, the player 198; `/fide world height <yd>` (1.8) and `/fide world parallax <px>` (120, was 60) tune them; the status line prints each copy's height, the focal length and the zoom. Headless 54/54; `npm test` 159 tests, 158 pass, 1 skipped.
+
+**Deploy from the laptop now** (no need to wait for the PR; `D:\fidelity-repo` is on `flash/wow-ematrix-polish` or `claude/ematrix-depth`):
+```powershell
+git -C D:\fidelity-repo fetch origin
+git -C D:\fidelity-repo checkout francois/serene-euler-51wj3e
+Rename-Item "D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix" "FidelityEMatrix.bak-$(Get-Date -Format yyyyMMdd-HHmm)"
+robocopy D:\fidelity-repo\FidelityEMatrix "D:\World of Warcraft\_anniversary_\Interface\AddOns\FidelityEMatrix" /E
+```
+Then `/reload` and paste, in this order: the login line; `/fide diag` (the SetLight form line); `/fide world status`; `/fide terrain probe`; `/fide terrain status`; `/fide status`. Then try `/fide world frame dressup` and back to `player`, and say which one is textured. Move the mouse to the screen edge: the copies should leave their units, far ones more than near ones; with the defaults (eye capped at `parallaxStrength` 0.5, gain 120 px) the arithmetic gives about 33 px far, 20 px mid, 8 px near (council B3 corrected an earlier "up to 60 px" here); `/fide world parallax 240` doubles that. If the copies are still the wrong size, `/fide world height 1.2` (kobolds) or `3`.
+
+## EMatrix v1.7.0: the review fixes (03 Nov 2026, Claude in the cloud)
+
+**Branch:** `francois/serene-euler-51wj3e`, a fast-forward of `claude/ematrix-depth` `7265578` plus these commits; draft PR into `claude/ematrix-depth`, which is what the laptop deploys (H005). **Not verified in the game**: everything below is proven headless only. The findings come from [`docs/EMATRIX-REVIEW-STATE.md`](docs/EMATRIX-REVIEW-STATE.md) (four of six hostile reviews); each one was checked against the code before it was fixed, and each fix has a test.
+
+**Evidence (20:24Z, this container, Linux, Node 22):** `npm test` 157 tests, 156 pass, 0 fail, 1 skipped (the Windows-only serve shutdown). Of those: the headless Lua (fengari) 52/52 (26 checks per SetLight profile, up from 19), `tools/ematrix-toc.test.mjs` 4/4 (new), the hands sync 17/17 (was 8), `upsert_task` 4/4 (new). Outside `npm test`: `node tools/test_ematrix_math.mjs` 12/12 (its "idle OnUpdate" check still looked for the detach on the box frame, which v1.5.0 moved to the driver frame; **H005 on v1.6.1 would have failed at that step**), `python3 -m unittest tools/headtrack/test_headmath.py` 10/10 (was 5).
+
+### What changed, by file
+- **`EMatrix_Terrain.lua`**: a model that fails to load frees its slot, hides the old picture and is retried after 8 s (TR1, TR5); view culling runs before the nearest-24 cut, so props behind the camera, off-screen or too small never take a slot (TR4); the 3x3 tiles around the player are scanned, so placements just across a tile border draw (TR6); buildings (WMOs) are counted and reported, never sent to a Model frame (TR7); the nearest prop gets the highest frame level (TR8); a prop's height is capped at two screen heights and nothing nearer than 1 yd down the view axis is drawn (TR10); the dead `/fide terrain head` knob, `autopitch` and every "nameplate solve" claim are gone, the saved pitch is the pitch (TR9, OX6); `Family()` is `unsupported` outside 1.x/2.x and then draws nothing rather than another family's placements (OX23); repeated errors **suspend** the overlay without writing the saved choice (`/fide terrain on` retries, status says SUSPENDED).
+- **`EMatrix_World.lua`**: copies face the camera and turn with the eye only, never with the window's turntable (WO1); out-of-range answers of `nil` count as far (WO3); the same suspend-without-saving on errors (WO6); a band change must be seen on two consecutive scans (WO7); a copy whose `SetUnit` fails is hidden and holds no slot (WO9); a unit keeps its slot while it stays among the nearest, and anchors are re-set only when something changed (WO11); `CenterInUI` deleted (WO13).
+- **`EMatrix_Core.lua`** (v1.7.0): the login line is built from runtime state inside a pcall (which overlays really came up, the actor count, the map data's tiles/placements/buildings, the box, the eye source) and a failed start prints one addon line (OX4); a typo in `/fide stereo|box|overlay` prints usage and changes nothing, an unknown command is one line (OX8); `/fide help` is six lines, `/fide help all` is the full list (OX14, OX15); a migration only records its version and fills missing keys, it never overrides a saved choice (OX24); the head tracker's depth now reaches every renderer as a parallax gain (`ns.EyeGain`, 1 + 0.6·z, clamped 0.4..1.8) used by the window, the world and the terrain overlays (HT2); `/fide eye inverty` (HT10); `/fide eye probe` states each step of the pad read and why it returned nil (HT9).
+- **Manifests** (OX21): `FidelityEMatrix_Vanilla.toc` (1.x) and `FidelityEMatrix_TBC.toc` (2.x) load only their own family's map data, 1.2 MB of Lua less; `FidelityEMatrix.toc` stays as the fallback with both. If a client ignores family manifests it just loads both, as before.
+- **`tools/headtrack/`**: the left trigger carries only "closer" depth and rests at 0 (HT1); the left-stick mapping is gone, it walked the character (HT4); a failed `head.json` write is counted, warned once, and never stops the pad feed (HT5); the rest pose (face centre and width) is calibrated and subtracted, so a lost face settles at rest, not at a lean (HT6); the face nearest to last frame's is followed, so a second face cannot hijack the eye (HT7); a frames directory distinguishes "no new frame" (keep the last axes, feed the pad) from "no face", skips files still being written, and drifts to rest after `--stale-seconds` (HT15).
+- **`bridge/hands/`**: push failures are logged once per kind, and a heartbeat file `laptop_heartbeat.json` is pushed on the first cycle and every `--heartbeat` seconds (300) (OX11); secrets in the results are masked before the push, PEM blocks, known token prefixes and `name = value` pairs, with the local file untouched (OX12); the rules forbid `reset`, `clean`, `checkout -f`, `restore`, `stash drop`, `push --force`, `branch -D` and any `pull`/`merge` without `--ff-only`, and the sync logs any task step that contains one (OX13); a key restriction for Node 2 is written up as a proposal with the gate script, not applied (OX10). `bridge/hands/upsert_task.mjs` writes a task into the task file from a JSON file (the heredoc hazard, closed by a tool).
+- **Snapshot `bridge/hands/laptop_tasks.json`**: H005 rewritten for v1.7.0 (version gate, the 15 expected files, the check list for the hidden box, OX3). The live copy on Node 2 is still the v1.6.1 task until Claude on Node 2 upserts this one.
+
+### Deploy order
+1. Merge the draft PR into `claude/ematrix-depth` (the owner, or Claude on Node 2).
+2. On Node 2: `node bridge/hands/upsert_task.mjs bridge/hands/laptop_tasks.json --task H005 --file F:\fidelity-llm\bridge\hands\laptop_tasks.json --now` (copies H005 from the snapshot into the live file with a fresh `requested_at`).
+3. Flash runs H005; the owner pastes the login line and the probe.
+
+### Check in the game (owner, after `/reload`; the box is hidden by default now)
+1. The login line: it names both overlays' real state, the actor count, the map data (`tbc, 9 tile(s), ... placements, ... buildings`), the box and the eye source. If it says `failed to start`, paste it.
+2. `/fide terrain probe` at the Northshire Abbey door: expect tile `azeroth:32:48`, "N drawable placements within 70 yd (M buildings not drawn)", six placements with screen positions and heights, and "models loaded X, failed Y". If `failed` grows, `/fide terrain loader id` and `/reload`.
+3. Look at a tree: its copy should stand on it and the nearest copies should draw over the farther ones. If copies float or sink, `/fide terrain pitch <deg>` (there is no nameplate solve; the pitch is yours to tune). Walk toward a tile border (the probe says "k tile(s) around"): trees across it should appear.
+4. `/fide world status`: actors with their bands. Walk toward an NPC: its copy should grow from far to mid to near without flickering at the edges, and never spin on its own.
+5. `/fide help` (six lines), `/fide stereo bogus` (usage only, nothing changes), `/fide status` (the Eye line shows the parallax gain).
+6. Window checks: `/fide box show`, click it open, cursor right (character slides right and turns, reticle slides left, left wall widens), `/fide stereo anaglyph` with the glasses, `/fide stereo off`, `/fide box hide`.
+7. Head tracking (after H006): `/fide eye probe` shows "read: ok" and the trigger axis at 0 when sitting normally; lean in and the Eye line's parallax gain rises above 1.
+
+### Still open
+- The two reviews that were still running at the cut-off (performance and memory; the C1–C15 crawl): their reports land in the Node 2 session's tasks folder, not here. Findings outside the lead's agreed list (the rest of HT1–19, OX1–24, TR1–13, WO1–13) are not addressed.
+- Nothing is verified in the game beyond v1.6.1's "the box renders the character, nameplates cannot be measured". The two signs (`/fide calibrate side|turn`), the pitch, the yaw convention of placements and the per-family manifest pickup are in-game checks.
+- `package-lock.json` is now committed (lockfile v3, 86 packages, `fengari 0.1.4`), so `npm ci` on the laptop installs exactly what the headless tests ran against here.
+
 ## EMatrix v1.2.0: Claude's depth pass (03 Nov 2026, Node 2) — Flash, start here
 
 **Branch:** `claude/ematrix-depth` (cut from `flash/wow-ematrix-polish` `87ec1ff`, with `main` merged in). **Not verified in the game yet**: everything below is proven headless only.

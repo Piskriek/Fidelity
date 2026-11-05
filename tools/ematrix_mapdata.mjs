@@ -10,7 +10,7 @@
 // (1.x: WoW Forever, Classic Era) or "tbc" (2.x). Each family gets its own data file because the
 // builds reference different model ids for some placements.
 //
-// Per tile it writes: the 129x129 grid of outer terrain heights (decimetres, integers) and
+// Per tile it writes: the 129x129 grid of outer terrain heights (tenths of a yard, integers) and
 // every M2 doodad and WMO placement with world position, yaw and scale, plus the model path
 // resolved through the listfile. World axes follow UnitPosition: x north, y west, z up.
 //
@@ -167,7 +167,7 @@ export function loadListfile(file, filter = () => true) {
 /** Lua-safe string literal. */
 const luaStr = s => `"${String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
 
-/** Emits one tile as a Lua table source. Heights as decimetres (integers), row-major 129x129. */
+/** Emits one tile as a Lua table source. Heights as tenths of a yard (integers), row-major 129x129. */
 export function tileToLua(mapName, col, row, stitched, objects, listfile, family = 'tbc') {
   const { grid, originX, originY } = stitched;
   const h = [];
@@ -187,7 +187,7 @@ export function tileToLua(mapName, col, row, stitched, objects, listfile, family
     `EMatrix_Data[${luaStr(family)}][${luaStr(`${mapName}:${col}:${row}`)}] = {`,
     `  map = ${luaStr(mapName)}, col = ${col}, row = ${row},`,
     `  originX = ${originX.toFixed(3)}, originY = ${originY.toFixed(3)}, unit = ${UNIT_SIZE.toFixed(5)},`,
-    `  -- heights[j*129 + k + 1] in decimetres: j along -x (south) from originX, k along -y (east) from originY`,
+    `  -- heights[j*129 + k + 1] in tenths of a yard: j along -x (south) from originX, k along -y (east) from originY`,
     `  heights = {${h.join(',\n')}},`,
     `  -- {fdid, path, x, y, z, yawDeg, scale}`,
     `  doodads = {${doodads.join(',\n')}},`,
