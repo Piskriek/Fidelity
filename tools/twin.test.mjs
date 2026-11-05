@@ -14,6 +14,7 @@ import { readMap, tileFor, groundHeight, nominalHeight, kindOf, ROOT } from './t
 import { parseSavedVariables, reportSteps, shotNames } from './twin/savedvars.mjs';
 import { startTwin, parseArgs, cleanPose } from './twin/server.mjs';
 import { patternTile, separation, stereogramInto } from './twin/stereogram.mjs';
+import { distanceOf, sampleBilinear, screenPoint, reliefPositions, reliefIndex, reliefUVs, screenPointFrom } from './twin/relief.mjs';
 import { spawn } from 'node:child_process';
 
 const REF = 'origin/owner/reports';
@@ -117,6 +118,71 @@ test('the live Magic Eye: a raised square comes out nearer for parallel eyes and
   for (let i = 3; i < par.length; i += 4) assert.equal(par[i], 255, 'opaque');
 });
 
+test('the live depth view: from the resting eye the surface is the picture, a moved head slides the far past the near, and the page\'s camera draws the same', () => {
+  // distances: inverse distance linear in the depth value, the focus on the glass, the farthest at `far`
+  assert.equal(distanceOf(1, { focus: 1, far: 3 }), 1);
+  assert.ok(Math.abs(distanceOf(0, { focus: 1, far: 3 }) - 3) < 1e-12);
+  assert.ok(Math.abs(distanceOf(0.5, { focus: 0.5, far: 4 }) - 1) < 1e-12, 'the focus depth sits on the glass');
+  assert.ok(distanceOf(0.9, { focus: 0.5, far: 4 }) < 1, 'nearer than the focus comes out in front');
+  assert.equal(distanceOf(1, { focus: 0.05, far: 4, minZ: 0.35 }), 0.35, 'never nearer than minZ');
+  for (let d = 0; d < 0.99; d += 0.05) assert.ok(distanceOf(d) > distanceOf(d + 0.05), 'nearer depth, shorter distance');
+  const inv = d => 1 / distanceOf(d, { focus: 1, far: 5 });
+  assert.ok(Math.abs((inv(0.75) - inv(0.25)) - 2 * (inv(0.5) - inv(0.25))) < 1e-12, 'inverse distance is linear in d');
+
+  // the sampler: exact at pixel centres, linear between, held at the edges, a channel picked by stride
+  const m = Float32Array.from([0, 10, 20, 30]);
+  assert.equal(sampleBilinear(m, 2, 2, 0.25, 0.25), 0); assert.equal(sampleBilinear(m, 2, 2, 0.75, 0.75), 30);
+  assert.equal(sampleBilinear(m, 2, 2, 0.5, 0.25), 5); assert.equal(sampleBilinear(m, 2, 2, 0, 0), 0);
+  assert.equal(sampleBilinear(Float32Array.from([9, 0, 7, 0]), 2, 1, 0.75, 0.5, 2, 0), 7);
+
+  let seed = 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const dw = 64, dh = 36, depth = new Uint8Array(dw * dh).map(() => Math.floor(rnd() * 256));
+  const cols = 32, rows = 18, halfW = 0.9, halfH = 0.5, opts = { cols, rows, halfW, halfH, focus: 0.6, far: 4 };
+  const P = reliefPositions(depth, dw, dh, opts, new Float32Array((cols + 1) * (rows + 1) * 3));
+  const head = { ex: 0.1, ey: -0.05, ez: 0.08 }, near = 0.05;
+  const f = windowFrustum(head, { screenDist: 1, halfW, halfH, near });
+  const cam = new THREE.PerspectiveCamera();
+  cam.position.set(head.ex, head.ey, -head.ez); cam.updateMatrixWorld();
+  cam.projectionMatrix.makePerspective(f.left, f.right, f.top, f.bottom, near, 100);
+  cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+  let onGlass = 0, behind = 0, inFront = 0;
+  for (let j = 0, k = 0; j <= rows; j++) for (let i = 0; i <= cols; i++, k += 3) {
+    const v = [P[k], P[k + 1], P[k + 2]], Z = -v[2];
+    const [sx, sy] = screenPoint(i / cols, j / rows, halfW, halfH);
+    const [x0, y0] = screenPointFrom({}, v);
+    assert.ok(Math.abs(x0 - sx) < 1e-6 && Math.abs(y0 - sy) < 1e-6, 'from the resting eye every vertex lands on its own pixel');
+    // seen from the head, a point Z away shifts by the head's sideways offset times (1 - 1/Z), scaled for the head's
+    // distance to the glass: none on the glass, towards the head's side behind it, away in front of it
+    const [x1, y1] = screenPointFrom(head, v);
+    const t = (1 - head.ez) / (Z - head.ez);
+    assert.ok(Math.abs(x1 - (head.ex + t * (v[0] - head.ex))) < 1e-9 && Math.abs(y1 - (head.ey + t * (v[1] - head.ey))) < 1e-9);
+    if (Math.abs(Z - 1) < 1e-9) onGlass++; else if (Z > 1) behind++; else inFront++;
+    // the page's camera (windowFrustum's off-axis projection from the head) draws the vertex where the line cuts the glass
+    const ndc = new THREE.Vector3(...v).project(cam);
+    assert.ok(Math.abs(ndc.x * halfW - x1) < 1e-5 && Math.abs(ndc.y * halfH - y1) < 1e-5, 'the three.js camera agrees with the geometry');
+  }
+  assert.ok(behind > 50 && inFront > 50, 'the random map puts points both behind and in front of the glass');
+  // the parallax itself, on three points straight ahead: on the glass, behind it, in front of it
+  const shift = Z => screenPointFrom({ ex: 0.1 }, [0, 0, -Z])[0];
+  assert.ok(Math.abs(shift(1)) < 1e-12, 'a point on the glass does not move');
+  assert.ok(shift(3) > 0 && shift(30) > shift(3), 'behind the glass it moves with the head, the farther the more');
+  assert.ok(Math.abs(shift(30) - 0.1 * (1 - 1 / 30)) < 1e-12);
+  assert.ok(shift(0.5) < 0, 'in front of the glass it moves against the head');
+
+  // the grid: every vertex used, two triangles per cell facing the eye, texture v up
+  const idx = reliefIndex(cols, rows);
+  assert.equal(idx.length, cols * rows * 6);
+  assert.equal(Math.max(...idx), (cols + 1) * (rows + 1) - 1);
+  const flat = reliefPositions(new Uint8Array([255]), 1, 1, { cols, rows, halfW, halfH }, new Float32Array((cols + 1) * (rows + 1) * 3));
+  const vtx = n => new THREE.Vector3(flat[n * 3], flat[n * 3 + 1], flat[n * 3 + 2]);
+  for (let q = 0; q < idx.length; q += 6 * 37) {
+    const a = vtx(idx[q]), b = vtx(idx[q + 1]), c = vtx(idx[q + 2]);
+    assert.ok(new THREE.Vector3().crossVectors(b.clone().sub(a), c.clone().sub(a)).z > 0, 'counter-clockwise seen from the eye');
+  }
+  const uv = reliefUVs(cols, rows);
+  assert.deepEqual([uv[0], uv[1]], [0, 1]); assert.deepEqual([uv[uv.length - 2], uv[uv.length - 1]], [1, 0]);
+});
+
 test('the report reader: steps, poses, and the two names a shot can have (a file can be named a second late)', { skip: !hasRef && 'origin/owner/reports is not fetched here' }, () => {
   const steps = reportSteps(tenth);
   assert.equal(steps.length, 115);
@@ -150,7 +216,11 @@ test('the server: the viewer, three.js, the map, the camera, the reports and sho
     assert.equal((await get(t.port, '/app/main.js')).status, 200);
     assert.equal((await get(t.port, '/shared/camera.mjs')).status, 200);
     assert.equal((await get(t.port, '/shared/stereogram.mjs')).status, 200);
-    assert.equal((await get(t.port, '/shared/server.mjs')).status, 404, 'only the viewer\'s two shared modules are served');
+    assert.equal((await get(t.port, '/shared/relief.mjs')).status, 200);
+    const live = await get(t.port, '/live');
+    assert.equal(live.status, 200); assert.match(live.body.toString(), /Fidelity Depth/);
+    assert.equal((await get(t.port, '/app/live.js')).status, 200);
+    assert.equal((await get(t.port, '/shared/server.mjs')).status, 404, 'only the viewer\'s shared modules are served');
     assert.equal((await get(t.port, '/vendor/three/build/three.module.js')).status, 200);
     assert.equal((await get(t.port, '/vendor/three/package.json')).status, 404, 'only three\'s modules are served');
     for (const bad of ['/app/../package.json', '/app/%2e%2e/%2e%2e/package.json', '/app/..%2f..%2fpackage.json']) assert.ok([403, 404].includes((await get(t.port, bad)).status), bad);

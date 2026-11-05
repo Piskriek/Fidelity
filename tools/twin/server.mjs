@@ -4,6 +4,7 @@
 // event stream (Server-Sent Events) carrying the head tracker's head.json and any pose a telemetry source posts.
 //
 //   npm run twin                      then open http://127.0.0.1:5203
+//                                     (or http://127.0.0.1:5203/live: a WoW picture or window you can look into)
 //   node tools/twin/server.mjs --port 5203 --family tbc --head tools/headtrack/head.json --ref origin/owner/reports
 //
 // It listens on 127.0.0.1 only, needs no package beyond the repo's, and writes nothing. It reads nothing from
@@ -121,8 +122,9 @@ export function startTwin(opts = {}) {
       }
       if (req.method !== 'GET') return json(res, 405, { error: 'GET or POST /api/pose' });
       if (p === '/' || p === '/index.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'index.html');
+      if (p === '/live' || p === '/live.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'live.html');
       if (p.startsWith('/app/')) return file(res, path.join(ROOT, 'apps', 'wow-twin'), p.slice(5));
-      if (p === '/shared/camera.mjs' || p === '/shared/stereogram.mjs') return file(res, path.join(ROOT, 'tools', 'twin'), p.slice('/shared/'.length));
+      if (/^\/shared\/(camera|stereogram|relief)\.mjs$/.test(p)) return file(res, path.join(ROOT, 'tools', 'twin'), p.slice('/shared/'.length));
       if (p.startsWith('/vendor/three/')) {
         const rel = p.slice('/vendor/three/'.length);
         if (!/^(build\/three\.module(\.min)?\.js|build\/three\.core(\.min)?\.js|examples\/jsm\/[\w/.-]+\.js)$/.test(rel)) return json(res, 404, { error: 'not served' });

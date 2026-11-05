@@ -18,3 +18,6 @@ body { display: flex; }
 .key { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; }
 @media (max-width: 760px) { body { flex-direction: column; } #panel { width: auto; border-left: 0; border-top: 1px solid var(--line); } }
 #magic { display: none; image-rendering: pixelated; pointer-events: none; }
+#panel button { margin-top: 6px; padding: 5px 10px; background: var(--line); color: var(--ink); border: 1px solid var(--muted); border-radius: 4px; cursor: pointer; font: inherit; }
+#panel .filepick { cursor: pointer; }
+#panel .filepick input { display: block; max-width: 100%; margin-top: 4px; color: var(--muted); font-size: 12px; }

@@ -97,11 +97,49 @@ files and the screen. In the order the owner set for his harness (game-written f
 
 Neither sends anything back to the game.
 
+## Live WoW in depth (`/live`)
+
+Open http://127.0.0.1:5203/live. It shows a WoW picture you can look into: the game's own pixels, not stand-ins.
+- **The picture** is one of the reports' screenshots (the list holds each step's clean twin shot). It can also be
+  **a live window**: press *Capture a window (live)* and pick WoW, the way screen sharing does. Nothing touches the
+  game. WoW must run in "Windowed (Fullscreen)" mode for the window to be capturable. Alt+Z hides the game's UI,
+  which otherwise reads as flat cards near the glass. Any picture can be opened or dropped on the page too.
+- **The depth** of every pixel comes from Depth Anything V2 Small (Apache-2.0), running in the browser through
+  transformers.js 3.8.1. It is the model's estimate from the picture alone: the game gives its depth to nothing
+  outside it, and the page says so.
+  - The model loads once from Hugging Face (about 30 to 50 MB), then from the browser's cache.
+  - It runs on the graphics card through WebGPU where the browser has it, otherwise on the processor. Headless
+    Chromium here, on the processor, takes 4 to 7 s a picture at 518 px wide; on a graphics card it should be far
+    faster, but that is not measured yet.
+  - A live window is estimated again whenever the model is free, while the picture itself updates at video rate,
+    so depth lags fast camera turns.
+- **The view** is the head-coupled window: the tracker's `head.json` (or "mouse as head") moves the eye. Far parts
+  slide with the head and near parts stay on the glass. "Depth" sets how far behind the glass the background sits.
+  "On the glass" sets which depth sits on the screen (lower brings near things out in front).
+  - The picture is drawn 5% larger than the window so a moved head opens no black edges; `?overscan=0` draws it to
+    the pixel.
+  - **M** shows a Magic Eye of the model's depth. **F** goes full screen. `?chrome=0` hides the panel.
+- **On the TV:** the server answers only the laptop itself, so the page runs on the laptop. Either cast the Chrome
+  tab (the ⋮ menu, Cast, the TV, Sources, Cast tab) or use the TV as a second screen over HDMI, which has the least
+  delay. The camera for the head can be a phone at the TV (`tools/headtrack/README.md`, "A phone as the camera").
+
+Checked in headless Chromium (05 Nov) with the tenth report's first scene shot:
+- at rest, with `?overscan=0`, the view matches the screenshot (mean difference 2.6 of 255);
+- with the head 0.3 to the right the far trees slide 41 px, the camp 32 px and the near ground 18 px, all with the
+  head, and the left is the mirror;
+- with the default 5% overscan the same head move leaves 2.6% of the left edge black, against 99% without;
+- the Magic Eye decodes back to the model's depth (median error 0.007);
+- no page errors.
+
+`tools/twin.test.mjs` checks the geometry ([`tools/twin/relief.mjs`](../../tools/twin/relief.mjs)): from the resting
+eye every vertex lands on its own pixel; seen from a moved head a point on the glass stays, a point behind it moves
+with the head and a point in front against it; the page's three.js camera draws exactly that.
+
 ## Limits
 
 - **No live creatures or other players.** The addon API gives a world position only for the player (and party
   members), so the twin cannot place the kobolds.
 - **No game models or textures**, only stand-ins.
-- **A separate window**, not the game's own pixels.
+- **A separate window**, not the game's own pixels (except `/live`, whose depth is estimated, not the game's).
 - **The game's-camera view is only as right as the camera model.** At the saved default it fails (the tenth
   report). The proposal is unconfirmed.
