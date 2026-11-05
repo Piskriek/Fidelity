@@ -118,10 +118,42 @@ local function SetUnitOn(model, unit)
         ns.PlaceModel(model, 0, 0)
         ns.FaceModel(model, 0)
     end)
-    -- idle animation (0) so the copy breathes like the original
+    -- idle animation (0) so the copy breathes like the original; Motion() moves it on from there
     pcall(function() if model.SetAnimation then model:SetAnimation(0) elseif model.SetSequence then model:SetSequence(0) end end)
+    model.__anim = 0
     model.__anchorPlate = nil -- a new unit is anchored afresh
     return ok
+end
+
+-- The copy plays its unit's motion: a PlayerModel given a unit shows the unit standing, whatever the
+-- unit does, so the copy stood still while the owner ran (his report, 05 Nov 2026). The unit's speed
+-- (GetUnitSpeed, yards per second) picks the animation: stand, walk below RUN_FROM, run at or above it,
+-- and swim idle or swim for the player in water. Only a change is applied: setting the same animation
+-- again restarts its loop.
+local ANIM = { stand = 0, walk = 4, run = 5, swimIdle = 41, swim = 42 }
+local RUN_FROM = 4.5 -- yd/s: walking is 2.5, running 7
+local function MotionOf(unit)
+    local speed = 0
+    if GetUnitSpeed then
+        local ok, v = pcall(GetUnitSpeed, unit)
+        if ok and type(v) == "number" then speed = v end
+    end
+    local swimming = unit == "player" and IsSwimming and IsSwimming() or false
+    if swimming then return speed > 0 and ANIM.swim or ANIM.swimIdle, speed end
+    if speed <= 0 then return ANIM.stand, speed end
+    return speed >= RUN_FROM and ANIM.run or ANIM.walk, speed
+end
+local function Animate(model, anim)
+    if not model or model.__anim == anim then return end
+    local ok = pcall(function()
+        if model.SetAnimation then model:SetAnimation(anim) elseif model.SetSequence then model:SetSequence(anim) else error("no animation call") end
+    end)
+    if ok then model.__anim = anim end
+end
+local function Motion(s)
+    if not (s and s.used and s.unit) then return end
+    local anim = MotionOf(s.unit)
+    Animate(s.mono, anim); Animate(s.left, anim); Animate(s.right, anim)
 end
 
 -- ---------------------------------------------------------------------------
@@ -321,6 +353,7 @@ local function Refresh()
     end
     -- every scan re-stamps the slots as sources (a slot that is not used releases its cell)
     for i = 1, MAX_ACTORS do if pool[i] then PublishSlot(i, pool[i]) end end
+    for i = 1, MAX_ACTORS do if pool[i] then Motion(pool[i]) end end
 end
 
 local function OnUpdate(self, dt)
@@ -462,3 +495,7 @@ World._scratch = scratch
 World._overlay = function() return overlay end
 World._refreshCount = function() return refreshCount end
 World.BAND_CONFIRM = BAND_CONFIRM
+
+-- for the headless harness
+World._MotionOf = MotionOf
+World._ANIM = ANIM

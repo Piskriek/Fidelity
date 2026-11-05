@@ -17,8 +17,12 @@ ns.Report = Report
 local PREFIX = "|cff00ffcc[Fidelity EMatrix]|r "
 local SHOT_DELAY = 0.5  -- seconds between a step's commands and its screenshot, so the frame has drawn
 local TWIN_HIDE = 0.25  -- after the first shot, before the drawings are hidden (a screenshot is taken at the end of a frame)
-local TWIN_DELAY = 0.5  -- after hiding, before the twin's screenshot
+local TWIN_DELAY = 0.5  -- after hiding, before the twin's screenshot, and no sooner than the next clock second (below)
 local TWIN_SHOW = 0.25  -- after the twin's screenshot, before the drawings come back
+-- A screenshot's file is named to the second (WoWScrnShot_MMDDYY_HHMMSS), so two shots in one second
+-- write one file: the tenth report's jar step lost its first shot that way (both at 05:29:07). The twin
+-- therefore waits until time() has moved past the first shot's second.
+local TURNED = 0.05     -- radians: step 11's facing must differ from step 10's by more than this
 
 local panel = nil
 local pending = nil -- { rec, twin, phase = "shot" | "hide" | "twin" | "show", t, f0, lo, hi }
@@ -118,7 +122,7 @@ Report.STEPS = {
     { key = "cratewide", label = "8 Crate, wide frame + twin",  cmds = { "terrain test pick westfallcrate", "terrain test aspect 1.85" }, shot = true, twin = true },
     { key = "canopy",    label = "9 Canopy04 at its fit + twin", cmds = { "terrain test aspect auto", "terrain test pick canopy04", "terrain test" }, shot = true, twin = true },
     { key = "walk",      label = "10 Test off, scene + twin",   cmds = { "terrain test pick any", "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true },
-    { key = "turn",      label = "11 Turn, scene + twin",       cmds = { "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true },
+    { key = "turn",      label = "11 Turn, scene + twin",       cmds = { "terrain test off", "terrain on", "world on", "box hide" }, shot = true, twin = true, turn = true },
     { key = "bound",     label = "12 Box, bind on + shot",      cmds = { "terrain off", "world on", "box show", "bind on", "cells" }, shot = true },
     { key = "save",      label = "Save (reload UI)",            save = true },
     { key = "clear",     label = "Clear report",                clear = true },
@@ -143,12 +147,28 @@ function Report.Run(step)
     local rec = { step = step.key, label = step.label, at = Stamp(), lines = {} }
     local p = step.shot and { rec = rec, twin = step.twin and true or false, phase = "shot", t = SHOT_DELAY } or nil
     if p then TrackFacing(p) end -- the facing at the press
+    if step.turn and p and p.f0 then
+        -- the turn step needs a pose of its own: the tenth report's step 11 repeated step 10's facing exactly
+        local before = nil
+        for i = #r.steps, 1, -1 do
+            local q = r.steps[i]
+            if q.step == "walk" and q.pose and q.pose.facingAtPress then before = q.pose.facingAtPress; break end
+        end
+        if before then
+            local d = math.abs((p.f0 - before + math.pi) % (2 * math.pi) - math.pi)
+            rec.turnedBy = d
+            if d <= TURNED then
+                rec.notTurned = string.format("facing %.3f rad at the press, %.3f at step 10: not turned (needs more than %.2f)", p.f0, before, TURNED)
+                print(PREFIX .. "Step 11 needs a turned pose: you face the way you faced at step 10. Turn about 45 degrees, stand still, and press 11 again (this shot repeats step 10's pose).")
+            end
+        end
+    end
     rec.lines = Capture(function() for _, c in ipairs(step.cmds or {}) do Slash(c) end end)
     rec.screenshot = step.shot and "pending" or "none"
     r.steps[#r.steps + 1] = rec
     pending = p
     print(PREFIX .. string.format("Report step %s: %d line(s) captured%s. %d step(s) in the report; press Save (reload UI) to write it.",
-        step.label, #rec.lines, step.twin and ", two screenshots in about a second, the second with the overlays hidden: stand still" or (step.shot and ", screenshot in half a second" or ""), #r.steps))
+        step.label, #rec.lines, step.twin and ", two screenshots within about two seconds, the second with the overlays hidden: stand still" or (step.shot and ", screenshot in half a second" or ""), #r.steps))
 end
 
 local function Shoot()
@@ -166,6 +186,7 @@ local function OnUpdate(self, dt)
     if p.t > 0 then return end
     if p.phase == "shot" then
         local ok = Shoot()
+        p.second = time and time() or nil -- the first shot's file name second
         p.rec.screenshot = ok and ("taken at " .. Stamp()) or "Screenshot() failed"
         p.rec.pose = Pose(p) -- silently: no line is printed
         if p.twin and ok then p.phase, p.t = "hide", TWIN_HIDE
@@ -177,6 +198,7 @@ local function OnUpdate(self, dt)
         HideDrawings(true)
         p.phase, p.t = "twin", TWIN_DELAY
     elseif p.phase == "twin" then
+        if p.second and time and time() <= p.second then return end -- the same second would overwrite the first file
         local ok = Shoot()
         p.rec.twin = { screenshot = ok and ("taken at " .. Stamp()) or "Screenshot() failed", pose = Pose(p) }
         p.phase, p.t = "show", TWIN_SHOW
@@ -241,7 +263,7 @@ function Report.Command(args, say)
     if not show then Supersede("the panel was hidden") end
     if show then p:Show() else p:Hide() end
     if show then
-        say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about a second and a half; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")
+        say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about two seconds; before 11, turn about 45 degrees and stand still; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")
     else
         say("Report panel hidden.")
     end

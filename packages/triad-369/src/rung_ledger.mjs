@@ -379,8 +379,10 @@ export function admit(rows, rungs, { now, manifests = {} } = {}) {
 }
 
 /**
- * Within one rung, readings of the same artifact (and line) at the same operating point by the same
- * class of witness are one reading: the most precise of them (ties: the later row) supersedes the others.
+ * Within one rung, readings of the same artifact (and line) of the same subject at the same operating
+ * point by the same class of witness are one reading: the most precise of them (ties: the later row)
+ * supersedes the others. The subject names what in the artifact was read (a placement in a scene shot),
+ * so two placements read in one shot stay two readings.
  */
 function supersede(rows) {
   const best = new Map(); // group -> index of the current winner
@@ -388,7 +390,7 @@ function supersede(rows) {
   const prec = r => (finite(r.precision) ? r.precision : Infinity);
   rows.forEach((row, i) => {
     const a = row.artifact || {};
-    const g = [a.report, a.file, a.line ?? '', row.witness, row.value ?? ''].join('|');
+    const g = JSON.stringify([a.report, a.file, a.line ?? '', row.subject ?? '', row.witness, row.value ?? '']);
     const j = best.get(g);
     if (j === undefined) { best.set(g, i); return; }
     if (prec(row) <= prec(rows[j])) { by[j] = i; best.set(g, i); } else by[i] = j;
@@ -509,8 +511,9 @@ function frontierOf(rungs, verdicts) {
 
 /**
  * The constants of FidelityEMatrix/EMatrix_Terrain.lua the rungs are built from, read from its
- * source text: FIT_BY_FILE, FIT_STATUS, FIT_KNOTS, ASPECT_RULES, HEIGHT_RULES, FRAME_ORDER and the
- * order PlayerState reads UnitPosition's numbers in.
+ * source text: FIT_BY_FILE, FIT_STATUS, FIT_KNOTS, ASPECT_RULES, HEIGHT_RULES, FRAME_ORDER, the
+ * camera's saved defaults (DEFAULTS terrainPitch and terrainFovY), the camera a report's twin proposes
+ * (CAMERA_PROPOSAL) and the order PlayerState reads UnitPosition's numbers in.
  */
 export function readTerrainConstants(src) {
   const block = name => { // the balanced { ... } after "local NAME = "
@@ -534,9 +537,18 @@ export function readTerrainConstants(src) {
   const heightDefault = Number((src.match(/local HEIGHT_DEFAULT = ([0-9.]+)/) || [])[1]);
   const frameOrder = [...block('FRAME_ORDER').matchAll(/"([A-Za-z]+)"/g)].map(m => m[1]);
   const readOrder = /return \{ x = ux, y = uy,/.test(src) ? 'north-south first' : 'west-east first';
+  // the camera the projection is judged at: the saved defaults (the owner's confirmed setting, when a
+  // report shows one, is passed to terrainRungs as camera)
+  const defaults = block('DEFAULTS');
+  const camNum = name => Number((defaults.match(new RegExp(name + '\\s*=\\s*([0-9.]+)')) || [])[1]);
+  const camera = { pitch: camNum('terrainPitch'), fovY: camNum('terrainFovY') };
+  // the camera a report's twin proposes (printed as an ask; it applies only by the owner's confirmed command)
+  const prop = block('CAMERA_PROPOSAL');
+  const propNum = name => Number((prop.match(new RegExp(name + '\\s*=\\s*([0-9.]+)')) || [])[1]);
+  const cameraProposal = { pitch: propNum('pitch'), fovY: propNum('fovY'), report: (prop.match(/report\s*=\s*"([0-9-]+)"/) || [])[1], heldOut: propNum('heldOut') };
   return {
     fitByFile, fitStatus, fitKnots: pairs(block('FIT_KNOTS')), aspectRules: words(block('ASPECT_RULES')), aspectDefault,
-    heightRules: words(block('HEIGHT_RULES')), heightDefault, frameOrder, readOrder,
+    heightRules: words(block('HEIGHT_RULES')), heightDefault, frameOrder, readOrder, camera, cameraProposal,
   };
 }
 
@@ -546,9 +558,10 @@ const ruleFor = (rules, dflt, file) => { for (const [word, v] of rules) if (file
  * The terrain's rung table: map data, axis, load, the frame kinds, one fit per file (the files the
  * addon has a fit for, and any file the ledger has readings of), the projection at the start pose
  * and one height per fitted file. Relative position is not a rung: it is projection, fit and height
- * together, plus the owner's word.
+ * together, plus the owner's word. camera ({ pitch, fovY }, radians) is the camera in use: the saved
+ * defaults unless the caller passes the owner's confirmed setting.
  */
-export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', files = [], tolerance = 0.1 } = {}) {
+export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', files = [], tolerance = 0.1, camera = c.camera } = {}) {
   const frameKind = c.frameOrder[0];
   const rungs = [
     { id: 'map', kind: 'map', context: { build }, restsOn: [] },
@@ -565,7 +578,9 @@ export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', f
       inUse: c.fitByFile[file] !== undefined,
     });
   }
-  rungs.push({ id: 'projection:' + pose, kind: 'projection', restsOn: ['map', 'axis'], tolerance, context: { pose } });
+  // the camera in use is the projection's context: a confirmed pitch or fovY unlocks the readings taken at the old one
+  const cameraContext = camera && finite(camera.pitch) && finite(camera.fovY) ? { pitch: camera.pitch, fovY: camera.fovY } : {};
+  rungs.push({ id: 'projection:' + pose, kind: 'projection', restsOn: ['map', 'axis'], tolerance, context: { pose, ...cameraContext } });
   for (const file of Object.keys(c.fitByFile).sort()) {
     rungs.push({ id: 'height:' + file, kind: 'height', restsOn: ['projection:' + pose, 'fit:' + file], tolerance, context: { pose } });
   }

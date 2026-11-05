@@ -43,14 +43,27 @@ except ImportError:  # the tool is optional: say so and stop
 
 
 def find_frame(a):
-    """The red edges as (top, bottom, left, right), or None when the shot has no marks."""
+    """The red edges as (top, bottom, left, right), or None when the shot has no marks.
+
+    The rows are the outermost rows with a long red run (the top and bottom edges; the mid-line lies
+    between). The columns are the extent of the top and bottom edges' own red run, not the columns
+    with a long red run: a vertical edge drawn over a bright model can wash out below the red test
+    (the tenth report's wide crate kept only its right edge that way, and the frame came out 3 px wide).
+    """
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     red = (r > 170) & (g < 110) & (b < 110) & ((r - g) > 90)
     rows = np.where(red.sum(axis=1) > 150)[0]
-    cols = np.where(red.sum(axis=0) > 150)[0]
-    if len(rows) < 2 or len(cols) < 2:
+    if len(rows) < 2:
         return None
-    return int(rows.min()), int(rows.max()), int(cols.min()), int(cols.max())
+    top, bottom = int(rows.min()), int(rows.max())
+    # on the edge rows themselves a looser test holds: the mark over the dimmed world reads as dark red
+    # (about 134, 27, 19), below the strict test, which then breaks the run
+    reddish = (r > 100) & ((r - np.maximum(g, b)) > 60)
+    band = reddish[[top, min(top + 1, bottom), max(bottom - 1, top), bottom]].any(axis=0)
+    run = largest_run(np.where(band)[0], gap=3)
+    if run is None or run[1] - run[0] < 150:
+        return None
+    return top, bottom, int(run[0]), int(run[1])
 
 
 def known_frame(h, w, aspect=0.8):

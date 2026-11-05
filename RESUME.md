@@ -1,5 +1,54 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
+## The tenth report, the owner's eight rulings, v1.8.9 and the second step (05 Nov 2026, Claude in the cloud) — start here
+
+**What came back:** `reports/20261105-0530` on `origin/owner/reports` (`d7839c8`). It holds 21 shots on v1.8.8 at the kobold camp north of the Abbey, the saved report and the MANIFEST, and every hash matches. The owner's rulings on the round's eight questions came with it. So did two notes: from Argon, how to decompose the camera's error; from the owner, that the copy of his character did not run when he ran. The full account is in `docs/council/2026-11-04-rungs/LANDED.md` (status **nofit**), and `STEER.md` ends with the answered rulings, the news back and the next ASK.
+
+**The camera's first verdict.**
+- The step-1 overlay-off twin was read blind and frozen at 03:42Z before any prediction was opened (owner ruling 1; `judge/blind10.json`).
+- At the saved default (pitch 0.35 rad, fovY 1.0 rad), every matched placement stood about 100 px (of 1041) below its predicted foot, at depths from 17 to 110 yd. **The projection fails** (five readings, 0.60 to 3.3 of each prop's projected height).
+- A fit on seven blind feet gives pitch 12.8° and fovY 53.8° (yaw offset 0.0000). Sapling F lands within 2 px, canopy L within 8 px, and trunk H, never fitted, within 2 px of canopy04.
+- The held-out sapling G misses by 19 px sideways: 0.121 against τ 0.1 at precision 0.019, a fail by 0.002. So the proposal is **not confirmed**. It prints as an ask and applies only by the owner's `confirm` (ruling 4).
+- G's miss is local: F is the same model, 42 px away, and holds. That matches Argon's third case.
+- `judge/fit10.py` reproduces every number in plain Python.
+
+**The fits.**
+- Barrel x0.53: **holds**, the first fit confirmed.
+- Bush x2.44 and crate x0.38: **fail**, and no camera distance alone can pass either (each reaches further below its middle than above; a vertical offset is next).
+- Tree: x5.6 in its 1.5-wide frame runs past the bottom, so a doubled trial at x11.2.
+- A wider frame magnifies the model: about 1.66× from aspect 0.8 to 1.85.
+
+**Procedure defects found and fixed in v1.8.9:**
+- the jar's twin overwrote its first shot (same second): the twin now waits for the next clock second;
+- the canopy04 step drew the barrel under canopy04's name: a pick nothing matches is refused;
+- step 11 was not turned: it now says so;
+- the copy of the character stood while the owner ran: each copy now stands, walks, runs or swims with its unit.
+
+**The rulings (05 Nov), as landed:**
+1. Twin readings count, read blind; his presses rank first.
+2. τ = 0.1.
+3. "Awareness" is a list of held rung names in `bridge/sync/rungs.json`, never a number on screen.
+4. `/fide terrain pitch|fov <deg>` only asks; `... confirm` writes and `default confirm` clears; confirmed fits may stay in `FIT_BY_FILE`.
+5. The relative-position rule, the depth sign-off, the camera options and `test fit` stay his.
+6. Camera options fixed.
+7. **Landed as the second step:** `tools/rungs-sync.mjs` writes `bridge/sync/rungs.json`, and the Apex's query reply fills `cascade_trace.rungs_traversed` (the rungs that hold) and `teacher_handshake.step_2_decision.rungs` (every verdict and the frontier). A missing file reads not_measured. There is no HUD change and no flow.
+8. Argon's Gates 1, 3, 5 and 7 stand.
+
+**Landed:**
+- `docs/rungs/ledger.json`: 93 rows (11 from the tenth report), its manifest, the camera proposal, and the `subject` convention.
+- `rung_ledger.mjs`: the camera in use is the projection's context; `subject` keeps two placements in one shot apart; the proposal is read from the addon.
+- v1.8.9: fits and statuses, the camera ask with `confirm`, the four procedure fixes, the motion of the copies.
+- `tools/frame_fill.py`: the frame's columns are read from its edges.
+- `packages/triad-369/src/rung_slots.mjs`, `tools/rungs-sync.mjs`, `bridge/sync/rungs.json`, and the Apex hook.
+- Tests: the ledger suite 20, the headless suite 70 (35 per SetLight profile), and `rung-slots.test.mjs` 4.
+- H010 asks for the eleventh report and the WoW Forever report. That one (a gnome in the dwarf starting zone) is not on `owner/reports`. The map data covers only Northshire's nine tiles, so Coldridge Valley reads MISSING until its report comes back.
+
+**Evidence (05 Nov, Linux, Node 22):**
+- `npm test`: 211 tests, 210 pass, 0 fail, 1 skipped;
+- headless: 70/70;
+- `node tools/test_ematrix_math.mjs`: 14/14;
+- `node tools/rungs-sync.mjs --check`: matches.
+
 ## Council round 2026-11-04-rungs: the recorded reading per rung, the one evaluator, v1.8.8 with the camera's first paired reading (04 Nov 2026, first committed 17:36Z, revised three times after adversarial review, evidence 22:01Z, Claude in the cloud) — start here
 
 **The owner's idea** was a node per density or fidelity rung, looping back to the fidelity process, taking his camera settings into account, with "a polynomial time algorithm" (`docs/council/2026-11-04-rungs/OWNER-INPUT.md`). Twelve voices ran, each verified, then three synthesis angles and a judge (`JUDGED.json`). Argon's Bentov packet was weighed as a candidate lens, and the gradient-equivalence note was applied.

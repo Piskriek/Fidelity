@@ -1,9 +1,37 @@
 {
   "schema": "fidelity-hands-v1",
   "from": "claude@node2",
-  "updated_at": "2026-11-04T17:32:00.846Z",
+  "updated_at": "2026-11-05T04:13:08.421Z",
   "note": "Snapshot: the live copy is F:\\fidelity-llm\\bridge\\hands\\laptop_tasks.json on Node 2 and must be rewritten from this file with a script (never a shell heredoc: one turned \\f and \\t in these paths into control characters). Protocol: bridge/hands/LAPTOP-HANDS.md. Rule: a task whose result is already done or failed for the same requested_at is never run again; a new requested_at is a new request.",
   "tasks": [
+    {
+      "id": "H010",
+      "priority": 0,
+      "title": "Collect the owner's eleventh report on v1.8.9 (step 11 at a turned pose, every twin in its own second, the copy of the character walking and running) and, separately, the WoW Forever report from the dwarf starting zone: deploy v1.8.9, have the owner press the panel (Clear, then 1 to 12, then Save), copy the screenshots and the saved FidelityEMatrix report into the repo on branch owner/reports (the existing worktree, never main) and push",
+      "steps": [
+        "First deploy v1.8.9 of FidelityEMatrix the H005 way (git -C D:\\fidelity-repo fetch origin, git -C D:\\fidelity-repo merge --ff-only origin/francois/serene-euler-51wj3e, back up, robocopy D:\\fidelity-repo\\FidelityEMatrix to D:\\World of Warcraft\\_anniversary_\\Interface\\AddOns\\FidelityEMatrix, hash check; 16 files; the toc must say 1.8.9).",
+        "Tell the owner, in these words: The tenth report gave the camera its first verdict: at the saved default every prop stood about 100 px below where the overlay put it. Its twin proposes pitch 12.8 and fovY 53.8 degrees, not yet confirmed. If you want this report to test that proposal, type /fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm before pressing 1; if not, type nothing and the twins re-test the default. Either way: /reload, stand where the tenth report stood (by the kobold camp north of the Abbey, facing the camp), /fide report, press Clear report, and let the chat text fade or drag the chat frame down. Press 1 and stand still for about two seconds (two screenshots, the second with the overlays hidden, now always a second apart). Press 2 to 9 one at a time and stand still after each. Before 10, take a step and stop. Before 11, turn about 45 degrees so that props stand on both sides of the screen centre, clear of the chat and the panel, then stand still and press 11 (if you did not turn, the chat now says so; turn and press 11 again). Press 12, then Save (reload UI). Keep the camera options as they were; if one changed, add a screenshot of them.",
+        "Ask the owner for three lines: whether the second shot of each pair showed no drawn copies and no red frame; whether the copy of his character now walks and runs with him (v1.8.9 plays its unit's motion); and which camera he chose (the proposal confirmed, or the default). Wait for the owner to say they are done.",
+        "Find the report file: D:\\World of Warcraft\\_anniversary_\\WTF\\Account\\<the account folder>\\SavedVariables\\FidelityEMatrix.lua. It must contain FidelityEMatrix_Report with steps; read its at field. If it has no steps, stop and report blocked with blocked_on \"owner: press the report buttons and Save (reload UI)\".",
+        "Collect the screenshots: every file in D:\\World of Warcraft\\_anniversary_\\Screenshots\\ modified at or after that at time (if in doubt, the last two hours). List them with size and mtime. Skip any single file over 8 MB and name it in the report instead.",
+        "Prepare the reports worktree as H009 did: git -C D:\\fidelity-reports fetch origin and git -C D:\\fidelity-reports pull --ff-only origin owner/reports (create the worktree the H009 way if D:\\fidelity-reports is missing).",
+        "Copy into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm, the report's at time; a new folder>\\: the screenshots, the FidelityEMatrix.lua SavedVariables file, and a MANIFEST.txt listing every file with its size, mtime and Get-FileHash -Algorithm SHA256, plus the addon version from D:\\fidelity-repo\\FidelityEMatrix\\FidelityEMatrix.toc and the client build from .build.info.",
+        "The WoW Forever report, separately: ask the owner where the WoW Forever client is installed and whether FidelityEMatrix was installed in it for the new character in the dwarf starting zone. If it was: copy that install's WTF\\Account\\<account>\\SavedVariables\\FidelityEMatrix.lua and the screenshots of that session into D:\\fidelity-reports\\reports\\<yyyymmdd-hhmm>-forever\\ with its own MANIFEST.txt (sizes, mtimes, SHA256, the addon version that install loaded, and that install's client build and product from its .build.info). If it was not installed there, do not install it without the owner's word: report what the owner tested in WoW Forever in one line instead.",
+        "git -C D:\\fidelity-reports add reports && git -C D:\\fidelity-reports commit -m \"report: owner screenshots and saved report <yyyymmdd-hhmm> (v1.8.9 run 11) and the WoW Forever report\" && git -C D:\\fidelity-reports push -u origin owner/reports",
+        "If that push is rejected as non-fast-forward: git -C D:\\fidelity-reports pull --ff-only origin owner/reports and then git -C D:\\fidelity-reports push -u origin owner/reports. The branch is always owner/reports and the push is always plain: no other branch, no forcing of any kind.",
+        "Report the folder names, the file lists with sizes, the commit hash and the push output. The director fetches origin/owner/reports and reads the lines there."
+      ],
+      "report": [
+        "The deploy's hash count (expect 16) and version line",
+        "The report's at time and its number of steps; the camera the owner chose",
+        "The screenshot list with sizes and any skipped file (expect two per twin step: 1 and 3 to 11, each pair in two different seconds)",
+        "The WoW Forever folder, or the owner's line on what was tested there",
+        "The commit hash on owner/reports and the push output",
+        "The owner's three lines"
+      ],
+      "status": "requested",
+      "requested_at": "2026-11-05T04:13:08.421Z"
+    },
     {
       "id": "H009",
       "priority": 0,

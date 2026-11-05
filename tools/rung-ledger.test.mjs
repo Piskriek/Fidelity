@@ -12,6 +12,7 @@ import {
   evaluate, recheck, order, rungKeys, descendants, admit, estimateFit, fitTest, readTerrainConstants, terrainRungs,
   VERDICTS, REFUSALS, VALUE_EPS, K_MAX, MARGIN,
 } from '../packages/triad-369/src/rung_ledger.mjs';
+import { buildSnapshot, serialize, RUNGS_FILE } from './rungs-sync.mjs';
 const round2 = v => Math.round(v * 100) / 100;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -19,11 +20,20 @@ const root = path.join(here, '..');
 const terrainSrc = fs.readFileSync(path.join(root, 'FidelityEMatrix', 'EMatrix_Terrain.lua'), 'utf8');
 const ledger = JSON.parse(fs.readFileSync(path.join(root, 'docs', 'rungs', 'ledger.json'), 'utf8'));
 const BUILD = '2.5.6.70577';
-const NOW = '2026-11-04 17:00:00';
+const NOW = '2026-11-05 06:00:00'; // after the tenth report (20261105-0530): the state v1.8.9 prints
+const NOW9 = '2026-11-04 17:00:00'; // after the ninth report: the tenth report's rows are still in the future
 const C = readTerrainConstants(terrainSrc);
+// the constants v1.8.8 shipped, for the tests that pin the state through the ninth report
+const C188 = {
+  ...C,
+  fitByFile: { elwynnbush09: 2.44, elwynntreemid01: 5.6, westfallbarrel01: 0.53, jar01: 0.37, westfallcrate: 0.38, elwynntreecanopy04: 5.6 },
+  fitKnots: [[0.7, 0.37], [1.0, 0.38], [1.2, 0.53], [2.5, 2.44], [14, 5.6]],
+};
 const filesWithRows = [...new Set(ledger.rows.filter(r => r.rung.startsWith('fit:')).map(r => r.rung.slice(4)))];
 const rungsFor = (c = C, opts = {}) => terrainRungs(c, { build: BUILD, files: filesWithRows, tolerance: ledger.tolerance, ...opts });
-const run = (rungs = rungsFor(), rows = ledger.rows) => evaluate(rungs, rows, { now: NOW, manifests: ledger.manifests });
+const run = (rungs = rungsFor(), rows = ledger.rows, now = NOW) => evaluate(rungs, rows, { now, manifests: ledger.manifests });
+const run9 = (rungs = rungsFor(C188), rows = ledger.rows) => run(rungs, rows, NOW9);
+const CAM = { pitch: C.camera.pitch, fovY: C.camera.fovY }; // the camera in use is the projection's context
 const rowById = new Map(ledger.rows.map(r => [r.id, r]));
 
 test('traceability: every fit in FIT_BY_FILE is a value a ledger row was read at, or the evaluator\'s proposal from the rows', () => {
@@ -47,6 +57,7 @@ test('the fit status the addon prints is the ledger\'s verdict, from the same re
     assert.ok(st, `${file} has a fit but no FIT_STATUS`);
     assert.equal(st.verdict, v.verdict, `${file}: the addon prints ${st.verdict}, the ledger says ${v.verdict}`);
     assert.equal(st.report, v.report, `${file}: the addon cites ${st.report}, the ledger ${v.report}`);
+    if (st.verdict === 'fails' && st.how === 'nok') assert.ok(v.estimate && v.estimate.canPass === false, `${file}: 'nok' says no k alone can pass; the estimate must agree (${JSON.stringify(v.estimate)})`);
     if (st.verdict === 'fitted') {
       assert.ok(['estimated', 'read', 'trial'].includes(st.how), `${file}: a fitted value must say where it came from, got ${st.how}`);
       if (st.how === 'estimated') {
@@ -79,16 +90,16 @@ test('the ledger reads every camera-distance fit shot once per reader, and every
 });
 
 test('verdicts from the rows through the ninth report, at the values v1.8.8 uses', () => {
-  const res = run();
+  const res = run9();
   const v = id => res.verdicts.get(id).verdict;
   for (const id of ['map', 'axis', 'load', 'frame:PlayerModel', 'frame:DressUpModel']) assert.equal(v(id), 'holds', id);
   assert.equal(v('frame:Model'), 'fails', 'a plain Model frame drew nothing in five variants');
   for (const f of ['elwynnbush09', 'westfallbarrel01', 'westfallcrate', 'jar01', 'elwynntreemid01', 'elwynntreecanopy04']) assert.equal(v('fit:' + f), 'fitted', f);
   assert.equal(v('projection:abbey-door'), 'unmeasured');
-  for (const f of Object.keys(C.fitByFile)) assert.equal(v('height:' + f), 'blocked', 'a height rests on the projection and the fit');
+  for (const f of Object.keys(C188.fitByFile)) assert.equal(v('height:' + f), 'blocked', 'a height rests on the projection and the fit');
   assert.ok(![...res.verdicts.keys()].some(id => /relative|position/.test(id)), 'relative position is not a rung');
   assert.ok(res.frontier.includes('projection:abbey-door'));
-  for (const f of Object.keys(C.fitByFile)) assert.ok(res.frontier.includes('fit:' + f), f + ' is on the frontier');
+  for (const f of Object.keys(C188.fitByFile)) assert.ok(res.frontier.includes('fit:' + f), f + ' is on the frontier');
   assert.ok(!res.frontier.includes('frame:Model'), 'a frame kind not in use is not asked for');
   for (const d of res.verdicts.values()) assert.ok(VERDICTS.includes(d.verdict));
   // the bush moved to its trial: no reading at x2.44 yet
@@ -110,14 +121,66 @@ test('verdicts from the rows through the ninth report, at the values v1.8.8 uses
 
 test('at the values v1.8.7 used, the barrel, the crate and canopy04 fail and their proposals are the v1.8.8 values', () => {
   const old = { ...C, fitByFile: { elwynnbush09: 2.0, elwynntreemid01: 2.8, westfallbarrel01: 0.6, jar01: 0.37, westfallcrate: 0.42, elwynntreecanopy04: 2.8 } };
-  const res = run(rungsFor(old));
+  const res = run9(rungsFor(old));
   for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01']) assert.equal(res.verdicts.get('fit:' + f).verdict, 'fails', f);
   const bush = res.verdicts.get('fit:elwynnbush09');
   assert.equal(bush.verdict, 'fitted', 'the bush at x2 is undecided, not failed');
   assert.ok(bush.untestable.length >= 7 && bush.untestable.every(u => /touches/.test(u.reason)), 'its stems touch the frame\'s bottom in every x2 reading, so none can decide: ' + JSON.stringify(bush.untestable));
   const barrel = res.verdicts.get('fit:westfallbarrel01');
   assert.ok(barrel.superseded.some(s => s.id === 'r8-124647-barrel-1' && s.by === 'r8-124647-barrel-2'), 'the grid reading of 124647 supersedes the first reading of the same shot');
-  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01', 'elwynnbush09']) assert.equal(res.verdicts.get('fit:' + f).estimate.value, C.fitByFile[f], f);
+  for (const f of ['westfallbarrel01', 'westfallcrate', 'elwynntreecanopy04', 'elwynntreemid01', 'elwynnbush09']) assert.equal(res.verdicts.get('fit:' + f).estimate.value, C188.fitByFile[f], f);
+});
+
+test('the tenth report: the barrel holds, the bush and the crate fail where no k passes, the tree doubles, the projection fails at the camera in use', () => {
+  const res = run();
+  const v = id => res.verdicts.get(id);
+  // the twins (round 7): every row of the tenth report is admitted but the wide-frame crate, which counts only at 1.85
+  const r10 = ledger.rows.filter(r => r.id.startsWith('r10-'));
+  assert.equal(r10.filter(r => r.rung.startsWith('fit:')).length, 6, 'six fit pairs held a model: the jar\'s first shot was overwritten and canopy04 was never drawn');
+  assert.equal(r10.filter(r => r.rung === 'projection:abbey-door').length, 5, 'five blind feet matched to placements');
+  assert.deepEqual(res.refused.filter(r => r.id.startsWith('r10-')), [{ id: 'r10-052921-crate-twin', rung: 'fit:westfallcrate', reason: 'key' }], 'only the wide crate is refused, by the lock');
+  for (const r of r10) {
+    assert.equal(r.artifact.report, '20261105-0530');
+    assert.equal(ledger.manifests['20261105-0530'][r.artifact.file], r.artifact.sha256, r.id + ': its shot is in the MANIFEST');
+    if (r.artifact.twin) assert.equal(ledger.manifests['20261105-0530'][r.artifact.twin.file], r.artifact.twin.sha256, r.id + ': its twin is in the MANIFEST');
+  }
+  // the barrel at x0.53: the first fit confirmed, by two readings (the canopy04 step drew the barrel)
+  assert.equal(v('fit:westfallbarrel01').verdict, 'holds');
+  assert.deepEqual(v('fit:westfallbarrel01').deciding.map(d => d.result), ['pass', 'pass']);
+  assert.ok(Math.abs(v('fit:westfallbarrel01').residual - 0.069) < 1e-9, 'gaps 0.055 and 0.014');
+  // the bush and the crate fail, and the estimate says no camera distance alone can pass either
+  for (const f of ['elwynnbush09', 'westfallcrate']) {
+    assert.equal(v('fit:' + f).verdict, 'fails', f);
+    assert.equal(v('fit:' + f).estimate.canPass, false, f + ': its reaches differ too much');
+    assert.ok(v('fit:' + f).estimate.reaches.down > v('fit:' + f).estimate.reaches.up, f + ' reaches further below its middle than above');
+  }
+  assert.ok(Math.abs(v('fit:elwynnbush09').estimate.fillAt - 0.796) < 0.01, 'the bush fills at most about 0.8 at its best k: ' + JSON.stringify(v('fit:elwynnbush09').estimate));
+  // the tree in its 1.5-wide frame reached the top and ran past the bottom at x5.6 and x2.8: v1.8.9 doubles it
+  const tree = run(rungsFor(C188)).verdicts.get('fit:elwynntreemid01');
+  assert.equal(tree.verdict, 'fails', 'at v1.8.8\'s x5.6 the tree runs past its frame');
+  assert.equal(tree.estimate.value, 11.2);
+  assert.equal(v('fit:elwynntreemid01').verdict, 'fitted', 'at v1.8.9\'s x11.2 nothing is read yet');
+  assert.equal(C.fitByFile.elwynntreemid01, 11.2);
+  // the wide crate counts only in a 1.85-wide frame, where it runs past every edge (the wide frame magnifies it)
+  const wideCrate = run(rungsFor({ ...C, aspectRules: [...C.aspectRules, ['crate', 1.85]] })).verdicts.get('fit:westfallcrate');
+  assert.ok(wideCrate.admitted.includes('r10-052921-crate-twin') && wideCrate.verdict === 'fails', 'in its own aspect the wide crate fails: ' + wideCrate.verdict);
+  // the projection at the camera in use fails: every placement stood about 100 px below its prediction
+  const proj = v('projection:abbey-door');
+  assert.equal(proj.verdict, 'fails');
+  assert.equal(proj.deciding.length, 5);
+  assert.ok(proj.deciding.every(d => d.result === 'fail'), 'all five feet miss by more than the tolerance plus their precision');
+  for (const f of Object.keys(C.fitByFile)) assert.equal(v('height:' + f).verdict, 'blocked', f);
+  // the lock on the camera: at the proposed pitch and fovY, readings at the default count for nothing
+  const atProposal = run(rungsFor(C, { camera: { pitch: C.cameraProposal.pitch, fovY: C.cameraProposal.fovY } })).verdicts.get('projection:abbey-door');
+  assert.equal(atProposal.verdict, 'unmeasured', 'a confirmed new camera starts unmeasured: the next twins test it');
+  // the proposal the addon prints is the ledger's, and says it is not confirmed
+  const prop = ledger.proposals['projection:abbey-door'];
+  assert.deepEqual({ pitch: prop.pitch, fovY: prop.fovY, report: prop.report, heldOut: prop.heldOut.residual }, C.cameraProposal);
+  assert.equal(prop.heldOut.result, 'fail');
+  assert.ok(prop.heldOut.residual - prop.heldOut.precision > ledger.tolerance, 'the held-out sapling fails by the decisive rule');
+  assert.match(terrainSrc, /NOT confirmed/);
+  // the frontier: everything but the barrel's fit and the frames already held
+  assert.deepEqual([...res.frontier].sort(), ['fit:elwynnbush09', 'fit:elwynntreecanopy04', 'fit:elwynntreemid01', 'fit:jar01', 'fit:westfallcrate', 'projection:abbey-door']);
 });
 
 test('the lock: a reading counts only in the context it was taken in; a version bump re-keys nothing; a base change re-keys exactly what rests on it', () => {
@@ -142,7 +205,7 @@ test('precedence: the owner\'s own fit outranks the director\'s reading; disagre
   const dirFail = { ...at, id: 'dir-fail', artifact: shot('20261104-1247', 'WoWScrnShot_110426_124647.jpg'), observed: { top: 0.2, bottom: 0.05 } };
   const dirPass = { ...at, id: 'dir-pass', artifact: shot('20261104-1226', 'WoWScrnShot_110426_122603.jpg'), observed: { top: 0.03, bottom: 0.02 } };
   const owner = { ...at, id: 'owner-fit', witness: 'owner', reader: 'the owner pressed /fide terrain test fit 0.53', observed: { fill: 1 }, precision: 0.1, artifact: { ...shot('20261104-1321', 'FidelityEMatrix.lua'), line: 1 } };
-  const v = rows => run(rungsFor(), [...ledger.rows, ...rows]).verdicts.get('fit:westfallbarrel01').verdict;
+  const v = rows => run9(rungsFor(C188), [...ledger.rows, ...rows]).verdicts.get('fit:westfallbarrel01').verdict;
   assert.equal(v([dirFail]), 'fails');
   assert.equal(v([dirPass]), 'holds');
   assert.equal(v([dirFail, dirPass]), 'contested');
@@ -197,14 +260,14 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
   assert.equal(w2('norung'), 'rung');
   assert.equal(r2.refused.filter(r => r.id === 'r8-124647-barrel-2' && r.reason === 'duplicate').length, 1, 'the second row with a taken id is refused, the first kept');
   // the projection's own gates: a pose at the shutter, and an overlay-on shot is an echo; a window ages a row out
-  const proj = { id: 'p1', rung: 'projection:abbey-door', kind: 'measured', witness: 'director', at: '2026-11-04 13:16:58', artifact: base.artifact, context: { pose: 'abbey-door' }, value: 0.35, observed: { residual: 0.02 }, precision: 0.01 };
+  const proj = { id: 'p1', rung: 'projection:abbey-door', kind: 'measured', witness: 'director', at: '2026-11-04 13:16:58', artifact: base.artifact, context: { pose: 'abbey-door', ...CAM }, value: 0.35, observed: { residual: 0.02 }, precision: 0.01 };
   const projRows = [
     { ...proj, id: 'nopose' },
     { ...proj, id: 'turning', pose: { facingSpread: 0.5 } },
     { ...proj, id: 'overlayon', witness: 'overlay-on', pose: { facingSpread: 0 } },
     { ...proj, id: 'still', pose: { facingSpread: 0 } },
   ];
-  const r3 = run(rungsFor(), [...ledger.rows, ...projRows]);
+  const r3 = run9(rungsFor(C188), [...ledger.rows, ...projRows]); // through the ninth report, no projection reading yet
   const w3 = id => (r3.refused.find(r => r.id === id) || {}).reason;
   assert.equal(w3('nopose'), 'shutter'); assert.equal(w3('turning'), 'shutter'); assert.equal(w3('overlayon'), 'echo');
   assert.equal(r3.verdicts.get('projection:abbey-door').verdict, 'holds', 'a still, posed reading within tolerance holds the projection');
@@ -220,7 +283,7 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
 
 test('the refusal order is fixed: a row with two defects is refused for the earlier one, in REFUSALS order', () => {
   const base = rowById.get('r8-124647-barrel-2');
-  const proj = { id: 'p', rung: 'projection:abbey-door', kind: 'measured', witness: 'director', at: '2026-11-04 13:16:58', artifact: base.artifact, context: { pose: 'abbey-door' }, value: 0.35, observed: { residual: 0.02 }, precision: 0.01 };
+  const proj = { id: 'p', rung: 'projection:abbey-door', kind: 'measured', witness: 'director', at: '2026-11-04 13:16:58', artifact: base.artifact, context: { pose: 'abbey-door', ...CAM }, value: 0.35, observed: { residual: 0.02 }, precision: 0.01 };
   // every adjacent pair of REFUSALS that one row can carry. Every echo witness is also outside its kind's
   // witness list, so echo and witness always co-occur, and the 'stub' row of the refusals test pins that pair;
   // a row cannot be both in the future and stale.
@@ -445,6 +508,15 @@ test('the output is a verdict list: no awareness, level, density, count or score
   };
   walk(res);
   for (const k of keys) assert.ok(!/aware|level|density|percent|coherence|score|count|held/.test(k), `the output carries "${k}"`);
+});
+
+test('bridge/sync/rungs.json is the evaluator\'s snapshot of this ledger and these constants (owner ruling 7: the Triad\'s slots read it)', () => {
+  const text = fs.readFileSync(RUNGS_FILE, 'utf8');
+  assert.equal(text, serialize(buildSnapshot()), 'run node tools/rungs-sync.mjs after changing the ledger or the addon\'s constants');
+  const snap = JSON.parse(text);
+  const res = run();
+  for (const v of snap.verdicts) assert.equal(v.verdict, res.verdicts.get(v.rung).verdict, v.rung + ': the snapshot\'s verdict is the evaluator\'s');
+  assert.deepEqual(snap.awareness, snap.verdicts.filter(v => v.verdict === 'holds').map(v => v.rung), 'awareness is the held set, by name');
 });
 
 test('the rows\' hashes are the reports\' own: each cited file is in its MANIFEST on origin/owner/reports (skipped without that ref)', t => {

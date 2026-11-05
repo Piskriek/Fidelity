@@ -1,0 +1,374 @@
+{
+ "scene": {
+  "report": "20261105-0530",
+  "file": "WoWScrnShot_110526_052834.jpg",
+  "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10",
+  "step": "1 Scene + twin (twin, overlays hidden)",
+  "read_at_utc": "2026-11-05T03:42:10Z",
+  "rule": "read before any prediction (props, probe lines, overlay-on shots) was opened; owner ruling 1",
+  "px_per_ui": 1.2199218347646783,
+  "repeat_twins": {
+   "WoWScrnShot_110526_052938.jpg": "step 10 twin, static scene mean diff 1.09 grey levels",
+   "WoWScrnShot_110526_052947.jpg": "step 11 twin, 1.17"
+  },
+  "objects": [
+   {
+    "label": "A",
+    "what": "camp hide frame (stretched hide on two poles, right pole carries a candle)",
+    "foot_px": [
+     990,
+     390
+    ],
+    "foot_precision_px": 6,
+    "top_px": [
+     1003,
+     349
+    ],
+    "foot_ui": [
+     811.5,
+     319.7
+    ],
+    "top_ui": [
+     822.2,
+     286.1
+    ],
+    "note": "foot = the hide's ground contact, mid; top = pole tops"
+   },
+   {
+    "label": "B",
+    "what": "two leaning wooden poles right of centre",
+    "foot_px": [
+     1415,
+     668
+    ],
+    "foot_precision_px": 5,
+    "top_px": [
+     1395,
+     520
+    ],
+    "foot_ui": [
+     1159.9,
+     547.6
+    ],
+    "top_ui": [
+     1143.5,
+     426.3
+    ],
+    "note": "left pole's base and top; right pole top (1412, 495), base hidden behind a kobold"
+   },
+   {
+    "label": "C",
+    "what": "upright banded barrel, camp right",
+    "foot_px": [
+     1578,
+     714
+    ],
+    "foot_precision_px": 6,
+    "top_px": [
+     1578,
+     650
+    ],
+    "foot_ui": [
+     1293.5,
+     585.3
+    ],
+    "top_ui": [
+     1293.5,
+     532.8
+    ],
+    "note": "base in the grass (lowest band 705); top rim back edge 648, front 655"
+   },
+   {
+    "label": "D",
+    "what": "grey wooden box or log lying left of the barrel",
+    "foot_px": [
+     1505,
+     700
+    ],
+    "foot_precision_px": 8,
+    "top_px": [
+     1505,
+     665
+    ],
+    "foot_ui": [
+     1233.7,
+     573.8
+    ],
+    "top_ui": [
+     1233.7,
+     545.1
+    ],
+    "note": "partly behind the barrel"
+   },
+   {
+    "label": "E",
+    "what": "campfire with a metal pot right of the barrel",
+    "foot_px": [
+     1615,
+     698
+    ],
+    "foot_precision_px": 10,
+    "top_px": null,
+    "foot_ui": [
+     1323.9,
+     572.2
+    ],
+    "top_ui": null,
+    "note": "base in grass"
+   },
+   {
+    "label": "F",
+    "what": "small green tree (sapling), centre",
+    "foot_px": [
+     824,
+     325
+    ],
+    "foot_precision_px": 3,
+    "top_px": [
+     822,
+     215
+    ],
+    "foot_ui": [
+     675.5,
+     266.4
+    ],
+    "top_ui": [
+     673.8,
+     176.2
+    ],
+    "note": "trunk base on the grass; crown top"
+   },
+   {
+    "label": "G",
+    "what": "small yellow-green tree (sapling), centre",
+    "foot_px": [
+     866,
+     344
+    ],
+    "foot_precision_px": 3,
+    "top_px": [
+     876,
+     222
+    ],
+    "foot_ui": [
+     709.9,
+     282.0
+    ],
+    "top_ui": [
+     718.1,
+     182.0
+    ],
+    "note": "trunk base; crown top"
+   },
+   {
+    "label": "H",
+    "what": "big trunk left of centre",
+    "foot_px": [
+     752,
+     326
+    ],
+    "foot_precision_px": 8,
+    "top_px": null,
+    "foot_ui": [
+     616.4,
+     267.2
+    ],
+    "top_ui": null,
+    "note": "crown cut by the frame top"
+   },
+   {
+    "label": "I",
+    "what": "background trunk behind the saplings",
+    "foot_px": [
+     960,
+     342
+    ],
+    "foot_precision_px": 5,
+    "top_px": null,
+    "foot_ui": [
+     786.9,
+     280.3
+    ],
+    "top_ui": null,
+    "note": "crown merges with the canopy"
+   },
+   {
+    "label": "J",
+    "what": "big trunk right of centre (1070-1190)",
+    "foot_px": [
+     1125,
+     358
+    ],
+    "foot_precision_px": 8,
+    "top_px": null,
+    "foot_ui": [
+     922.2,
+     293.5
+    ],
+    "top_ui": null,
+    "note": "roots 1075,345 to 1190,362"
+   },
+   {
+    "label": "K",
+    "what": "dark round bush at the base of trunk L",
+    "foot_px": [
+     1255,
+     395
+    ],
+    "foot_precision_px": 5,
+    "top_px": [
+     1255,
+     356
+    ],
+    "foot_ui": [
+     1028.8,
+     323.8
+    ],
+    "top_ui": [
+     1028.8,
+     291.8
+    ],
+    "note": "base at the trunk's foot"
+   },
+   {
+    "label": "L",
+    "what": "big trunk (1240-1360)",
+    "foot_px": [
+     1300,
+     390
+    ],
+    "foot_precision_px": 8,
+    "top_px": null,
+    "foot_ui": [
+     1065.6,
+     319.7
+    ],
+    "top_ui": null,
+    "note": "roots reach 1345,395"
+   },
+   {
+    "label": "M",
+    "what": "big trunk far right (1360-1450)",
+    "foot_px": [
+     1420,
+     372
+    ],
+    "foot_precision_px": 10,
+    "top_px": null,
+    "foot_ui": [
+     1164.0,
+     304.9
+    ],
+    "top_ui": null,
+    "note": "partly behind the flow panel"
+   }
+  ]
+ },
+ "fits": {
+  "report": "20261105-0530",
+  "reader": "twin reading, round 7",
+  "read_at_utc": "2026-11-05T03:49:25Z",
+  "fits": [
+   {
+    "file": "elwynnbush09",
+    "k": 2.44,
+    "aspect": 0.8,
+    "shot": "WoWScrnShot_110526_052846.jpg",
+    "twin": "WoWScrnShot_110526_052847.jpg",
+    "step": "3 Bush at its fit + twin",
+    "observed": {
+     "top": 0.166,
+     "bottom": 0.014,
+     "width": "overflow"
+    },
+    "precision": 0.01,
+    "note": "frame_fill twin: main top 0.234, low 0.166; by eye on a brightened crop the leaf tips reach row 382 (0.166); stems end near row 720 (low threshold reaches the edge, the real player's legs sit there); leaves reach both sides"
+   },
+   {
+    "file": "elwynntreemid01",
+    "k": 5.6,
+    "aspect": 1.5,
+    "shot": "WoWScrnShot_110526_052852.jpg",
+    "twin": "WoWScrnShot_110526_052853.jpg",
+    "step": "4 Tree at its fit + twin",
+    "observed": {
+     "top": "touches",
+     "bottom": "clipped",
+     "width": 0.467
+    },
+    "precision": 0.01,
+    "note": "main top 0.101 missed the dark crown; by eye the crown tip reaches row 316 (3 px); the trunk runs flat into the bottom edge across its width"
+   },
+   {
+    "file": "westfallbarrel01",
+    "k": 0.53,
+    "aspect": 0.8,
+    "shot": "WoWScrnShot_110526_052902.jpg",
+    "twin": "WoWScrnShot_110526_052903.jpg",
+    "step": "5 Barrel at its fit + twin",
+    "observed": {
+     "top": 0.055,
+     "bottom": 0.014,
+     "width": "overflow"
+    },
+    "precision": 0.005,
+    "note": "no low-threshold flag; top rim at row 336 by eye; its bulge is cut at both sides (aspect 0.8 < its own ~0.82)"
+   },
+   {
+    "file": "westfallbarrel01",
+    "k": 0.53,
+    "aspect": 0.8,
+    "shot": "WoWScrnShot_110526_052930.jpg",
+    "twin": "WoWScrnShot_110526_052931.jpg",
+    "step": "9 Canopy04 at its fit + twin (the pick fell back to the barrel)",
+    "observed": {
+     "top": 0.055,
+     "bottom": 0.014,
+     "width": "overflow"
+    },
+    "precision": 0.005,
+    "note": "the step's own line says westfallbarrel01.m2 ... picked by \"canopy04\": no canopy04 is in the pool at this pose and TestSlot fell back to the first loaded slot; a repeat of the barrel"
+   },
+   {
+    "file": "westfallcrate",
+    "k": 0.38,
+    "aspect": 0.8,
+    "shot": "WoWScrnShot_110526_052916.jpg",
+    "twin": "WoWScrnShot_110526_052917.jpg",
+    "step": "7 Crate at its fit + twin",
+    "observed": {
+     "top": 0.116,
+     "bottom": "touches",
+     "width": "overflow"
+    },
+    "precision": 0.005,
+    "note": "the crate's top edge is crisp at row 361; the low-threshold 0.075 was a kobold walking through the frame"
+   },
+   {
+    "file": "westfallcrate",
+    "k": 0.38,
+    "aspect": 1.85,
+    "shot": "WoWScrnShot_110526_052921.jpg",
+    "twin": "WoWScrnShot_110526_052922.jpg",
+    "step": "8 Crate, wide frame + twin",
+    "observed": {
+     "top": "clipped",
+     "bottom": "clipped",
+     "width": "overflow"
+    },
+    "precision": 0.005,
+    "note": "planks fill the whole frame; the wide frame magnifies the model about 1.66x (row-profile match against the 0.8 shot, r 0.93, about the mid-line); frame_fill find took only the right edge (bright wood washed out the left edge's red)"
+   }
+  ],
+  "missing": [
+   {
+    "file": "jar01",
+    "why": "both shots fell in 05:29:07; the screenshot file name has one-second resolution, so the twin overwrote the first shot (WoWScrnShot_110526_052907.jpg shows no frame)"
+   },
+   {
+    "file": "elwynntreecanopy04",
+    "why": "no canopy04 placement is loaded at this pose; the pick fell back to the barrel and still said picked by \"canopy04\""
+   }
+  ]
+ }
+}

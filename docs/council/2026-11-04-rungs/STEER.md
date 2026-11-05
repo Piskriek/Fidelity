@@ -5,7 +5,7 @@ Written by the director (Claude in the cloud), first committed 17:36Z. Revised t
 - a second pass found 28 of those fixes sound, 6 partly open, and new defects in the fixes themselves;
 - a final pass over the second revision demonstrated nine more.
 
-All are addressed below, in the ledger, in the evaluator or in v1.8.8, and each correction is stated where it falls. Evidence for this revision: the test run at 22:01Z.
+All are addressed below, in the ledger, in the evaluator or in v1.8.8, and each correction is stated where it falls. Evidence for this revision: the test run at 22:01Z. **News back (05 Nov):** the tenth report and the owner's eight rulings. They are at the end of this file ("Owner rulings" answered, "News back", the new ASK) and in `LANDED.md` (status `nofit`).
 
 **Inputs**, all in this folder and each relayed through the Triad unchanged:
 - the owner's idea, his camera settings and his second message, "we need a polynomial time algorithm" (`OWNER-INPUT.md`);
@@ -264,14 +264,16 @@ and while every rung beneath it holds. The being reports which rungs hold and wh
 
 ## Owner rulings
 
-1. **Whether the director's reading of your screenshot counts as a measurement** for the frame-kind, fit, projection and height rungs, or whether only your own fit press, cursor mark and word count. If the director's reading counts: whether the reader may also be the one who wrote the prediction. The plan is to read the twin before opening the predictions.
-2. **The tolerances.** 0.1 is proposed in each rung's own unit: the gap as a fraction of the frame for a fit, the residual over the prop's projected height for the projection and the height. A reading decides only when it clears the tolerance by its own precision, so a reading by eye at 0.1 can confirm a full frame but not one gap of 0.05. Readings count until their context changes: the frame kind or aspect, a camera setting, the pose, the client build.
-3. **Whether "awareness" may name the set of rungs that hold.** Whether any count of it may be shown (O2 says none; B6, B8 and A1 would allow one labelled as framing). Whether the HUD's D3 may be replaced by that set. Nothing on your screen changes before your word.
-4. **Whether a fitted pitch or fovY applies by default** in the next version, or only when you type `/fide terrain pitch|fov` yourself (the being asks, you permit). Also whether confirmed fits move `FIT_BY_FILE` without asking, as v1.8.8's estimates did.
-5. **Which rungs stay yours:** the rule of relative position and the word that the overlay works; the camera settings; the calibration procedure.
-6. **Holding the camera settings fixed** while the projection is calibrated, and an options screenshot in any report taken after a change.
-7. **Whether the verdicts may fill the Triad's reserved slots** (`rungs_traversed`, `DECISION`) as data with no display change, as the second step.
-8. **Argon's gates stand as set:** 5 (a lens, not a ruling), 7 (the BRS file unchanged without your permission), 3 (a lens never lies) and 1 (no forcing without grounding).
+Asked in this round; **answered by the owner on 05 Nov 2026** (relayed by Flash with the tenth report, through the Triad unchanged). Each answer is followed by what the code does with it.
+
+1. **The director's readings count**, provided the twin's real objects are read before the predictions are opened; the owner's own presses keep precedence. The tenth report's step-1 twin was read blind and frozen at 03:42Z (`judge/blind10.json`), and its fit pairs were read with `tools/frame_fill.py twin`. The evaluator ranks an owner row first, as before.
+2. **τ = 0.1 is approved** as the scale-free tolerance, in each rung's own unit. It stays `ledger.json` `tolerance`.
+3. **"Awareness" may name the set of rungs that hold internally,** with no numerical score or percentage on screen. `bridge/sync/rungs.json` lists it as `awareness`, a list of names. No count is written anywhere, and nothing reaches the screen.
+4. **Pitch and FOV are proposed as commands that need confirmation; confirmed model fits may update `FIT_BY_FILE`.** In v1.8.9, `/fide terrain pitch|fov <deg>` only asks. The same command ending in `confirm` writes the value, and `default confirm` clears it. The barrel's confirmed x0.53 stays and now prints "confirmed".
+5. **These stay the owner's:** the relative-position rule, the visual depth sign-off, the camera options, and `/fide terrain test fit <k>`. Nothing in v1.8.9 writes any of them.
+6. **The camera options stay fixed during this calibration.** H010 repeats the request.
+7. **The verdicts may fill the Triad's data slots** (`rungs_traversed`, DECISION) without altering the HUD and without a seventh flow. This is landed as the second step (`packages/triad-369/src/rung_slots.mjs`, `tools/rungs-sync.mjs`, the Apex's query reply).
+8. **Argon's Gates 1, 3, 5 and 7 stand as set.** The Bentov packet stays a lens: no term from it is in code, and `FIDELITY_COMPLETE_BRS_V2.md` is untouched.
 
 ## Vector
 
@@ -368,6 +370,26 @@ LANDED becomes `used` when the shots map to rows and the verdicts match the read
 - no named foot can be read;
 - the held-out residual stays above τ after the capped fit. The projection then prints `fails` with its residual.
 
+## News back: the tenth report (05 Nov)
+
+The detail is in `LANDED.md`; the rows are the `r10-*` rows of `docs/rungs/ledger.json`. In short:
+- **The projection fails at the saved default.** Every matched placement stood about 100 px (of 1041) below its predicted foot at every depth from 17 to 110 yd: five blind readings, 0.60 to 3.3 of each prop's projected height.
+- **Fitted on seven blind feet:** pitch 12.8° and fovY 53.8° (yaw offset 0.0000). Sapling F lands within 2 px, canopy L within 8 px, and the never-fitted trunk H within 2 px of canopy04. The held-out sapling G, named before any fitted residual existed, misses by 19 px sideways: 0.121 against τ 0.1 at precision 0.019. **`nofit` by the pre-registered rule.** Its twin model F, 42 px away, rules out a camera cause, which matches Argon's third case: a local offset.
+- **Fits:**
+  - the barrel holds at x0.53, the first fit confirmed;
+  - the bush (fill 0.82 at x2.44) and the crate (top gap 0.116 at x0.38) fail, and no k alone can pass either (a vertical offset is next);
+  - the tree doubles to x11.2;
+  - a wider frame magnifies the model (about 1.66× from aspect 0.8 to 1.85 at the same height).
+- **Procedure defects, each fixed in v1.8.9:** the jar's twin overwrote its first shot (same second); the canopy04 pick fell back to the barrel under canopy04's name; step 11 was not turned; the copy of the character stood while the owner ran.
+- **WoW Forever** (a gnome in the dwarf starting zone): no report yet. The addon's map data holds only Northshire's nine tiles (azeroth 31 to 33 × 47 to 49), so Coldridge Valley (about tile 31:43) reads MISSING. The map rung there stays unmeasured until H010 brings its report.
+
 ## Next round's ASK
 
-"The camera's first verdict: fit pitch and fovY (and a yaw offset only if the horizontal residual fails) on the tenth report's twins. Test it on a held-out placement. Then read the six fits' twins: a per-file aspect for the crate, and from the bush's x2.44 twin whether its reaches differ enough to need a vertical offset." If the twins cannot be read, the ASK is instead what the twin needs: a turned pose, the chat moved, or a closer zoom notch.
+"The camera at a second pose: the eleventh report's twins (H010) test the camera the owner chooses. That is either the proposal, if he confirms `/fide terrain pitch 12.8 confirm` and `/fide terrain fov 53.8 confirm`, or the default again, at a pose turned about 45° (step 11 now says when it was not). The held-out placement is named before unsealing, and every residual is judged by the decisive rule. Then:
+- the vertical offset for the bush and the crate, whose reaches differ;
+- the tree's x11.2 trial;
+- the jar's first twin;
+- canopy04 wherever it is loaded;
+- the WoW Forever report's map context."
+
+If the twins cannot be read, the ASK is instead what the twin needs: the chat moved, a closer zoom notch, or a pose with more placements clear of the HUD.

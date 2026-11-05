@@ -769,14 +769,16 @@ test("terrain overlay: nearby placements become props at projected positions; fa
     local bush = byPath["world/azeroth/elwynn/passivedoodads/bush/elwynnbush09.m2"]
     check(tree and bush, "tree and bush must be in the pool")
     check(tree.mono.kind == "PlayerModel" and bush.mono.kind == "PlayerModel" and T.FrameKind() == "PlayerModel", "props are PlayerModel frames: a plain Model frame draws nothing on the owner's client (the 10:23 report), got " .. tostring(tree.mono.kind))
-    check(near(tree.mono.camDistance, 5.6, 1e-9) and near(bush.mono.camDistance, 2.44, 1e-9) and tree.mono.modelScale == 1, "an unmeasured 16 yd canopy takes the last knot (the tree's trial x5.6); the bush takes its trial x2.44, got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
-    check(near(T.CameraDistanceFor(14), 5.6, 1e-9) and near(T.CameraDistanceFor(1.2), 0.53, 1e-9) and near(T.CameraDistanceFor(1.85), 1.485, 1e-9) and near(T.CameraDistanceFor(nil), 2.44, 1e-9) and T.CameraDistanceFor(1e9) == 5.6 and near(T.CameraDistanceFor(1e-9), 0.37, 1e-9), "an unmeasured file interpolates between the fits in use by nominal height, clamped at the ends")
+    check(near(tree.mono.camDistance, 11.2, 1e-9) and near(bush.mono.camDistance, 2.44, 1e-9) and tree.mono.modelScale == 1, "an unmeasured 16 yd canopy takes the last knot (the tree's trial x11.2); the bush keeps its x2.44, got " .. tostring(tree.mono.camDistance) .. " and " .. tostring(bush.mono.camDistance))
+    check(near(T.CameraDistanceFor(14), 11.2, 1e-9) and near(T.CameraDistanceFor(1.2), 0.53, 1e-9) and near(T.CameraDistanceFor(1.85), 1.485, 1e-9) and near(T.CameraDistanceFor(nil), 2.44, 1e-9) and T.CameraDistanceFor(1e9) == 11.2 and near(T.CameraDistanceFor(1e-9), 0.37, 1e-9), "an unmeasured file interpolates between the fits in use by nominal height, clamped at the ends")
     check(near(tree.mono.w, tree.mono.h * 1.5, 1e-6) and near(bush.mono.w, bush.mono.h * 0.8, 1e-6) and T.AspectFor("x/elwynntreecanopy03.m2") == 1.5 and T.AspectFor("x/jar01.m2") == 0.8, "trees and canopies get a frame 1.5 as wide as tall, the rest 0.8")
-    check(T.CameraDistanceFor(14, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2") == 5.6 and T.CameraDistanceFor(1.2, "World\\Azeroth\\Westfall\\PassiveDoodads\\Barrels\\WestfallBarrel01.M2") == 0.53 and T.CameraDistanceFor(2.5, "x/elwynnbush09.m2") == 2.44 and T.CameraDistanceFor(16, "x/elwynntreecanopy04.m2") == 5.6, "a file the owner's reports measured uses its own fit, whatever the path's case or slashes")
+    check(T.CameraDistanceFor(14, "world/azeroth/elwynn/passivedoodads/trees/elwynntreemid01.m2") == 11.2 and T.CameraDistanceFor(1.2, "World\\Azeroth\\Westfall\\PassiveDoodads\\Barrels\\WestfallBarrel01.M2") == 0.53 and T.CameraDistanceFor(2.5, "x/elwynnbush09.m2") == 2.44 and T.CameraDistanceFor(16, "x/elwynntreecanopy04.m2") == 5.6, "a file the owner's reports measured uses its own fit, whatever the path's case or slashes")
     -- each fit says what the ledger found (docs/rungs/ledger.json; tools/rung-ledger.test.mjs checks they match)
-    check(T.FitSource("x/WestfallCrate.m2") == "a fit estimated from report 20261104-1321, not confirmed" and T.FitSource("x/westfallbarrel01.m2") == "a fit estimated from report 20261104-1247, not confirmed", "the crate and the barrel print an estimate, not a measurement: " .. T.FitSource("x/WestfallCrate.m2"))
+    local NOK = "a fit that failed in report 20261105-0530: no camera distance alone fits it (it reaches further below its middle than above)"
+    check(T.FitSource("x/WestfallCrate.m2") == NOK and T.FitSource("x/elwynnbush09.m2") == NOK, "the crate and the bush print their failure and why no k helps: " .. T.FitSource("x/WestfallCrate.m2"))
+    check(T.FitSource("x/westfallbarrel01.m2") == "a fit confirmed in report 20261105-0530", "the barrel prints the first confirmed fit: " .. T.FitSource("x/westfallbarrel01.m2"))
     check(T.FitSource("x/jar01.m2") == "a fit read at this value in report 20261104-1321, undecided", "the jar prints an undecided reading: " .. T.FitSource("x/jar01.m2"))
-    check(T.FitSource("x/elwynntreecanopy04.m2") == "a trial value after report 20261104-1321 (it reached the frame's edge there), not a fit yet" and T.FitSource("x/elwynntreemid01.m2") == T.FitSource("x/elwynntreecanopy04.m2") and T.FitSource("x/elwynnbush09.m2") == "a trial value after report 20261104-1247 (it reached the frame's edge there), not a fit yet" and T.FitSource("x/elwynntreecanopy03.m2") == "an interpolation between measured files, a guess", "the tree, canopy04 and the bush print a trial; an unmeasured canopy prints a guess: " .. T.FitSource("x/elwynntreecanopy04.m2"))
+    check(T.FitSource("x/elwynntreecanopy04.m2") == "a trial value after report 20261104-1321 (it reached the frame's edge there), not a fit yet" and T.FitSource("x/elwynntreemid01.m2") == "a trial value after report 20261105-0530 (it reached the frame's edge there), not a fit yet" and T.FitSource("x/elwynntreecanopy03.m2") == "an interpolation between measured files, a guess", "the tree and canopy04 print a trial; an unmeasured canopy prints a guess: " .. T.FitSource("x/elwynntreemid01.m2"))
     for _, f in ipairs({ "x/elwynnbush09.m2", "x/jar01.m2", "x/westfallcrate.m2", "x/westfallbarrel01.m2", "x/elwynntreemid01.m2", "x/elwynntreecanopy04.m2", "x/elwynntreecanopy03.m2" }) do
         check(not T.FitSource(f):find("measured from", 1, true), "no fit may print itself as measured: " .. f)
     end
@@ -851,7 +853,7 @@ test("terrain test: every press draws on a brand-new frame of the asked kind, th
     slash("terrain test camdist 2")
     check(newest().camDistance == 2 and newest().modelScale == 1, "camdist 2 sets the camera distance scale on a new frame, got " .. tostring(newest().camDistance))
     slash("terrain test pick canopy"); slash("terrain test")
-    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 5.6, 1e-9) and near(newest().w, newest().h * 1.5, 1e-6), "pick canopy draws the canopy at its interpolated fit in a wide frame, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
+    check(tostring(newest().model):find("canopy", 1, true) and near(newest().camDistance, 11.2, 1e-9) and near(newest().w, newest().h * 1.5, 1e-6), "pick canopy draws the canopy at its interpolated fit (the last knot, the tree's trial x11.2) in a wide frame, got " .. tostring(newest().model) .. " x" .. tostring(newest().camDistance))
     check(T._markFrame() and T._markFrame().shown and T._markFrame().points.ALL and T._markFrame().points.ALL.rel == newest(), "the test marks the frame's edges on a frame above the model")
     slash("terrain test pick any"); slash("terrain test")
     check(tostring(newest().model):find("bush", 1, true) or tostring(newest().model):find("canopy", 1, true), "pick any goes back to the first loaded prop")
@@ -1342,7 +1344,7 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     -- (b) silent: the shutter adds no line to the chat and none to the record
     check(#printed == 0 and #rec.lines == linesAtPress, "the shutter record prints nothing, got " .. #printed .. " line(s)")
     check(near(rec.pose.facing, 0.5, 1e-9) and near(rec.pose.facingSpread, 1.2, 1e-6), "the pose's facing is the shutter's (0.5) and its spread since the press is the turn's full 1.2, got " .. tostring(rec.pose.facing) .. " and " .. tostring(rec.pose.facingSpread))
-    check(rec.pose.pitchKind == "(saved default, not measured)" and rec.pose.focal and rec.pose.zoom == cameraZoom, "the pose carries the camera's numbers with their kind")
+    check(rec.pose.pitchKind == "(saved default, failed the tenth report's twin)" and rec.pose.focal and rec.pose.zoom == cameraZoom, "the pose carries the camera's numbers with their kind")
     local cam = M.BuildCamera(playerPos.x, playerPos.y, 80.0, 0.5, cameraZoom, 0.35, 1.0, 1920, 1080)
     check(#rec.pose.props >= 1, "the pose lists the drawable placements in view at the shutter")
     local p1 = rec.pose.props[1]
@@ -1463,15 +1465,16 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     printed = {}
     slash("terrain probe")
     local all = table.concat(printed, "\n")
-    check(all:find("camera pitch 20.1 deg (saved default, not measured), focal", 1, true) and all:find("px (saved default, not measured), screen", 1, true), "the probe prints the pitch and the focal with their kind: " .. all:sub(1, 300))
+    check(all:find("camera pitch 20.1 deg (saved default, failed the tenth report's twin), focal", 1, true) and all:find("px (saved default, failed the tenth report's twin), screen", 1, true), "the probe prints the pitch and the focal with their kind: " .. all:sub(1, 300))
+    check(all:find("probe: the camera: report 20261105-0530's twin fits pitch 12.8 deg and fovY 53.8 deg, not confirmed", 1, true), "the probe names the camera the tenth report proposes, and that it is not confirmed: " .. all:sub(1, 600))
     printed = {}
-    slash("terrain pitch 25"); slash("terrain probe"); slash("terrain status")
+    slash("terrain pitch 25 confirm"); slash("terrain probe"); slash("terrain status")
     all = table.concat(printed, "\n")
     check(all:find("camera pitch 25.0 deg (your setting, not measured)", 1, true) and all:find("pitch 25.0 deg (your setting, not measured)", 1, true), "after the owner's own pitch the lines say it is his setting: " .. all:sub(1, 300))
     FidelityEMatrix_Config.terrainPitch = nil
     printed = {}
     slash("terrain status")
-    check(printed[1] and printed[1]:find("(saved default, not measured)", 1, true), "back to the saved default")
+    check(printed[1] and printed[1]:find("(saved default, failed the tenth report's twin)", 1, true), "back to the saved default")
     -- the aspect knob draws a test frame of the asked aspect, and auto returns to the file's own (1.5 for a canopy)
     slash("terrain test pick canopy"); slash("terrain test aspect 1.85")
     local f = T._testFrames[#T._testFrames]
@@ -1483,6 +1486,100 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     slash("report hide")
     shotProbe = nil
     playerFacing = 0.0
+    step(0.6)
+    check(#lastErrors() == 0, table.concat(lastErrors(), " | "))
+end)
+
+test("v1.8.9: a pick no loaded file matches draws nothing; the camera applies only when confirmed; the twin waits for a new second; step 11 says when it was not turned; the copies walk and run with their units", function()
+    local R, T, W = ns.Report, ns.Terrain, ns.World
+    local function click(i) local b = _G["FidelityEMatrixReportButton" .. i]; b.scripts.OnClick(b, "LeftButton") end
+    slash("stereo off"); slash("box hide"); slash("terrain test off"); slash("terrain on"); slash("world on")
+    playerFacing = 0.0
+    step(0.6)
+    -- (a) the tenth report's canopy04 step drew the barrel under the name canopy04: a pick nothing matches is refused
+    slash("terrain test pick bush"); slash("terrain test")
+    local bushFrame = T._testFrames[#T._testFrames]
+    check(bushFrame and bushFrame.shown and tostring(bushFrame.model):find("bush", 1, true), "a pick that matches draws its file")
+    local framesBefore = #T._testFrames
+    printed = {}
+    slash("terrain test pick canopy04")
+    local all = table.concat(printed, "\n")
+    check(all:find('no loaded placement\'s file holds "canopy04" here, so nothing is drawn (loaded: ', 1, true) and not all:find('picked by "canopy04"', 1, true), "a pick that matches no loaded file is refused, never answered with another file: " .. all:sub(1, 300))
+    check(#T._testFrames == framesBefore and not bushFrame.shown and T._testMode() == nil, "the refusal draws nothing and ends the earlier test")
+    printed = {}
+    slash("terrain test fit 3")
+    check(table.concat(printed, "\n"):find("no test frame is up", 1, true) and not (FidelityEMatrix_Config.propFit and FidelityEMatrix_Config.propFit.elwynnbush09), "with no test up, fit saves nothing")
+    -- (b) owner ruling 4: pitch and fov are asked, and written only with "confirm"
+    FidelityEMatrix_Config.terrainPitch, FidelityEMatrix_Config.terrainFovY = nil, nil
+    printed = {}
+    slash("terrain pitch 12.8")
+    check(FidelityEMatrix_Config.terrainPitch == nil and table.concat(printed, "\n"):find("Camera pitch would change from 20.1 deg (saved default, failed the tenth report's twin) to 12.8 deg. Nothing is written yet: /fide terrain pitch 12.8 confirm applies it", 1, true), "a number alone writes nothing: " .. table.concat(printed, "\n"))
+    slash("terrain pitch 12.8 confirm")
+    check(near(FidelityEMatrix_Config.terrainPitch, math.rad(12.8), 1e-12), "the same command with confirm writes it")
+    slash("terrain pitch default")
+    check(FidelityEMatrix_Config.terrainPitch ~= nil, "default without confirm clears nothing")
+    slash("terrain pitch default confirm")
+    check(FidelityEMatrix_Config.terrainPitch == nil, "default confirm clears the owner's setting")
+    printed = {}
+    slash("terrain pitch"); slash("terrain fov")
+    all = table.concat(printed, "\n")
+    check(all:find("fits pitch 12.8 deg and fovY 53.8 deg, not confirmed (its held-out sapling missed by 0.121 of its height; the tolerance is 0.1): /fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm apply them", 1, true), "with no number each prints the value in use and the proposal: " .. all:sub(1, 400))
+    slash("terrain fov 53.8"); check(FidelityEMatrix_Config.terrainFovY == nil, "fov alone writes nothing")
+    slash("terrain fov 53.8 confirm"); check(near(FidelityEMatrix_Config.terrainFovY, math.rad(53.8), 1e-12), "fov with confirm writes it")
+    FidelityEMatrix_Config.terrainFovY = nil
+    -- (c) the twin waits until the clock's second moves past the first shot's (file names are to the second)
+    _G.time = function() return math.floor(GetTime()) end
+    FidelityEMatrix_Report = nil
+    slash("report show")
+    while (GetTime() % 1) < 0.50 or (GetTime() % 1) > 0.56 do step(1 / 60) end -- press at x.5: the first shot at about x+1.0, so the twin's earliest moment (+0.75) shares its second
+    while (GetTime() % 1) < 0.53 or (GetTime() % 1) > 0.56 do step(1 / 120, 1 / 120) end
+    click(1)
+    local rec = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+    step(2.0)
+    check(rec.pose and rec.twin and rec.twin.pose and rec.twin.screenshot:find("taken at", 1, true), "both shots are taken")
+    check(math.floor(rec.twin.pose.time) > math.floor(rec.pose.time), "the twin's second is later than the first shot's, so its file cannot overwrite the first: " .. tostring(rec.pose.time) .. " / " .. tostring(rec.twin.pose.time))
+    check(rec.twin.pose.time - rec.pose.time >= 0.75 - 1e-9, "and no sooner than the hide and the delay")
+    _G.time = nil
+    -- (d) step 11 needs its own pose
+    FidelityEMatrix_Report = nil
+    playerFacing = 0.3
+    click(10); step(2.0)
+    printed = {}
+    click(11); step(2.0)
+    local r11 = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+    check(r11.step == "turn" and r11.notTurned and table.concat(printed, "\n"):find("Step 11 needs a turned pose", 1, true), "an unturned step 11 says so in the chat and in the record: " .. tostring(r11.notTurned))
+    playerFacing = 1.1
+    printed = {}
+    click(11); step(2.0)
+    r11 = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+    check(r11.step == "turn" and not r11.notTurned and near(r11.turnedBy, 0.8, 1e-6) and not table.concat(printed, "\n"):find("needs a turned pose", 1, true), "a turned step 11 records how far it turned and says nothing: " .. tostring(r11.turnedBy))
+    playerFacing = 0.0
+    slash("report hide")
+    -- (e) the owner's report: the copy stood still while he ran. It plays its unit's motion now.
+    local speeds, swimming = {}, false
+    _G.GetUnitSpeed = function(unit) return speeds[unit] or 0, 7, 7, 4.7 end
+    _G.IsSwimming = function() return swimming end
+    local A = W._ANIM
+    speeds.player = 7; check(W._MotionOf("player") == A.run, "running (7 yd/s) runs")
+    speeds.player = 2.5; check(W._MotionOf("player") == A.walk, "walking (2.5 yd/s) walks")
+    speeds.player = 0; check(W._MotionOf("player") == A.stand, "standing stands")
+    swimming = true; speeds.player = 4.7; check(W._MotionOf("player") == A.swim, "swimming swims")
+    speeds.player = 0; check(W._MotionOf("player") == A.swimIdle, "treading water idles in the water"); swimming = false
+    local slot = nil
+    for _, s in ipairs(W._pool) do if s.used and s.unit == "player" then slot = s end end
+    check(slot ~= nil, "the player has a copy")
+    if slot then
+        local calls, orig = 0, slot.mono.SetAnimation
+        slot.mono.SetAnimation = function(self, a) calls = calls + 1; return orig(self, a) end
+        speeds.player = 7; stepUntilWorldRefresh()
+        check(slot.mono.animation == A.run, "the copy runs when the player runs, got " .. tostring(slot.mono.animation))
+        stepUntilWorldRefresh(); stepUntilWorldRefresh()
+        check(calls == 1, "a running copy is not restarted every scan: " .. calls .. " call(s)")
+        speeds.player = 0; stepUntilWorldRefresh()
+        check(slot.mono.animation == A.stand and calls == 2, "and stands again when the player stops")
+        slot.mono.SetAnimation = orig
+    end
+    _G.GetUnitSpeed, _G.IsSwimming = nil, nil
     step(0.6)
     check(#lastErrors() == 0, table.concat(lastErrors(), " | "))
 end)

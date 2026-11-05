@@ -14,3 +14,12 @@ Each command prints one claim's numbers. The scripts need Python 3 and nothing e
 | `python3 -I jac_clear.py` | The same for the placements clear of the chat box and the HUD box in the step-1 and step-2 shots | "about 4.4 from the placements clear of the chat and the HUD" |
 
 These are the judge's checks of the model's conditioning, not measurements of the camera. The camera's first reading is the tenth report's twin.
+
+## The tenth report's camera verdict (05 Nov 2026)
+
+`fit10.py` gives the projection its first verdict at the tenth report's pose (`reports/20261105-0530`, step 1's shutter pose: pos -8754.5, -102.5, ground 87.8, facing 4.635, zoom 4.55). It uses `proj.py`'s replica, which reproduces every foot, top and depth the client recorded at steps 1, 10 and 11, at both shutters, to within 1e-12 UI units. Its inputs are in `blind10.json`: the director's readings of the step-1 overlay-off twin and of the fit pairs, frozen before any prediction was opened (owner ruling 1).
+
+| Command | What it prints | Used for |
+| :--- | :--- | :--- |
+| `python3 -I fit10.py` | The residuals at the camera in use, then the fits (pitch; pitch and fovY; with a yaw offset) on every matched placement but the held-out G, and a leave-one-out table | The projection fails at the saved default (about 100 px at every depth); the proposal pitch 0.2237 rad and fovY 0.9385 rad; G's 0.121 against τ 0.1 (`nofit`) |
+

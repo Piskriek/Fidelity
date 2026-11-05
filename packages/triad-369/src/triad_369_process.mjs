@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { getBridgeRoot } from './bridge_paths.mjs';
 import { startQueryBridge } from './query_bridge.mjs';
 import { commandEvidence, fileEvidence, flow, flowIntegrity as summarizeFlows, notMeasured, symbolic } from './evidence.mjs';
+import { rungSlots } from './rung_slots.mjs';
 
 // Configuration via Environment or Defaults
 const BRIDGE_ROOT = getBridgeRoot();
@@ -34,6 +35,9 @@ const QUERY_OUT_FILE = path.join(LOOP_DIR, 'triad_query_out.json');
 const SOURCE_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SYNC_DIR = process.env.TRIAD_SYNC_DIR ? path.resolve(process.env.TRIAD_SYNC_DIR) : (fs.existsSync(path.resolve(SOURCE_DIR, '../sync')) ? path.resolve(SOURCE_DIR, '../sync') : path.resolve(SOURCE_DIR, '../../../bridge/sync'));
 const ARENA_TELEMETRY_FILE = path.join(SYNC_DIR, 'arena_telemetry.json');
+// the rung verdicts tools/rungs-sync.mjs writes from docs/rungs/ledger.json (owner ruling 7): data for
+// two reply slots, never a flow and never re-tested here
+const RUNGS_FILE = path.join(SYNC_DIR, 'rungs.json');
 
 // Remote Node 2 (Sol / Compute Worker)
 const REMOTE_HOST = process.env.REMOTE_HOST || 'RAMPAGE@192.168.0.5';
@@ -465,10 +469,14 @@ export async function handleQueryCascade(query) {
   answerParts.push('This response uses keyword routing; no conversational model is connected.');
   const synthesizedAnswer = answerParts.join('\n');
 
+  // The rung verdicts fill rungs_traversed and the DECISION slot as data (owner ruling 7). A missing
+  // or malformed file reads not_measured.
+  const slots = rungSlots(readJson(RUNGS_FILE, null));
+
   // Only ASK was received. This path does not invoke a Teacher Engine or change a scene.
   const teacherHandshake = {
     step_1_ask: { asker: sender, target: 'Triad query handler', request: text, timestamp: iso(now) },
-    step_2_decision: { outcome: 'not_evaluated', reason: 'No Teacher Engine is connected to this query path.' },
+    step_2_decision: { outcome: 'not_evaluated', reason: 'No Teacher Engine is connected to this query path.', rungs: slots.decision },
     step_3_change: { applied: false, delta: null },
     step_4_news_back: { landed: 'not_evaluated' }
   };
@@ -489,7 +497,7 @@ export async function handleQueryCascade(query) {
       flow_31_down: { target: 'Node 1 (Fidelity Local)', status: density ? 'file_read' : 'unavailable', data: fidelityInfo },
       flow_32_down: { target: 'Node 2 (Sol Remote)', status: remoteStatus, data: solInfo },
       flow_34_down: { target: 'Node 4 (Arena handoff)', status: arenaSnapshot ? 'file_read' : 'unavailable', data: arenaInfo },
-      rungs_traversed: [],
+      rungs_traversed: slots.rungs_traversed,
       keyword_matches: matchedRungs.map(r => ({ density: r.density, domain: r.domain })),
       primary_domain: primaryRung ? `${primaryRung.density} (${primaryRung.domain})` : null
     },

@@ -2,12 +2,13 @@
  "about": "The recorded reading per rung (council round 2026-11-04-rungs). Each row is one reading: the rung it witnesses, the witness class and reader, the time (the step stamp, the client's local clock), the artifact with the SHA256 its report's MANIFEST lists, the context it was taken in, the operating point (value) and what was observed. packages/triad-369/src/rung_ledger.mjs turns the rows into verdicts; tools/rung-ledger.test.mjs makes the addon's constants answer to them. A value moves only when a counted reading moves it.",
  "conventions": {
   "fit.observed": "top and bottom: the gaps from the red frame's top and bottom edges to the model's outermost part (twigs and stems included, not only the dense leaves), as fractions of the frame height; 'touches' when the model reaches that edge and whether it is cut there cannot be seen, 'clipped' when it visibly runs past it, 'hidden' when something covers it. topBound and bottomBound: with that edge hidden, the largest gap the visible part allows (the model reaches at least that far). width: the model's width as a fraction of the frame width, or 'overflow'. fill: a first reading that recorded only how much of the frame the model fills.",
-  "coverage": "every camera-distance fit shot in the nine reports has a second reading (35 shots). The two model-scale shots of the fifth report (WoWScrnShot_110426_112707 and 112755) are not fit readings: they vary SetModelScale at the default camera, not the camera factor a fit is.",
+  "coverage": "every camera-distance fit shot in the nine reports has a second reading (35 shots). The two model-scale shots of the fifth report (WoWScrnShot_110426_112707 and 112755) are not fit readings: they vary SetModelScale at the default camera, not the camera factor a fit is. The tenth report adds a twin reading of each fit pair it holds (the jar's pair was overwritten, the canopy04 step drew the barrel) and five projection readings of its step-1 twin. The tenth report adds a twin reading of each fit pair it holds (the jar's pair was overwritten, the canopy04 step drew the barrel) and five projection readings of its step-1 twin.",
   "decisive": "a reading passes only when its residual plus its precision is within the tolerance, and fails only when its residual minus its precision is outside it; a reading nearer the tolerance than its own precision decides nothing",
   "precision": "about half a tick of the reading grid: 0.03 on a marked frame, 0.05 on the known rectangle; 0.1 for a first reading by eye",
   "readers": {
    "first reading, when the report landed": "the director, reading the owner's screenshots when each report landed (by eye, the whole picture)",
-   "second reading, grid crop, round 6": "the director, re-reading every fit shot in round 6 against crops with a tick every 5% (tools/frame_fill.py sheet) and 1% zooms; the bush and tree tops corrected after the round's review re-read them brightened"
+   "second reading, grid crop, round 6": "the director, re-reading every fit shot in round 6 against crops with a tick every 5% (tools/frame_fill.py sheet) and 1% zooms; the bush and tree tops corrected after the round's review re-read them brightened",
+   "twin reading, round 7": "the director, reading the tenth report's overlay-off twins (owner ruling 1: the real objects read before any prediction was opened; fits with tools/frame_fill.py twin and a brightened crop for every flagged edge)"
   },
   "witness classes": {
    "host": "a host API read (UnitPosition and the tile lookup, GetModelFileID), captured by the owner's panel",
@@ -16,7 +17,9 @@
    "client-visible": "the frame's own IsVisible: an echo",
    "headless": "the stub harness: an echo"
   },
-  "time": "the step stamp the panel records (date(), the client's local clock); never a file time and never the report-level at"
+  "time": "the step stamp the panel records (date(), the client's local clock); never a file time and never the report-level at",
+  "projection.observed": "residual: the distance from the predicted foot (the camera in use, through EMatrix_Math.BuildCamera and ProjectPoint, or its replica, which reproduces every recorded foot) to the foot read blind in an overlay-off twin, over the placement's projected height; foot, predicted and height in UI units from the bottom left; the context names the camera in use (pitch, fovY) so a confirmed change unlocks the old readings",
+  "subject": "what in the artifact a reading is of (a placement in a scene shot): two subjects read in one shot are two readings; the evaluator supersedes only readings of the same artifact, line, subject, witness class and value"
  },
  "tolerance": 0.1,
  "rows": [
@@ -1944,6 +1947,396 @@
    },
    "precision": 0.03,
    "note": "pressed a third time: as 131711"
+  },
+  {
+   "id": "r10-052846-bush-twin",
+   "rung": "fit:elwynnbush09",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:28:46",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052846.jpg",
+    "sha256": "C1889E17B259D59608BE8611034B0C1CE4070335549BA24D72DAABC9B361FB35",
+    "twin": {
+     "file": "WoWScrnShot_110526_052847.jpg",
+     "sha256": "63CFDEFF7987F72B6D29676E1CF1EF9A3B825E8C68DCB72BE766D482DFE9E311"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 2.44,
+   "observed": {
+    "top": 0.166,
+    "bottom": 0.014,
+    "width": "overflow"
+   },
+   "precision": 0.01,
+   "note": "frame_fill twin: main top 0.234, low 0.166; by eye on a brightened crop the leaf tips reach row 382 (0.166); stems end near row 720 (low threshold reaches the edge, the real player's legs sit there); leaves reach both sides (tools/frame_fill.py twin on the pair; step \"3 Bush at its fit + twin\")"
+  },
+  {
+   "id": "r10-052852-tree-twin",
+   "rung": "fit:elwynntreemid01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:28:52",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052852.jpg",
+    "sha256": "7D2D337D7817C4844B41B23051A0B197AE6F785D064A04D85CE7EFC360EF8878",
+    "twin": {
+     "file": "WoWScrnShot_110526_052853.jpg",
+     "sha256": "C9448F37842664E3893DEA77A14C379F86ACDA0AFF17308464883F9E042A3F63"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.5,
+    "build": "2.5.6.70577"
+   },
+   "value": 5.6,
+   "observed": {
+    "top": "touches",
+    "bottom": "clipped",
+    "width": 0.467
+   },
+   "precision": 0.01,
+   "note": "main top 0.101 missed the dark crown; by eye the crown tip reaches row 316 (3 px); the trunk runs flat into the bottom edge across its width (tools/frame_fill.py twin on the pair; step \"4 Tree at its fit + twin\")"
+  },
+  {
+   "id": "r10-052902-barrel-twin",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:02",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052902.jpg",
+    "sha256": "E7EFC4DEC4D6C7E073E60D40F1BEF5C07F45E97227A125A89F3DB31B1C5B0FB5",
+    "twin": {
+     "file": "WoWScrnShot_110526_052903.jpg",
+     "sha256": "EDCDCDF196E156438896BADDCFF55A5995EA9993D4B907BA05EF7C8585CB4362"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.53,
+   "observed": {
+    "top": 0.055,
+    "bottom": 0.014,
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "no low-threshold flag; top rim at row 336 by eye; its bulge is cut at both sides (aspect 0.8 < its own ~0.82) (tools/frame_fill.py twin on the pair; step \"5 Barrel at its fit + twin\")"
+  },
+  {
+   "id": "r10-052930-barrel-twin",
+   "rung": "fit:westfallbarrel01",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:30",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052930.jpg",
+    "sha256": "D6A0157D1BEA602AE2026D9E56F3AF97F5D5A3A55F2145954355AFCDF11B9D59",
+    "twin": {
+     "file": "WoWScrnShot_110526_052931.jpg",
+     "sha256": "DC02005EA1444F5CF6EAAFCBED5BF72A501208075FF8B4580026971E6DE2CFAC"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.53,
+   "observed": {
+    "top": 0.055,
+    "bottom": 0.014,
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "the step's own line says westfallbarrel01.m2 ... picked by \"canopy04\": no canopy04 is in the pool at this pose and TestSlot fell back to the first loaded slot; a repeat of the barrel (tools/frame_fill.py twin on the pair; step \"9 Canopy04 at its fit + twin (the pick fell back to the barrel)\")"
+  },
+  {
+   "id": "r10-052916-crate-twin",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:16",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052916.jpg",
+    "sha256": "C1B4EE9B240FC888AF6DC218EBA471439E8100BBC988C9C5EA828106BFF984C7",
+    "twin": {
+     "file": "WoWScrnShot_110526_052917.jpg",
+     "sha256": "963558FC14EF9D2882BDC64A4A0B92CA5C66FDA375B03D410DAD4751CCBD5BB7"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 0.8,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.38,
+   "observed": {
+    "top": 0.116,
+    "bottom": "touches",
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "the crate's top edge is crisp at row 361; the low-threshold 0.075 was a kobold walking through the frame (tools/frame_fill.py twin on the pair; step \"7 Crate at its fit + twin\")"
+  },
+  {
+   "id": "r10-052921-crate-twin",
+   "rung": "fit:westfallcrate",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "at": "2026-11-05 05:29:21",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052921.jpg",
+    "sha256": "5C90878827D34957518EA3B297CB9D3DE0F095BF64BE35A05B1A5069BCC3F12A",
+    "twin": {
+     "file": "WoWScrnShot_110526_052922.jpg",
+     "sha256": "9E6FAD876014EDF3379C86BC81E42D00F4BCD970C972777390AB0787BCF6549A"
+    }
+   },
+   "context": {
+    "frameKind": "PlayerModel",
+    "aspect": 1.85,
+    "build": "2.5.6.70577"
+   },
+   "value": 0.38,
+   "observed": {
+    "top": "clipped",
+    "bottom": "clipped",
+    "width": "overflow"
+   },
+   "precision": 0.005,
+   "note": "planks fill the whole frame; the wide frame magnifies the model about 1.66x (row-profile match against the 0.8 shot, r 0.93, about the mid-line); frame_fill find took only the right edge (bright wood washed out the left edge's red) (tools/frame_fill.py twin on the pair; step \"8 Crate, wide frame + twin\")"
+  },
+  {
+   "id": "r10-052834-proj-C",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "westfallbarrel01 at (-8765.8, -112.5, 84.0)",
+   "at": "2026-11-05 05:28:34",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 1.767,
+    "placement": "westfallbarrel01 at (-8765.8, -112.5, 84.0), 16.7 yd down the view",
+    "foot": [
+     1293.5,
+     268.0
+    ],
+    "predicted": [
+     1244.0,
+     345.2
+    ],
+    "height": 51.9
+   },
+   "precision": 0.095,
+   "note": "blind object C (\"upright banded barrel, camp right\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+  },
+  {
+   "id": "r10-052834-proj-K",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynnbush09 at (-8789.0, -183.0, 81.5)",
+   "at": "2026-11-05 05:28:34",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 3.303,
+    "placement": "elwynnbush09 at (-8789.0, -183.0, 81.5), 85.3 yd down the view",
+    "foot": [
+     1028.8,
+     529.5
+    ],
+    "predicted": [
+     1012.1,
+     615.5
+    ],
+    "height": 26.5
+   },
+   "precision": 0.155,
+   "note": "blind object K (\"dark round bush at the base of trunk L\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+  },
+  {
+   "id": "r10-052834-proj-L",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynntreecanopy02 at (-8796.1, -191.2, 82.0)",
+   "at": "2026-11-05 05:28:34",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 0.6,
+    "placement": "elwynntreecanopy02 at (-8796.1, -191.2, 82.0), 93.3 yd down the view",
+    "foot": [
+     1065.6,
+     533.6
+    ],
+    "predicted": [
+     1043.9,
+     628.2
+    ],
+    "height": 161.9
+   },
+   "precision": 0.041,
+   "note": "blind object L (\"big trunk (1240-1360)\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+  },
+  {
+   "id": "r10-052834-proj-G",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynntreemid01 at (-8758.4, -195.1, 85.5)",
+   "at": "2026-11-05 05:28:34",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 0.694,
+    "placement": "elwynntreemid01 at (-8758.4, -195.1, 85.5), 93.0 yd down the view",
+    "foot": [
+     709.9,
+     571.3
+    ],
+    "predicted": [
+     726.6,
+     659.3
+    ],
+    "height": 129.1
+   },
+   "precision": 0.019,
+   "note": "blind object G (\"small yellow-green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+  },
+  {
+   "id": "r10-052834-proj-F",
+   "rung": "projection:abbey-door",
+   "kind": "measured",
+   "witness": "director",
+   "reader": "twin reading, round 7",
+   "subject": "elwynntreemid01 at (-8752.6, -212.1, 87.0)",
+   "at": "2026-11-05 05:28:34",
+   "artifact": {
+    "report": "20261105-0530",
+    "file": "WoWScrnShot_110526_052834.jpg",
+    "sha256": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10"
+   },
+   "context": {
+    "pose": "abbey-door",
+    "pitch": 0.35,
+    "fovY": 1
+   },
+   "pose": {
+    "x": -8754.5,
+    "y": -102.5,
+    "facing": 4.635472,
+    "zoom": 4.55,
+    "facingSpread": 0,
+    "stamp": "2026-11-05 05:28:34"
+   },
+   "observed": {
+    "residual": 0.796,
+    "placement": "elwynntreemid01 at (-8752.6, -212.1, 87.0), 108.0 yd down the view",
+    "foot": [
+     675.5,
+     586.9
+    ],
+    "predicted": [
+     679.2,
+     678.1
+    ],
+    "height": 114.7
+   },
+   "precision": 0.021,
+   "note": "blind object F (\"small green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
   }
  ],
  "manifests": {
@@ -2015,6 +2408,59 @@
    "WoWScrnShot_110426_131711.jpg": "21000B7A9A1D81245B701E76BF918D1770095D985E937EAAB9CE377D7DD48392",
    "WoWScrnShot_110426_131816.jpg": "7B58BF2B77B3BC2DF00701B5DCE70A2943342572B1D8DC02C96FB2B528C228AA",
    "WoWScrnShot_110426_131819.jpg": "3FD45516505E79CC5B3AA7E24926FD1B1259852140249A01EADCFE748E7B9642"
+  },
+  "20261105-0530": {
+   "FidelityEMatrix.lua": "9D12183CF12058EDB1FA19F01E5A6CF88DA839C828A75A6EA71EB64FF89D4F5F",
+   "WoWScrnShot_110526_052833.jpg": "B042683FF943D8E94424A0B593156E95B89AA329FE56710985144B5F46B1FE73",
+   "WoWScrnShot_110526_052834.jpg": "F00AA6E222B54B7338F4671C01AFE9C697B327E30D527A78BF2D078F799F6C10",
+   "WoWScrnShot_110526_052838.jpg": "E78849D23EFB8787F8165B589A1622BE645809AA3CAB1042CD1168A9C966F2CE",
+   "WoWScrnShot_110526_052846.jpg": "C1889E17B259D59608BE8611034B0C1CE4070335549BA24D72DAABC9B361FB35",
+   "WoWScrnShot_110526_052847.jpg": "63CFDEFF7987F72B6D29676E1CF1EF9A3B825E8C68DCB72BE766D482DFE9E311",
+   "WoWScrnShot_110526_052852.jpg": "7D2D337D7817C4844B41B23051A0B197AE6F785D064A04D85CE7EFC360EF8878",
+   "WoWScrnShot_110526_052853.jpg": "C9448F37842664E3893DEA77A14C379F86ACDA0AFF17308464883F9E042A3F63",
+   "WoWScrnShot_110526_052902.jpg": "E7EFC4DEC4D6C7E073E60D40F1BEF5C07F45E97227A125A89F3DB31B1C5B0FB5",
+   "WoWScrnShot_110526_052903.jpg": "EDCDCDF196E156438896BADDCFF55A5995EA9993D4B907BA05EF7C8585CB4362",
+   "WoWScrnShot_110526_052907.jpg": "3748FD744791EBA3704B340288E616BE352D0D209804004D256CCA781D37B374",
+   "WoWScrnShot_110526_052916.jpg": "C1B4EE9B240FC888AF6DC218EBA471439E8100BBC988C9C5EA828106BFF984C7",
+   "WoWScrnShot_110526_052917.jpg": "963558FC14EF9D2882BDC64A4A0B92CA5C66FDA375B03D410DAD4751CCBD5BB7",
+   "WoWScrnShot_110526_052921.jpg": "5C90878827D34957518EA3B297CB9D3DE0F095BF64BE35A05B1A5069BCC3F12A",
+   "WoWScrnShot_110526_052922.jpg": "9E6FAD876014EDF3379C86BC81E42D00F4BCD970C972777390AB0787BCF6549A",
+   "WoWScrnShot_110526_052930.jpg": "D6A0157D1BEA602AE2026D9E56F3AF97F5D5A3A55F2145954355AFCDF11B9D59",
+   "WoWScrnShot_110526_052931.jpg": "DC02005EA1444F5CF6EAAFCBED5BF72A501208075FF8B4580026971E6DE2CFAC",
+   "WoWScrnShot_110526_052937.jpg": "A0C0BF069CA1848406D70F789B2614CE4266A8A3BD41FCDD51EDF9E12B439FDB",
+   "WoWScrnShot_110526_052938.jpg": "FB33BC829FDE1F286ED0A9025ADF7906C082C5A80A184222CC6F31E733743131",
+   "WoWScrnShot_110526_052946.jpg": "AD499E1877DC945BD75E7534BE092FC9F65AE066B6E653BA37E1ADB69D9C9660",
+   "WoWScrnShot_110526_052947.jpg": "41448EE807B52FB878D18B806E8B568AB26022559350938735941A44A363B5BC",
+   "WoWScrnShot_110526_052952.jpg": "5471496C9C79AD44AC322340ECBCF9634C3862F0973121EAA7B9B6C2712B5659"
+  }
+ },
+ "proposals": {
+  "projection:abbey-door": {
+   "report": "20261105-0530",
+   "pitch": 0.2237,
+   "fovY": 0.9385,
+   "yawOffset": 0.0,
+   "command": "/fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm",
+   "rule": "pitch and fovY fitted by weighted least squares (Levenberg-Marquardt) on the blind feet of every named placement but the held-out one, each weighted by its reading precision and its origin uncertainty; zoom frozen at its read (4.55); a yaw offset freed only if the horizontal residual fails (freed as a check, it fitted 0.0000 rad)",
+   "fittedOn": [
+    "C westfallbarrel01",
+    "D westfallcrate",
+    "B gnolltent02 (near)",
+    "A gnolltent02 (72 yd)",
+    "K elwynnbush09 (88 yd)",
+    "L elwynntreecanopy02 (98 yd)",
+    "F elwynntreemid01 (110 yd)"
+   ],
+   "heldOut": {
+    "label": "G",
+    "placement": "elwynntreemid01 at (-8758.4, -195.1, 85.5), 92.6 yd",
+    "residual": 0.121,
+    "precision": 0.019,
+    "result": "fail",
+    "why": "chosen before any fitted residual was computed (the sharpest trunk base, the smallest precision over its height); it misses by 19 px sideways while F, the same model 42 px away, lands within 2 px, so no camera parameter can close it: a local offset (its origin, or the blind reading: a colour profile read after unsealing puts the trunk 6 px right of the blind reading, 0.083 of its height, which still does not pass and does not count)"
+   },
+   "status": "not confirmed: the held-out residual 0.121 exceeds the tolerance by more than its precision; printed as an ask, applied only by the owner's confirmed command (owner ruling 4)",
+   "script": "docs/council/2026-11-04-rungs/judge/fit10.py (blind10.json holds the readings frozen before unsealing)"
   }
  }
 }

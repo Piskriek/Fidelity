@@ -126,8 +126,48 @@ end
 --- camera number here is a reading: it is the saved default until the owner sets it himself.
 local function CameraKind(key)
     local v = FidelityEMatrix_Config and FidelityEMatrix_Config[key]
-    if v == nil then return "(saved default, not measured)" end
+    if v == nil then return "(saved default, failed the tenth report's twin)" end
     return "(your setting, not measured)"
+end
+
+-- The camera the tenth report's overlay-off twin proposes (docs/rungs/ledger.json "proposals"): pitch
+-- and fovY fitted on seven placements the director read blind (council round 7). At the saved default
+-- every placement stood about 100 px (at 1041 px tall) below its prediction. The held-out sapling
+-- missed by 0.121 of its height against a tolerance of 0.1, so the fit is NOT confirmed. It applies only
+-- by the owner's own confirmed command (owner ruling 4, 05 Nov 2026): /fide terrain pitch <deg> confirm.
+local CAMERA_PROPOSAL = { pitch = 0.2237, fovY = 0.9385, report = "20261105-0530", heldOut = 0.121 }
+
+local function ProposalLine()
+    local P = CAMERA_PROPOSAL
+    return string.format("report %s's twin fits pitch %.1f deg and fovY %.1f deg, not confirmed (its held-out sapling missed by %.3f of its height; the tolerance is 0.1): /fide terrain pitch %.1f confirm and /fide terrain fov %.1f confirm apply them",
+        P.report, math.deg(P.pitch), math.deg(P.fovY), P.heldOut, math.deg(P.pitch), math.deg(P.fovY))
+end
+
+--- /fide terrain pitch|fov: shows the value in use and the proposal; a number asks, and only the same
+--- command with "confirm" writes it (owner ruling 4); "default confirm" clears the owner's setting.
+local CAMERA_KEYS = {
+    pitch = { key = "terrainPitch", label = "Camera pitch", lo = 3, hi = 80 },
+    fov = { key = "terrainFovY", label = "Vertical field of view", lo = 20, hi = 150 },
+}
+local function CameraCommand(sub, args, say)
+    local c = CAMERA_KEYS[sub]
+    local now = math.deg(Cfg(c.key))
+    local word, confirm = args[3], args[4] == "confirm"
+    if word == "default" then
+        if not confirm then say("%s is %.1f deg %s; /fide terrain %s default confirm clears your setting.", c.label, now, CameraKind(c.key), sub); return end
+        FidelityEMatrix_Config[c.key] = nil
+        say("%s back to its saved default, %.1f deg %s.", c.label, math.deg(Cfg(c.key)), CameraKind(c.key))
+        return
+    end
+    local v = tonumber(word)
+    if not v then say("%s is %.1f deg %s. %s.", c.label, now, CameraKind(c.key), ProposalLine()); return end
+    v = math.min(math.max(v, c.lo), c.hi)
+    if not confirm then
+        say("%s would change from %.1f deg %s to %.1f deg. Nothing is written yet: /fide terrain %s %.1f confirm applies it (the next report's twins test it).", c.label, now, CameraKind(c.key), v, sub, v)
+        return
+    end
+    FidelityEMatrix_Config[c.key] = math.rad(v)
+    say("%s set to %.1f deg by your confirmation %s; /fide terrain %s default confirm restores the default.", c.label, v, CameraKind(c.key), sub)
 end
 
 -- ---------------------------------------------------------------------------
@@ -288,28 +328,37 @@ end
 -- as tall would hold its width); the tree and canopy04 ran past the top edge at x2.8 (trials at x5.6).
 -- At x2 the bush's twigs reach 0.10 to 0.12 below the frame's top and its stems touch the bottom edge,
 -- where a reading cannot see whether the frame cuts it, so x2 can never be decided; its base, hidden at
--- x3, reaches at least 0.89 there, so its down reach is at least 1.17 against up 0.78. It moves to a
--- trial at x2.44, where its twin can see both edges; by those bounds no k alone fills its frame (at
--- most 0.83), so a vertical offset is the likely next step. The jar's base was hidden behind the world
--- overlay's copy of the player. None is confirmed: the next report's twins read both edges.
+-- x3, reaches at least 0.89 there, so its down reach is at least 1.17 against up 0.78. It moved to a
+-- trial at x2.44, where its twin could see both edges. The jar's base was hidden behind the world
+-- overlay's copy of the player.
+-- The tenth report's twins (round 7, read with tools/frame_fill.py twin and brightened crops): the
+-- barrel at x0.53 fills 0.93 of its frame (gaps 0.055 and 0.014, twice), the first fit confirmed; the
+-- bush at x2.44 fills 0.82 (its leaf tips 0.166 below the top, its stems 0.014 above the bottom) and
+-- the crate at x0.38 leaves 0.116 above it with its base at the bottom edge: each reaches further below
+-- its middle than above, so no camera distance alone fits either ("nok") and a vertical offset is
+-- the next step; the tree at x5.6 in its 1.5-wide frame reaches the top and runs past the bottom,
+-- so it doubles to a trial at x11.2. A wider frame magnifies the model (the crate about 1.66x from
+-- 0.8 to 1.85 wide at the same height), so a fit holds only in its own aspect.
 local REF_HEIGHT = 2.5
-local FIT_BY_FILE = { elwynnbush09 = 2.44, elwynntreemid01 = 5.6, westfallbarrel01 = 0.53, jar01 = 0.37, westfallcrate = 0.38, elwynntreecanopy04 = 5.6 }
+local FIT_BY_FILE = { elwynnbush09 = 2.44, elwynntreemid01 = 11.2, westfallbarrel01 = 0.53, jar01 = 0.37, westfallcrate = 0.38, elwynntreecanopy04 = 5.6 }
 -- The ledger's verdict on each value above (holds, fitted, fails, contested), the report it cites, and
 -- for a fitted value where the value came from: "estimated" (the evaluator's proposal from the
 -- readings), "read" (readings at this value exist but none could decide) or "trial" (a step after
 -- the model reached an edge of its frame, to a value where a reading can decide; not an estimate).
+-- A failed value marked "nok" failed where no camera distance alone can pass (the evaluator's
+-- estimate says canPass false): it stays until an offset is built, not until a better k is found.
 local FIT_STATUS = {
-    elwynnbush09 = { "fitted", "20261104-1247", "trial" },
-    elwynntreemid01 = { "fitted", "20261104-1321", "trial" },
-    westfallbarrel01 = { "fitted", "20261104-1247", "estimated" },
+    elwynnbush09 = { "fails", "20261105-0530", "nok" },
+    elwynntreemid01 = { "fitted", "20261105-0530", "trial" },
+    westfallbarrel01 = { "holds", "20261105-0530" },
     jar01 = { "fitted", "20261104-1321", "read" },
-    westfallcrate = { "fitted", "20261104-1321", "estimated" },
+    westfallcrate = { "fails", "20261105-0530", "nok" },
     elwynntreecanopy04 = { "fitted", "20261104-1321", "trial" },
 }
 -- (nominal height, the fit in use), ascending: an unmeasured file takes an interpolation between them,
--- a guess. The bush's x2.44 and the tree's x5.6 are trials, so the guesses between and beyond them
--- are trials too; canopy04's own trial adds no knot.
-local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.38 }, { 1.2, 0.53 }, { 2.5, 2.44 }, { 14, 5.6 } }
+-- a guess. The bush's x2.44 failed and the tree's x11.2 is a trial, so the guesses between and beyond
+-- them are guesses too; canopy04's own trial adds no knot.
+local FIT_KNOTS = { { 0.7, 0.37 }, { 1.0, 0.38 }, { 1.2, 0.53 }, { 2.5, 2.44 }, { 14, 11.2 } }
 local function FileKey(path)
     local p = tostring(path or ""):lower():gsub("\\", "/")
     return p:match("([^/]+)%.%w+$") or p:match("([^/]+)$") or p
@@ -344,6 +393,7 @@ local STATUS_TEXT = {
     read = "a fit read at this value in report %s, undecided",
     trial = "a trial value after report %s (it reached the frame's edge there), not a fit yet",
     fails = "a fit that failed in report %s, to be re-read",
+    nok = "a fit that failed in report %s: no camera distance alone fits it (it reaches further below its middle than above)",
     contested = "a fit contested in report %s",
 }
 --- Where a prop's camera factor comes from, in the words the test line prints after "by".
@@ -352,7 +402,8 @@ local function FitSource(path)
     if key and OwnerFit(key) then return "your saved fit" end
     local st = key and FIT_BY_FILE[key] and FIT_STATUS[key]
     if st then
-        local text = (st[1] == "fitted" and STATUS_TEXT[st[3] or ""]) or STATUS_TEXT[st[1]] or (st[1] .. " in report %s")
+        local text = (st[1] == "fitted" and STATUS_TEXT[st[3] or ""]) or (st[1] == "fails" and st[3] == "nok" and STATUS_TEXT.nok)
+            or STATUS_TEXT[st[1]] or (st[1] .. " in report %s")
         return string.format(text, st[2])
     end
     return "an interpolation between measured files, a guess"
@@ -468,18 +519,33 @@ local lastInfo = { props = 0, buildings = 0, tile = nil, groundZ = nil, pitch = 
 local ApplyBackdrop -- defined with the enable/disable commands below
 
 --- The pool slot a test press draws: the first loaded one, or the first whose model path holds
---- `pick` (a keyword such as "tree" or "barrel"), so each kind of prop can be sized by eye.
+--- `pick` (a keyword such as "tree" or "barrel"), so each kind of prop can be sized by eye. The second
+--- result says whether the pick matched: a pick that matches no loaded file is not answered with another
+--- file (the tenth report's canopy04 step drew the barrel under the name canopy04).
 local function TestSlot(pick)
     local first = nil
     for i = 1, MAX_PROPS do
         local s = pool[i]
         if s and s.used and s.entry and s.mono then
-            if not pick then return s end
+            if not pick then return s, true end
             first = first or s
-            if tostring(s.entry[2]):lower():find(pick, 1, true) then return s end
+            if tostring(s.entry[2]):lower():find(pick, 1, true) then return s, true end
         end
     end
-    return first
+    return first, false
+end
+
+--- The loaded files a pick can name, for the line that refuses a pick nothing matches.
+local function LoadedKeys()
+    local keys, seen = {}, {}
+    for i = 1, MAX_PROPS do
+        local s = pool[i]
+        if s and s.used and s.entry and s.mono then
+            local k = FileKey(s.entry[2])
+            if not seen[k] then seen[k] = true; keys[#keys + 1] = k end
+        end
+    end
+    return keys
 end
 
 local VARIANT_LABEL = { default = "default (camera distance from the model's height)", cam = "camera", z = "SetPosition x", scale = "model scale", camdist = "camera distance scale", nolight = "no light applied" }
@@ -497,9 +563,15 @@ local function NewTestFrame(kind)
 end
 
 local function ApplyTest(say)
-    local s = TestSlot(testMode.pick)
+    local s, matched = TestSlot(testMode.pick)
     if not s then
         say("terrain test: no loaded prop yet (turn the overlay on near placements, wait a second, then try again)")
+        return false
+    end
+    if not matched then
+        local keys = LoadedKeys()
+        say("terrain test: no loaded placement's file holds \"%s\" here, so nothing is drawn (loaded: %s); /fide terrain test pick any draws the nearest",
+            testMode.pick, #keys > 0 and table.concat(keys, ", ") or "none")
         return false
     end
     for i = 1, MAX_PROPS do if pool[i] then HideModels(pool[i]) end end
@@ -838,7 +910,7 @@ function Terrain.IsEnabled() return enabled end
 function Terrain.IsSuspended() return suspended end
 function Terrain.Info() return lastInfo end
 
-local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|fit <k|clear>|scale <s>|aspect <a|auto>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov <deg>|pitch <deg>|backdrop <none|dim|black>>"
+local USAGE = "Usage: /fide terrain <on|off|status|probe|test [off|camdist <k>|fit <k|clear>|scale <s>|aspect <a|auto>|pick <word|any>|frame <model|player|dressup>|strata <background|medium|high>|known|own|cam <n>|z <x>|nolight]|loader <path|id>|fov [<deg>|default] [confirm]|pitch [<deg>|default] [confirm]|backdrop <none|dim|black>>"
 
 function Terrain.Command(args, say)
     local sub = args[2] or "toggle"
@@ -846,8 +918,7 @@ function Terrain.Command(args, say)
     if sub == "on" then Terrain.SetEnabled(true)
     elseif sub == "off" then Terrain.SetEnabled(false)
     elseif sub == "toggle" then Terrain.SetEnabled(not enabled)
-    elseif sub == "fov" and v then FidelityEMatrix_Config.terrainFovY = math.rad(math.min(math.max(v, 20), 150)); say("Vertical field of view: %.0f degrees", v); return
-    elseif sub == "pitch" and v then FidelityEMatrix_Config.terrainPitch = math.rad(math.min(math.max(v, 3), 80)); say("Camera pitch fixed at %.0f degrees (the client gives no pitch to read)", v); return
+    elseif sub == "fov" or sub == "pitch" then CameraCommand(sub, args, say); return
     elseif sub == "loader" and (args[3] == "path" or args[3] == "id") then FidelityEMatrix_Config.terrainLoader = args[3]; say("Model loader tries the %s first (restart the overlay to reload)", args[3]); return
     elseif sub == "probe" then
         -- everything the laptop needs to say why nothing is drawn
@@ -864,6 +935,7 @@ function Terrain.Command(args, say)
         local found, buildings = Scan(ps, cam, tiles)
         say("probe: %d drawable placements within %d yd (%d buildings not drawn: Model frames load M2 only); camera pitch %.1f deg %s, focal %.0f px %s, screen %dx%d",
             #found, RADIUS, buildings, math.deg(pitch), CameraKind("terrainPitch"), cam.focal, CameraKind("terrainFovY"), cam.w, cam.h)
+        say("probe: the camera: %s", ProposalLine())
         for i = 1, math.min(MAX_PROPS, #found) do
             local e = found[i].e
             local sx, sy, depth = Math.ProjectPoint(cam, e[3], e[4], e[5])
@@ -888,8 +960,10 @@ function Terrain.Command(args, say)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
         elseif what == "camdist" and n and n > 0 then testMode.variant, testMode.value = "camdist", math.min(n, 50)
         elseif what == "fit" and (args[4] == "clear" or (n and n > 0)) then
-            local s = TestSlot(testMode.pick)
+            if not prev.variant then testMode = nil; say("terrain test fit: no test frame is up, so there is no picked prop to save a fit for (/fide terrain test pick <word>, then /fide terrain test)"); return end
+            local s, matched = TestSlot(testMode.pick)
             if not s then say("terrain test fit: no prop picked yet"); return end
+            if not matched then say("terrain test fit: no loaded placement's file holds \"%s\" here; nothing is saved", testMode.pick); return end
             local key = FileKey(s.entry[2])
             FidelityEMatrix_Config.propFit = FidelityEMatrix_Config.propFit or {}
             if args[4] == "clear" then FidelityEMatrix_Config.propFit[key] = nil
@@ -914,7 +988,7 @@ function Terrain.Command(args, say)
             if args[4] == "background" then testMode.strata = nil else testMode.strata = args[4]:upper() end
         elseif what and what ~= "default" then say(USAGE); return end
         if not TestSlot(testMode.pick) then Refresh() end -- the overlay may have come on this very frame: scan now
-        if not ApplyTest(say) then testMode = nil end
+        if not ApplyTest(say) then EndTest() end -- a refused press leaves no earlier test frame up
         return
     elseif sub == "backdrop" and (args[3] == "none" or args[3] == "dim" or args[3] == "black") then FidelityEMatrix_Config.terrainBackdrop = args[3]; ApplyBackdrop(); say("Terrain backdrop: %s", args[3]); return
     elseif sub == "status" then
@@ -925,6 +999,7 @@ function Terrain.Command(args, say)
             lastInfo.pitch and string.format("%.1f deg %s", math.deg(lastInfo.pitch), CameraKind("terrainPitch")) or "?", lastInfo.props or 0, lastInfo.buildings or 0, loadStats.ok, loadStats.failed,
             errors.count, errors.last and (" (last: " .. errors.last .. ")") or "",
             ps and string.format("%.1f, %.1f (%s)", ps.x, ps.y, ps.mapName) or "unknown (no UnitPosition here)")
+        say("Terrain camera: %s", ProposalLine())
         return
     else
         say(USAGE)
@@ -938,6 +1013,7 @@ Terrain._pool = pool
 Terrain._lastCam = function() return lastCam end
 Terrain._failedAt = failedAt
 Terrain._testFrames = testFrames
+Terrain._testMode = function() return testMode end
 Terrain.FrameKind = function() return propFrameKind end
 Terrain.CameraDistanceFor = CameraDistanceFor
 Terrain.FileKey = FileKey
