@@ -5,7 +5,7 @@ Written by the director (Claude in the cloud), first committed 17:36Z. Revised t
 - a second pass found 28 of those fixes sound, 6 partly open, and new defects in the fixes themselves;
 - a final pass over the second revision demonstrated nine more.
 
-All are addressed below, in the ledger, in the evaluator or in v1.8.8, and each correction is stated where it falls. Evidence for this revision: the test run at 22:01Z. **News back (05 Nov):** the tenth report and the owner's eight rulings. They are at the end of this file ("Owner rulings" answered, "News back", the new ASK) and in `LANDED.md` (status `nofit`).
+All are addressed below, in the ledger, in the evaluator or in v1.8.8, and each correction is stated where it falls. Evidence for this revision: the test run at 22:01Z. **News back (05 Nov):** the tenth report and the owner's eight rulings. They are at the end of this file ("Owner rulings" answered, "News back", the new ASK) and in `LANDED.md` (status `changed`).
 
 **Inputs**, all in this folder and each relayed through the Triad unchanged:
 - the owner's idea, his camera settings and his second message, "we need a polynomial time algorithm" (`OWNER-INPUT.md`);
@@ -266,7 +266,7 @@ and while every rung beneath it holds. The being reports which rungs hold and wh
 
 Asked in this round; **answered by the owner on 05 Nov 2026** (relayed by Flash with the tenth report, through the Triad unchanged). Each answer is followed by what the code does with it.
 
-1. **The director's readings count**, provided the twin's real objects are read before the predictions are opened; the owner's own presses keep precedence. The tenth report's step-1 twin was read blind and frozen at 03:42Z (`judge/blind10.json`), and its fit pairs were read with `tools/frame_fill.py twin`. The evaluator ranks an owner row first, as before.
+1. **The director's readings count**, provided the twin's real objects are read before the predictions are opened; the owner's own presses keep precedence. The tenth report's step-1 twin was read blind and frozen at 03:42:10Z (`judge/blind10_scene.json`, SHA256 `cca1df12…`, self-reported time), and its fit pairs were read with `tools/frame_fill.py twin`. The evaluator ranks an owner row first, as before.
 2. **τ = 0.1 is approved** as the scale-free tolerance, in each rung's own unit. It stays `ledger.json` `tolerance`.
 3. **"Awareness" may name the set of rungs that hold internally,** with no numerical score or percentage on screen. `bridge/sync/rungs.json` lists it as `awareness`, a list of names. No count is written anywhere, and nothing reaches the screen.
 4. **Pitch and FOV are proposed as commands that need confirmation; confirmed model fits may update `FIT_BY_FILE`.** In v1.8.9, `/fide terrain pitch|fov <deg>` only asks. The same command ending in `confirm` writes the value, and `default confirm` clears it. The barrel's confirmed x0.53 stays and now prints "confirmed".
@@ -374,18 +374,22 @@ LANDED becomes `used` when the shots map to rows and the verdicts match the read
 
 The detail is in `LANDED.md`; the rows are the `r10-*` rows of `docs/rungs/ledger.json`. In short:
 - **The projection fails at the saved default.** Every matched placement stood about 100 px (of 1041) below its predicted foot at every depth from 17 to 110 yd: five blind readings, 0.60 to 3.3 of each prop's projected height.
-- **Fitted on seven blind feet:** pitch 12.8° and fovY 53.8° (yaw offset 0.0000). Sapling F lands within 2 px, canopy L within 8 px, and the never-fitted trunk H within 2 px of canopy04. The held-out sapling G, named before any fitted residual existed, misses by 19 px sideways: 0.121 against τ 0.1 at precision 0.019. **`nofit` by the pre-registered rule.** Its twin model F, 42 px away, rules out a camera cause, which matches Argon's third case: a local offset.
+- **Fitted on seven blind feet** at the map data's own placements: pitch 12.85° and fovY 53.82° (yaw offset -0.0001). The held-out sapling G was named before any fitted residual existed. It lands 0.120 of its height from its blind foot, at the blind reader's honest precision of 0.064 (a 10 px floor; after unsealing, the two sapling trunks proved 9.5 px and 7 px from their blind feet). So the test is **undecided** and the proposal **not confirmed**. The first write-up's "fail by 0.002, a local offset (Argon's third case)" rested on a stated 3 px; it is withdrawn.
 - **Fits:**
   - the barrel holds at x0.53, the first fit confirmed;
   - the bush (fill 0.82 at x2.44) and the crate (top gap 0.116 at x0.38) fail, and no k alone can pass either (a vertical offset is next);
   - the tree doubles to x11.2;
   - a wider frame magnifies the model (about 1.66× from aspect 0.8 to 1.85 at the same height).
-- **Procedure defects, each fixed in v1.8.9:** the jar's twin overwrote its first shot (same second); the canopy04 pick fell back to the barrel under canopy04's name; step 11 was not turned; the copy of the character stood while the owner ran.
+- **Procedure defects, each fixed in v1.8.9:**
+  - the jar's twin overwrote its first shot (same second), so a twin now waits two clock seconds, because a file can be named a second late;
+  - the canopy04 pick fell back to the barrel under canopy04's name, so a pick nothing matches stays refused through the step;
+  - step 11 was not turned;
+  - the copy of the character stood while the owner ran.
 - **WoW Forever** (a gnome in the dwarf starting zone): no report yet. The addon's map data holds only Northshire's nine tiles (azeroth 31 to 33 × 47 to 49), so Coldridge Valley (about tile 31:43) reads MISSING. The map rung there stays unmeasured until H010 brings its report.
 
 ## Next round's ASK
 
-"The camera at a second pose: the eleventh report's twins (H010) test the camera the owner chooses. That is either the proposal, if he confirms `/fide terrain pitch 12.8 confirm` and `/fide terrain fov 53.8 confirm`, or the default again, at a pose turned about 45° (step 11 now says when it was not). The held-out placement is named before unsealing, and every residual is judged by the decisive rule. Then:
+"The camera at a second pose: the eleventh report's twins (H010) test the camera the owner chooses. That is either the proposal, if he confirms `/fide terrain pitch 12.8 confirm` and `/fide terrain fov 53.8 confirm`, or the default again, at a pose turned about 45° (step 11 now says when it was not). The held-out placement is named before unsealing. Every blind foot is read as the trunk's two pixel edges on a zoomed crop, and the blind record's SHA256 is committed before any prediction is opened. Every residual is judged by the decisive rule. Then:
 - the vertical offset for the bush and the crate, whose reaches differ;
 - the tree's x11.2 trial;
 - the jar's first twin;

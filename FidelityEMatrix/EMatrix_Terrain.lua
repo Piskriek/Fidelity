@@ -132,14 +132,15 @@ end
 
 -- The camera the tenth report's overlay-off twin proposes (docs/rungs/ledger.json "proposals"): pitch
 -- and fovY fitted on seven placements the director read blind (council round 7). At the saved default
--- every placement stood about 100 px (at 1041 px tall) below its prediction. The held-out sapling
--- missed by 0.121 of its height against a tolerance of 0.1, so the fit is NOT confirmed. It applies only
--- by the owner's own confirmed command (owner ruling 4, 05 Nov 2026): /fide terrain pitch <deg> confirm.
-local CAMERA_PROPOSAL = { pitch = 0.2237, fovY = 0.9385, report = "20261105-0530", heldOut = 0.121 }
+-- every placement stood about 100 px (at 1041 px tall) below its prediction. The held-out test was
+-- undecided (the blind feet were read to about 10 px, and the held-out sapling's residual lies within
+-- that of the tolerance), so the fit is NOT confirmed. It applies only by the owner's own confirmed
+-- command (owner ruling 4, 05 Nov 2026): /fide terrain pitch <deg> confirm.
+local CAMERA_PROPOSAL = { pitch = 0.2242, fovY = 0.9394, report = "20261105-0530", heldOut = "undecided" }
 
 local function ProposalLine()
     local P = CAMERA_PROPOSAL
-    return string.format("report %s's twin fits pitch %.1f deg and fovY %.1f deg, not confirmed (its held-out sapling missed by %.3f of its height; the tolerance is 0.1): /fide terrain pitch %.1f confirm and /fide terrain fov %.1f confirm apply them",
+    return string.format("report %s's twin fits pitch %.1f deg and fovY %.1f deg, not confirmed (its held-out test was %s): /fide terrain pitch %.1f confirm and /fide terrain fov %.1f confirm apply them",
         P.report, math.deg(P.pitch), math.deg(P.fovY), P.heldOut, math.deg(P.pitch), math.deg(P.fovY))
 end
 
@@ -509,6 +510,8 @@ end
 -- model's position, camera and scale as knobs, so the owner can tell whether a Model frame on this
 -- client draws a doodad file at all, and where its view is. Nothing else moves while it is on.
 local testMode = nil
+local refusedPick = nil -- a pick no loaded file matched: later bare presses stay refused until pick any, a matching pick or test off
+local testShown = false -- a test frame is up (set when ApplyTest draws one, cleared by EndTest)
 local MarkFrame -- defined with EndTest below; ApplyTest calls it
 local testHidBox = false
 local testFrames = {} -- every /fide terrain test press draws on a brand-new frame, so no earlier knob (a camera index, a scale) can linger on it
@@ -569,6 +572,7 @@ local function ApplyTest(say)
         return false
     end
     if not matched then
+        refusedPick = testMode.pick
         local keys = LoadedKeys()
         say("terrain test: no loaded placement's file holds \"%s\" here, so nothing is drawn (loaded: %s); /fide terrain test pick any draws the nearest",
             testMode.pick, #keys > 0 and table.concat(keys, ", ") or "none")
@@ -614,6 +618,8 @@ local function ApplyTest(say)
         if m.GetFrameLevel then level = tostring(m:GetFrameLevel()) end
     end)
     lastInfo.props = 1
+    testShown = true
+    refusedPick = nil
     if backdropTex then backdropTex:SetColorTexture(0, 0, 0, 0.6); backdropTex:Show() end
     local knob = (VARIANT_LABEL[v] or v) .. (value ~= nil and (" " .. tostring(value)) or "")
     say("terrain test [%s] on a new %s frame: %s (nominal height %.1f yd, camera x%.2f by %s%s), %s (file id %s), %d px tall and %.2f as wide at the screen centre%s (its edges marked in red, its mid-line thin), strata %s level %s, visible %s; the box and the world's copies are hidden and the world dimmed. Variants: /fide terrain test, camdist <k>, fit <k>|clear (saves the pick's fit for the pool), scale <s>, aspect <a>|auto, pick <word>|any, frame model|player|dressup, strata high, known, cam 0, z 2, nolight; /fide terrain test off restores.",
@@ -650,6 +656,7 @@ end
 
 local function EndTest()
     testMode = nil
+    testShown = false
     for _, f in ipairs(testFrames) do f:Hide() end
     if markFrame then markFrame:Hide() end
     if testHidBox and _G.FidelityEMatrixFrame then _G.FidelityEMatrixFrame:Show() end
@@ -949,18 +956,20 @@ function Terrain.Command(args, say)
     elseif sub == "test" then
         local what, n = args[3], tonumber(args[4])
         if what == "off" then
+            refusedPick = nil
             if testMode then EndTest(); say("terrain test off: the overlay draws as before") else say("terrain test is not on") end
             return
         end
         if not enabled then say("terrain test needs the overlay on: /fide terrain on, stand near placements, then /fide terrain test"); return end
         local prev = testMode or {}
-        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata, pick = prev.pick, aspect = prev.aspect }
+        -- a refused pick is inherited, so the step's next bare press is refused again, not answered with the nearest file
+        testMode = { variant = "default", value = nil, known = prev.known or false, frame = prev.frame, strata = prev.strata, pick = prev.pick or refusedPick, aspect = prev.aspect }
         if what == "cam" and n then testMode.variant, testMode.value = "cam", math.floor(n)
         elseif what == "z" and n then testMode.variant, testMode.value = "z", math.min(math.max(n, -50), 50)
         elseif what == "scale" and n and n > 0 then testMode.variant, testMode.value = "scale", math.min(n, 50)
         elseif what == "camdist" and n and n > 0 then testMode.variant, testMode.value = "camdist", math.min(n, 50)
         elseif what == "fit" and (args[4] == "clear" or (n and n > 0)) then
-            if not prev.variant then testMode = nil; say("terrain test fit: no test frame is up, so there is no picked prop to save a fit for (/fide terrain test pick <word>, then /fide terrain test)"); return end
+            if not testShown then testMode = prev.variant and prev or nil; say("terrain test fit: no test frame is up, so there is no picked prop to save a fit for (/fide terrain test pick <word>, then /fide terrain test)"); return end
             local s, matched = TestSlot(testMode.pick)
             if not s then say("terrain test fit: no prop picked yet"); return end
             if not matched then say("terrain test fit: no loaded placement's file holds \"%s\" here; nothing is saved", testMode.pick); return end
@@ -980,13 +989,14 @@ function Terrain.Command(args, say)
         elseif what == "known" then testMode.known = true
         elseif what == "own" then testMode.known = false
         elseif what == "pick" and args[4] then
+            refusedPick = nil
             if args[4] == "any" then testMode.pick = nil else testMode.pick = args[4]:lower() end
         elseif what == "frame" and FRAME_KINDS[args[4] or ""] then testMode.frame = args[4]
         elseif what == "aspect" and (args[4] == "auto" or (n and n > 0)) then
             if args[4] == "auto" then testMode.aspect = nil else testMode.aspect = math.min(math.max(n, 0.2), 4.0) end
         elseif what == "strata" and (args[4] == "background" or args[4] == "medium" or args[4] == "high") then
             if args[4] == "background" then testMode.strata = nil else testMode.strata = args[4]:upper() end
-        elseif what and what ~= "default" then say(USAGE); return end
+        elseif what and what ~= "default" then testMode = prev.variant and prev or nil; say(USAGE); return end -- a malformed press changes nothing
         if not TestSlot(testMode.pick) then Refresh() end -- the overlay may have come on this very frame: scan now
         if not ApplyTest(say) then EndTest() end -- a refused press leaves no earlier test frame up
         return

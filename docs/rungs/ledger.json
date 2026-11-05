@@ -2,7 +2,7 @@
  "about": "The recorded reading per rung (council round 2026-11-04-rungs). Each row is one reading: the rung it witnesses, the witness class and reader, the time (the step stamp, the client's local clock), the artifact with the SHA256 its report's MANIFEST lists, the context it was taken in, the operating point (value) and what was observed. packages/triad-369/src/rung_ledger.mjs turns the rows into verdicts; tools/rung-ledger.test.mjs makes the addon's constants answer to them. A value moves only when a counted reading moves it.",
  "conventions": {
   "fit.observed": "top and bottom: the gaps from the red frame's top and bottom edges to the model's outermost part (twigs and stems included, not only the dense leaves), as fractions of the frame height; 'touches' when the model reaches that edge and whether it is cut there cannot be seen, 'clipped' when it visibly runs past it, 'hidden' when something covers it. topBound and bottomBound: with that edge hidden, the largest gap the visible part allows (the model reaches at least that far). width: the model's width as a fraction of the frame width, or 'overflow'. fill: a first reading that recorded only how much of the frame the model fills.",
-  "coverage": "every camera-distance fit shot in the nine reports has a second reading (35 shots). The two model-scale shots of the fifth report (WoWScrnShot_110426_112707 and 112755) are not fit readings: they vary SetModelScale at the default camera, not the camera factor a fit is. The tenth report adds a twin reading of each fit pair it holds (the jar's pair was overwritten, the canopy04 step drew the barrel) and five projection readings of its step-1 twin. The tenth report adds a twin reading of each fit pair it holds (the jar's pair was overwritten, the canopy04 step drew the barrel) and five projection readings of its step-1 twin.",
+  "coverage": "every camera-distance fit shot in the nine reports has a second reading (35 shots). The two model-scale shots of the fifth report (WoWScrnShot_110426_112707 and 112755) are not fit readings: they vary SetModelScale at the default camera, not the camera factor a fit is. The tenth report adds a twin reading of each fit pair it holds (the jar's pair was overwritten, the canopy04 step drew the barrel) and five projection readings of its step-1 twin.",
   "decisive": "a reading passes only when its residual plus its precision is within the tolerance, and fails only when its residual minus its precision is outside it; a reading nearer the tolerance than its own precision decides nothing",
   "precision": "about half a tick of the reading grid: 0.03 on a marked frame, 0.05 on the known rectangle; 0.1 for a first reading by eye",
   "readers": {
@@ -18,7 +18,7 @@
    "headless": "the stub harness: an echo"
   },
   "time": "the step stamp the panel records (date(), the client's local clock); never a file time and never the report-level at",
-  "projection.observed": "residual: the distance from the predicted foot (the camera in use, through EMatrix_Math.BuildCamera and ProjectPoint, or its replica, which reproduces every recorded foot) to the foot read blind in an overlay-off twin, over the placement's projected height; foot, predicted and height in UI units from the bottom left; the context names the camera in use (pitch, fovY) so a confirmed change unlocks the old readings",
+  "projection.observed": "residual: the distance from the predicted foot (the camera in use, through EMatrix_Math.BuildCamera and ProjectPoint or its replica at the map data's own placements, which gives the client's recorded feet) to the foot read blind in an overlay-off twin, over the placement's projected height; foot, predicted and height in UI units from the bottom left; the context names the camera in use (pitch, fovY) so a confirmed change unlocks the old readings",
   "subject": "what in the artifact a reading is of (a placement in a scene shot): two subjects read in one shot are two readings; the evaluator supersedes only readings of the same artifact, line, subject, witness class and value"
  },
  "tolerance": 0.1,
@@ -1954,7 +1954,7 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "at": "2026-11-05 05:28:46",
+   "at": "2026-11-05 05:28:45",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052846.jpg",
@@ -1976,7 +1976,7 @@
     "width": "overflow"
    },
    "precision": 0.01,
-   "note": "frame_fill twin: main top 0.234, low 0.166; by eye on a brightened crop the leaf tips reach row 382 (0.166); stems end near row 720 (low threshold reaches the edge, the real player's legs sit there); leaves reach both sides (tools/frame_fill.py twin on the pair; step \"3 Bush at its fit + twin\")"
+   "note": "frame_fill twin: main top 0.234, low 0.166; by eye on a brightened crop the leaf tips reach row 382 (0.166); stems end near row 720 (low threshold reaches the edge, the real player's legs sit there); leaves reach both sides (tools/frame_fill.py twin on the pair; step \"3 Bush at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
   },
   {
    "id": "r10-052852-tree-twin",
@@ -2006,7 +2006,7 @@
     "width": 0.467
    },
    "precision": 0.01,
-   "note": "main top 0.101 missed the dark crown; by eye the crown tip reaches row 316 (3 px); the trunk runs flat into the bottom edge across its width (tools/frame_fill.py twin on the pair; step \"4 Tree at its fit + twin\")"
+   "note": "main top 0.101 missed the dark crown; by eye the crown tip reaches row 316 (3 px); the trunk runs flat into the bottom edge across its width (tools/frame_fill.py twin on the pair; step \"4 Tree at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
   },
   {
    "id": "r10-052902-barrel-twin",
@@ -2014,7 +2014,7 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "at": "2026-11-05 05:29:02",
+   "at": "2026-11-05 05:29:01",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052902.jpg",
@@ -2036,7 +2036,7 @@
     "width": "overflow"
    },
    "precision": 0.005,
-   "note": "no low-threshold flag; top rim at row 336 by eye; its bulge is cut at both sides (aspect 0.8 < its own ~0.82) (tools/frame_fill.py twin on the pair; step \"5 Barrel at its fit + twin\")"
+   "note": "no low-threshold flag; top rim at row 336 by eye; its bulge is cut at both sides (aspect 0.8 < its own ~0.82) (tools/frame_fill.py twin on the pair; step \"5 Barrel at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
   },
   {
    "id": "r10-052930-barrel-twin",
@@ -2066,7 +2066,7 @@
     "width": "overflow"
    },
    "precision": 0.005,
-   "note": "the step's own line says westfallbarrel01.m2 ... picked by \"canopy04\": no canopy04 is in the pool at this pose and TestSlot fell back to the first loaded slot; a repeat of the barrel (tools/frame_fill.py twin on the pair; step \"9 Canopy04 at its fit + twin (the pick fell back to the barrel)\")"
+   "note": "the step's own line says westfallbarrel01.m2 ... picked by \"canopy04\": no canopy04 is in the pool at this pose and TestSlot fell back to the first loaded slot; a repeat of the barrel (tools/frame_fill.py twin on the pair; step \"9 Canopy04 at its fit + twin (the pick fell back to the barrel)\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
   },
   {
    "id": "r10-052916-crate-twin",
@@ -2096,7 +2096,7 @@
     "width": "overflow"
    },
    "precision": 0.005,
-   "note": "the crate's top edge is crisp at row 361; the low-threshold 0.075 was a kobold walking through the frame (tools/frame_fill.py twin on the pair; step \"7 Crate at its fit + twin\")"
+   "note": "the crate's top edge is crisp at row 361; the low-threshold 0.075 was a kobold walking through the frame (tools/frame_fill.py twin on the pair; step \"7 Crate at its fit + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
   },
   {
    "id": "r10-052921-crate-twin",
@@ -2104,7 +2104,7 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "at": "2026-11-05 05:29:21",
+   "at": "2026-11-05 05:29:20",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052921.jpg",
@@ -2126,7 +2126,7 @@
     "width": "overflow"
    },
    "precision": 0.005,
-   "note": "planks fill the whole frame; the wide frame magnifies the model about 1.66x (row-profile match against the 0.8 shot, r 0.93, about the mid-line); frame_fill find took only the right edge (bright wood washed out the left edge's red) (tools/frame_fill.py twin on the pair; step \"8 Crate, wide frame + twin\")"
+   "note": "planks fill the whole frame; the wide frame magnifies the model about 1.66x (row-profile match against the 0.8 shot, r 0.93, about the mid-line); frame_fill find took only the right edge (bright wood washed out the left edge's red) (tools/frame_fill.py twin on the pair; step \"8 Crate, wide frame + twin\"; judge/blind10_fits.json, sha256 47c52e6bb217e9fb...)"
   },
   {
    "id": "r10-052834-proj-C",
@@ -2134,8 +2134,8 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "subject": "westfallbarrel01 at (-8765.8, -112.5, 84.0)",
-   "at": "2026-11-05 05:28:34",
+   "subject": "westfallbarrel01 at (-8765.8, -112.51, 84.02)",
+   "at": "2026-11-05 05:28:32",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052834.jpg",
@@ -2155,20 +2155,20 @@
     "stamp": "2026-11-05 05:28:34"
    },
    "observed": {
-    "residual": 1.767,
-    "placement": "westfallbarrel01 at (-8765.8, -112.5, 84.0), 16.7 yd down the view",
+    "residual": 1.784,
+    "placement": "westfallbarrel01 at (-8765.8, -112.51, 84.02) scale 1.0, 16.7 yd down the view",
     "foot": [
      1293.5,
      268.0
     ],
     "predicted": [
-     1244.0,
-     345.2
+     1243.9,
+     346.3
     ],
     "height": 51.9
    },
-   "precision": 0.095,
-   "note": "blind object C (\"upright banded barrel, camp right\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+   "precision": 0.158,
+   "note": "blind object C (\"upright banded barrel, camp right\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
   },
   {
    "id": "r10-052834-proj-K",
@@ -2176,8 +2176,8 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "subject": "elwynnbush09 at (-8789.0, -183.0, 81.5)",
-   "at": "2026-11-05 05:28:34",
+   "subject": "elwynnbush09 at (-8788.98, -183.04, 81.51)",
+   "at": "2026-11-05 05:28:32",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052834.jpg",
@@ -2197,20 +2197,20 @@
     "stamp": "2026-11-05 05:28:34"
    },
    "observed": {
-    "residual": 3.303,
-    "placement": "elwynnbush09 at (-8789.0, -183.0, 81.5), 85.3 yd down the view",
+    "residual": 3.311,
+    "placement": "elwynnbush09 at (-8788.98, -183.04, 81.51) scale 1.12, 85.3 yd down the view",
     "foot": [
      1028.8,
      529.5
     ],
     "predicted": [
-     1012.1,
-     615.5
+     1011.8,
+     615.6
     ],
     "height": 26.5
    },
-   "precision": 0.155,
-   "note": "blind object K (\"dark round bush at the base of trunk L\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+   "precision": 0.309,
+   "note": "blind object K (\"dark round bush at the base of trunk L\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
   },
   {
    "id": "r10-052834-proj-L",
@@ -2218,8 +2218,8 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "subject": "elwynntreecanopy02 at (-8796.1, -191.2, 82.0)",
-   "at": "2026-11-05 05:28:34",
+   "subject": "elwynntreecanopy02 at (-8796.11, -191.17, 82.01)",
+   "at": "2026-11-05 05:28:32",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052834.jpg",
@@ -2239,20 +2239,20 @@
     "stamp": "2026-11-05 05:28:34"
    },
    "observed": {
-    "residual": 0.6,
-    "placement": "elwynntreecanopy02 at (-8796.1, -191.2, 82.0), 93.3 yd down the view",
+    "residual": 0.597,
+    "placement": "elwynntreecanopy02 at (-8796.11, -191.17, 82.01) scale 1.104, 93.3 yd down the view",
     "foot": [
      1065.6,
      533.6
     ],
     "predicted": [
-     1043.9,
-     628.2
+     1044.1,
+     628.3
     ],
-    "height": 161.9
+    "height": 162.6
    },
-   "precision": 0.041,
-   "note": "blind object L (\"big trunk (1240-1360)\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+   "precision": 0.05,
+   "note": "blind object L (\"big trunk (1240-1360)\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
   },
   {
    "id": "r10-052834-proj-G",
@@ -2260,8 +2260,8 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "subject": "elwynntreemid01 at (-8758.4, -195.1, 85.5)",
-   "at": "2026-11-05 05:28:34",
+   "subject": "elwynntreemid01 at (-8758.38, -195.06, 85.52)",
+   "at": "2026-11-05 05:28:32",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052834.jpg",
@@ -2282,19 +2282,19 @@
    },
    "observed": {
     "residual": 0.694,
-    "placement": "elwynntreemid01 at (-8758.4, -195.1, 85.5), 93.0 yd down the view",
+    "placement": "elwynntreemid01 at (-8758.38, -195.06, 85.52) scale 1.0, 93.0 yd down the view",
     "foot": [
      709.9,
      571.3
     ],
     "predicted": [
-     726.6,
-     659.3
+     726.5,
+     659.4
     ],
     "height": 129.1
    },
-   "precision": 0.019,
-   "note": "blind object G (\"small yellow-green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+   "precision": 0.063,
+   "note": "blind object G (\"small yellow-green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
   },
   {
    "id": "r10-052834-proj-F",
@@ -2302,8 +2302,8 @@
    "kind": "measured",
    "witness": "director",
    "reader": "twin reading, round 7",
-   "subject": "elwynntreemid01 at (-8752.6, -212.1, 87.0)",
-   "at": "2026-11-05 05:28:34",
+   "subject": "elwynntreemid01 at (-8752.57, -212.05, 87.01)",
+   "at": "2026-11-05 05:28:32",
    "artifact": {
     "report": "20261105-0530",
     "file": "WoWScrnShot_110526_052834.jpg",
@@ -2323,20 +2323,20 @@
     "stamp": "2026-11-05 05:28:34"
    },
    "observed": {
-    "residual": 0.796,
-    "placement": "elwynntreemid01 at (-8752.6, -212.1, 87.0), 108.0 yd down the view",
+    "residual": 0.792,
+    "placement": "elwynntreemid01 at (-8752.57, -212.05, 87.01) scale 1.034, 108.0 yd down the view",
     "foot": [
      675.5,
      586.9
     ],
     "predicted": [
-     679.2,
-     678.1
+     678.9,
+     678.2
     ],
-    "height": 114.7
+    "height": 115.2
    },
-   "precision": 0.021,
-   "note": "blind object F (\"small green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened (r10 blind record, sha256 of the record in RESUME); the match to the placement was made after; foot and predicted in UI units from the bottom left; the residual is over the projected height"
+   "precision": 0.071,
+   "note": "blind object F (\"small green tree (sapling), centre\") read in the overlay-off twin before any prediction was opened: judge/blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, printed in the director's session at 03:42:10Z before the saved predictions were read (self-reported, not independently timed). The match to the placement was made after. The precision is the blind reader's floor of 10 px over the projected height: after unsealing, a pixel check put the two sapling trunks 9.5 px (G) and 7 px (F) from their blind feet. Foot and predicted in UI units from the bottom left; the predicted foot is the client's own (the replica gives the barrel's recorded foot exactly)."
   }
  ],
  "manifests": {
@@ -2437,30 +2437,30 @@
  "proposals": {
   "projection:abbey-door": {
    "report": "20261105-0530",
-   "pitch": 0.2237,
-   "fovY": 0.9385,
-   "yawOffset": 0.0,
+   "pitch": 0.2242,
+   "fovY": 0.9394,
+   "yawOffset": -0.0001,
    "command": "/fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm",
-   "rule": "pitch and fovY fitted by weighted least squares (Levenberg-Marquardt) on the blind feet of every named placement but the held-out one, each weighted by its reading precision and its origin uncertainty; zoom frozen at its read (4.55); a yaw offset freed only if the horizontal residual fails (freed as a check, it fitted 0.0000 rad)",
+   "rule": "pitch and fovY fitted by weighted least squares (Levenberg-Marquardt) on the blind feet of every matched placement but the held-out one, at the map data's own placements, each weighted by its reading precision (at least 10 px) and its origin uncertainty; zoom frozen at its read (4.55); a yaw offset freed only if the horizontal residual fails (freed as a check, it fits -0.0001 rad)",
    "fittedOn": [
     "C westfallbarrel01",
     "D westfallcrate",
-    "B gnolltent02 (near)",
-    "A gnolltent02 (72 yd)",
-    "K elwynnbush09 (88 yd)",
-    "L elwynntreecanopy02 (98 yd)",
-    "F elwynntreemid01 (110 yd)"
+    "B gnolltent02",
+    "A gnolltent02",
+    "K elwynnbush09",
+    "L elwynntreecanopy02",
+    "F elwynntreemid01"
    ],
    "heldOut": {
     "label": "G",
-    "placement": "elwynntreemid01 at (-8758.4, -195.1, 85.5), 92.6 yd",
-    "residual": 0.121,
-    "precision": 0.019,
-    "result": "fail",
-    "why": "chosen before any fitted residual was computed (the sharpest trunk base, the smallest precision over its height); it misses by 19 px sideways while F, the same model 42 px away, lands within 2 px, so no camera parameter can close it: a local offset (its origin, or the blind reading: a colour profile read after unsealing puts the trunk 6 px right of the blind reading, 0.083 of its height, which still does not pass and does not count)"
+    "placement": "elwynntreemid01 at (-8758.38, -195.06, 85.52)",
+    "residual": 0.12,
+    "precision": 0.064,
+    "result": "undecided",
+    "why": "chosen before any fitted residual was computed (the sharpest trunk base). Its blind foot was read 9.5 px left of the trunk centre a pixel check found after unsealing, and the sapling F's 7 px right of its own, so the reader's floor of 10 px is the precision: the residual lies within it of the tolerance, and the test decides nothing. Both fitted predictions fall right of their trunk centres by a similar 7 to 9 px, a shift a small yaw could take up; the re-read positions cannot count (owner ruling 1), so the next report's blind feet, read as the trunk's two pixel edges on a zoomed crop, decide."
    },
-   "status": "not confirmed: the held-out residual 0.121 exceeds the tolerance by more than its precision; printed as an ask, applied only by the owner's confirmed command (owner ruling 4)",
-   "script": "docs/council/2026-11-04-rungs/judge/fit10.py (blind10.json holds the readings frozen before unsealing)"
+   "status": "not confirmed: the held-out test was undecided; printed as an ask, applied only by the owner's confirmed command (owner ruling 4)",
+   "script": "docs/council/2026-11-04-rungs/judge/fit10.py (blind10_scene.json, sha256 cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793, holds the readings frozen before unsealing)"
   }
  }
 }

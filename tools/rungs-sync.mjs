@@ -16,7 +16,8 @@ const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const RUNGS_FILE = path.join(ROOT, 'bridge', 'sync', 'rungs.json');
 
 export function buildSnapshot(root = ROOT) {
-  const ledgerText = fs.readFileSync(path.join(root, 'docs', 'rungs', 'ledger.json'), 'utf8');
+  // line endings normalised, so a CRLF checkout (core.autocrlf on Windows) hashes the same text as git stores
+  const ledgerText = fs.readFileSync(path.join(root, 'docs', 'rungs', 'ledger.json'), 'utf8').replace(/\r\n/g, '\n');
   const ledger = JSON.parse(ledgerText);
   const C = readTerrainConstants(fs.readFileSync(path.join(root, 'FidelityEMatrix', 'EMatrix_Terrain.lua'), 'utf8'));
   const version = (fs.readFileSync(path.join(root, 'FidelityEMatrix', 'EMatrix_Core.lua'), 'utf8').match(/local VERSION = "([0-9.]+)"/) || [])[1] || null;
@@ -37,7 +38,7 @@ export const serialize = snapshot => JSON.stringify(snapshot, null, 2) + '\n';
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   const text = serialize(buildSnapshot());
   if (process.argv.includes('--check')) {
-    const committed = fs.existsSync(RUNGS_FILE) ? fs.readFileSync(RUNGS_FILE, 'utf8') : '';
+    const committed = fs.existsSync(RUNGS_FILE) ? fs.readFileSync(RUNGS_FILE, 'utf8').replace(/\r\n/g, '\n') : '';
     if (committed !== text) { console.error('rungs-sync: bridge/sync/rungs.json is not the ledger\'s snapshot; run node tools/rungs-sync.mjs'); process.exit(1); }
     console.log('rungs-sync: bridge/sync/rungs.json matches the ledger');
   } else {

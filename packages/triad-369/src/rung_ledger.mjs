@@ -326,6 +326,10 @@ function numbersIn(v, acc = []) {
 /** 'YYYY-MM-DD HH:MM:SS' (the client's local clock, as the step stamp prints it) as a comparable number, or null. */
 export function stampTime(s) {
   const m = typeof s === 'string' && s.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/);
+  if (m) { // fields out of range (month 13, second 93) would roll over in Date.UTC: such a stamp is not a time
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
+    if (d.getUTCFullYear() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3] || d.getUTCHours() !== +m[4] || d.getUTCMinutes() !== +m[5] || d.getUTCSeconds() !== +m[6]) return null;
+  }
   if (!m) return null;
   return Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]);
 }
@@ -545,7 +549,7 @@ export function readTerrainConstants(src) {
   // the camera a report's twin proposes (printed as an ask; it applies only by the owner's confirmed command)
   const prop = block('CAMERA_PROPOSAL');
   const propNum = name => Number((prop.match(new RegExp(name + '\\s*=\\s*([0-9.]+)')) || [])[1]);
-  const cameraProposal = { pitch: propNum('pitch'), fovY: propNum('fovY'), report: (prop.match(/report\s*=\s*"([0-9-]+)"/) || [])[1], heldOut: propNum('heldOut') };
+  const cameraProposal = { pitch: propNum('pitch'), fovY: propNum('fovY'), report: (prop.match(/report\s*=\s*"([0-9-]+)"/) || [])[1], heldOut: (prop.match(/heldOut\s*=\s*"([a-z]+)"/) || [])[1] };
   return {
     fitByFile, fitStatus, fitKnots: pairs(block('FIT_KNOTS')), aspectRules: words(block('ASPECT_RULES')), aspectDefault,
     heightRules: words(block('HEIGHT_RULES')), heightDefault, frameOrder, readOrder, camera, cameraProposal,
@@ -561,7 +565,7 @@ const ruleFor = (rules, dflt, file) => { for (const [word, v] of rules) if (file
  * together, plus the owner's word. camera ({ pitch, fovY }, radians) is the camera in use: the saved
  * defaults unless the caller passes the owner's confirmed setting.
  */
-export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', files = [], tolerance = 0.1, camera = c.camera } = {}) {
+export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', files = [], tolerance = 0.1, camera = {} } = {}) {
   const frameKind = c.frameOrder[0];
   const rungs = [
     { id: 'map', kind: 'map', context: { build }, restsOn: [] },
@@ -578,11 +582,16 @@ export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', f
       inUse: c.fitByFile[file] !== undefined,
     });
   }
-  // the camera in use is the projection's context: a confirmed pitch or fovY unlocks the readings taken at the old one
-  const cameraContext = camera && finite(camera.pitch) && finite(camera.fovY) ? { pitch: camera.pitch, fovY: camera.fovY } : {};
+  // the camera in use is the projection's and the heights' context: a confirmed pitch or fovY unlocks the
+  // readings taken at the old one. A camera that names one of the two keeps the default for the other (the
+  // owner confirms pitch and fov with separate commands); a camera with no finite pitch or fovY is an error.
+  const cam = { ...(c.camera || {}), ...(camera || {}) };
+  if (!finite(cam.pitch) || !finite(cam.fovY)) throw new Error('terrainRungs: the camera in use needs a finite pitch and fovY (the addon\'s DEFAULTS or the caller\'s camera)');
+  const cameraContext = { pitch: cam.pitch, fovY: cam.fovY };
   rungs.push({ id: 'projection:' + pose, kind: 'projection', restsOn: ['map', 'axis'], tolerance, context: { pose, ...cameraContext } });
   for (const file of Object.keys(c.fitByFile).sort()) {
-    rungs.push({ id: 'height:' + file, kind: 'height', restsOn: ['projection:' + pose, 'fit:' + file], tolerance, context: { pose } });
+    // a height reading compares a real top with a predicted top, which moves with the camera
+    rungs.push({ id: 'height:' + file, kind: 'height', restsOn: ['projection:' + pose, 'fit:' + file], tolerance, context: { pose, ...cameraContext } });
   }
   return rungs;
 }

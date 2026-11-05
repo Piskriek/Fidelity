@@ -3,7 +3,7 @@
   "asOf": "2026-11-05 05:29:30",
   "source": {
     "ledger": "docs/rungs/ledger.json",
-    "sha256": "2AAEEBCC68C2EC38B74CA71362EC81DAF79E79A85F57D9A8476F99AF72C39B64",
+    "sha256": "9FEECC0BAC624452E9E277AADD002F87217AB869D8C33195BC61919CEC635189",
     "addon": "1.8.9",
     "build": "2.5.6.70577"
   },
@@ -43,7 +43,7 @@
       "rung": "projection:abbey-door",
       "verdict": "fails",
       "report": "20261105-0530",
-      "residual": 0.796
+      "residual": 0.792
     },
     {
       "rung": "frame:PlayerModel",

@@ -56,6 +56,8 @@ def find_frame(a):
     if len(rows) < 2:
         return None
     top, bottom = int(rows.min()), int(rows.max())
+    if bottom - top < 150:  # a red roof or a highlighted panel button is not a test frame
+        return None
     # on the edge rows themselves a looser test holds: the mark over the dimmed world reads as dark red
     # (about 134, 27, 19), below the strict test, which then breaks the run
     reddish = (r > 100) & ((r - np.maximum(g, b)) > 60)
@@ -63,7 +65,12 @@ def find_frame(a):
     run = largest_run(np.where(band)[0], gap=3)
     if run is None or run[1] - run[0] < 150:
         return None
-    return top, bottom, int(run[0]), int(run[1])
+    left, right = int(run[0]), int(run[1])
+    # a real frame keeps at least one vertical edge: a column at either end of the run that is red down the frame
+    cols = red[top:bottom + 1].sum(axis=0) > 150
+    if not (cols[max(left - 3, 0):left + 4].any() or cols[max(right - 3, 0):right + 4].any()):
+        return None
+    return top, bottom, left, right
 
 
 def known_frame(h, w, aspect=0.8):

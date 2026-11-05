@@ -7,11 +7,12 @@
 // HUD text, no seventh flow, no re-test (the Apex never judges a rung), and a missing or malformed file
 // reads not_measured. "Awareness" names the set of rungs that hold (owner ruling 3): a list, never a
 // number or a percentage.
-import { VERDICTS } from './rung_ledger.mjs';
+import { VERDICTS, stampTime } from './rung_ledger.mjs';
 
 export const RUNGS_SOURCE = 'bridge/sync/rungs.json';
 
-const isStamp = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}$/.test(s);
+const isStamp = s => stampTime(s) !== null; // the evaluator's own clock rule: well formed, and every field in range
+const NEEDS_REPORT = new Set(['holds', 'fails', 'fitted', 'contested']); // a verdict a reading made names its report
 
 /** The snapshot rungs-sync writes, from an evaluate() result. asOf: the newest reading's own stamp. */
 export function rungSnapshot(result, { asOf, source }) {
@@ -31,13 +32,33 @@ export function rungSnapshot(result, { asOf, source }) {
   };
 }
 
+/**
+ * Whether a snapshot can be served: one verdict per rung, each a known verdict, a report wherever a reading
+ * made the verdict, a frontier of rungs that neither hold nor are blocked (the evaluator's own rule), and an
+ * asOf that is a real time. A snapshot that contradicts itself is malformed.
+ */
+function servable(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot) || !isStamp(snapshot.asOf)) return false;
+  const { verdicts, frontier } = snapshot;
+  if (!Array.isArray(verdicts) || verdicts.length === 0 || !Array.isArray(frontier)) return false;
+  const byRung = new Map();
+  for (const v of verdicts) {
+    if (!v || typeof v !== 'object' || typeof v.rung !== 'string' || !VERDICTS.includes(v.verdict) || byRung.has(v.rung)) return false;
+    if (NEEDS_REPORT.has(v.verdict) ? typeof v.report !== 'string' || !v.report : !(v.report === null || typeof v.report === 'string')) return false;
+    byRung.set(v.rung, v);
+  }
+  const seen = new Set();
+  for (const id of frontier) {
+    const v = typeof id === 'string' && byRung.get(id);
+    if (!v || v.verdict === 'holds' || v.verdict === 'blocked' || seen.has(id)) return false;
+    seen.add(id);
+  }
+  return true;
+}
+
 /** The two slots, from a snapshot (or anything else: a malformed or missing one reads not_measured). */
 export function rungSlots(snapshot) {
-  const valid = snapshot && typeof snapshot === 'object' && isStamp(snapshot.asOf)
-    && Array.isArray(snapshot.verdicts) && snapshot.verdicts.length > 0 && Array.isArray(snapshot.frontier)
-    && snapshot.verdicts.every(v => v && typeof v.rung === 'string' && VERDICTS.includes(v.verdict) && (v.report === null || typeof v.report === 'string'))
-    && snapshot.frontier.every(id => typeof id === 'string' && snapshot.verdicts.some(v => v.rung === id));
-  if (!valid) return { rungs_traversed: [], decision: { status: 'not_measured', source: RUNGS_SOURCE } };
+  if (!servable(snapshot)) return { rungs_traversed: [], decision: { status: 'not_measured', source: RUNGS_SOURCE } };
   return {
     rungs_traversed: snapshot.verdicts.filter(v => v.verdict === 'holds').map(v => `${v.rung}: holds${v.report ? ` (report ${v.report})` : ''}`),
     decision: {

@@ -17,11 +17,13 @@ ns.Report = Report
 local PREFIX = "|cff00ffcc[Fidelity EMatrix]|r "
 local SHOT_DELAY = 0.5  -- seconds between a step's commands and its screenshot, so the frame has drawn
 local TWIN_HIDE = 0.25  -- after the first shot, before the drawings are hidden (a screenshot is taken at the end of a frame)
-local TWIN_DELAY = 0.5  -- after hiding, before the twin's screenshot, and no sooner than the next clock second (below)
+local TWIN_DELAY = 0.5  -- after hiding, before the twin's screenshot, and no sooner than two clock seconds on (below)
 local TWIN_SHOW = 0.25  -- after the twin's screenshot, before the drawings come back
 -- A screenshot's file is named to the second (WoWScrnShot_MMDDYY_HHMMSS), so two shots in one second
--- write one file: the tenth report's jar step lost its first shot that way (both at 05:29:07). The twin
--- therefore waits until time() has moved past the first shot's second.
+-- write one file: the tenth report's jar step lost its first shot that way (both at 05:29:07). The name
+-- is taken when the file is written, which can fall in the next second (the same report's wide-crate twin
+-- was stamped 05:29:21 and named 052922), so the twin waits until time() is two seconds past the second
+-- in which the first shot was called: the first file is named in that second or the next, the twin later.
 local TURNED = 0.05     -- radians: step 11's facing must differ from step 10's by more than this
 
 local panel = nil
@@ -168,7 +170,7 @@ function Report.Run(step)
     r.steps[#r.steps + 1] = rec
     pending = p
     print(PREFIX .. string.format("Report step %s: %d line(s) captured%s. %d step(s) in the report; press Save (reload UI) to write it.",
-        step.label, #rec.lines, step.twin and ", two screenshots within about two seconds, the second with the overlays hidden: stand still" or (step.shot and ", screenshot in half a second" or ""), #r.steps))
+        step.label, #rec.lines, step.twin and ", two screenshots within about three seconds, the second with the overlays hidden: stand still" or (step.shot and ", screenshot in half a second" or ""), #r.steps))
 end
 
 local function Shoot()
@@ -198,7 +200,7 @@ local function OnUpdate(self, dt)
         HideDrawings(true)
         p.phase, p.t = "twin", TWIN_DELAY
     elseif p.phase == "twin" then
-        if p.second and time and time() <= p.second then return end -- the same second would overwrite the first file
+        if p.second and time and time() <= p.second + 1 then return end -- the first file may be named one second late
         local ok = Shoot()
         p.rec.twin = { screenshot = ok and ("taken at " .. Stamp()) or "Screenshot() failed", pose = Pose(p) }
         p.phase, p.t = "show", TWIN_SHOW
@@ -263,7 +265,7 @@ function Report.Command(args, say)
     if not show then Supersede("the panel was hidden") end
     if show then p:Show() else p:Hide() end
     if show then
-        say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about two seconds; before 11, turn about 45 degrees and stand still; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")
+        say("Report panel shown: press the buttons top to bottom (each runs its commands and takes a screenshot half a second later; a twin step takes a second one with the overlays hidden, so stand still for about three seconds; before 11, turn about 45 degrees and stand still; the terrain test hides the box while it is on), then Save (reload UI). The laptop copies the screenshots and the saved report to the repo (task H009).")
     else
         say("Report panel hidden.")
     end

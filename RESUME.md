@@ -2,15 +2,16 @@
 
 ## The tenth report, the owner's eight rulings, v1.8.9 and the second step (05 Nov 2026, Claude in the cloud) — start here
 
-**What came back:** `reports/20261105-0530` on `origin/owner/reports` (`d7839c8`). It holds 21 shots on v1.8.8 at the kobold camp north of the Abbey, the saved report and the MANIFEST, and every hash matches. The owner's rulings on the round's eight questions came with it. So did two notes: from Argon, how to decompose the camera's error; from the owner, that the copy of his character did not run when he ran. The full account is in `docs/council/2026-11-04-rungs/LANDED.md` (status **nofit**), and `STEER.md` ends with the answered rulings, the news back and the next ASK.
+**What came back:** `reports/20261105-0530` on `origin/owner/reports` (`d7839c8`). It holds 21 shots on v1.8.8 at the kobold camp north of the Abbey, the saved report and the MANIFEST, and every hash matches. The owner's rulings on the round's eight questions came with it. So did two notes: from Argon, how to decompose the camera's error; from the owner, that the copy of his character did not run when he ran. The full account is in `docs/council/2026-11-04-rungs/LANDED.md` (status **changed**, revised after the round's review), and `STEER.md` ends with the answered rulings, the news back and the next ASK.
 
 **The camera's first verdict.**
-- The step-1 overlay-off twin was read blind and frozen at 03:42Z before any prediction was opened (owner ruling 1; `judge/blind10.json`).
-- At the saved default (pitch 0.35 rad, fovY 1.0 rad), every matched placement stood about 100 px (of 1041) below its predicted foot, at depths from 17 to 110 yd. **The projection fails** (five readings, 0.60 to 3.3 of each prop's projected height).
-- A fit on seven blind feet gives pitch 12.8° and fovY 53.8° (yaw offset 0.0000). Sapling F lands within 2 px, canopy L within 8 px, and trunk H, never fitted, within 2 px of canopy04.
-- The held-out sapling G misses by 19 px sideways: 0.121 against τ 0.1 at precision 0.019, a fail by 0.002. So the proposal is **not confirmed**. It prints as an ask and applies only by the owner's `confirm` (ruling 4).
-- G's miss is local: F is the same model, 42 px away, and holds. That matches Argon's third case.
-- `judge/fit10.py` reproduces every number in plain Python.
+- The step-1 overlay-off twin was read blind before any prediction was opened (owner ruling 1). The record is `judge/blind10_scene.json`, committed byte-identical; its SHA256 `cca1df1241337dbb33f8f83504c5ab161cff73d47a1644968e0628e4de016793` was printed in the session at 03:42:10Z (self-reported time). From the next report on, the hash is committed before unsealing.
+- At the saved default (pitch 0.35 rad, fovY 1.0 rad), every matched placement stood about 100 px (of 1041) below its predicted foot, at depths from 17 to 110 yd. **The projection fails** (five readings, 0.60 to 3.31 of each prop's projected height, each far beyond the blind reader's 10 px floor).
+- A fit on seven blind feet, at the map data's own placements, gives pitch 12.85° and fovY 53.82° (yaw offset -0.0001).
+- The held-out sapling G lands 0.120 of its height from its blind foot at precision 0.064: **undecided**, so the proposal is **not confirmed**. It prints as an ask and applies only by the owner's `confirm` (ruling 4).
+- The 10 px floor is the reader's own error. After unsealing, the two sapling trunks proved 9.5 px and 7 px from their blind feet, against a stated 3 px.
+- The first write-up's "fail by 0.002, a local offset" rested on that 3 px and is withdrawn.
+- `judge/fit10.py` reproduces every number in plain Python, and checks the barrel's foot against the client's.
 
 **The fits.**
 - Barrel x0.53: **holds**, the first fit confirmed.
@@ -19,8 +20,8 @@
 - A wider frame magnifies the model: about 1.66× from aspect 0.8 to 1.85.
 
 **Procedure defects found and fixed in v1.8.9:**
-- the jar's twin overwrote its first shot (same second): the twin now waits for the next clock second;
-- the canopy04 step drew the barrel under canopy04's name: a pick nothing matches is refused;
+- the jar's twin overwrote its first shot (same second): the twin now waits until the clock is two seconds past the first shot's call (a file can be named a second late);
+- the canopy04 step drew the barrel under canopy04's name: a pick nothing matches is refused, and stays refused through the step's later presses;
 - step 11 was not turned: it now says so;
 - the copy of the character stood while the owner ran: each copy now stands, walks, runs or swims with its unit.
 
@@ -40,11 +41,13 @@
 - v1.8.9: fits and statuses, the camera ask with `confirm`, the four procedure fixes, the motion of the copies.
 - `tools/frame_fill.py`: the frame's columns are read from its edges.
 - `packages/triad-369/src/rung_slots.mjs`, `tools/rungs-sync.mjs`, `bridge/sync/rungs.json`, and the Apex hook.
-- Tests: the ledger suite 20, the headless suite 70 (35 per SetLight profile), and `rung-slots.test.mjs` 4.
+- Tests: the ledger suite 20, the headless suite 70 (35 per SetLight profile), and `rung-slots.test.mjs` 5.
 - H010 asks for the eleventh report and the WoW Forever report. That one (a gnome in the dwarf starting zone) is not on `owner/reports`. The map data covers only Northshire's nine tiles, so Coldridge Valley reads MISSING until its report comes back.
 
+**The round's review:** five reviewers, each followed by a skeptic, confirmed 26 of 39 findings, and all are addressed (listed in `LANDED.md`). The largest was the held-out precision above. Others: the replica fed rounded placements; the refusal undone by the step's next press; a twin still able to share its first shot's name; the heights outside the camera lock; the uncited blind-record hash; 34 false frames from the first `find_frame` fix; self-contradicting snapshots served as judged; line endings in the snapshot's hash; and tests that could not fail.
+
 **Evidence (05 Nov, Linux, Node 22):**
-- `npm test`: 211 tests, 210 pass, 0 fail, 1 skipped;
+- `npm test`: 212 tests, 211 pass, 0 fail, 1 skipped;
 - headless: 70/70;
 - `node tools/test_ematrix_math.mjs`: 14/14;
 - `node tools/rungs-sync.mjs --check`: matches.

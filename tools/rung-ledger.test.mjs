@@ -170,15 +170,35 @@ test('the tenth report: the barrel holds, the bush and the crate fail where no k
   assert.equal(proj.deciding.length, 5);
   assert.ok(proj.deciding.every(d => d.result === 'fail'), 'all five feet miss by more than the tolerance plus their precision');
   for (const f of Object.keys(C.fitByFile)) assert.equal(v('height:' + f).verdict, 'blocked', f);
-  // the lock on the camera: at the proposed pitch and fovY, readings at the default count for nothing
-  const atProposal = run(rungsFor(C, { camera: { pitch: C.cameraProposal.pitch, fovY: C.cameraProposal.fovY } })).verdicts.get('projection:abbey-door');
-  assert.equal(atProposal.verdict, 'unmeasured', 'a confirmed new camera starts unmeasured: the next twins test it');
-  // the proposal the addon prints is the ledger's, and says it is not confirmed
+  // the lock on the camera: at the proposed pitch and fovY, readings at the default count for nothing, and so
+  // does a change of either one alone (the owner confirms pitch and fov with separate commands)
+  for (const camera of [{ pitch: C.cameraProposal.pitch, fovY: C.cameraProposal.fovY }, { pitch: C.cameraProposal.pitch }, { fovY: C.cameraProposal.fovY }]) {
+    const r = run(rungsFor(C, { camera }));
+    assert.equal(r.verdicts.get('projection:abbey-door').verdict, 'unmeasured', JSON.stringify(camera) + ': a confirmed new camera starts unmeasured');
+    assert.ok(r.refused.filter(x => x.rung === 'projection:abbey-door').length === 5 && r.refused.filter(x => x.rung === 'projection:abbey-door').every(x => x.reason === 'key'), 'the five readings at the default are refused by the lock');
+  }
+  assert.deepEqual(rungsFor(C, { camera: { pitch: 0.3 } }).find(r => r.id === 'projection:abbey-door').context, { pose: 'abbey-door', pitch: 0.3, fovY: C.camera.fovY }, 'a camera that names one parameter keeps the default for the other');
+  assert.throws(() => rungsFor(C, { camera: { pitch: NaN } }), /finite pitch and fovY/);
+  // the heights carry the camera too: a height read at the old camera is refused once the camera changes
+  const heightRow = { id: 'h-old', rung: 'height:westfallbarrel01', kind: 'measured', witness: 'director', at: '2026-11-05 05:28:32', artifact: r10[0].artifact, context: { pose: 'abbey-door', ...CAM }, pose: { facingSpread: 0 }, observed: { residual: 0.02 }, precision: 0.01 };
+  const moved = run(rungsFor(C, { camera: { pitch: C.cameraProposal.pitch } }), [...ledger.rows, heightRow]);
+  assert.deepEqual(moved.refused.find(x => x.id === 'h-old'), { id: 'h-old', rung: 'height:westfallbarrel01', reason: 'key' });
+  assert.ok(!run(rungsFor(), [...ledger.rows, heightRow]).refused.some(x => x.id === 'h-old'), 'at the camera it was read at, the height row is admitted');
+  // the proposal the addon prints is the ledger's, and says it is not confirmed: its held-out test decided nothing
   const prop = ledger.proposals['projection:abbey-door'];
-  assert.deepEqual({ pitch: prop.pitch, fovY: prop.fovY, report: prop.report, heldOut: prop.heldOut.residual }, C.cameraProposal);
-  assert.equal(prop.heldOut.result, 'fail');
-  assert.ok(prop.heldOut.residual - prop.heldOut.precision > ledger.tolerance, 'the held-out sapling fails by the decisive rule');
-  assert.match(terrainSrc, /NOT confirmed/);
+  assert.deepEqual({ pitch: prop.pitch, fovY: prop.fovY, report: prop.report, heldOut: prop.heldOut.result }, C.cameraProposal);
+  assert.equal(prop.heldOut.result, 'undecided');
+  const { residual: hr, precision: hp } = prop.heldOut;
+  assert.ok(hr - hp <= ledger.tolerance && hr + hp > ledger.tolerance, `the held-out sapling is within its precision of the tolerance (${hr} +- ${hp}): undecided by the decisive rule`);
+  assert.ok(hp >= 10 / 157 - 0.005, 'the held-out foot carries the blind reader\'s 10 px floor over its projected height');
+  assert.match(terrainSrc, /twin fits pitch %\.1f deg and fovY %\.1f deg, not confirmed \(its held-out test was %s\)/, 'the printed line says the fit is not confirmed and why');
+  assert.match(prop.command, /^\/fide terrain pitch \d+\.\d confirm and \/fide terrain fov \d+\.\d confirm$/);
+  // a reading's time is its step's own stamp (the ledger's time convention), not the shutter's
+  for (const r of r10.filter(r => r.rung === 'projection:abbey-door')) {
+    assert.equal(r.at, '2026-11-05 05:28:32', r.id + ': step 1\'s stamp');
+    assert.notEqual(r.at, r.pose.stamp, r.id + ': the shutter stamp is the pose\'s, not the reading\'s time');
+  }
+  assert.equal(ledger.rows.find(r => r.id === 'r10-052846-bush-twin').at, '2026-11-05 05:28:45', 'step 3\'s stamp, not its shot\'s (05:28:46)');
   // the frontier: everything but the barrel's fit and the frames already held
   assert.deepEqual([...res.frontier].sort(), ['fit:elwynnbush09', 'fit:elwynntreecanopy04', 'fit:elwynntreemid01', 'fit:jar01', 'fit:westfallcrate', 'projection:abbey-door']);
 });
@@ -235,6 +255,8 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
     { ...base, id: 'nosha', artifact: { report: base.artifact.report, file: base.artifact.file } },
     { ...base, id: 'norung', rung: 'fit:nothing-here' },
     { ...base, id: 'badtime', at: 'yesterday' },
+    { ...base, id: 'badclock', at: '2026-11-04 12:46:93' }, // a second that does not exist would roll over to 12:47:33
+    { ...base, id: 'badmonth', at: '2026-13-04 12:46:46' },
     { ...base, id: 'r8-124647-barrel-2' }, // a second row with an id already taken
     { ...rowById.get('20261104-1321-map'), id: 'mapnoobs', observed: null },
     { ...rowById.get('20261104-1321-load'), id: 'loadquoted', observed: { loaded: '45', failed: 0 } },
@@ -251,7 +273,7 @@ test('refusals: every reason fires for its defect and keeps its reason; nothing 
   ];
   const r2 = run(rungsFor(), [...ledger.rows, ...synth]);
   const w2 = id => (r2.refused.find(r => r.id === id) || {}).reason;
-  for (const id of ['nan', 'inf', 'nullvalue', 'novalue', 'quoted', 'noobs', 'badtime', 'mapnoobs', 'loadquoted', 'failquoted', 'drawnword', 'topword', 'widthword', 'noprecision', 'negprecision', 'textprecision', 'negativegap', 'gapoverone', 'boundseen']) assert.equal(w2(id), 'non-finite', id);
+  for (const id of ['nan', 'inf', 'nullvalue', 'novalue', 'quoted', 'noobs', 'badtime', 'badclock', 'badmonth', 'mapnoobs', 'loadquoted', 'failquoted', 'drawnword', 'topword', 'widthword', 'noprecision', 'negprecision', 'textprecision', 'negativegap', 'gapoverone', 'boundseen']) assert.equal(w2(id), 'non-finite', id);
   assert.equal(w2('future'), 'future');
   assert.equal(w2('stub'), 'echo'); assert.equal(w2('typed'), 'echo');
   assert.equal(w2('hostfit'), 'witness', 'no host API reads a fill');
@@ -515,7 +537,14 @@ test('bridge/sync/rungs.json is the evaluator\'s snapshot of this ledger and the
   assert.equal(text, serialize(buildSnapshot()), 'run node tools/rungs-sync.mjs after changing the ledger or the addon\'s constants');
   const snap = JSON.parse(text);
   const res = run();
-  for (const v of snap.verdicts) assert.equal(v.verdict, res.verdicts.get(v.rung).verdict, v.rung + ': the snapshot\'s verdict is the evaluator\'s');
+  assert.deepEqual(snap.verdicts.map(v => v.rung), res.order, 'every rung, in the evaluation order');
+  assert.deepEqual(snap.frontier, res.frontier, 'the frontier is the evaluator\'s');
+  for (const v of snap.verdicts) {
+    const d = res.verdicts.get(v.rung);
+    assert.equal(v.verdict, d.verdict, v.rung + ': the snapshot\'s verdict is the evaluator\'s');
+    assert.equal(v.report, d.report ?? null, v.rung + ': its report');
+    assert.equal(v.residual, typeof d.residual === 'number' ? d.residual : undefined, v.rung + ': its residual');
+  }
   assert.deepEqual(snap.awareness, snap.verdicts.filter(v => v.verdict === 'holds').map(v => v.rung), 'awareness is the held set, by name');
 });
 

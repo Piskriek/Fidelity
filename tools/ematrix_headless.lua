@@ -1402,7 +1402,7 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     slash("world off")
     step(0.3)
     local logFit = #shotLog
-    click(5)
+    click(3) -- the bush at its fit: the fixture loads the bush (a pick no loaded file matches would draw nothing, v1.8.9)
     step(1.6)
     check(not W.IsEnabled() and FidelityEMatrix_Config.worldOverlay == false, "a twin never turns the world overlay on, nor writes its choice")
     local fitFirst, fitTwin = shotLog[logFit + 1], shotLog[logFit + 2]
@@ -1490,7 +1490,7 @@ test("report twins: the pose is the shutter's, recorded silently; the twin hides
     check(#lastErrors() == 0, table.concat(lastErrors(), " | "))
 end)
 
-test("v1.8.9: a pick no loaded file matches draws nothing; the camera applies only when confirmed; the twin waits for a new second; step 11 says when it was not turned; the copies walk and run with their units", function()
+test("v1.8.9: a pick no loaded file matches draws nothing, through a whole report step; the camera applies only when confirmed; the twin's file can never share the first's name; step 11 says when it was not turned; the copies walk and run with their units", function()
     local R, T, W = ns.Report, ns.Terrain, ns.World
     local function click(i) local b = _G["FidelityEMatrixReportButton" .. i]; b.scripts.OnClick(b, "LeftButton") end
     slash("stereo off"); slash("box hide"); slash("terrain test off"); slash("terrain on"); slash("world on")
@@ -1506,9 +1506,36 @@ test("v1.8.9: a pick no loaded file matches draws nothing; the camera applies on
     local all = table.concat(printed, "\n")
     check(all:find('no loaded placement\'s file holds "canopy04" here, so nothing is drawn (loaded: ', 1, true) and not all:find('picked by "canopy04"', 1, true), "a pick that matches no loaded file is refused, never answered with another file: " .. all:sub(1, 300))
     check(#T._testFrames == framesBefore and not bushFrame.shown and T._testMode() == nil, "the refusal draws nothing and ends the earlier test")
+    -- the refused pick stays refused: the report step's next bare press must not draw the nearest file instead
+    printed = {}
+    slash("terrain test"); slash("terrain test aspect 1.85")
+    check(#T._testFrames == framesBefore and table.concat(printed, "\n"):find('holds "canopy04" here', 1, true) and not table.concat(printed, "\n"):find("on a new PlayerModel frame", 1, true), "bare presses after a refused pick are refused again: " .. table.concat(printed, " | "):sub(1, 300))
     printed = {}
     slash("terrain test fit 3")
     check(table.concat(printed, "\n"):find("no test frame is up", 1, true) and not (FidelityEMatrix_Config.propFit and FidelityEMatrix_Config.propFit.elwynnbush09), "with no test up, fit saves nothing")
+    slash("terrain test pick any")
+    check(T._testFrames[#T._testFrames].shown and #T._testFrames == framesBefore + 1 and T._testMode() ~= nil, "pick any clears the refusal and draws the nearest")
+    -- a malformed press changes nothing: no test state is left behind for fit to use
+    slash("terrain test off")
+    slash("terrain test bogus")
+    check(T._testMode() == nil, "a malformed test press leaves no test state")
+    printed = {}
+    slash("terrain test fit 3")
+    check(table.concat(printed, "\n"):find("no test frame is up", 1, true) and not (FidelityEMatrix_Config.propFit and FidelityEMatrix_Config.propFit.elwynnbush09), "and fit after it saves nothing")
+    -- the whole report step 9 where no canopy04 is loaded: neither shutter shows a test frame
+    FidelityEMatrix_Report = nil
+    slash("report show")
+    local seen = {}
+    shotProbe = function() local f = T._testFrames[#T._testFrames]; return { test = f and f.shown or false } end
+    local logAt = #shotLog
+    click(8); step(3.5) -- the crate in a wide frame: a test is up before step 9
+    click(9); step(3.5)
+    local r9 = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+    check(r9.step == "canopy" and r9.twin and r9.twin.screenshot:find("taken at", 1, true), "step 9 still takes its pair")
+    check(shotLog[logAt + 3] and not shotLog[logAt + 3].test and shotLog[logAt + 4] and not shotLog[logAt + 4].test, "neither of step 9's shots shows a test frame")
+    check(table.concat(r9.lines, "\n"):find('holds "canopy04" here', 1, true) and not table.concat(r9.lines, "\n"):find("on a new PlayerModel frame", 1, true), "step 9's record says why and draws nothing: " .. table.concat(r9.lines, " | "):sub(1, 400))
+    shotProbe = nil
+    slash("terrain test pick any"); slash("terrain test off"); slash("report hide")
     -- (b) owner ruling 4: pitch and fov are asked, and written only with "confirm"
     FidelityEMatrix_Config.terrainPitch, FidelityEMatrix_Config.terrainFovY = nil, nil
     printed = {}
@@ -1523,23 +1550,34 @@ test("v1.8.9: a pick no loaded file matches draws nothing; the camera applies on
     printed = {}
     slash("terrain pitch"); slash("terrain fov")
     all = table.concat(printed, "\n")
-    check(all:find("fits pitch 12.8 deg and fovY 53.8 deg, not confirmed (its held-out sapling missed by 0.121 of its height; the tolerance is 0.1): /fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm apply them", 1, true), "with no number each prints the value in use and the proposal: " .. all:sub(1, 400))
+    check(all:find("fits pitch 12.8 deg and fovY 53.8 deg, not confirmed (its held-out test was undecided): /fide terrain pitch 12.8 confirm and /fide terrain fov 53.8 confirm apply them", 1, true), "with no number each prints the value in use and the proposal: " .. all:sub(1, 400))
     slash("terrain fov 53.8"); check(FidelityEMatrix_Config.terrainFovY == nil, "fov alone writes nothing")
     slash("terrain fov 53.8 confirm"); check(near(FidelityEMatrix_Config.terrainFovY, math.rad(53.8), 1e-12), "fov with confirm writes it")
     FidelityEMatrix_Config.terrainFovY = nil
-    -- (c) the twin waits until the clock's second moves past the first shot's (file names are to the second)
+    -- (c) a screenshot's file is named to the second when it is written, which can be a frame after the call
+    -- (the tenth report's wide-crate twin was stamped :21 and named :22): at every press phase, the two names differ
     _G.time = function() return math.floor(GetTime()) end
-    FidelityEMatrix_Report = nil
+    local names = {}
+    local realShot = _G.Screenshot
+    _G.Screenshot = function() names[#names + 1] = math.floor(GetTime() + 1 / 60); return realShot() end -- named one frame late
     slash("report show")
-    while (GetTime() % 1) < 0.50 or (GetTime() % 1) > 0.56 do step(1 / 60) end -- press at x.5: the first shot at about x+1.0, so the twin's earliest moment (+0.75) shares its second
-    while (GetTime() % 1) < 0.53 or (GetTime() % 1) > 0.56 do step(1 / 120, 1 / 120) end
-    click(1)
-    local rec = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
-    step(2.0)
-    check(rec.pose and rec.twin and rec.twin.pose and rec.twin.screenshot:find("taken at", 1, true), "both shots are taken")
-    check(math.floor(rec.twin.pose.time) > math.floor(rec.pose.time), "the twin's second is later than the first shot's, so its file cannot overwrite the first: " .. tostring(rec.pose.time) .. " / " .. tostring(rec.twin.pose.time))
-    check(rec.twin.pose.time - rec.pose.time >= 0.75 - 1e-9, "and no sooner than the hide and the delay")
-    _G.time = nil
+    local collisions, pairs = 0, 0
+    for phase = 0, 59 do -- one press in every frame of a second: the first shot lands once in the last frame before a boundary
+        FidelityEMatrix_Report = nil
+        local want = phase / 60
+        local guard = 0
+        while math.abs((GetTime() % 1) - want) > 0.5 / 60 and guard < 200 do step(1 / 60); guard = guard + 1 end
+        local before = #names
+        click(1); step(3.2)
+        local rec = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+        if #names == before + 2 then
+            pairs = pairs + 1
+            if names[before + 1] == names[before + 2] then collisions = collisions + 1 end
+            check(rec.twin.pose.time - rec.pose.time >= 0.75 - 1e-9, "the twin comes no sooner than the hide and the delay")
+        end
+    end
+    check(pairs == 60 and collisions == 0, "sixty pairs over the second, no twin named like its first shot: " .. collisions .. " collision(s) in " .. pairs)
+    _G.Screenshot, _G.time = realShot, nil
     -- (d) step 11 needs its own pose
     FidelityEMatrix_Report = nil
     playerFacing = 0.3
@@ -1553,6 +1591,14 @@ test("v1.8.9: a pick no loaded file matches draws nothing; the camera applies on
     click(11); step(2.0)
     r11 = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
     check(r11.step == "turn" and not r11.notTurned and near(r11.turnedBy, 0.8, 1e-6) and not table.concat(printed, "\n"):find("needs a turned pose", 1, true), "a turned step 11 records how far it turned and says nothing: " .. tostring(r11.turnedBy))
+    -- the threshold (0.05 rad) and the wrap at 2 pi
+    for _, c in ipairs({ { 0.30, 0.34, true }, { 0.30, 0.36, false }, { 6.26, 0.01, true }, { 0.01, 6.26, true }, { 6.20, 0.10, false } }) do
+        FidelityEMatrix_Report = nil
+        playerFacing = c[1]; click(10); step(3.2)
+        playerFacing = c[2]; click(11); step(3.2)
+        local rr = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+        check((rr.notTurned ~= nil) == c[3], string.format("from %.2f to %.2f the step %s", c[1], c[2], c[3] and "warns" or "does not warn") .. " (turned by " .. tostring(rr.turnedBy) .. ")")
+    end
     playerFacing = 0.0
     slash("report hide")
     -- (e) the owner's report: the copy stood still while he ran. It plays its unit's motion now.
@@ -1578,6 +1624,16 @@ test("v1.8.9: a pick no loaded file matches draws nothing; the camera applies on
         speeds.player = 0; stepUntilWorldRefresh()
         check(slot.mono.animation == A.stand and calls == 2, "and stands again when the player stops")
         slot.mono.SetAnimation = orig
+        -- a frame taken again for a unit (SetUnitOn) restarts standing, and its record of the animation restarts
+        -- with it, so the next scan sets the run again rather than believing it is still running
+        speeds.player = 7; stepUntilWorldRefresh()
+        local m = slot.mono
+        check(m.animation == A.run and m.__anim == A.run, "the copy runs before it is taken again")
+        W._SetUnitOn(m, "player")
+        check(m.animation == A.stand and m.__anim == A.stand, "SetUnitOn restarts the copy standing and says so")
+        W._Motion(slot)
+        check(m.animation == A.run, "and the next motion step runs it again, got " .. tostring(m.animation))
+        speeds.player = 0
     end
     _G.GetUnitSpeed, _G.IsSwimming = nil, nil
     step(0.6)

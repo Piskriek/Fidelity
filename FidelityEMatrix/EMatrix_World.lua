@@ -499,3 +499,5 @@ World.BAND_CONFIRM = BAND_CONFIRM
 -- for the headless harness
 World._MotionOf = MotionOf
 World._ANIM = ANIM
+World._SetUnitOn = SetUnitOn
+World._Motion = Motion
