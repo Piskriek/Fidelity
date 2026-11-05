@@ -9,10 +9,10 @@
 // reading that head.json), then says every few seconds, in plain words, what each part is doing, the open /live page
 // included (it sends the twin its own numbers every 2 s: pictures drawn a second, the captured window's pictures a
 // second, the depth's time a picture, the head's updates a second). Ctrl+C stops all.
-// Each part's own output goes to tools/room/logs/<part>.log. Options: --phone <address> (required), --depth
-// browser|local (default browser), --port <twin port> (5203), --python <python with OpenCV 4> (default: the
-// repository's .venv), --stream <path on the phone> (/video/force/1280x720), --seconds <n> (stop after n seconds and
-// print a summary, for checks).
+// Each part's own output goes to tools/room/logs/<part>.log, and what the launcher says to tools/room/logs/room.log.
+// Options: --phone <address> (required), --depth browser|local (default browser), --port <twin port> (5203), --python
+// <python with OpenCV 4> (default: the repository's .venv), --stream <path on the phone> (/video/force/1280x720),
+// --seconds <n> (stop after n seconds and print a summary, for checks).
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -151,7 +151,7 @@ export async function launch(o, say = console.log) {
     const waiting = tracker.lines.filter(l => /waiting for the stream|still waiting/.test(l)).length;
     const up = tracker.lines.some(l => /the stream is up|frames; the smallest face/.test(l));
     lines.push(tracker.exited ? `tracker: ${tracker.exited}: see tools/room/logs/headtrack.log` : up ? 'phone: streaming' : waiting ? 'phone: the tracker is waiting for the phone\'s stream' : 'phone: connecting');
-    if (!tracker.exited) lines.push(describeHead(head, age));
+    if (!tracker.exited) lines.push(up || (head && head.frames > 0) ? describeHead(head, age) : 'head: waiting for the phone\'s pictures');
     if (depth) {
       const h = await getJson(`http://127.0.0.1:${o.depthPort}/health`);
       lines.push(depth.exited ? `depth: ${depth.exited}: see tools/room/logs/depthd.log` : h ? `depth: the service runs Depth Anything V2 Small on the ${h.device}` : 'depth: the service is starting (the first start downloads the model, about 50 MB)');
@@ -173,18 +173,22 @@ async function main() {
   let o;
   try { o = parseArgs(process.argv.slice(2)); } catch (e) { console.error(e.message); process.exit(2); }
   if (o.help) { console.log(fs.readFileSync(fileURLToPath(import.meta.url), 'utf8').split('\n').filter(l => l.startsWith('//')).map(l => l.slice(3)).join('\n')); return; }
-  const run = await launch(o);
+  // everything it says also goes to tools/room/logs/room.log, so a whole test can be sent on afterwards
+  fs.mkdirSync(LOGS, { recursive: true });
+  const say = line => { console.log(line); try { fs.appendFileSync(path.join(LOGS, 'room.log'), `${line}\n`); } catch { /* the log is a copy */ } };
+  say(`--- ${new Date().toISOString()} room: ${process.argv.slice(2).join(' ')}`);
+  const run = await launch(o, say);
   const t0 = Date.now();
   let last = null;
   for (;;) {
     await new Promise(r => setTimeout(r, 5000));
-    console.log(`room: ${Math.round((Date.now() - t0) / 1000)} s`);
+    say(`room: ${Math.round((Date.now() - t0) / 1000)} s`);
     last = await run.report();
     if (o.seconds && Date.now() - t0 >= o.seconds * 1000) break;
   }
   run.stopAll();
   const pg = last.page && { drawn: last.page.renderFps, captured: last.page.captureFps, depthMs: last.page.depthMs, depthPerSecond: last.page.depthPerSecond, headPerSecond: last.page.headPerSecond, head: last.page.head };
-  console.log(`room: done after ${o.seconds} s: ${JSON.stringify({ phone: last.up, face: !!(last.head && last.head.restWidth > 0), depth: last.depthUp, twin: last.twinUp, page: pg || null, stopped: last.exited })}`);
+  say(`room: done after ${o.seconds} s: ${JSON.stringify({ phone: last.up, face: !!(last.head && last.head.restWidth > 0), depth: last.depthUp, twin: last.twinUp, page: pg || null, stopped: last.exited })}`);
   setTimeout(() => process.exit(0), 500);
 }
 
