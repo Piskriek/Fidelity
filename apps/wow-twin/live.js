@@ -95,7 +95,6 @@ async function estimator() {
   }
   // half precision only where the card has it (shader-f16); full precision on any other card; the processor last
   const tries = gpu ? [...(gpu.f16 ? [['webgpu', 'fp16']] : []), ['webgpu', 'fp32'], ['wasm', 'q8']] : [['wasm', 'q8']];
-  state.fallbacks = [];
   let last = null;
   for (const [device, dtype] of tries) {
     try {
@@ -119,20 +118,44 @@ async function estimator() {
   throw last || new Error('the depth model did not start');
 }
 
+// A depth service on another machine (tools/depthd, through this twin's --depth): asked once; null when there is none,
+// when ?model=local asks for the model in this page, or after it failed (then the page's own model takes over)
+let remote;
+async function remoteDepth() {
+  const blob = await new Promise((ok, fail) => work.toBlob(b => (b ? ok(b) : fail(new Error('the picture could not be encoded'))), 'image/jpeg', 0.85));
+  const r = await fetch('/api/depth', { method: 'POST', headers: { 'content-type': 'image/jpeg' }, body: blob });
+  if (!r.ok) { let m = String(r.status); try { m = (await r.json()).error || m; } catch { /* not JSON */ } throw new Error(m); }
+  const width = Number(r.headers.get('x-depth-width')), height = Number(r.headers.get('x-depth-height'));
+  const data = new Uint8Array(await r.arrayBuffer());
+  if (!(width > 0 && height > 0 && data.length === width * height)) throw new Error('the depth service sent a depth of the wrong size');
+  return { data, width, height, channels: 1, device: r.headers.get('x-depth-device') || 'unknown', there: r.headers.get('x-depth-ms') };
+}
+
 const work = document.createElement('canvas'), workCtx = work.getContext('2d', { willReadFrequently: true });
 async function estimate() {
   if (state.busy || !state.el) return;
   state.busy = true;
   const stamp = state.stamp;
   try {
-    const est = await estimator();
+    if (remote === undefined) {
+      try { remote = OPT.get('model') === 'local' ? null : ((await (await fetch('/api/depth')).json()).remote || null); } catch { remote = null; }
+    }
     work.width = DEPTH_W; work.height = Math.max(1, Math.round(DEPTH_W * state.fh / state.fw));
     workCtx.drawImage(state.el, 0, 0, work.width, work.height);
     const t0 = performance.now();
-    const out = await est(work);
+    let d = null;
+    if (remote) {
+      try {
+        d = await remoteDepth();
+        state.device = `depth service at ${remote} (${d.device}, ${d.there} ms there)`;
+      } catch (e) {
+        state.fallbacks.push(`the depth service at ${remote}: ${String(e.message || e).slice(0, 80)}`);
+        remote = null; // the page's own model from now on
+      }
+    }
+    if (!d) d = (await (await estimator())(work)).depth; // one channel per pixel, near bright, the size of `work`
     state.ms = performance.now() - t0;
     if (stamp !== state.stamp) return; // the picture changed while the model was busy
-    const d = out.depth; // one channel per pixel, near bright, the size of `work`
     state.depth = d.data; state.dw = d.width; state.dh = d.height; state.stride = d.channels || 1;
     state.depthStamp++; state.frames++; state.error = '';
     updateSurface();
@@ -293,8 +316,8 @@ function frame() {
   else { placeEye(h); renderer.render(scene, camera); }
   ui.status.textContent = [
     state.el ? `picture: ${state.label} (${state.fw} x ${state.fh})` : 'no picture yet',
-    state.loading || (state.error ? `depth: ${state.error}` : state.est ? `depth: estimated by the model on the ${state.device}, ${state.ms.toFixed(0)} ms a picture${state.live ? `, ${state.frames} so far` : ''}` : 'depth: the model starts with the first picture'),
-    state.fallbacks && state.fallbacks.length && state.est ? `(tried first: ${state.fallbacks.join('; ')})` : '',
+    state.loading || (state.error ? `depth: ${state.error}` : state.device && state.frames ? `depth: estimated by the model on the ${state.device}, ${state.ms.toFixed(0)} ms a picture${state.live ? `, ${state.frames} so far` : ''}` : 'depth: the model starts with the first picture'),
+    state.fallbacks.length && state.device ? `(tried first: ${state.fallbacks.join('; ')})` : '',
     state.depth ? 'the depth is the model\'s estimate from the picture, not the game\'s' : 'flat until the model answers',
     `head: ${h.source}`,
     magic.on ? `Magic Eye, ${magic.cross ? 'crossed' : 'parallel'} eyes (M leaves, C switches); one repeat ${magic.period} px` : 'M: Magic Eye of the depth; F: full screen',

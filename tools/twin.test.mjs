@@ -317,6 +317,56 @@ test('the head from a tracker on another machine (--head http://...): each new h
   }
 });
 
+test('the depth service on another machine (--depth): the page\'s picture goes there, its depth comes back, and nothing else gets through', async () => {
+  assert.throws(() => parseArgs(['--depth', 'http://user:pw@127.0.0.1:5205']), /--depth is http/);
+  assert.throws(() => parseArgs(['--depth', 'https://127.0.0.1:5205']), /--depth is http/);
+  assert.throws(() => parseArgs(['--depth', 'http://127.0.0.1:5205/elsewhere']), /--depth is http/);
+  assert.equal(parseArgs(['--depth', 'http://127.0.0.1:5205/']).depth, 'http://127.0.0.1:5205');
+  const plain = await startTwin({ port: 0, head: path.join(os.tmpdir(), 'no-head.json') });
+  try {
+    assert.deepEqual(JSON.parse((await get(plain.port, '/api/depth')).body), { remote: null }, 'no service: the page uses its own model');
+    assert.equal((await get(plain.port, '/api/depth', 'POST', 'x', { 'content-type': 'image/jpeg' })).status, 404);
+  } finally { await plain.close(); }
+
+  const seen = [];
+  const depthBytes = Buffer.from([0, 64, 128, 255, 10, 20]);
+  const service = http.createServer((req, res) => {
+    const chunks = [];
+    req.on('data', c => chunks.push(c));
+    req.on('end', () => {
+      seen.push({ method: req.method, url: req.url, type: req.headers['content-type'], body: Buffer.concat(chunks) });
+      res.writeHead(200, { 'content-type': 'application/octet-stream', 'x-depth-width': '3', 'x-depth-height': '2', 'x-depth-ms': '12', 'x-depth-device': 'DirectML, fp16', 'x-other': 'not passed on' });
+      res.end(depthBytes);
+    });
+  });
+  await new Promise(r => service.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${service.address().port}`;
+  const t = await startTwin({ port: 0, head: path.join(os.tmpdir(), 'no-head.json'), depth: url });
+  try {
+    assert.deepEqual(JSON.parse((await get(t.port, '/api/depth')).body), { remote: url });
+    const picture = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]);
+    const r = await get(t.port, '/api/depth', 'POST', picture, { 'content-type': 'image/jpeg' });
+    assert.equal(r.status, 200);
+    assert.deepEqual([...r.body], [...depthBytes], 'the depth comes back unchanged');
+    assert.equal(seen.length, 1); assert.equal(seen[0].url, '/depth'); assert.equal(seen[0].type, 'image/jpeg');
+    assert.deepEqual([...seen[0].body], [...picture], 'the picture goes there unchanged');
+    const h = await new Promise(resolve => http.request({ host: '127.0.0.1', port: t.port, path: '/api/depth', method: 'POST', headers: { 'content-type': 'image/png' } }, res => { res.resume(); res.on('end', () => resolve(res.headers)); }).end(picture));
+    assert.equal(h['x-depth-width'], '3'); assert.equal(h['x-depth-height'], '2'); assert.equal(h['x-depth-device'], 'DirectML, fp16');
+    assert.equal(h['x-other'], undefined, 'only the depth headers are passed on');
+    assert.equal((await get(t.port, '/api/depth', 'POST', picture, { 'content-type': 'text/plain' })).status, 415, 'a form or text post from another page cannot reach it');
+    assert.equal((await get(t.port, '/api/depth', 'POST', picture, { 'content-type': 'image/jpeg', origin: 'http://evil.example' })).status, 403);
+    assert.equal(seen.length, 2, 'the refused posts never reached the service');
+    await new Promise(r => service.close(r));
+    service.closeAllConnections?.();
+    const gone = await get(t.port, '/api/depth', 'POST', picture, { 'content-type': 'image/jpeg' });
+    assert.equal(gone.status, 502, 'a service that went away is a clean error');
+    assert.equal((await get(t.port, '/api/camera')).status, 200, 'and the twin goes on');
+  } finally {
+    await t.close();
+    if (service.listening) await new Promise(r => service.close(r));
+  }
+});
+
 test('the server survives bad requests, answers only this machine and its own page, and leaks no internals', async () => {
   const t = await startTwin({ port: 0 });
   try {

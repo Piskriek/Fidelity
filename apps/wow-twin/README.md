@@ -13,7 +13,8 @@ npm run twin
 Then open http://127.0.0.1:5203. The server listens on this machine only, needs nothing beyond the repo's
 packages (three.js is already a dependency), and writes nothing. Options: `--port`, `--family tbc|vanilla`,
 `--head <head.json>` (or `http://<machine>:<port>/head.json` from a tracker on another machine run with
-`--serve`), `--ref <git ref of the reports>` (default `origin/owner/reports`).
+`--serve`), `--depth http://<machine>:<port>` (a depth service for `/live`, `tools/depthd`), `--ref <git ref of
+the reports>` (default `origin/owner/reports`).
 
 ## What it draws, and what each thing is
 
@@ -116,6 +117,9 @@ Open http://127.0.0.1:5203/live. It shows a WoW picture you can look into: the g
   - Measured: headless Chromium here, on the processor, 4 to 7 s a picture at 518 px wide. The owner's laptop (an
     i7-6700HQ beside WoW, before full precision on the card was tried): 18.9 s. On a graphics card it should be far
     faster, but that is not measured yet.
+  - With `--depth http://<machine>:<port>` the twin sends each picture to a depth service on a machine with a
+    graphics card to spare ([`tools/depthd`](../../tools/depthd/README.md)) and the page uses what comes back; if the
+    service fails, the page says so and uses its own model.
   - A live window is estimated again whenever the model is free, while the picture itself updates at video rate,
     so depth lags fast camera turns.
 - **The view** is the head-coupled window: the tracker's `head.json` (or "mouse as head") moves the eye. Far parts

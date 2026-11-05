@@ -7,6 +7,7 @@
 //                                     (or http://127.0.0.1:5203/live: a WoW picture or window you can look into)
 //   node tools/twin/server.mjs --port 5203 --family tbc --head tools/headtrack/head.json --ref origin/owner/reports
 //   --head http://192.168.0.5:5204/head.json reads the head from a tracker on another machine (headtrack.py --serve 5204)
+//   --depth http://192.168.0.5:5205 sends /live's pictures to a depth service on another machine (tools/depthd)
 //
 // It listens on 127.0.0.1 only, needs no package beyond the repo's, and writes nothing. It reads nothing from
 // the game: the map data and the reports are files the addon and the laptop already produce.
@@ -26,19 +27,21 @@ const SHOT = /^WoWScrnShot_\d{6}_\d{6}\.jpg$/;
 const BLIND = { '20261105-0530': 'docs/council/2026-11-04-rungs/judge/blind10_scene.json' };
 
 export function parseArgs(argv) {
-  const o = { port: 5203, family: 'tbc', head: path.join(ROOT, 'tools', 'headtrack', 'head.json'), ref: 'origin/owner/reports', host: '127.0.0.1' };
+  const o = { port: 5203, family: 'tbc', head: path.join(ROOT, 'tools', 'headtrack', 'head.json'), ref: 'origin/owner/reports', host: '127.0.0.1', depth: null };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = argv[i + 1];
-    if (['--port', '--family', '--head', '--ref'].includes(a) && (v === undefined || v.startsWith('--'))) throw new Error(`twin: ${a} needs a value`);
+    if (['--port', '--family', '--head', '--ref', '--depth'].includes(a) && (v === undefined || v.startsWith('--'))) throw new Error(`twin: ${a} needs a value`);
     if (a === '--port') { o.port = Number(v); i++; }
     else if (a === '--family') { o.family = v; i++; }
     else if (a === '--head') { o.head = /^http:\/\//i.test(v) ? v : path.resolve(v); i++; } // a file, or another machine's tracker (--serve)
     else if (a === '--ref') { o.ref = v; i++; }
+    else if (a === '--depth') { o.depth = v.replace(/\/+$/, ''); i++; } // a depth service on another machine (tools/depthd)
     else throw new Error(`twin: unknown argument ${a}`);
   }
   if (!Number.isInteger(o.port) || o.port < 0 || o.port > 65535) throw new Error('twin: --port needs a port number');
   if (!/^(tbc|vanilla)$/.test(o.family)) throw new Error('twin: --family is tbc or vanilla');
   if (!/^[\w./-]+$/.test(o.ref) || o.ref.startsWith('-')) throw new Error('twin: --ref is a git ref');
+  if (o.depth !== null) { let u; try { u = new URL(o.depth); } catch { u = null; } if (!u || u.protocol !== 'http:' || u.username || u.password || (u.pathname !== '/' && u.pathname !== '')) throw new Error('twin: --depth is http://<machine>:<port> of a depth service'); }
   if (/^http:\/\//i.test(o.head)) { let u; try { u = new URL(o.head); } catch { throw new Error('twin: --head is a file or an http:// address'); } if (u.username || u.password) throw new Error('twin: --head takes no credentials'); }
   return o;
 }
@@ -80,6 +83,7 @@ export function startTwin(opts = {}) {
   // or another machine's tracker (headtrack.py --serve): its newest head, fetched one request at a time
   const headUrl = /^http:\/\//i.test(o.head) ? o.head : null;
   const headAgent = headUrl ? new http.Agent({ keepAlive: true, maxSockets: 1 }) : null;
+  const depthAgent = o.depth ? new http.Agent({ keepAlive: true, maxSockets: 2 }) : null;
   let headBusy = false;
   const pollHeadUrl = () => {
     if (headBusy) return;
@@ -147,7 +151,39 @@ export function startTwin(opts = {}) {
         });
         return;
       }
-      if (req.method !== 'GET') return json(res, 405, { error: 'GET or POST /api/pose' });
+      if (req.method === 'POST' && p === '/api/depth') {
+        // a picture from the page, passed to the depth service and its depth passed back; a picture type only, so a
+        // page elsewhere cannot send it without a preflight this server never grants
+        if (!o.depth) return json(res, 404, { error: 'no depth service: start the twin with --depth http://<machine>:<port>' });
+        const type = String(req.headers['content-type'] || '');
+        if (!/^image\/(jpeg|png)\b/i.test(type)) return json(res, 415, { error: 'a picture is sent as image/jpeg or image/png' });
+        const chunks = [];
+        let size = 0, tooBig = false;
+        req.on('data', c => { size += c.length; if (size > (8 << 20)) { tooBig = true; req.destroy(); } else chunks.push(c); });
+        req.on('end', () => {
+          if (tooBig) return;
+          const body = Buffer.concat(chunks);
+          const up = http.request(`${o.depth}/depth`, { method: 'POST', agent: depthAgent, timeout: 20000, headers: { 'content-type': type, 'content-length': body.length } }, r => {
+            const out = [];
+            r.on('data', c => out.push(c));
+            r.on('error', () => { if (!res.headersSent) json(res, 502, { error: 'the depth service broke off' }); });
+            r.on('end', () => {
+              if (res.headersSent) return;
+              if (r.statusCode !== 200) return json(res, 502, { error: `the depth service answered ${r.statusCode}` });
+              const headers = { 'content-type': 'application/octet-stream', 'cache-control': 'no-store' };
+              for (const h of ['content-encoding', 'x-depth-width', 'x-depth-height', 'x-depth-ms', 'x-depth-device']) if (r.headers[h]) headers[h] = String(r.headers[h]).slice(0, 80);
+              res.writeHead(200, headers);
+              res.end(Buffer.concat(out));
+            });
+          });
+          up.on('timeout', () => up.destroy(new Error('timeout')));
+          up.on('error', () => { if (!res.headersSent) json(res, 502, { error: 'the depth service did not answer' }); });
+          up.end(body);
+        });
+        return;
+      }
+      if (req.method !== 'GET') return json(res, 405, { error: 'GET, or POST /api/pose or /api/depth' });
+      if (p === '/api/depth') return json(res, 200, { remote: o.depth });
       if (p === '/' || p === '/index.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'index.html');
       if (p === '/live' || p === '/live.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'live.html');
       if (p.startsWith('/app/')) return file(res, path.join(ROOT, 'apps', 'wow-twin'), p.slice(5));
@@ -192,7 +228,7 @@ export function startTwin(opts = {}) {
       }
       if (p === '/events') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
-        res.write(`event: hello\ndata: ${JSON.stringify({ head: headUrl || path.relative(ROOT, o.head), family: o.family })}\n\n`);
+        res.write(`event: hello\ndata: ${JSON.stringify({ head: headUrl || path.relative(ROOT, o.head), family: o.family, depth: o.depth })}\n\n`);
         clients.add(res);
         req.on('close', () => clients.delete(res));
         return;
@@ -214,7 +250,7 @@ export function startTwin(opts = {}) {
       keepAlive = setInterval(() => { for (const res of clients) res.write(': keep-alive\n\n'); }, 15000);
       resolve({
         server, port,
-        close: () => new Promise(r => { clearInterval(headTimer); clearInterval(keepAlive); if (headAgent) headAgent.destroy(); for (const c of clients) c.end(); server.close(() => r()); }),
+        close: () => new Promise(r => { clearInterval(headTimer); clearInterval(keepAlive); if (headAgent) headAgent.destroy(); if (depthAgent) depthAgent.destroy(); for (const c of clients) c.end(); server.close(() => r()); }),
       });
     });
   });
