@@ -49,7 +49,7 @@ test('the camera is the addon\'s: every foot the client recorded at the tenth re
       checked++;
     }
   }
-  assert.ok(checked >= 300, `checked ${checked} recorded feet`);
+  assert.equal(checked, 308, 'every recorded foot of the tenth run: 22 shutter poses of 14 placements');
 });
 
 test('the ground is the addon\'s: the height under the recorded pose is the recorded ground', { skip: !hasRef && 'origin/owner/reports is not fetched here' }, () => {

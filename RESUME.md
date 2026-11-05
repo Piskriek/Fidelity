@@ -7,7 +7,7 @@
 **What landed** (`apps/wow-twin/`, `tools/twin/`; run `npm run twin`, open http://127.0.0.1:5203; `apps/wow-twin/README.md`):
 - **The ground:** all nine Northshire tiles' heights, from the addon's own map data. The test checks that the height under the tenth report's pose is the ground the client recorded there.
 - **Stand-ins:** every one of the 5,027 placements as a simple shape for its kind, at its position, turn and scale. These are not the game's models. The 43 buildings are wire columns (not drawn).
-- **The game's camera at any recorded shutter pose, over the report's own screenshot.** The camera is the addon's `BuildCamera` line for line. The test reproduces all 336 feet the client recorded at the tenth report's shutters, through the shared module and through a three.js camera. Cyan crosses mark predicted feet, yellow circles the director's blind feet.
+- **The game's camera at any recorded shutter pose, over the report's own screenshot.** The camera is the addon's `BuildCamera` line for line. The test reproduces all 308 feet the client recorded at the tenth report's shutters, through the shared module and through a three.js camera. Cyan crosses mark predicted feet, yellow circles the director's blind feet.
   - At the saved default the camp's stand-ins float above the real camp. With the proposal (pitch 12.8°, fovY 53.8°, not confirmed) they stand on it.
 - **A head-coupled window:** the screen as a window. `head.json` from `tools/headtrack/headtrack.py --no-gamepad` moves the eye, with no virtual pad needed; "mouse as head" tries it without a webcam.
 - **Free orbit.**

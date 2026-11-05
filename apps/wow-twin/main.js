@@ -111,7 +111,8 @@ const player = new THREE.Group();
 const playerBody = new THREE.MeshLambertMaterial({ color: 0xe3b341, transparent: true, opacity: 1 });
 player.add(new THREE.Mesh(new THREE.CapsuleGeometry(0.4, 1.2, 4, 10), playerBody));
 player.children[0].position.y = 1;
-const nose = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.8, 10), new THREE.MeshLambertMaterial({ color: 0xff7b3d }));
+const noseMat = new THREE.MeshLambertMaterial({ color: 0xff7b3d, transparent: true, opacity: 1 });
+const nose = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.8, 10), noseMat);
 nose.rotation.x = -Math.PI / 2;
 nose.position.set(0, 1.4, -0.7);
 player.add(nose);
@@ -218,7 +219,7 @@ function frame() {
   backdrop.style.opacity = withShot ? ui.opacity.value : 0;
   scene.background = withShot ? null : SKY;
   scene.fog = withShot ? null : HAZE; // distance haze only where no screenshot sits behind the render
-  playerBody.opacity = gameView ? 0.3 : 1; // from the game's camera the player stands right in front of the lens
+  playerBody.opacity = noseMat.opacity = gameView ? 0.3 : 1; // from the game's camera the player stands right in front of the lens
   controls.enabled = ui.camera.value === 'free';
   let cam = null, head = { source: 'none' };
   if (pose) placePlayer(pose);
