@@ -81,6 +81,10 @@ head to the laptop's twin over the network:
 The phone must be reachable from that machine, so put it on the same Wi-Fi. The server answers only `GET /head.json`,
 with the numbers head.json holds.
 
+Run this way on 05 Nov, with the owner's phone and DroidCam on the home Wi-Fi: the 3080 PC tracked at 26.8 frames a
+second with none lost (the laptop beside WoW had managed 1.3), the face 66 px wide near the middle, and the
+laptop's `/live` page showed `head: head tracker`, the head coming from the PC.
+
 ## What the pad carries
 
 | `--map` | x (left/right) | y (up/down) | depth |
