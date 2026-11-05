@@ -267,6 +267,7 @@ def main(argv=None) -> int:
     frame_interval = 1.0 / max(1.0, args.fps)
     started = last = last_frame_at = time.time()
     frames, lost, stale, json_errors = 0, 0, 0, 0
+    read_s, search_s, searched = 0.0, 0.0, 0  # where the time goes: waiting for the camera, searching for faces
     last_face, axes, said_size = None, (0.0, 0.0, 0.0), False
     cv2 = None
     if args.show:
@@ -278,7 +279,9 @@ def main(argv=None) -> int:
         while True:
             now = time.time()
             dt, last = now - last, now
+            t_read = time.time()
             frame = source.read()
+            read_s += time.time() - t_read
             key = -1
             if frame is NO_FRAME:
                 if now - last_frame_at > args.stale_seconds:  # the source went quiet: drift back to rest
@@ -296,7 +299,10 @@ def main(argv=None) -> int:
                     said_size = True
                     print(f"headtrack: {w}x{h} frames; the smallest face it can find is {smallest_face(w, args.detect_width, args.min_face):.0f} px wide", flush=True)
                 acquire = (lambda fs, fw=w: pick_center(fs, fw)) if args.pick == "center" else None
+                t_search = time.time()
                 face = source.synthetic_face() if synthetic else pick_tracked(detector.detect(frame), last_face, TRACK_MAX_JUMP * w, acquire)
+                search_s += time.time() - t_search
+                searched += 1
                 if face is not None:
                     last_face = face
                 if rest_width <= 0:  # calibrating: average the rest pose, output rest meanwhile
@@ -357,6 +363,9 @@ def main(argv=None) -> int:
             cv2.destroyAllWindows()
     print(f"headtrack: {frames} frames, {lost} without a face, {stale} stale, {json_errors} head.json write errors, "
           f"{frames / max(1e-6, time.time() - started):.1f} fps", flush=True)
+    if frames:
+        print(f"headtrack: per frame, {1000 * read_s / frames:.0f} ms waiting for the camera and "
+              f"{1000 * search_s / max(1, searched):.0f} ms searching for faces", flush=True)
     return 0
 
 
