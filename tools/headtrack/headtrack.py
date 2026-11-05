@@ -30,10 +30,12 @@ import json
 import math
 import os
 import sys
+import threading
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from headmath import (Smoother, average_rest, face_to_axes, normalize_face, pick_center, pick_tracked, search_scale, smallest_face,  # noqa: E402
+from headmath import (Smoother, average_rest, face_to_axes, normalize_face, pick_center, pick_tracked, search_scale, search_window,  # noqa: E402
+                      size_band, smallest_face,
                       to_depth_trigger, to_trigger)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -50,22 +52,69 @@ TRACK_MAX_JUMP = 0.25
 # Frame sources
 # ---------------------------------------------------------------------------------------------
 class CameraSource:
-    def __init__(self, spec: str, width: int, height: int):
+    """A camera index or a stream address. A stream (an IP-camera app on a phone) is read by a background thread
+    that keeps only the newest picture: a face search slower than the stream then never builds a backlog, which would
+    both delay the head and make the app drop the connection. A stream that ends or stalls for `reopen_after` seconds
+    is opened again."""
+
+    def __init__(self, spec: str, width: int, height: int, reopen_after: float = 2.0):
         import cv2  # lazy: not needed for synthetic runs or tests
         self.cv2 = cv2
-        index = int(spec) if spec.isdigit() else spec
-        self.cap = cv2.VideoCapture(index, cv2.CAP_DSHOW) if isinstance(index, int) and os.name == "nt" else cv2.VideoCapture(index)
-        if isinstance(index, int):
-            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.spec, self.width, self.height, self.reopen_after = spec, width, height, reopen_after
+        self.index = int(spec) if spec.isdigit() else spec
+        self.cap = self._open()
         if not self.cap.isOpened():
             raise RuntimeError(f"could not open camera/stream {spec!r} (is another program holding it? try --source frames:<dir>)")
+        self.stream = not isinstance(self.index, int)
+        self.received, self.reopened = 0, 0
+        self._latest, self._fresh, self._stop = None, False, False
+        if self.stream:
+            self._lock = threading.Lock()
+            self._thread = threading.Thread(target=self._pump, daemon=True)
+            self._thread.start()
+
+    def _open(self):
+        cv2 = self.cv2
+        if isinstance(self.index, int):
+            cap = cv2.VideoCapture(self.index, cv2.CAP_DSHOW) if os.name == "nt" else cv2.VideoCapture(self.index)
+            cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+            cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
+            return cap
+        return cv2.VideoCapture(self.index)
+
+    def _pump(self):
+        last_ok = time.time()
+        while not self._stop:
+            ok, frame = self.cap.read()
+            if ok:
+                last_ok = time.time()
+                with self._lock:
+                    self._latest, self._fresh = frame, True
+                    self.received += 1
+            elif time.time() - last_ok > self.reopen_after:
+                self.cap.release()
+                time.sleep(0.5)
+                self.cap = self._open()
+                self.reopened += 1
+                last_ok = time.time()
+                print(f"headtrack: the stream stopped; opened it again ({self.reopened})", flush=True)
+            else:
+                time.sleep(0.02)
 
     def read(self):
-        ok, frame = self.cap.read()
-        return frame if ok else None
+        if not self.stream:
+            ok, frame = self.cap.read()
+            return frame if ok else None
+        with self._lock:
+            if not self._fresh:
+                return NO_FRAME  # nothing newer than the last picture yet
+            self._fresh = False
+            return self._latest
 
     def close(self):
+        self._stop = True
+        if self.stream:
+            self._thread.join(timeout=2.0)
         self.cap.release()
 
 
@@ -162,8 +211,18 @@ class HaarDetector:
         self.scale_width = scale_width
         self.min_face = max(24, int(min_face))
 
-    def detect(self, frame):
+    def detect(self, frame, near=None):
+        """Faces in the picture as (x, y, w, h). With `near` (the last face's box), only a window around it is searched,
+        at full resolution and for sizes close to it: a fraction of the work of the whole picture."""
         h, w = frame.shape[:2]
+        if near is not None:
+            x0, y0, x1, y1 = search_window(near, w, h)
+            lo, hi = size_band(max(near[2], near[3]))
+            if x1 - x0 >= lo and y1 - y0 >= lo:
+                gray = self.cv2.cvtColor(frame[y0:y1, x0:x1], self.cv2.COLOR_BGR2GRAY)
+                faces = self.cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(lo, lo), maxSize=(hi, hi))
+                return [(x + x0, y + y0, fw, fh) for (x, y, fw, fh) in faces]
+            return []
         s = search_scale(w, self.scale_width)
         small = self.cv2.resize(frame, (int(w * s), int(h * s))) if s != 1.0 else frame
         gray = self.cv2.cvtColor(small, self.cv2.COLOR_BGR2GRAY)
@@ -268,6 +327,7 @@ def main(argv=None) -> int:
     started = last = last_frame_at = time.time()
     frames, lost, stale, json_errors = 0, 0, 0, 0
     read_s, search_s, searched = 0.0, 0.0, 0  # where the time goes: waiting for the camera, searching for faces
+    full_s, full_searches, ticks = 0.0, 0, 0     # whole-picture searches (no face near the last one); loop turns
     last_face, axes, said_size = None, (0.0, 0.0, 0.0), False
     cv2 = None
     if args.show:
@@ -300,9 +360,19 @@ def main(argv=None) -> int:
                     print(f"headtrack: {w}x{h} frames; the smallest face it can find is {smallest_face(w, args.detect_width, args.min_face):.0f} px wide", flush=True)
                 acquire = (lambda fs, fw=w: pick_center(fs, fw)) if args.pick == "center" else None
                 t_search = time.time()
-                face = source.synthetic_face() if synthetic else pick_tracked(detector.detect(frame), last_face, TRACK_MAX_JUMP * w, acquire)
+                if synthetic:
+                    face = source.synthetic_face()
+                else:
+                    faces = detector.detect(frame, near=last_face) if last_face is not None else []
+                    if not faces:  # no face near the last one (or none yet): search the whole picture
+                        t_full = time.time()
+                        faces = detector.detect(frame)
+                        full_s += time.time() - t_full
+                        full_searches += 1
+                    face = pick_tracked(faces, last_face, TRACK_MAX_JUMP * w, acquire)
                 search_s += time.time() - t_search
                 searched += 1
+                frames += 1
                 if face is not None:
                     last_face = face
                 if rest_width <= 0:  # calibrating: average the rest pose, output rest meanwhile
@@ -333,10 +403,10 @@ def main(argv=None) -> int:
             if key == ord("c"):
                 rest_x, rest_y, rest_width = 0.0, 0.0, 0.0
                 cal_samples, cal_until = [], time.time() + args.calibrate_seconds
-            frames += 1
+            ticks += 1
             if pad is not None:
                 pad.write(*axes)
-            if frames % 3 == 0:
+            if ticks % 3 == 0:
                 payload = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "x": round(axes[0], 4), "y": round(axes[1], 4), "z": round(axes[2], 4),
                            "restX": round(rest_x, 4), "restY": round(rest_y, 4), "restWidth": round(rest_width, 1),
                            "frames": frames, "lost": lost, "stale": stale, "jsonErrors": json_errors,
@@ -361,11 +431,16 @@ def main(argv=None) -> int:
             pad.close()
         if cv2 is not None:
             cv2.destroyAllWindows()
+    elapsed = max(1e-6, time.time() - started)
     print(f"headtrack: {frames} frames, {lost} without a face, {stale} stale, {json_errors} head.json write errors, "
-          f"{frames / max(1e-6, time.time() - started):.1f} fps", flush=True)
-    if frames:
-        print(f"headtrack: per frame, {1000 * read_s / frames:.0f} ms waiting for the camera and "
-              f"{1000 * search_s / max(1, searched):.0f} ms searching for faces", flush=True)
+          f"{frames / elapsed:.1f} fps", flush=True)
+    if getattr(source, "stream", False):
+        print(f"headtrack: the stream delivered {source.received} pictures ({source.received / elapsed:.1f} a second) and was "
+              f"opened again {source.reopened} times; the tracker used the newest each time", flush=True)
+    if searched and detector is not None:  # (a synthetic source hands over its face: nothing is searched)
+        print(f"headtrack: per frame, {1000 * read_s / max(1, ticks):.0f} ms waiting for the camera and "
+              f"{1000 * search_s / searched:.0f} ms searching for faces; {full_searches} of {searched} searched the whole "
+              f"picture ({1000 * full_s / max(1, full_searches):.0f} ms each), the rest only near the last face", flush=True)
     return 0
 
 

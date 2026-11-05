@@ -119,6 +119,22 @@ def smallest_face(frame_w: float, scale_width: int, min_face: int) -> float:
     return max(24, int(min_face)) / search_scale(frame_w, scale_width)
 
 
+def search_window(face, frame_w: int, frame_h: int, margin: float = 1.0) -> tuple[int, int, int, int]:
+    """Where to look for a face that was at `face` (x, y, w, h) in the last picture: its box grown by `margin` times
+    its size on every side, clipped to the picture, as whole pixels (x0, y0, x1, y1). A head moves little between two
+    pictures, so searching this small window instead of the whole picture costs a fraction of the time."""
+    x, y, w, h = face
+    m = margin * max(w, h)
+    return (max(0, int(math.floor(x - m))), max(0, int(math.floor(y - m))),
+            min(int(frame_w), int(math.ceil(x + w + m))), min(int(frame_h), int(math.ceil(y + h + m))))
+
+
+def size_band(width: float, lo: float = 0.6, hi: float = 1.6, floor: int = 24) -> tuple[int, int]:
+    """The face sizes worth trying near a face `width` px wide: lo to hi times it, never below the cascade's floor."""
+    smallest = max(floor, int(width * lo))
+    return smallest, max(smallest + 1, int(math.ceil(width * hi)))
+
+
 def pick_center(faces, frame_w: float) -> tuple[float, float, float, float] | None:
     """The face whose centre is nearest the picture's vertical centre line: with the camera centred on the
     screen, the person sitting straight in front of it (the player, in a living room). Equal distances go to

@@ -4,7 +4,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # run from anywhere: python -m unittest tools/headtrack/test_headmath.py
 from headmath import (TRIGGER_CENTRE, Smoother, apply_gain_deadzone, average_rest, clamp, depth_from_width,  # noqa: E402
-                      face_to_axes, normalize_face, pick_center, pick_largest, pick_tracked, search_scale, smallest_face,
+                      face_to_axes, normalize_face, pick_center, pick_largest, pick_tracked, search_scale, search_window,
+                      size_band, smallest_face,
                       to_depth_trigger, to_trigger)
 
 
@@ -122,6 +123,16 @@ class HeadMathTests(unittest.TestCase):
                          "kept: still the same person, though the other face is larger and now as near the centre")
         self.assertEqual(pick_tracked([side_big], first, 320.0, center), (40.0, 100.0, 120.0, 120.0),
                          "lost beyond max_jump: re-acquired by the rule from what is left")
+
+    def test_the_next_search_looks_only_near_the_last_face(self):
+        self.assertEqual(search_window((600, 300, 64, 64), 1280, 720), (536, 236, 728, 428), "one face size on every side")
+        self.assertEqual(search_window((10, 5, 50, 50), 1280, 720), (0, 0, 110, 105), "clipped at the top left")
+        self.assertEqual(search_window((1250, 690, 40, 40), 1280, 720, margin=0.5), (1230, 670, 1280, 720), "and at the bottom right")
+        x0, y0, x1, y1 = search_window((600, 300, 64, 64), 1280, 720)
+        self.assertLess((x1 - x0) * (y1 - y0), 1280 * 720 / 20, "a twentieth of a 720p picture or less")
+        self.assertEqual(size_band(64.5), (38, 104))
+        self.assertEqual(size_band(30), (24, 48), "never below the cascade's 24 px")
+        self.assertEqual(size_band(10), (24, 25), "a band is never empty")
 
     def test_the_search_size_decides_how_far_away_a_face_can_be_found(self):
         self.assertEqual(search_scale(640, 320), 0.5)

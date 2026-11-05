@@ -43,13 +43,24 @@ stream. Nothing runs on the phone but a camera app.
 5. Sit normally for the 2 s calibration; `head.json` then follows the player, and the twin's `/live` page and its
    head-coupled window read it.
 
+A stream is read in the background, keeping only the newest picture, so a slow face search never builds a
+backlog (which delays the head and makes the app hang up), and a stream that stops for 2 s is opened again. Once a
+face is found, the next search looks only in a window around it, for sizes close to it; the whole picture is
+searched again only when the face is not there. The last lines of a run say where the time went: the stream's
+own rate, the times it was reopened, and the search time near the last face and over the whole picture.
+
 DroidCam (Android and iPhone) works the same way: its stream is `http://<phone ip>:4747/video`, or
 `/video/force/1280x720` for 720p; it serves one program at a time, so close its page in the browser first.
 
 Checked here (05 Nov) with a 1280 x 720 MJPEG stream served over HTTP the way such an app serves one, a 44 px face
 swaying in the middle and a 72 px face still at the side: with `--room` the face was found in all 227 frames
 (22.6 a second) and `x` rose and fell with the sway, the middle person's, not the larger one's; with the defaults
-none of 228 frames had a face. Not yet run with a phone in a real room.
+none of 228 frames had a face. With the window search: 6 ms a picture against 58 ms for the whole picture, and a
+stream that hung up every 4 s was opened again twice with the face found in all 203 pictures.
+
+The first runs with the owner's phone (05 Nov) found his face (46 to 65 px wide) but searched the whole 720p picture
+in 3.1 s on the laptop, about fifty times slower than here, and DroidCam hung up on the slow reader; that led to
+the background reading, the reopening and the window search.
 
 The phone, the laptop and the TV only need the same Wi-Fi. One camera gives the direction to the head and a rough
 distance from the face's size, for one person at a time.
