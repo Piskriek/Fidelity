@@ -35,7 +35,8 @@ export function buildSnapshot(root = ROOT) {
 
 export const serialize = snapshot => JSON.stringify(snapshot, null, 2) + '\n';
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+const isEntry = () => { try { return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } };
+if (process.argv[1] && isEntry()) { // a symlink or a junction in the path still runs it
   const text = serialize(buildSnapshot());
   if (process.argv.includes('--check')) {
     const committed = fs.existsSync(RUNGS_FILE) ? fs.readFileSync(RUNGS_FILE, 'utf8').replace(/\r\n/g, '\n') : '';

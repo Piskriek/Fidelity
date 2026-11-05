@@ -12,7 +12,8 @@ import * as THREE from 'three';
 import { buildCamera, projectPoint, toThree, threeView, cameraAtPose, windowFrustum } from './twin/camera.mjs';
 import { readMap, tileFor, groundHeight, nominalHeight, kindOf, ROOT } from './twin/data.mjs';
 import { parseSavedVariables, reportSteps, shotNames } from './twin/savedvars.mjs';
-import { startTwin, parseArgs } from './twin/server.mjs';
+import { startTwin, parseArgs, cleanPose } from './twin/server.mjs';
+import { spawn } from 'node:child_process';
 
 const REF = 'origin/owner/reports';
 const hasRef = (() => { try { execFileSync('git', ['-C', ROOT, 'rev-parse', '--verify', '--quiet', REF], { stdio: 'ignore' }); return true; } catch { return false; } })();
@@ -83,8 +84,8 @@ test('the report reader: steps, poses, and the two names a shot can have (a file
   assert.deepEqual(parseSavedVariables('A = { 1, 2, ["k"] = "v\\"x", n = -3.5e1, t = true, z = nil, }'), { A: { 1: 1, 2: 2, k: 'v"x', n: -35, t: true, z: null } });
 });
 
-const get = (port, p, method = 'GET', body) => new Promise((resolve, reject) => {
-  const req = http.request({ host: '127.0.0.1', port, path: p, method, headers: body ? { 'content-type': 'application/json' } : {} }, res => {
+const get = (port, p, method = 'GET', body, headers = {}) => new Promise((resolve, reject) => {
+  const req = http.request({ host: '127.0.0.1', port, path: p, method, headers: { ...(body ? { 'content-type': 'application/json' } : {}), ...headers } }, res => {
     const chunks = [];
     res.on('data', c => chunks.push(c));
     res.on('end', () => resolve({ status: res.statusCode, type: res.headers['content-type'], body: Buffer.concat(chunks) }));
@@ -161,4 +162,52 @@ test('the server: the viewer, three.js, the map, the camera, the reports and sho
   }
   assert.throws(() => parseArgs(['--ref', 'origin/x; rm -rf /']), /git ref/);
   assert.throws(() => parseArgs(['--family', 'wotlk']), /tbc or vanilla/);
+  assert.throws(() => parseArgs(['--ref']), /needs a value/, 'an option with no value is refused, not read as "undefined"');
+  assert.throws(() => parseArgs(['--ref', '--port']), /needs a value/);
+  assert.throws(() => parseArgs(['--ref', '-x']), /git ref/, 'a ref may not look like an option');
+});
+
+test('the server survives bad requests, answers only this machine and its own page, and leaks no internals', async () => {
+  const t = await startTwin({ port: 0 });
+  try {
+    const alive = async () => assert.equal((await get(t.port, '/api/camera')).status, 200, 'still serving');
+    const bad = await get(t.port, '/app/%E0%A4%A');
+    assert.equal(bad.status, 400, 'a malformed escape is a bad request, not a crash'); await alive();
+    const nul = await get(t.port, '/app/a%00b');
+    assert.equal(nul.status, 400); assert.doesNotMatch(nul.body.toString(), new RegExp(ROOT.replace(/[\\/]/g, '.')), 'no absolute path in the answer'); await alive();
+    const obj = await get(t.port, '/api/pose', 'POST', JSON.stringify({ x: 1, y: 2, facing: 0, source: { toString: 1, valueOf: 2 } }));
+    assert.equal(obj.status, 200, 'an odd source is replaced, not fatal'); await alive();
+    assert.equal((await get(t.port, '/api/pose', 'POST', '{"x":1,"y":2,"facing":0}', { 'content-type': 'text/plain' })).status, 415, 'a cross-site simple POST (text/plain) is refused');
+    assert.equal((await get(t.port, '/api/pose', 'POST', '{"x":1,"y":2,"facing":0}', { origin: 'http://evil.example' })).status, 403, 'another site\'s page is refused');
+    assert.equal((await get(t.port, '/api/pose', 'POST', '{"x":1,"y":2,"facing":0}', { origin: `http://127.0.0.1:${t.port}` })).status, 200, 'its own page is served');
+    assert.equal((await get(t.port, '/api/map', 'GET', null, { host: `attacker.example:${t.port}` })).status, 403, 'a foreign Host (DNS rebinding) is refused');
+    assert.equal((await get(t.port, '/api/camera', 'GET', null, { host: `localhost:${t.port}` })).status, 200);
+    assert.equal((await get(t.port, '/api/pose', 'POST', JSON.stringify({ x: 1e308, y: 2, facing: 0 }))).status, 400, 'an absurd pose is refused');
+    await alive();
+  } finally { await t.close(); }
+  assert.equal(cleanPose({ x: 1, y: 2, facing: 0, source: { toString: 1 } }).source, 'posted');
+  assert.equal(cleanPose({ x: 1, y: 2, facing: 0, zoom: '5' }), null, 'a number must be a number');
+  assert.deepEqual(cleanPose({ x: -8754.5, y: -102.5, facing: 4.6, source: 'chat log' }), { x: -8754.5, y: -102.5, z: null, facing: 4.6, zoom: null, pitch: null, fovY: null, source: 'chat log' });
+});
+
+test('a failed start leaves nothing running, and the server starts through a symlinked path', async () => {
+  // a second server on a taken port fails; once the first closes, the process must exit on its own
+  const script = `import('${path.join(ROOT, 'tools', 'twin', 'server.mjs').replace(/\\/g, '/')}').then(async m => { const a = await m.startTwin({ port: 0 }); try { await m.startTwin({ port: a.port }); } catch { console.log('second start refused'); } await a.close(); })`;
+  const child = spawn(process.execPath, ['--input-type=module', '-e', script], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let out = '';
+  child.stdout.on('data', c => { out += c; });
+  const code = await new Promise(resolve => { const timer = setTimeout(() => { child.kill(); resolve('hung'); }, 5000); child.on('exit', c => { clearTimeout(timer); resolve(c); }); });
+  assert.equal(code, 0, 'the process exits by itself: no timer was left running by the failed start');
+  assert.match(out, /second start refused/);
+  // through a symlink (a junction on Windows) the entry check still recognises the script
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twin-link-'));
+  const link = path.join(dir, 'repo');
+  try { fs.symlinkSync(ROOT, link, 'junction'); } catch { fs.rmSync(dir, { recursive: true, force: true }); return; }
+  const srv = spawn(process.execPath, [path.join(link, 'tools', 'twin', 'server.mjs'), '--port', '0'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let line = '';
+  srv.stdout.on('data', c => { line += c; });
+  await new Promise(resolve => { const timer = setTimeout(resolve, 5000); srv.stdout.on('data', () => { if (/twin: http/.test(line)) { clearTimeout(timer); resolve(); } }); srv.on('exit', () => { clearTimeout(timer); resolve(); }); });
+  srv.kill();
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.match(line, /twin: http:\/\/127\.0\.0\.1:\d+/, 'started through the link');
 });

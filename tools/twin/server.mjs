@@ -27,6 +27,7 @@ export function parseArgs(argv) {
   const o = { port: 5203, family: 'tbc', head: path.join(ROOT, 'tools', 'headtrack', 'head.json'), ref: 'origin/owner/reports', host: '127.0.0.1' };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], v = argv[i + 1];
+    if (['--port', '--family', '--head', '--ref'].includes(a) && (v === undefined || v.startsWith('--'))) throw new Error(`twin: ${a} needs a value`);
     if (a === '--port') { o.port = Number(v); i++; }
     else if (a === '--family') { o.family = v; i++; }
     else if (a === '--head') { o.head = path.resolve(v); i++; }
@@ -35,8 +36,24 @@ export function parseArgs(argv) {
   }
   if (!Number.isInteger(o.port) || o.port < 0 || o.port > 65535) throw new Error('twin: --port needs a port number');
   if (!/^(tbc|vanilla)$/.test(o.family)) throw new Error('twin: --family is tbc or vanilla');
-  if (!/^[\w./-]+$/.test(o.ref)) throw new Error('twin: --ref is a git ref');
+  if (!/^[\w./-]+$/.test(o.ref) || o.ref.startsWith('-')) throw new Error('twin: --ref is a git ref');
   return o;
+}
+
+// a pose's numbers must be finite and in a sane range: UnitPosition's coordinates stay within a few thousand yards
+const POSE_RANGE = { x: 20000, y: 20000, z: 4000, facing: 20, zoom: 100, pitch: 2, fovY: 3.2 };
+export function cleanPose(pose) {
+  if (!pose || typeof pose !== 'object' || Array.isArray(pose)) return null;
+  const out = {};
+  for (const [k, lim] of Object.entries(POSE_RANGE)) {
+    const v = pose[k];
+    const required = k === 'x' || k === 'y' || k === 'facing';
+    if (v === undefined || v === null) { if (required) return null; out[k] = null; continue; }
+    if (typeof v !== 'number' || !Number.isFinite(v) || Math.abs(v) > lim) return null;
+    out[k] = v;
+  }
+  out.source = typeof pose.source === 'string' && pose.source.length <= 40 ? pose.source : 'posted';
+  return out;
 }
 
 const git = (args, encoding = 'utf8') => execFileSync('git', ['-C', ROOT, ...args], { encoding, maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] });
@@ -48,9 +65,10 @@ export function startTwin(opts = {}) {
   const map = () => (mapJson ??= JSON.stringify(readMap(o.family)));
   const clients = new Set();
   const send = (event, data) => { const line = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`; for (const res of clients) res.write(line); };
-  // the head tracker writes head.json about every three frames: forward each new version
-  let headStamp = '';
-  const headTimer = setInterval(() => {
+  // the head tracker writes head.json about every three frames: forward each new version (the timers start
+  // once the server listens, so a failed start leaves nothing running)
+  let headStamp = '', headTimer = null, keepAlive = null;
+  const pollHead = () => {
     let st;
     try { st = fs.statSync(o.head); } catch { return; }
     const stamp = `${st.mtimeMs}:${st.size}`;
@@ -58,10 +76,9 @@ export function startTwin(opts = {}) {
     headStamp = stamp;
     try {
       const h = JSON.parse(fs.readFileSync(o.head, 'utf8'));
-      if ([h.x, h.y, h.z].every(Number.isFinite)) send('head', { x: h.x, y: h.y, z: h.z, at: h.at ?? null, fps: h.fps ?? null });
+      if ([h.x, h.y, h.z].every(Number.isFinite)) send('head', { x: h.x, y: h.y, z: h.z, at: typeof h.at === 'string' ? h.at.slice(0, 40) : null, fps: Number.isFinite(h.fps) ? h.fps : null });
     } catch { /* a half-written file: the next poll reads it whole */ }
-  }, 30);
-  const keepAlive = setInterval(() => { for (const res of clients) res.write(': keep-alive\n\n'); }, 15000);
+  };
 
   const reply = (res, code, type, body) => { res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store' }); res.end(body); };
   const json = (res, code, value) => reply(res, code, TYPES['.json'], JSON.stringify(value));
@@ -71,21 +88,34 @@ export function startTwin(opts = {}) {
     fs.readFile(p, (err, buf) => (err ? json(res, 404, { error: 'not found' }) : reply(res, 200, TYPES[path.extname(p)] || 'application/octet-stream', buf)));
   };
 
+  let port = 0;
+  const local = new Set();
   const server = http.createServer((req, res) => {
-    const url = new URL(req.url, 'http://twin');
-    const p = decodeURIComponent(url.pathname);
     try {
+      // only this machine's own names (a foreign Host is DNS rebinding) and no other site's page
+      if (!local.has(String(req.headers.host || ''))) return json(res, 403, { error: 'this server answers only 127.0.0.1 and localhost' });
+      const origin = req.headers.origin;
+      if (origin && !local.has(origin.replace(/^http:\/\//, ''))) return json(res, 403, { error: 'requests from other sites are refused' });
+      const url = new URL(req.url, 'http://twin');
+      const p = decodeURIComponent(url.pathname);
+      if (p.includes('\0')) return json(res, 400, { error: 'bad path' });
       if (req.method === 'POST' && p === '/api/pose') {
+        // JSON only: a page elsewhere cannot send it without a preflight this server never grants
+        if (!/^application\/json\b/i.test(String(req.headers['content-type'] || ''))) return json(res, 415, { error: 'a pose is sent as application/json' });
         let body = '';
         req.on('data', c => { body += c; if (body.length > 4096) req.destroy(); });
         req.on('end', () => {
-          let pose;
-          try { pose = JSON.parse(body); } catch { return json(res, 400, { error: 'not JSON' }); }
-          const ok = pose && ['x', 'y', 'facing'].every(k => Number.isFinite(pose[k])) && ['z', 'zoom', 'pitch', 'fovY'].every(k => pose[k] === undefined || Number.isFinite(pose[k]));
-          if (!ok) return json(res, 400, { error: 'a pose needs finite x, y and facing (z, zoom, pitch and fovY optional)' });
-          const clean = { x: pose.x, y: pose.y, z: pose.z ?? null, facing: pose.facing, zoom: pose.zoom ?? null, pitch: pose.pitch ?? null, fovY: pose.fovY ?? null, source: String(pose.source || 'posted').slice(0, 40) };
-          send('pose', clean);
-          json(res, 200, { ok: true, listeners: clients.size });
+          try {
+            let pose;
+            try { pose = JSON.parse(body); } catch { return json(res, 400, { error: 'not JSON' }); }
+            const clean = cleanPose(pose);
+            if (!clean) return json(res, 400, { error: 'a pose needs x, y and facing as numbers in range (z, zoom, pitch and fovY optional)' });
+            send('pose', clean);
+            json(res, 200, { ok: true, listeners: clients.size });
+          } catch (e) {
+            console.error(`twin: ${e && e.message}`);
+            if (!res.headersSent) json(res, 500, { error: 'server error' });
+          }
         });
         return;
       }
@@ -140,13 +170,19 @@ export function startTwin(opts = {}) {
       }
       return json(res, 404, { error: 'not found' });
     } catch (e) {
-      return json(res, 500, { error: String(e && e.message || e) });
+      // a malformed request (a bad escape, a bad path) or a fault: a generic answer, the detail only in the console
+      console.error(`twin: ${e && e.message}`);
+      if (res.headersSent) { res.end(); return; }
+      return json(res, e instanceof URIError ? 400 : 500, { error: e instanceof URIError ? 'bad request' : 'server error' });
     }
   });
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(o.port, o.host, () => {
-      const port = server.address().port;
+      port = server.address().port;
+      for (const name of ['127.0.0.1', 'localhost', '[::1]']) local.add(`${name}:${port}`);
+      headTimer = setInterval(pollHead, 30);
+      keepAlive = setInterval(() => { for (const res of clients) res.write(': keep-alive\n\n'); }, 15000);
       resolve({
         server, port,
         close: () => new Promise(r => { clearInterval(headTimer); clearInterval(keepAlive); for (const c of clients) c.end(); server.close(() => r()); }),
@@ -155,7 +191,8 @@ export function startTwin(opts = {}) {
   });
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+const isEntry = () => { try { return fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } };
+if (process.argv[1] && isEntry()) {
   const opts = parseArgs(process.argv.slice(2));
   startTwin(opts).then(({ port }) => {
     console.log(`twin: http://${opts.host}:${port}  (map ${opts.family}, reports from ${opts.ref}, head from ${path.relative(ROOT, opts.head)})`);

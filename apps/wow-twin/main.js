@@ -268,6 +268,7 @@ async function loadReport(stamp) {
 function chooseStep() {
   const r = state.report;
   if (!r) return;
+  state.live = null; // choosing a recorded step leaves any live pose
   const s = r.steps.find(x => String(x.index) === ui.step.value);
   state.step = s;
   const useTwin = ui.shot.value === 'twin' && s && s.twin && s.twin.pose;
