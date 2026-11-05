@@ -1,6 +1,23 @@
 # FIDELITY MULTIVERSE: RESUME & ENGINEERING HANDOFF
 
-## The Fidelity Twin: Northshire outside the game (05 Nov 2026, Claude in the cloud) — start here
+## The 3D in the room: WoW's own picture in depth, the phone as the camera, the 3080 doing the heavy work (05 Nov 2026 evening, Claude in the cloud, Argon on the laptop) — start here
+
+**The owner's room** (his words and Argon's measurements): the laptop (Lenovo 80RU: i7-6700HQ, Intel HD 530 and GTX 950M, 1x1 Wi-Fi) with a Hisense TV on its HDMI in front of him; the 3080 PC (`192.168.0.5`, RTX 3080, Wi-Fi 6E) elsewhere; his phone running DroidCam (`192.168.0.4` on the home Wi-Fi); a living-room TV with a Chromecast (`192.168.0.9`). Argon (Antigravity, on the laptop) is the hands: it runs commands on the laptop and on the 3080 PC over SSH. Nothing reaches the cloud session from the house.
+
+**What landed, each measured** (commits `5e1af3d` to `1756441` on this branch):
+- **`/live`** (`npm run twin`, then http://127.0.0.1:5203/live): a report's screenshot, a captured window (live, as screen sharing does: nothing touches the game) or any picture, drawn as a surface that moves with the head. The depth of each pixel is Depth Anything V2 Small's estimate, labelled as such. Here, on the tenth report's first scene shot: the resting view matches the shot (2.6 of 255); a head 0.3 to the right slides the far trees 41 px, the camp 32 px, the near ground 18 px; M gives a Magic Eye of the depth (decodes back to it). `tools/twin/relief.mjs`, tested.
+- **The phone as the head camera** (`tools/headtrack/headtrack.py --room`): the tracker had shrunk frames to 320 px with a 30 px minimum, so it could never find a face from a sofa; `--room` searches the full frame from 24 px and follows the person straight ahead. A stream is read in the background (newest picture only), reopened when it stops, and searched near the last face. OpenCV is pinned below 5 (5.0 removed the Haar face finder).
+- **The tracker on the 3080 PC** (`--serve 5204`; the twin's `--head http://192.168.0.5:5204/head.json`): on the laptop beside WoW the search took 3.1 s a picture; on the PC it tracks at 26.8 frames a second with none lost, and the laptop's `/live` shows `head: head tracker`.
+- **The depth model on the 3080 PC** (`tools/depthd`, DirectML; the twin's `--depth http://192.168.0.5:5205`): on the laptop the page's own model took 18.9 s (processor) and 28 to 30 s (Intel graphics: Windows gives Chrome the Intel chip, and neither chip has half precision); on the 3080, 104 ms warm. The round from the laptop's page still took 1.5 s; the page now shows where each picture's time goes (making it, this machine, the network, the service), and the two Python servers keep their connection and send at once (the Windows small-write stall). That fix is not yet measured there.
+
+**Open:**
+- The breakdown line from the owner's setup, and with it where the 1.4 s goes.
+- The first look from his seat: WoW on the laptop screen, `/live` full screen on the Hisense capturing it, the phone on the Hisense.
+- More cameras, triangulated (the owner asked for an easy way to add them): not built.
+- The strategy the owner authorized (`fractal_symbiotic_bridge_strategy`, uploaded 05 Nov): being mapped; its `@hm/...` pieces live in HeavyMetal2, which this session may not read (attaching it was refused).
+- Argon's own work on the laptop (the fractal engine at Rung 3, a Coldridge scene, Coldridge map tiles written straight into the game's AddOns folder) is uncommitted in `D:\fidelity-repo`; the laptop's copy also has two commits of its own (a merge and a Windows line-ending test fix, `2b0306d`). The twin runs from a clean worktree beside it, `D:\fidelity-twin`.
+
+## The Fidelity Twin: Northshire outside the game (05 Nov 2026, Claude in the cloud)
 
 **The owner asked to try the external scene.** He suggested a standalone engine fed by telemetry from WoW in place of the in-addon overlay: exact camera control, true 3D with no cropped squares, head tracking straight into the view, room for GPU fractals; the trade-off is a separate window.
 
