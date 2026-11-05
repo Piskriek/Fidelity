@@ -62,11 +62,14 @@ class CameraSource:
         self.cv2 = cv2
         self.spec, self.width, self.height, self.reopen_after = spec, width, height, reopen_after
         self.index = int(spec) if spec.isdigit() else spec
+        self.stream = not isinstance(self.index, int)
         self.cap = self._open()
         if not self.cap.isOpened():
-            raise RuntimeError(f"could not open camera/stream {spec!r} (is another program holding it? try --source frames:<dir>)")
-        self.stream = not isinstance(self.index, int)
-        self.received, self.reopened = 0, 0
+            if not self.stream:
+                raise RuntimeError(f"could not open camera/stream {spec!r} (is another program holding it? try --source frames:<dir>)")
+            # a phone that is not there yet (asleep, its app closed, still joining the Wi-Fi): keep trying, do not give up
+            print(f"headtrack: waiting for the stream at {spec} (is the phone's camera app open, on the same Wi-Fi?)", flush=True)
+        self.received, self.reopened, self.tries = 0, 0, 0
         self._latest, self._fresh, self._stop = None, False, False
         if self.stream:
             self._lock = threading.Lock()
@@ -80,13 +83,22 @@ class CameraSource:
             cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
             cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
             return cap
+        # 5 s to connect and 5 s for a picture, so a phone that vanished is noticed instead of waited on for ever
+        timeouts = [getattr(cv2, "CAP_PROP_OPEN_TIMEOUT_MSEC", None), 5000, getattr(cv2, "CAP_PROP_READ_TIMEOUT_MSEC", None), 5000]
+        if None not in timeouts:
+            try:
+                return cv2.VideoCapture(self.index, cv2.CAP_FFMPEG, timeouts)
+            except (cv2.error, TypeError):
+                pass
         return cv2.VideoCapture(self.index)
 
     def _pump(self):
         last_ok = time.time()
         while not self._stop:
-            ok, frame = self.cap.read()
+            ok, frame = self.cap.read() if self.cap.isOpened() else (False, None)
             if ok:
+                if self.received == 0 and self.tries:
+                    print("headtrack: the stream is up", flush=True)
                 last_ok = time.time()
                 with self._lock:
                     self._latest, self._fresh = frame, True
@@ -95,9 +107,14 @@ class CameraSource:
                 self.cap.release()
                 time.sleep(0.5)
                 self.cap = self._open()
-                self.reopened += 1
                 last_ok = time.time()
-                print(f"headtrack: the stream stopped; opened it again ({self.reopened})", flush=True)
+                if self.received:  # it had been delivering: it stopped, and is opened again
+                    self.reopened += 1
+                    print(f"headtrack: the stream stopped; opened it again ({self.reopened})", flush=True)
+                else:  # never there yet: keep waiting, saying so now and then
+                    self.tries += 1
+                    if self.tries % 10 == 0:
+                        print(f"headtrack: still waiting for the stream ({self.tries} tries)", flush=True)
             else:
                 time.sleep(0.02)
 

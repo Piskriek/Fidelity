@@ -44,7 +44,9 @@ stream. Nothing runs on the phone but a camera app.
    head-coupled window read it.
 
 A stream is read in the background, keeping only the newest picture, so a slow face search never builds a
-backlog (which delays the head and makes the app hang up), and a stream that stops for 2 s is opened again. Once a
+backlog (which delays the head and makes the app hang up), and a stream that stops for 2 s is opened again. A
+phone that is not there yet when the tracker starts (asleep, its app closed, still joining the Wi-Fi) is waited for:
+the tracker says so and connects when the stream appears, with 5 s to connect and 5 s for a picture. Once a
 face is found, the next search looks only in a window around it, for sizes close to it; the whole picture is
 searched again only when the face is not there. The last lines of a run say where the time went: the stream's
 own rate, the times it was reopened, and the search time near the last face and over the whole picture.
