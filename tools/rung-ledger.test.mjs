@@ -30,10 +30,10 @@ const C188 = {
   fitKnots: [[0.7, 0.37], [1.0, 0.38], [1.2, 0.53], [2.5, 2.44], [14, 5.6]],
 };
 const filesWithRows = [...new Set(ledger.rows.filter(r => r.rung.startsWith('fit:')).map(r => r.rung.slice(4)))];
-const rungsFor = (c = C, opts = {}) => terrainRungs(c, { build: BUILD, files: filesWithRows, tolerance: ledger.tolerance, ...opts });
+const rungsFor = (c = C, opts = {}) => terrainRungs(c, { build: BUILD, files: filesWithRows, tolerance: ledger.tolerance, camera: ledger.camera, ...opts });
 const run = (rungs = rungsFor(), rows = ledger.rows, now = NOW) => evaluate(rungs, rows, { now, manifests: ledger.manifests });
 const run9 = (rungs = rungsFor(C188), rows = ledger.rows) => run(rungs, rows, NOW9);
-const CAM = { pitch: C.camera.pitch, fovY: C.camera.fovY }; // the camera in use is the projection's context
+const CAM = { pitch: ledger.camera.pitch, fovY: ledger.camera.fovY }; // the camera in use (the ledger's record) is the projection's context
 const rowById = new Map(ledger.rows.map(r => [r.id, r]));
 
 test('traceability: every fit in FIT_BY_FILE is a value a ledger row was read at, or the evaluator\'s proposal from the rows', () => {
@@ -178,6 +178,12 @@ test('the tenth report: the barrel holds, the bush and the crate fail where no k
     assert.ok(r.refused.filter(x => x.rung === 'projection:abbey-door').length === 5 && r.refused.filter(x => x.rung === 'projection:abbey-door').every(x => x.reason === 'key'), 'the five readings at the default are refused by the lock');
   }
   assert.deepEqual(rungsFor(C, { camera: { pitch: 0.3 } }).find(r => r.id === 'projection:abbey-door').context, { pose: 'abbey-door', pitch: 0.3, fovY: C.camera.fovY }, 'a camera that names one parameter keeps the default for the other');
+  assert.deepEqual(rungsFor(C, { camera: { pitch: 0.3, fovY: undefined } }).find(r => r.id === 'projection:abbey-door').context.fovY, C.camera.fovY, 'an unset key keeps the default too');
+  assert.deepEqual(ledger.camera && { pitch: ledger.camera.pitch, fovY: ledger.camera.fovY }, C.camera, 'every reading so far was taken at the saved defaults, and the ledger says so');
+  // once the owner's confirmed camera is recorded in the ledger (the values a confirm writes), the snapshot judges at it
+  const confirmed = { ...ledger, camera: { pitch: 12.8 * Math.PI / 180, fovY: 53.8 * Math.PI / 180 } };
+  const atConfirmed = evaluate(terrainRungs(C, { build: BUILD, files: filesWithRows, tolerance: ledger.tolerance, camera: confirmed.camera }), ledger.rows, { now: NOW, manifests: ledger.manifests });
+  assert.equal(atConfirmed.verdicts.get('projection:abbey-door').verdict, 'unmeasured', 'at the confirmed camera the default\'s readings count for nothing');
   assert.throws(() => rungsFor(C, { camera: { pitch: NaN } }), /finite pitch and fovY/);
   // the heights carry the camera too: a height read at the old camera is refused once the camera changes
   const heightRow = { id: 'h-old', rung: 'height:westfallbarrel01', kind: 'measured', witness: 'director', at: '2026-11-05 05:28:32', artifact: r10[0].artifact, context: { pose: 'abbey-door', ...CAM }, pose: { facingSpread: 0 }, observed: { residual: 0.02 }, precision: 0.01 };
@@ -192,7 +198,12 @@ test('the tenth report: the barrel holds, the bush and the crate fail where no k
   assert.ok(hr - hp <= ledger.tolerance && hr + hp > ledger.tolerance, `the held-out sapling is within its precision of the tolerance (${hr} +- ${hp}): undecided by the decisive rule`);
   assert.ok(hp >= 10 / 157 - 0.005, 'the held-out foot carries the blind reader\'s 10 px floor over its projected height');
   assert.match(terrainSrc, /twin fits pitch %\.1f deg and fovY %\.1f deg, not confirmed \(its held-out test was %s\)/, 'the printed line says the fit is not confirmed and why');
-  assert.match(prop.command, /^\/fide terrain pitch \d+\.\d confirm and \/fide terrain fov \d+\.\d confirm$/);
+  const deg = r => (r * 180 / Math.PI).toFixed(1);
+  assert.equal(prop.command, `/fide terrain pitch ${deg(prop.pitch)} confirm and /fide terrain fov ${deg(prop.fovY)} confirm`, 'the command types the proposal\'s own numbers');
+  // every projection row carries the blind reader's 10 px floor over its projected height (1839 shot px over 1507.47 UI)
+  for (const r of r10.filter(r => r.rung === 'projection:abbey-door')) {
+    assert.ok(r.precision >= (10 / (1839 / 1507.4736328125)) / r.observed.height - 0.0005, `${r.id}: precision ${r.precision} below the 10 px floor`);
+  }
   // a reading's time is its step's own stamp (the ledger's time convention), not the shutter's
   for (const r of r10.filter(r => r.rung === 'projection:abbey-door')) {
     assert.equal(r.at, '2026-11-05 05:28:32', r.id + ': step 1\'s stamp');

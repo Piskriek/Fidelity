@@ -26,7 +26,7 @@ export function buildSnapshot(root = ROOT) {
   const build = (head.match(/builds\["tbc"\] = \{ build = "([0-9.]+)"/) || [])[1];
   if (!build) throw new Error('rungs-sync: the tbc map data names no build');
   const files = [...new Set(ledger.rows.filter(r => r.rung.startsWith('fit:')).map(r => r.rung.slice(4)))];
-  const rungs = terrainRungs(C, { build, files, tolerance: ledger.tolerance });
+  const rungs = terrainRungs(C, { build, files, tolerance: ledger.tolerance, camera: ledger.camera });
   const asOf = ledger.rows.map(r => r.at).filter(a => stampTime(a) !== null).sort((a, b) => stampTime(a) - stampTime(b)).pop();
   const result = evaluate(rungs, ledger.rows, { now: asOf, manifests: ledger.manifests });
   const sha256 = crypto.createHash('sha256').update(ledgerText).digest('hex').toUpperCase();

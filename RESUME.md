@@ -46,6 +46,8 @@
 
 **The round's review:** five reviewers, each followed by a skeptic, confirmed 26 of 39 findings, and all are addressed (listed in `LANDED.md`). The largest was the held-out precision above. Others: the replica fed rounded placements; the refusal undone by the step's next press; a twin still able to share its first shot's name; the heights outside the camera lock; the uncited blind-record hash; 34 false frames from the first `find_frame` fix; self-contradicting snapshots served as judged; line endings in the snapshot's hash; and tests that could not fail.
 
+A second pass found 25 of the 26 fixes sound and seven more defects, all fixed. The largest: the Triad snapshot was always judged at the default camera, so `docs/rungs/ledger.json` now records the camera in use (`camera`) and `tools/rungs-sync.mjs` judges at it.
+
 **Evidence (05 Nov, Linux, Node 22):**
 - `npm test`: 212 tests, 211 pass, 0 fail, 1 skipped;
 - headless: 70/70;

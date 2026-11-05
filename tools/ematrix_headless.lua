@@ -1522,20 +1522,29 @@ test("v1.8.9: a pick no loaded file matches draws nothing, through a whole repor
     printed = {}
     slash("terrain test fit 3")
     check(table.concat(printed, "\n"):find("no test frame is up", 1, true) and not (FidelityEMatrix_Config.propFit and FidelityEMatrix_Config.propFit.elwynnbush09), "and fit after it saves nothing")
-    -- the whole report step 9 where no canopy04 is loaded: neither shutter shows a test frame
+    -- the whole report step 9 where no canopy04 is loaded, after step 8 left the crate's test frame up (as at the camp)
+    local tile = EMatrix_Data.tbc["azeroth:32:48"]
+    local nBefore = #tile.doodads
+    tile.doodads[#tile.doodads + 1] = { 900100, "world/azeroth/westfall/passivedoodads/crates/westfallcrate.m2", playerPos.x + 10, playerPos.y, 80.0, 0.0, 1.0 }
+    slash("terrain test pick any"); slash("terrain test off"); step(0.6)
     FidelityEMatrix_Report = nil
     slash("report show")
-    local seen = {}
-    shotProbe = function() local f = T._testFrames[#T._testFrames]; return { test = f and f.shown or false } end
+    shotProbe = function() local f = T._testFrames[#T._testFrames]; return { test = f and f.shown or false, mode = T._testMode() ~= nil } end
     local logAt = #shotLog
-    click(8); step(3.5) -- the crate in a wide frame: a test is up before step 9
+    click(8); step(3.5)
+    local r8 = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
+    check(r8.step == "cratewide" and shotLog[logAt + 1] and shotLog[logAt + 1].test and shotLog[logAt + 1].mode, "step 8 draws the crate: a test frame is up before step 9")
+    check(T._testMode() ~= nil, "and it is still up when step 9 is pressed")
     click(9); step(3.5)
     local r9 = FidelityEMatrix_Report.steps[#FidelityEMatrix_Report.steps]
     check(r9.step == "canopy" and r9.twin and r9.twin.screenshot:find("taken at", 1, true), "step 9 still takes its pair")
-    check(shotLog[logAt + 3] and not shotLog[logAt + 3].test and shotLog[logAt + 4] and not shotLog[logAt + 4].test, "neither of step 9's shots shows a test frame")
-    check(table.concat(r9.lines, "\n"):find('holds "canopy04" here', 1, true) and not table.concat(r9.lines, "\n"):find("on a new PlayerModel frame", 1, true), "step 9's record says why and draws nothing: " .. table.concat(r9.lines, " | "):sub(1, 400))
+    check(shotLog[logAt + 3] and not shotLog[logAt + 3].test and not shotLog[logAt + 3].mode and shotLog[logAt + 4] and not shotLog[logAt + 4].mode, "at neither of step 9's shutters is a test up")
+    local after, refused = {}, false
+    for _, l in ipairs(r9.lines) do if refused then after[#after + 1] = l end; if l:find('holds "canopy04" here', 1, true) then refused = true end end
+    check(refused and #after > 0 and not table.concat(after, "\n"):find("on a new PlayerModel frame", 1, true), "after the refusal, the step's later presses draw nothing: " .. table.concat(after, " | "):sub(1, 300))
     shotProbe = nil
-    slash("terrain test pick any"); slash("terrain test off"); slash("report hide")
+    for i = #tile.doodads, nBefore + 1, -1 do tile.doodads[i] = nil end
+    slash("terrain test pick any"); slash("terrain test off"); slash("report hide"); step(0.6)
     -- (b) owner ruling 4: pitch and fov are asked, and written only with "confirm"
     FidelityEMatrix_Config.terrainPitch, FidelityEMatrix_Config.terrainFovY = nil, nil
     printed = {}

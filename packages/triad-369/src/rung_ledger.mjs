@@ -585,7 +585,8 @@ export function terrainRungs(c, { build, loader = 'path', pose = 'abbey-door', f
   // the camera in use is the projection's and the heights' context: a confirmed pitch or fovY unlocks the
   // readings taken at the old one. A camera that names one of the two keeps the default for the other (the
   // owner confirms pitch and fov with separate commands); a camera with no finite pitch or fovY is an error.
-  const cam = { ...(c.camera || {}), ...(camera || {}) };
+  const named = Object.fromEntries(Object.entries(camera || {}).filter(([, v]) => v !== undefined && v !== null)); // an unset key keeps the default
+  const cam = { ...(c.camera || {}), ...named };
   if (!finite(cam.pitch) || !finite(cam.fovY)) throw new Error('terrainRungs: the camera in use needs a finite pitch and fovY (the addon\'s DEFAULTS or the caller\'s camera)');
   const cameraContext = { pitch: cam.pitch, fovY: cam.fovY };
   rungs.push({ id: 'projection:' + pose, kind: 'projection', restsOn: ['map', 'axis'], tolerance, context: { pose, ...cameraContext } });

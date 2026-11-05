@@ -19,9 +19,15 @@
   },
   "time": "the step stamp the panel records (date(), the client's local clock); never a file time and never the report-level at",
   "projection.observed": "residual: the distance from the predicted foot (the camera in use, through EMatrix_Math.BuildCamera and ProjectPoint or its replica at the map data's own placements, which gives the client's recorded feet) to the foot read blind in an overlay-off twin, over the placement's projected height; foot, predicted and height in UI units from the bottom left; the context names the camera in use (pitch, fovY) so a confirmed change unlocks the old readings",
-  "subject": "what in the artifact a reading is of (a placement in a scene shot): two subjects read in one shot are two readings; the evaluator supersedes only readings of the same artifact, line, subject, witness class and value"
+  "subject": "what in the artifact a reading is of (a placement in a scene shot): two subjects read in one shot are two readings; the evaluator supersedes only readings of the same artifact, line, subject, witness class and value",
+  "camera": "the camera in use (pitch and fovY in radians) that tools/rungs-sync.mjs and the tests pass to terrainRungs: the projection's and the heights' context, so a reading counts only at the camera it was taken at"
  },
  "tolerance": 0.1,
+ "camera": {
+  "pitch": 0.35,
+  "fovY": 1.0,
+  "source": "the camera in use at every reading so far: the addon's saved defaults (EMatrix_Terrain.lua DEFAULTS), which every shutter pose of the tenth report records with the kind \"(saved default, not measured)\". When a report's poses show the owner's confirmed setting, the director copies the values the poses record here (a confirm writes math.rad of the degrees typed, e.g. 0.2234 and 0.9390 for 12.8 and 53.8), and the projection and the heights start unmeasured at it."
+ },
  "rows": [
   {
    "id": "20261104-0935-map",

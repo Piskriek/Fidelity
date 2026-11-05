@@ -79,6 +79,13 @@ Status: changed (05 Nov 2026, the tenth report; read in the cloud from 03:37Z; r
 - line endings in the snapshot's hash;
 - several tests that could not fail.
 
+**The second pass** (four verifiers and a regression hunter, each followed by a skeptic) found 25 of the 26 fixes sound and seven more defects. All are fixed:
+- the Triad snapshot was always judged at the default camera, so the ledger now records the camera in use and the sync tool judges at it;
+- two slot rules were caught by the wrong check;
+- tests left the rows' 10 px floor and the proposal command's numbers unguarded;
+- the step-9 check never started from a drawn test;
+- the hash-cited blind records could change line endings.
+
 **Evidence** (05 Nov, Linux, Node 22):
 - `npm test`: 212 tests, 211 pass, 0 fail, 1 skipped (the real-tile ADT case without `EMATRIX_TILES`);
 - `node --test tools/rung-ledger.test.mjs`: 20/20; `node --test packages/triad-369/test/rung-slots.test.mjs`: 5/5;
