@@ -31,6 +31,8 @@ const state = {
   head: null, headAt: 0, mouse: { x: 0, y: 0 }, note: '', noteAt: 0,
   testHead: OPT.has('head') ? OPT.get('head').split(',').map(Number) : null, // ?head=x,y,z holds the head still (for checks)
 };
+// counts since the last status: pictures drawn, captured window pictures, head updates, depth maps (sendStatus)
+const meter = { t: performance.now(), drawn: 0, captured: 0, heads: 0, depths: 0 };
 
 // ---------------------------------------------------------------------------------------------
 // The surface
@@ -168,7 +170,7 @@ async function estimate() {
     state.ms = performance.now() - t0;
     if (stamp !== state.stamp) return; // the picture changed while the model was busy
     state.depth = d.data; state.dw = d.width; state.dh = d.height; state.stride = d.channels || 1;
-    state.depthStamp++; state.frames++; state.error = '';
+    state.depthStamp++; state.frames++; state.error = ''; meter.depths++;
     updateSurface();
     window.__depth = { ms: state.ms, device: state.device, dw: d.width, dh: d.height, frames: state.frames, stride: state.stride, depth: d.data }; // for the browser check
   } catch (e) {
@@ -209,6 +211,9 @@ async function startCapture() {
     state.stream = stream;
     stream.getVideoTracks()[0].addEventListener('ended', () => { if (state.stream === stream) { state.stream = null; state.live = false; } });
     setPicture(video, video.videoWidth || 1920, video.videoHeight || 1080, 'a captured window, live', true);
+    // count the pictures the capture really delivers (a covered or minimized window, or a capped game, sends fewer)
+    const counted = () => { meter.captured++; if (state.el === video) video.requestVideoFrameCallback(counted); };
+    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(counted);
   } catch (e) { state.error = `no capture: ${e.message}`; }
 }
 ui.capture.addEventListener('click', startCapture);
@@ -265,7 +270,7 @@ stage.addEventListener('pointermove', e => {
   state.mouse.y = -(((e.clientY - b.top) / b.height) * 2 - 1);
 });
 const events = new EventSource('/events');
-events.addEventListener('head', e => { try { state.head = JSON.parse(e.data); state.headAt = performance.now(); } catch { /* a torn write */ } });
+events.addEventListener('head', e => { try { state.head = JSON.parse(e.data); state.headAt = performance.now(); meter.heads++; } catch { /* a torn write */ } });
 
 function placeEye(h) {
   // head.json's x, y and z are about -1..1 from the rest pose: the same gains as the twin's window, in screen distances
@@ -330,9 +335,32 @@ window.addEventListener('keydown', e => {
 window.addEventListener('resize', layout);
 
 // ---------------------------------------------------------------------------------------------
+// The page's own numbers, every 2 s, to the twin (POST /api/live-status): the room launcher prints them
+// (tools/room/launch.mjs), so a test can be read from its terminal; window.__live has the same for checks
+// ---------------------------------------------------------------------------------------------
+function sendStatus() {
+  const now = performance.now(), s = (now - meter.t) / 1000;
+  if (s <= 0) return;
+  const rate = n => Math.round((n / s) * 10) / 10;
+  const status = {
+    picture: state.el ? `${state.label} (${state.fw} x ${state.fh})` : null, live: state.live,
+    renderFps: rate(meter.drawn), captureFps: state.live ? rate(meter.captured) : null,
+    depthDevice: state.device || null, depthMs: state.frames ? Math.round(state.ms) : null, depthFrames: state.frames, depthPerSecond: rate(meter.depths),
+    depthBreakdown: remote && state.frames ? state.breakdown : null, depthNote: state.loading || null, depthError: state.error || null,
+    head: headOffset().source, headPerSecond: rate(meter.heads), headAgeMs: state.headAt ? Math.round(now - state.headAt) : null,
+    magic: magic.on, fullscreen: !!document.fullscreenElement, width: canvas.width, height: canvas.height,
+  };
+  meter.t = now; meter.drawn = meter.captured = meter.heads = meter.depths = 0;
+  window.__live = status;
+  fetch('/api/live-status', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(status) }).catch(() => { /* the twin stopped */ });
+}
+setInterval(sendStatus, 2000);
+
+// ---------------------------------------------------------------------------------------------
 // The loop
 // ---------------------------------------------------------------------------------------------
 function frame() {
+  meter.drawn++;
   const h = headOffset();
   if (state.live && !state.busy) estimate(); // a live window: the model runs again as soon as it is free
   if (magic.on) drawMagic();

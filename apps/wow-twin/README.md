@@ -128,6 +128,12 @@ Open http://127.0.0.1:5203/live. It shows a WoW picture you can look into: the g
   - The picture is drawn 5% larger than the window so a moved head opens no black edges; `?overscan=0` draws it to
     the pixel.
   - **M** shows a Magic Eye of the model's depth. **F** goes full screen. `?chrome=0` hides the panel.
+  - Every 2 s the page sends the twin its own numbers (pictures drawn a second, the captured window's pictures a
+    second, the depth's time a picture and depth maps a second, the head's updates a second), and the room launcher
+    (`npm run room`, [`tools/room/launch.mjs`](../../tools/room/launch.mjs)) prints them, so a test can be read and
+    copied from its terminal. With the model on the processor (WebAssembly) the page stops drawing while the model
+    runs: in headless Chromium here, a live window drew under 2 pictures a second, so on a PC with a graphics card
+    the depth belongs on the card (WebGPU) or in the depth service.
 - **On the TV:** the server answers only the laptop itself, so the page runs on the laptop. Either cast the Chrome
   tab (the ⋮ menu, Cast, the TV, Sources, Cast tab) or use the TV as a second screen over HDMI, which has the least
   delay. The camera for the head can be a phone at the TV (`tools/headtrack/README.md`, "A phone as the camera").

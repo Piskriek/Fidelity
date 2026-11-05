@@ -12,7 +12,7 @@ import * as THREE from 'three';
 import { buildCamera, projectPoint, toThree, threeView, cameraAtPose, windowFrustum } from './twin/camera.mjs';
 import { readMap, tileFor, groundHeight, nominalHeight, kindOf, ROOT } from './twin/data.mjs';
 import { parseSavedVariables, reportSteps, shotNames } from './twin/savedvars.mjs';
-import { startTwin, parseArgs, cleanPose } from './twin/server.mjs';
+import { startTwin, parseArgs, cleanPose, cleanLiveStatus } from './twin/server.mjs';
 import { patternTile, separation, stereogramInto } from './twin/stereogram.mjs';
 import { distanceOf, sampleBilinear, screenPoint, reliefPositions, reliefIndex, reliefUVs, screenPointFrom } from './twin/relief.mjs';
 import { spawn } from 'node:child_process';
@@ -403,6 +403,32 @@ test('the page\'s "set my resting position" reaches the tracker through the twin
     await t.close();
     if (tracker.listening) await new Promise(r => tracker.close(r));
   }
+});
+
+test('the page\'s own numbers reach the twin and come back for the room launcher: cleaned, and only from this machine\'s page', async () => {
+  assert.equal(cleanLiveStatus([1]), null); assert.equal(cleanLiveStatus('x'), null); assert.equal(cleanLiveStatus(null), null);
+  const t = await startTwin({ port: 0, head: path.join(os.tmpdir(), 'no-head.json') });
+  try {
+    assert.deepEqual(JSON.parse((await get(t.port, '/api/live-status')).body), { status: null }, 'nothing before the page speaks');
+    assert.equal((await get(t.port, '/favicon.ico')).status, 204, 'the browser\'s icon request is answered (no 404 in the page\'s console)');
+    const sent = { picture: 'a captured window, live (1920 x 1080)', live: true, renderFps: 59.8, captureFps: 29.6, depthDevice: 'graphics card (WebGPU: nvidia ampere), fp16', depthMs: 61, depthFrames: 120, depthPerSecond: 14.5, head: 'head tracker', headPerSecond: 26.4, headAgeMs: 12, magic: false, fullscreen: true, width: 1920, height: 1080, secret: 'dropped' };
+    assert.equal((await get(t.port, '/api/live-status', 'POST', JSON.stringify(sent))).status, 200);
+    const back = JSON.parse((await get(t.port, '/api/live-status')).body);
+    assert.ok(back.ageMs >= 0 && back.ageMs < 5000, `age ${back.ageMs}`);
+    for (const k of ['picture', 'live', 'renderFps', 'captureFps', 'depthDevice', 'depthMs', 'depthFrames', 'depthPerSecond', 'head', 'headPerSecond', 'headAgeMs', 'magic', 'fullscreen', 'width', 'height']) assert.deepEqual(back.status[k], sent[k], k);
+    assert.equal(back.status.secret, undefined, 'unknown fields are dropped');
+    // numbers out of range or not numbers become null, long strings are cut short
+    assert.equal((await get(t.port, '/api/live-status', 'POST', JSON.stringify({ renderFps: -1, captureFps: 'fast', depthMs: 1e12, head: 'h'.repeat(500), live: 'yes' }))).status, 200);
+    const odd = JSON.parse((await get(t.port, '/api/live-status')).body).status;
+    assert.equal(odd.renderFps, null); assert.equal(odd.captureFps, null); assert.equal(odd.depthMs, null); assert.equal(odd.head.length, 160); assert.equal(odd.live, false);
+    // refused: not an object, not JSON, a text post (another page could send one), another site, too big
+    assert.equal((await get(t.port, '/api/live-status', 'POST', '[1,2]')).status, 400);
+    assert.equal((await get(t.port, '/api/live-status', 'POST', 'not json')).status, 400);
+    assert.equal((await get(t.port, '/api/live-status', 'POST', '{}', { 'content-type': 'text/plain' })).status, 415);
+    assert.equal((await get(t.port, '/api/live-status', 'POST', '{}', { origin: 'http://evil.example' })).status, 403);
+    await assert.rejects(get(t.port, '/api/live-status', 'POST', JSON.stringify({ picture: 'p'.repeat(5000) })), 'a status over 4 KB is cut off');
+    assert.equal(JSON.parse((await get(t.port, '/api/live-status')).body).status.head.length, 160, 'the refused posts left the last good status');
+  } finally { await t.close(); }
 });
 
 test('the server survives bad requests, answers only this machine and its own page, and leaks no internals', async () => {

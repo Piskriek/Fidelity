@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { parseArgs, findPython, streamUrl, describeHead } from './room/launch.mjs';
+import { parseArgs, findPython, streamUrl, describeHead, describePage } from './room/launch.mjs';
 
 test('the launcher\'s options: the phone is required, the depth is browser or local, every option needs a value', () => {
   const o = parseArgs(['--phone', '192.168.0.4']);
@@ -41,4 +41,20 @@ test('the plain words about the head: not yet, stale, waiting for a face, tracki
   assert.match(ok, /tracking \(rest x 0.06 y 0.02, face 61 px\), 23.0 pictures a second/);
   assert.doesNotMatch(ok, /re-aim/);
   assert.match(describeHead({ restWidth: 53, restX: -0.48, restY: -0.77, fps: 20, x: 0, y: 0 }, 100), /near the edge of the phone's picture: re-aim it/, 'the owner\'s first rest pose (05 Nov) would have been flagged');
+});
+
+test('the plain words about the page: not open, gone quiet, a live window with its numbers, a still picture with an error', () => {
+  assert.match(describePage(null, null, 5203), /not open yet \(in Chrome on this PC: http:\/\/localhost:5203\/live\)/);
+  assert.match(describePage({ renderFps: 60 }, 9000), /no word from it for 9 s \(closed, minimized/);
+  assert.match(describePage({ renderFps: 60 }, undefined), /no word from it/, 'no age is no word');
+  const live = describePage({ live: true, renderFps: 59.8, captureFps: 29.6, width: 1920, height: 1080, fullscreen: true, depthDevice: 'graphics card (WebGPU: nvidia), fp16', depthMs: 61.2, depthPerSecond: 14.5, head: 'head tracker', headPerSecond: 26.4 }, 500);
+  assert.match(live, /^page: drawing 60 pictures a second at 1920 x 1080, full screen; /);
+  assert.match(live, /; the window captured at 30 pictures a second; /);
+  assert.match(live, /; depth 61 ms a picture on the graphics card \(WebGPU: nvidia\), fp16, 15 a second; /);
+  assert.match(live, /; head: head tracker, 26 updates a second$/);
+  assert.match(describePage({ live: false, picture: 'shot (1920 x 1080)', renderFps: 4.2, depthError: 'the depth service did not answer', head: 'mouse' }, 100),
+    /^page: drawing 4.2 pictures a second; a still picture, shot \(1920 x 1080\); depth: the depth service did not answer; head: mouse$/);
+  assert.match(describePage({ live: true, renderFps: 60, captureFps: 0, depthNote: 'loading the depth model: 40%', head: 'head tracker' }, 100), /captured at 0.0 pictures a second; depth: loading the depth model: 40%/);
+  assert.match(describePage({ live: true, renderFps: 60, captureFps: 30, depthMs: 189, depthDevice: 'depth service', depthPerSecond: 3, depthBreakdown: '5 ms making the picture + 180 ms on the service\'s machine', head: 'head tracker' }, 100),
+    /\n {4}where a depth picture's time goes: 5 ms making the picture \+ 180 ms/);
 });

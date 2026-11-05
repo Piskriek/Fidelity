@@ -6,7 +6,9 @@
 //
 // It starts the head tracker on the phone's DroidCam stream (tools/headtrack/headtrack.py --room, writing head.json
 // here), the depth service when asked (tools/depthd/depthd.py on 127.0.0.1), and the twin (tools/twin/server.mjs,
-// reading that head.json), then says every few seconds, in plain words, what each part is doing. Ctrl+C stops all.
+// reading that head.json), then says every few seconds, in plain words, what each part is doing, the open /live page
+// included (it sends the twin its own numbers every 2 s: pictures drawn a second, the captured window's pictures a
+// second, the depth's time a picture, the head's updates a second). Ctrl+C stops all.
 // Each part's own output goes to tools/room/logs/<part>.log. Options: --phone <address> (required), --depth
 // browser|local (default browser), --port <twin port> (5203), --python <python with OpenCV 4> (default: the
 // repository's .venv), --stream <path on the phone> (/video/force/1280x720), --seconds <n> (stop after n seconds and
@@ -64,6 +66,22 @@ export function describeHead(head, ageMs) {
   const r = `rest x ${Number(head.restX).toFixed(2)} y ${Number(head.restY).toFixed(2)}, face ${Math.round(head.restWidth)} px`;
   const off = Math.abs(head.restX) > 0.6 || Math.abs(head.restY) > 0.6 ? '; your face is near the edge of the phone\'s picture: re-aim it and restart' : '';
   return `head: tracking (${r}), ${Number(head.fps).toFixed(1)} pictures a second, now x ${Number(head.x).toFixed(2)} y ${Number(head.y).toFixed(2)}${off}`;
+}
+
+const rate = v => (Number.isFinite(v) ? (v >= 10 ? String(Math.round(v)) : v.toFixed(1)) : '?');
+
+/** Plain words about the /live page from the newest status it sent the twin (GET /api/live-status) and its age. */
+export function describePage(st, ageMs, port = 5203) {
+  if (!st) return `page: not open yet (in Chrome on this PC: http://localhost:${port}/live)`;
+  if (!(ageMs <= 6000)) return `page: no word from it for ${Math.round(ageMs / 1000)} s (closed, minimized, or behind another tab: Chrome stops drawing a page nobody sees)`;
+  const parts = [`drawing ${rate(st.renderFps)} pictures a second${st.width && st.height ? ` at ${st.width} x ${st.height}` : ''}${st.fullscreen ? ', full screen' : ''}${st.magic ? ', the Magic Eye' : ''}`];
+  parts.push(st.live ? `the window captured at ${rate(st.captureFps)} pictures a second` : st.picture ? `a still picture, ${st.picture}` : 'no picture yet (click "Capture a window (live)")');
+  if (st.depthError) parts.push(`depth: ${st.depthError}`);
+  else if (st.depthNote) parts.push(`depth: ${st.depthNote}`);
+  else if (Number.isFinite(st.depthMs)) parts.push(`depth ${Math.round(st.depthMs)} ms a picture on the ${st.depthDevice || 'model'}${st.live ? `, ${rate(st.depthPerSecond)} a second` : ''}`);
+  else parts.push('depth: waiting for the first picture');
+  parts.push(`head: ${st.head || '?'}${st.headPerSecond > 0 ? `, ${rate(st.headPerSecond)} updates a second` : ''}`);
+  return `page: ${parts.join('; ')}${st.depthBreakdown ? `\n    where a depth picture's time goes: ${st.depthBreakdown}` : ''}`;
 }
 
 function probe(url, timeout = 3000) {
@@ -140,8 +158,12 @@ export async function launch(o, say = console.log) {
     } else lines.push('depth: the page runs the model itself on this graphics card (WebGPU)');
     const live = await probe(`http://127.0.0.1:${o.port}/live`);
     lines.push(twin.exited ? `twin: ${twin.exited}: see tools/room/logs/twin.log` : live === 200 ? `twin: ready: in Chrome open http://localhost:${o.port}/live, click "Capture a window (live)", pick WoW, press F` : 'twin: starting');
+    // the page's own numbers (it sends them to the twin every 2 s)
+    const lp = live === 200 ? await getJson(`http://127.0.0.1:${o.port}/api/live-status`) : null;
+    if (live === 200) lines.push(describePage(lp && lp.status, lp && lp.ageMs, o.port));
     say(lines.map(l => `  ${l}`).join('\n'));
-    return { head, age, up, depthUp: depth ? !depth.exited : null, twinUp: live === 200, exited: parts.filter(p => p.exited).map(p => `${p.name} ${p.exited}`) };
+    const page = lp && lp.status && lp.ageMs <= 6000 ? lp.status : null;
+    return { head, age, up, depthUp: depth ? !depth.exited : null, twinUp: live === 200, page, exited: parts.filter(p => p.exited).map(p => `${p.name} ${p.exited}`) };
   };
 
   return { parts, report, stopAll };
@@ -161,7 +183,8 @@ async function main() {
     if (o.seconds && Date.now() - t0 >= o.seconds * 1000) break;
   }
   run.stopAll();
-  console.log(`room: done after ${o.seconds} s: ${JSON.stringify({ phone: last.up, face: !!(last.head && last.head.restWidth > 0), depth: last.depthUp, twin: last.twinUp, stopped: last.exited })}`);
+  const pg = last.page && { drawn: last.page.renderFps, captured: last.page.captureFps, depthMs: last.page.depthMs, depthPerSecond: last.page.depthPerSecond, headPerSecond: last.page.headPerSecond, head: last.page.head };
+  console.log(`room: done after ${o.seconds} s: ${JSON.stringify({ phone: last.up, face: !!(last.head && last.head.restWidth > 0), depth: last.depthUp, twin: last.twinUp, page: pg || null, stopped: last.exited })}`);
   setTimeout(() => process.exit(0), 500);
 }
 

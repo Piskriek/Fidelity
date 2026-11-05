@@ -62,6 +62,22 @@ export function cleanPose(pose) {
   return out;
 }
 
+/** What /live says about itself every 2 s (for the room launcher's report): known fields only, numbers finite and in
+ * range (else null), strings cut short. Null when it is not an object. */
+export function cleanLiveStatus(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return null;
+  const num = (v, hi) => (typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= hi ? v : null);
+  const str = (v, n) => (typeof v === 'string' && v ? v.slice(0, n) : null);
+  return {
+    picture: str(s.picture, 120), live: s.live === true,
+    renderFps: num(s.renderFps, 1000), captureFps: num(s.captureFps, 1000),
+    depthDevice: str(s.depthDevice, 160), depthMs: num(s.depthMs, 600000), depthFrames: num(s.depthFrames, 1e9), depthPerSecond: num(s.depthPerSecond, 1000),
+    depthBreakdown: str(s.depthBreakdown, 300), depthNote: str(s.depthNote, 160), depthError: str(s.depthError, 200),
+    head: str(s.head, 160), headPerSecond: num(s.headPerSecond, 1000), headAgeMs: num(s.headAgeMs, 1e9),
+    magic: s.magic === true, fullscreen: s.fullscreen === true, width: num(s.width, 100000), height: num(s.height, 100000),
+  };
+}
+
 const git = (args, encoding = 'utf8') => execFileSync('git', ['-C', ROOT, ...args], { encoding, maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'ignore'] });
 
 /** Starts the server; resolves to { server, port, close() }. */
@@ -120,7 +136,7 @@ export function startTwin(opts = {}) {
     fs.readFile(p, (err, buf) => (err ? json(res, 404, { error: 'not found' }) : reply(res, 200, TYPES[path.extname(p)] || 'application/octet-stream', buf)));
   };
 
-  let port = 0;
+  let port = 0, liveStatus = null; // the newest status /live sent (in memory only)
   const local = new Set();
   const server = http.createServer((req, res) => {
     try {
@@ -184,6 +200,22 @@ export function startTwin(opts = {}) {
         });
         return;
       }
+      if (req.method === 'POST' && p === '/api/live-status') {
+        // /live's own numbers every 2 s, kept in memory for the room launcher (GET /api/live-status); JSON only
+        if (!/^application\/json\b/i.test(String(req.headers['content-type'] || ''))) return json(res, 415, { error: 'sent as application/json' });
+        let body = '', tooBig = false;
+        req.on('data', c => { body += c; if (body.length > 4096) { tooBig = true; req.destroy(); } });
+        req.on('end', () => {
+          if (tooBig) return;
+          let s;
+          try { s = JSON.parse(body); } catch { return json(res, 400, { error: 'not JSON' }); }
+          const clean = cleanLiveStatus(s);
+          if (!clean) return json(res, 400, { error: 'a status is a JSON object' });
+          liveStatus = { ...clean, receivedAt: Date.now() };
+          json(res, 200, { ok: true });
+        });
+        return;
+      }
       if (req.method === 'POST' && p === '/api/recalibrate') {
         // the page's "set my resting position": passed to the tracker (headtrack.py --serve), which re-measures it
         if (!/^application\/json\b/i.test(String(req.headers['content-type'] || ''))) return json(res, 415, { error: 'sent as application/json' });
@@ -198,8 +230,14 @@ export function startTwin(opts = {}) {
         up.end('{}');
         return;
       }
-      if (req.method !== 'GET') return json(res, 405, { error: 'GET, or POST /api/pose, /api/depth or /api/recalibrate' });
+      if (req.method !== 'GET') return json(res, 405, { error: 'GET, or POST /api/pose, /api/depth, /api/recalibrate or /api/live-status' });
       if (p === '/api/depth') return json(res, 200, { remote: o.depth });
+      if (p === '/api/live-status') {
+        if (!liveStatus) return json(res, 200, { status: null });
+        const { receivedAt, ...status } = liveStatus;
+        return json(res, 200, { status, ageMs: Date.now() - receivedAt });
+      }
+      if (p === '/favicon.ico') { res.writeHead(204, { 'cache-control': 'max-age=86400' }); return res.end(); } // no icon, and no 404 in the console
       if (p === '/' || p === '/index.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'index.html');
       if (p === '/live' || p === '/live.html') return file(res, path.join(ROOT, 'apps', 'wow-twin'), 'live.html');
       if (p.startsWith('/app/')) return file(res, path.join(ROOT, 'apps', 'wow-twin'), p.slice(5));
