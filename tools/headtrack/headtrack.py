@@ -276,6 +276,9 @@ class HeadServer:
         outer = self
 
         class Handler(http.server.BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.1"   # one connection for every poll
+            disable_nagle_algorithm = True  # and each answer sent at once (Windows otherwise can hold it up to 200 ms)
+
             def do_GET(self):
                 if self.path.split("?")[0] != "/head.json":
                     self.send_error(404)

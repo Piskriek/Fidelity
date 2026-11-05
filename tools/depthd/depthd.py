@@ -10,7 +10,7 @@ a graphics card free (the 3080 PC), and the laptop's twin sends it the pictures:
     npm run twin -- --depth http://<this machine>:5205 # on the laptop
 
 POST /depth with a JPEG or PNG: the depth, one byte a pixel (255 nearest), gzip-compressed, with X-Depth-Width,
-X-Depth-Height, X-Depth-Ms (the model's own time) and X-Depth-Device. GET /health: what runs where. It answers only
+X-Depth-Height, X-Depth-Ms (the model's own time), X-Depth-Total-Ms (all of it here) and X-Depth-Device. GET /health: what runs where. It answers only
 this machine and private network addresses. The model is downloaded once from Hugging Face into tools/depthd/models.
 
 The preprocessing is the model's own (preprocessor_config.json: DPTImageProcessor, 518 px, aspect kept, sides a
@@ -150,6 +150,11 @@ def lan_address() -> str:
 
 def make_server(model, port: int, host: str = "0.0.0.0"):
     class Handler(http.server.BaseHTTPRequestHandler):
+        # keep the connection between pictures, and send each answer at once: Windows otherwise holds a small write
+        # back for the other side's acknowledgement (Nagle's rule against delayed acknowledgements), up to 200 ms
+        protocol_version = "HTTP/1.1"
+        disable_nagle_algorithm = True
+
         def _send(self, code, body: bytes, ctype="application/json", extra=None):
             self.send_response(code)
             self.send_header("Content-Type", ctype)
@@ -171,6 +176,7 @@ def make_server(model, port: int, host: str = "0.0.0.0"):
             self._send(200, json.dumps({"ok": True, "device": model.device, "model": FILES[model.kind]}).encode())
 
         def do_POST(self):
+            t0 = time.time()
             if not allowed(self.client_address[0]):
                 return self._error(403, "this service answers the home network only")
             if self.path.split("?")[0] != "/depth":
@@ -192,9 +198,11 @@ def make_server(model, port: int, host: str = "0.0.0.0"):
                 print(f"depthd: the model failed: {e}", file=sys.stderr, flush=True)
                 return self._error(500, "the model failed")
             h, w = depth.shape
-            self._send(200, gzip.compress(depth.tobytes(), compresslevel=3), "application/octet-stream",
+            packed = gzip.compress(depth.tobytes(), compresslevel=3)
+            self._send(200, packed, "application/octet-stream",
                        {"Content-Encoding": "gzip", "X-Depth-Width": str(w), "X-Depth-Height": str(h),
-                        "X-Depth-Ms": f"{ms:.0f}", "X-Depth-Device": model.device})
+                        "X-Depth-Ms": f"{ms:.0f}", "X-Depth-Total-Ms": f"{(time.time() - t0) * 1000:.0f}",
+                        "X-Depth-Device": model.device})
 
         def log_message(self, *a):
             pass

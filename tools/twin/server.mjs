@@ -163,6 +163,7 @@ export function startTwin(opts = {}) {
         req.on('end', () => {
           if (tooBig) return;
           const body = Buffer.concat(chunks);
+          const sent = Date.now();
           const up = http.request(`${o.depth}/depth`, { method: 'POST', agent: depthAgent, timeout: 20000, headers: { 'content-type': type, 'content-length': body.length } }, r => {
             const out = [];
             r.on('data', c => out.push(c));
@@ -171,7 +172,8 @@ export function startTwin(opts = {}) {
               if (res.headersSent) return;
               if (r.statusCode !== 200) return json(res, 502, { error: `the depth service answered ${r.statusCode}` });
               const headers = { 'content-type': 'application/octet-stream', 'cache-control': 'no-store' };
-              for (const h of ['content-encoding', 'x-depth-width', 'x-depth-height', 'x-depth-ms', 'x-depth-device']) if (r.headers[h]) headers[h] = String(r.headers[h]).slice(0, 80);
+              for (const h of ['content-encoding', 'x-depth-width', 'x-depth-height', 'x-depth-ms', 'x-depth-total-ms', 'x-depth-device']) if (r.headers[h]) headers[h] = String(r.headers[h]).slice(0, 80);
+              headers['x-relay-ms'] = String(Date.now() - sent); // to the service and back, from here
               res.writeHead(200, headers);
               res.end(Buffer.concat(out));
             });

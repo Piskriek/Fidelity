@@ -44,5 +44,48 @@ class AddressTests(unittest.TestCase):
             self.assertFalse(depthd.allowed(a), a)
 
 
+class ServerTests(unittest.TestCase):
+    def test_a_picture_in_its_depth_out_on_one_connection_with_the_times(self):
+        import gzip
+        import http.client
+        import threading
+        import numpy as np
+
+        class FakeModel:
+            device, kind = "fake, q8", "q8"
+
+            def run(self, picture):
+                if picture.startswith(b"bad"):
+                    raise ValueError("not a JPEG or PNG picture")
+                return np.array([[0, 128, 255], [10, 20, 30]], np.uint8), 7.0
+
+        srv = depthd.make_server(FakeModel(), 0, "127.0.0.1")
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+            for _ in range(2):  # two pictures on one connection: it stays open between them
+                conn.request("POST", "/depth", body=b"\xff\xd8picture", headers={"Content-Type": "image/jpeg"})
+                r = conn.getresponse()
+                body = r.read()
+                self.assertEqual(r.status, 200)
+                self.assertEqual((r.getheader("X-Depth-Width"), r.getheader("X-Depth-Height")), ("3", "2"))
+                self.assertEqual(r.getheader("X-Depth-Ms"), "7")
+                self.assertTrue(r.getheader("X-Depth-Total-Ms").isdigit(), "its own total, for the page's breakdown")
+                self.assertEqual(r.getheader("X-Depth-Device"), "fake, q8")
+                self.assertEqual(list(gzip.decompress(body)), [0, 128, 255, 10, 20, 30])
+            conn.request("POST", "/depth", body=b"bad", headers={"Content-Type": "image/jpeg"})
+            r = conn.getresponse(); r.read()
+            self.assertEqual(r.status, 400)
+            conn.close()
+            conn = http.client.HTTPConnection("127.0.0.1", srv.server_address[1], timeout=5)
+            conn.request("POST", "/depth", body=b"x", headers={"Content-Type": "text/plain"})
+            r = conn.getresponse(); r.read()
+            self.assertEqual(r.status, 415)
+            conn.close()
+        finally:
+            srv.shutdown()
+            srv.server_close()
+
+
 if __name__ == "__main__":
     unittest.main()

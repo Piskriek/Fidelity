@@ -27,7 +27,7 @@ for (const [k, el] of [['depth', ui.depthamt], ['focus', ui.focus], ['gain', ui.
 
 const state = {
   el: null, fw: 16, fh: 9, label: '', live: false, stream: null, stamp: 0,
-  depth: null, dw: 0, dh: 0, stride: 1, depthStamp: 0, est: null, device: '', loading: '', busy: false, ms: 0, frames: 0, error: '', fallbacks: [],
+  depth: null, dw: 0, dh: 0, stride: 1, depthStamp: 0, est: null, device: '', loading: '', busy: false, ms: 0, frames: 0, error: '', fallbacks: [], breakdown: '',
   head: null, headAt: 0, mouse: { x: 0, y: 0 },
   testHead: OPT.has('head') ? OPT.get('head').split(',').map(Number) : null, // ?head=x,y,z holds the head still (for checks)
 };
@@ -122,13 +122,23 @@ async function estimator() {
 // when ?model=local asks for the model in this page, or after it failed (then the page's own model takes over)
 let remote;
 async function remoteDepth() {
+  const t0 = performance.now();
   const blob = await new Promise((ok, fail) => work.toBlob(b => (b ? ok(b) : fail(new Error('the picture could not be encoded'))), 'image/jpeg', 0.85));
+  const t1 = performance.now();
   const r = await fetch('/api/depth', { method: 'POST', headers: { 'content-type': 'image/jpeg' }, body: blob });
   if (!r.ok) { let m = String(r.status); try { m = (await r.json()).error || m; } catch { /* not JSON */ } throw new Error(m); }
   const width = Number(r.headers.get('x-depth-width')), height = Number(r.headers.get('x-depth-height'));
   const data = new Uint8Array(await r.arrayBuffer());
+  const t2 = performance.now();
   if (!(width > 0 && height > 0 && data.length === width * height)) throw new Error('the depth service sent a depth of the wrong size');
-  return { data, width, height, channels: 1, device: r.headers.get('x-depth-device') || 'unknown', there: r.headers.get('x-depth-ms') };
+  // where the time went: making the picture here, the page to this machine's twin and back, the network, the service
+  const num = h => { const v = Number(r.headers.get(h)); return Number.isFinite(v) ? v : null; };
+  const relay = num('x-relay-ms'), there = num('x-depth-total-ms'), model = num('x-depth-ms');
+  const parts = [`${Math.round(t1 - t0)} ms making the picture`];
+  if (relay !== null) parts.push(`${Math.max(0, Math.round(t2 - t1 - relay))} ms on this machine (the page and its twin)`);
+  if (relay !== null && there !== null) parts.push(`${Math.max(0, Math.round(relay - there))} ms on the network`);
+  if (there !== null) parts.push(`${Math.round(there)} ms on the service's machine${model !== null ? ` (${Math.round(model)} ms of it the model)` : ''}`);
+  return { data, width, height, channels: 1, device: r.headers.get('x-depth-device') || 'unknown', breakdown: parts.join(' + ') };
 }
 
 const work = document.createElement('canvas'), workCtx = work.getContext('2d', { willReadFrequently: true });
@@ -147,7 +157,8 @@ async function estimate() {
     if (remote) {
       try {
         d = await remoteDepth();
-        state.device = `depth service at ${remote} (${d.device}, ${d.there} ms there)`;
+        state.device = `depth service at ${remote} (${d.device})`;
+        state.breakdown = d.breakdown;
       } catch (e) {
         state.fallbacks.push(`the depth service at ${remote}: ${String(e.message || e).slice(0, 80)}`);
         remote = null; // the page's own model from now on
@@ -317,6 +328,7 @@ function frame() {
   ui.status.textContent = [
     state.el ? `picture: ${state.label} (${state.fw} x ${state.fh})` : 'no picture yet',
     state.loading || (state.error ? `depth: ${state.error}` : state.device && state.frames ? `depth: estimated by the model on the ${state.device}, ${state.ms.toFixed(0)} ms a picture${state.live ? `, ${state.frames} so far` : ''}` : 'depth: the model starts with the first picture'),
+    remote && state.breakdown && state.frames ? `  = ${state.breakdown}` : '',
     state.fallbacks.length && state.device ? `(tried first: ${state.fallbacks.join('; ')})` : '',
     state.depth ? 'the depth is the model\'s estimate from the picture, not the game\'s' : 'flat until the model answers',
     `head: ${h.source}`,

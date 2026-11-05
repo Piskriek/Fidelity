@@ -77,6 +77,20 @@ class HeadServerTests(unittest.TestCase):
         finally:
             server.close()
 
+    def test_one_connection_serves_every_poll(self):
+        import http.client
+        server = headtrack.HeadServer(0, host="127.0.0.1")
+        try:
+            conn = http.client.HTTPConnection("127.0.0.1", server.port, timeout=5)
+            for i in range(3):  # the twin polls 30 times a second: no new connection each time
+                server.update({"x": i / 10})
+                conn.request("GET", "/head.json")
+                r = conn.getresponse()
+                self.assertEqual(json.loads(r.read()), {"x": i / 10})
+            conn.close()
+        finally:
+            server.close()
+
 
 if __name__ == "__main__":
     unittest.main()

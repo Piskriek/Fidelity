@@ -30,7 +30,11 @@ N ms there)`. If the service fails, the page says so and goes back to its own mo
 from the start.
 
 - `POST /depth` with a JPEG or PNG returns the depth, one byte a pixel (255 nearest, 0 farthest), gzip-compressed,
-  with `X-Depth-Width`, `X-Depth-Height`, `X-Depth-Ms` and `X-Depth-Device`. `GET /health` says what runs where.
+  with `X-Depth-Width`, `X-Depth-Height`, `X-Depth-Ms` (the model), `X-Depth-Total-Ms` (all of it on this machine)
+  and `X-Depth-Device`. `GET /health` says what runs where. The connection stays open between pictures, and each
+  answer is sent at once.
+- The page shows where each picture's time went: making the picture, this machine (the page and its twin), the
+  network, and the service's machine with the model's share.
 - It answers this machine and private network addresses only. A picture is at most 8 MB, one at a time on the card.
 - The preprocessing is the model's own (518 px, aspect kept, sides a multiple of 14, ImageNet mean and deviation).
 
@@ -40,6 +44,7 @@ Checked here (05 Nov, onnxruntime 1.31 on the processor, no graphics card):
 - It matches the page's browser model with correlation 0.997.
 - The fp16, fp32 and q8 models agree within 0.999.
 - Through the twin and the page, a head 0.3 to the right slides the far trees 35 px and the near ground 16 px.
-- DirectML on the 3080 is not measured yet.
+- On the owner's 3080 PC (DirectML, fp16, reported by Argon): 1326 ms for the first picture (DirectML compiling its
+  shaders), 104 ms warm; the whole round from the laptop's page took 1528 ms, which the breakdown is there to explain.
 
 `python -m unittest tools/depthd/test_depthd.py`: the sizes the model sees, the byte scaling, the address rule.

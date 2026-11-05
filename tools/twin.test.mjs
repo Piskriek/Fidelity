@@ -335,7 +335,7 @@ test('the depth service on another machine (--depth): the page\'s picture goes t
     req.on('data', c => chunks.push(c));
     req.on('end', () => {
       seen.push({ method: req.method, url: req.url, type: req.headers['content-type'], body: Buffer.concat(chunks) });
-      res.writeHead(200, { 'content-type': 'application/octet-stream', 'x-depth-width': '3', 'x-depth-height': '2', 'x-depth-ms': '12', 'x-depth-device': 'DirectML, fp16', 'x-other': 'not passed on' });
+      res.writeHead(200, { 'content-type': 'application/octet-stream', 'x-depth-width': '3', 'x-depth-height': '2', 'x-depth-ms': '12', 'x-depth-total-ms': '15', 'x-depth-device': 'DirectML, fp16', 'x-other': 'not passed on' });
       res.end(depthBytes);
     });
   });
@@ -353,6 +353,8 @@ test('the depth service on another machine (--depth): the page\'s picture goes t
     const h = await new Promise(resolve => http.request({ host: '127.0.0.1', port: t.port, path: '/api/depth', method: 'POST', headers: { 'content-type': 'image/png' } }, res => { res.resume(); res.on('end', () => resolve(res.headers)); }).end(picture));
     assert.equal(h['x-depth-width'], '3'); assert.equal(h['x-depth-height'], '2'); assert.equal(h['x-depth-device'], 'DirectML, fp16');
     assert.equal(h['x-other'], undefined, 'only the depth headers are passed on');
+    assert.equal(h['x-depth-total-ms'], '15');
+    assert.match(h['x-relay-ms'], /^\d+$/, 'and the time to the service and back, for the page\'s breakdown');
     assert.equal((await get(t.port, '/api/depth', 'POST', picture, { 'content-type': 'text/plain' })).status, 415, 'a form or text post from another page cannot reach it');
     assert.equal((await get(t.port, '/api/depth', 'POST', picture, { 'content-type': 'image/jpeg', origin: 'http://evil.example' })).status, 403);
     assert.equal(seen.length, 2, 'the refused posts never reached the service');
