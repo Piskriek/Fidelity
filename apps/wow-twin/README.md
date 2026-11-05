@@ -41,6 +41,34 @@ packages (three.js is already a dependency), and writes nothing. Options: `--por
   - **Mouse as head** tries this without a webcam.
 - **Free orbit**, around the player.
 
+## 3D you can see without glasses
+
+The twin knows how far away every point is, so it can make pictures that pop out for the eyes alone.
+
+- **A Magic Eye picture** (an autostereogram) is one patterned image with the scene hidden in it.
+- **A side-by-side pair**, one picture per eye, works for cross-eyed or parallel viewing.
+- **A red/cyan anaglyph** is for anyone with the glasses.
+
+To make them:
+1. Open the viewer with `?report=20261105-0530&camera=game&lens=proposal&shot=none&chrome=0`, adding:
+   - `&view=depth` for the depth map (near white, far black);
+   - `&eye=L` or `&eye=R` for one eye (`&baseline=0.8` yards between the eyes, `&focus=25` yards on the screen plane).
+2. Save each canvas (right-click, save image).
+3. Run:
+
+```
+python3 tools/twin/stereo.py magic depth.png magic-eye.png        # add --cross for crossed eyes
+python3 tools/twin/stereo.py pair left.png right.png northshire   # -cross, -parallel and -anaglyph pictures
+```
+
+To view the Magic Eye picture, put your face close to it so it blurs, relax your eyes as if looking far behind the
+screen, and lean back slowly. When the two dots at the top become three, hold it: the valley comes out, with the
+ground falling away and the trees and the camp standing up. For the cross-eyed pair, look at a fingertip held
+between you and the screen until the two pictures become three; the middle one is in 3D.
+
+`stereo.py selftest` checks the encoding: the background repeats at the full separation, and a raised square at
+the shorter one, centred on it.
+
 ## A live pose
 
 Any telemetry source can send `POST /api/pose` with JSON `{ x, y, facing, z?, zoom?, pitch?, fovY? }`, using

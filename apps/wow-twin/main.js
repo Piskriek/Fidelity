@@ -28,6 +28,31 @@ const controls = new OrbitControls(camera, canvas);
 controls.enabled = false;
 
 const state = { map: null, cams: null, report: null, step: null, pose: null, live: null, head: null, headAt: 0, mouse: { x: 0, y: 0 } };
+// The stereo proof of concept (tools/twin/stereo.py): ?view=depth draws each point's distance as grey (near white),
+// ?eye=L|R draws one eye of a stereo pair (?baseline in yards between the eyes, ?focus the distance that sits on the
+// screen plane), ?chrome=0 hides the panel so a capture holds only the picture.
+const OPT = new URLSearchParams(location.search);
+const STEREO = { view: OPT.get('view'), eye: OPT.get('eye'), baseline: Number(OPT.get('baseline') || 0.6), focus: Number(OPT.get('focus') || 25), near: Number(OPT.get('near') || 4), far: Number(OPT.get('far') || 400) };
+if (OPT.get('chrome') === '0') document.getElementById('panel').style.display = 'none';
+// grey = 1 - log(z / near) / log(far / near): near things white, far things black, the layers spread evenly by ratio
+const depthMaterial = new THREE.ShaderMaterial({
+  uniforms: { uNear: { value: STEREO.near }, uFar: { value: STEREO.far } },
+  vertexShader: `varying float vDepth;
+    void main() {
+      vec4 p = vec4(position, 1.0);
+      #ifdef USE_INSTANCING
+        p = instanceMatrix * p;
+      #endif
+      vec4 mv = modelViewMatrix * p;
+      vDepth = -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `uniform float uNear; uniform float uFar; varying float vDepth;
+    void main() {
+      float g = 1.0 - log(max(vDepth, uNear) / uNear) / log(uFar / uNear);
+      gl_FragColor = vec4(vec3(clamp(g, 0.0, 1.0)), 1.0);
+    }`,
+});
 
 // ---------------------------------------------------------------------------------------------
 // The world: terrain from the heights, stand-ins at the placements
@@ -157,6 +182,17 @@ function gameCamera(pose) {
   return cam;
 }
 
+function stereoCamera(pose) {
+  const cam = gameCamera(pose);
+  const sign = STEREO.eye === 'L' ? -1 : 1;
+  const near = 0.3, halfH = Math.tan(cam.fovY / 2) * STEREO.focus, halfW = halfH * (cam.w / cam.h);
+  const f = windowFrustum({ ex: sign * STEREO.baseline / 2 }, { screenDist: STEREO.focus, halfW, halfH, near });
+  camera.position.addScaledVector(localDir(cam.rx, cam.ry, cam.rz), f.offset[0]);
+  camera.projectionMatrix.makePerspective(f.left, f.right, f.top, f.bottom, near, 4000);
+  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+  return cam;
+}
+
 function headOffset() {
   if (ui.mousehead.checked) return { x: state.mouse.x, y: state.mouse.y, z: 0, source: 'mouse' };
   if (state.head && performance.now() - state.headAt < 1500) return { ...state.head, source: 'head tracker' };
@@ -183,7 +219,7 @@ function drawOverlay(cam) {
   ctx2d.setTransform(1, 0, 0, 1, 0, 0);
   ctx2d.clearRect(0, 0, overlay.width, overlay.height);
   const pose = state.pose;
-  if (!ui.feet.checked || ui.camera.value !== 'game' || !pose || !cam || state.live) return;
+  if (!ui.feet.checked || ui.camera.value !== 'game' || !pose || !cam || state.live || STEREO.view || STEREO.eye) return;
   const sx = overlay.width / pose.w, sy = overlay.height / pose.h; // UI units to overlay pixels
   ctx2d.lineWidth = 2;
   ctx2d.font = `${12 * (window.devicePixelRatio || 1)}px system-ui, sans-serif`;
@@ -223,7 +259,9 @@ function frame() {
   controls.enabled = ui.camera.value === 'free';
   let cam = null, head = { source: 'none' };
   if (pose) placePlayer(pose);
-  if (ui.camera.value === 'game' && pose) cam = gameCamera(pose);
+  if (STEREO.view === 'depth') { scene.overrideMaterial = depthMaterial; scene.background = new THREE.Color(0x000000); scene.fog = null; backdrop.style.opacity = 0; player.visible = false; }
+  if (STEREO.eye && pose) { cam = stereoCamera(pose); player.visible = false; }
+  else if (ui.camera.value === 'game' && pose) cam = gameCamera(pose);
   else if (ui.camera.value === 'window' && pose) ({ cam, head } = windowCamera(pose));
   else controls.update();
   renderer.render(scene, camera);
