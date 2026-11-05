@@ -4,7 +4,8 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # run from anywhere: python -m unittest tools/headtrack/test_headmath.py
 from headmath import (TRIGGER_CENTRE, Smoother, apply_gain_deadzone, average_rest, clamp, depth_from_width,  # noqa: E402
-                      face_to_axes, normalize_face, pick_largest, pick_tracked, to_depth_trigger, to_trigger)
+                      face_to_axes, normalize_face, pick_center, pick_largest, pick_tracked, search_scale, smallest_face,
+                      to_depth_trigger, to_trigger)
 
 
 class HeadMathTests(unittest.TestCase):
@@ -98,6 +99,38 @@ class HeadMathTests(unittest.TestCase):
         self.assertAlmostEqual(rx, 0.5)
         self.assertAlmostEqual(ry, 0.25)
         self.assertAlmostEqual(rw, 100.0)
+
+    def test_pick_center_follows_the_person_straight_ahead(self):
+        side_big = (40, 100, 120, 120)                              # centre x 100: nearer the camera, off to the side
+        middle_small = (600, 120, 60, 60)                           # centre x 630: straight ahead in a 1280 px picture
+        self.assertEqual(pick_center([side_big, middle_small], 1280), (600.0, 120.0, 60.0, 60.0))
+        self.assertEqual(pick_largest([side_big, middle_small]), (40.0, 100.0, 120.0, 120.0), "the old rule takes the near one")
+        tie_left, tie_right = (590, 100, 40, 40), (630, 100, 60, 60)  # centres 610 and 660: both 30 / 20 px off 640
+        self.assertEqual(pick_center([tie_left, tie_right], 1280), (630.0, 100.0, 60.0, 60.0), "the nearer the centre line wins")
+        same_a, same_b = (620, 100, 40, 40), (600, 300, 80, 80)    # both centres at x 640
+        self.assertEqual(pick_center([same_a, same_b], 1280), (600.0, 300.0, 80.0, 80.0), "equal distances go to the larger")
+        self.assertIsNone(pick_center([], 1280))
+        self.assertIsNone(pick_center([(0, 0, 0, 5)], 1280), "degenerate boxes are skipped")
+
+    def test_pick_tracked_acquires_by_the_rule_then_keeps_the_same_person(self):
+        center = lambda fs: pick_center(fs, 1280)
+        side_big, middle = (40, 100, 120, 120), (600, 120, 60, 60)
+        first = pick_tracked([side_big, middle], None, 320.0, center)
+        self.assertEqual(first, (600.0, 120.0, 60.0, 60.0), "acquired: the person straight ahead")
+        moved = (420, 120, 60, 60)                                  # the player leans 180 px to the left
+        self.assertEqual(pick_tracked([side_big, moved], first, 320.0, center), (420.0, 120.0, 60.0, 60.0),
+                         "kept: still the same person, though the other face is larger and now as near the centre")
+        self.assertEqual(pick_tracked([side_big], first, 320.0, center), (40.0, 100.0, 120.0, 120.0),
+                         "lost beyond max_jump: re-acquired by the rule from what is left")
+
+    def test_the_search_size_decides_how_far_away_a_face_can_be_found(self):
+        self.assertEqual(search_scale(640, 320), 0.5)
+        self.assertEqual(search_scale(320, 320), 1.0)
+        self.assertEqual(search_scale(1280, 0), 1.0, "0 searches the full frame")
+        self.assertEqual(smallest_face(640, 320, 30), 60.0, "the default: a desk webcam at 640 px")
+        self.assertEqual(smallest_face(1280, 320, 30), 120.0, "the default on a 720p phone stream: a face must be 120 px")
+        self.assertEqual(smallest_face(1280, 0, 24), 24.0, "--room: a face three metres from a phone, about 26 px at 1280")
+        self.assertEqual(smallest_face(1280, 0, 10), 24.0, "never below the cascade's own 24 px window")
 
     def test_pick_tracked_prefers_continuity_within_max_jump(self):
         last = (100, 100, 80, 80)                                   # centre (140, 140)

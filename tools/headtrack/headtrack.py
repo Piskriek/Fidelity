@@ -12,6 +12,7 @@ The left stick is never used: with GamePadEnable 1 it walks the character.
     python headtrack.py --source 1           # another camera index
     python headtrack.py --source frames:D:\\path\\to\\dir   # newest .jpg/.png written by another daemon
     python headtrack.py --source http://127.0.0.1:8080/stream.mjpg   # an MJPEG stream
+    python headtrack.py --source http://192.168.0.20:8080/video --no-gamepad --room   # a phone at the TV (an IP-camera app)
     python headtrack.py --source synthetic --duration 5    # no camera: a moving fake face (for tests)
     python headtrack.py --show               # preview window; press c to recalibrate the rest pose, q to quit
     python headtrack.py --no-gamepad         # head.json only
@@ -32,7 +33,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from headmath import (Smoother, average_rest, face_to_axes, normalize_face, pick_tracked,  # noqa: E402
+from headmath import (Smoother, average_rest, face_to_axes, normalize_face, pick_center, pick_tracked, search_scale, smallest_face,  # noqa: E402
                       to_depth_trigger, to_trigger)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -143,7 +144,12 @@ def open_source(spec: str, width: int, height: int):
 # Face detection (OpenCV's bundled Haar cascade: no model download)
 # ---------------------------------------------------------------------------------------------
 class HaarDetector:
-    def __init__(self, scale_width: int = 320):
+    """scale_width: the frame is shrunk to this width before the search (0 = never shrunk); min_face: the smallest
+    face searched for, in the shrunk picture's pixels (the cascade's own window is 24). Shrunk to 320 with 30 px,
+    the default, a face must be 60 px wide in a 640 px picture: right for a webcam at a desk, too big for a couch
+    three metres from a phone, where a face is 25 to 55 px wide in a 1280 px picture (--room)."""
+
+    def __init__(self, scale_width: int = 320, min_face: int = 30):
         import cv2
         self.cv2 = cv2
         path = os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml")
@@ -151,13 +157,14 @@ class HaarDetector:
         if self.cascade.empty():
             raise RuntimeError(f"Haar cascade not found at {path}")
         self.scale_width = scale_width
+        self.min_face = max(24, int(min_face))
 
     def detect(self, frame):
         h, w = frame.shape[:2]
-        s = self.scale_width / float(w) if w > self.scale_width else 1.0
+        s = search_scale(w, self.scale_width)
         small = self.cv2.resize(frame, (int(w * s), int(h * s))) if s != 1.0 else frame
         gray = self.cv2.cvtColor(small, self.cv2.COLOR_BGR2GRAY)
-        faces = self.cascade.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=4, minSize=(30, 30))
+        faces = self.cascade.detectMultiScale(gray, scaleFactor=1.15, minNeighbors=4, minSize=(self.min_face, self.min_face))
         return [(x / s, y / s, fw / s, fh / s) for (x, y, fw, fh) in faces]
 
 
@@ -222,11 +229,22 @@ def main(argv=None) -> int:
     ap.add_argument("--stale-seconds", type=float, default=2.0,
                     help="frames:<dir> only: drift back to rest when no new frame has arrived for this long")
     ap.add_argument("--duration", type=float, default=0.0, help="stop after this many seconds (0 = run until quit)")
+    ap.add_argument("--pick", default="largest", choices=["largest", "center"],
+                    help="whom to follow when there are several faces: the largest (nearest the camera) or the one "
+                         "nearest the picture's centre line (straight in front of a camera centred on the screen)")
+    ap.add_argument("--detect-width", type=int, default=320,
+                    help="shrink each frame to this width before the face search (0 = search the full frame)")
+    ap.add_argument("--min-face", type=int, default=30, help="the smallest face searched for, in the searched picture's pixels (at least 24)")
+    ap.add_argument("--room", action="store_true",
+                    help="a camera at a TV, watching a sofa: search the full frame for faces from 24 px and follow the "
+                         "person straight ahead (--detect-width 0 --min-face 24 --pick center); stream at 1280x720")
     args = ap.parse_args(argv)
+    if args.room:
+        args.detect_width, args.min_face, args.pick = 0, 24, "center"
 
     source = open_source(args.source, args.width, args.height)
     synthetic = isinstance(source, SyntheticSource)
-    detector = None if synthetic else HaarDetector()
+    detector = None if synthetic else HaarDetector(args.detect_width, args.min_face)
     pad = None if args.no_gamepad else PadOutput(args.map)
     mirror = not args.no_mirror
     smoother = Smoother()
@@ -235,12 +253,13 @@ def main(argv=None) -> int:
     frame_interval = 1.0 / max(1.0, args.fps)
     started = last = last_frame_at = time.time()
     frames, lost, stale, json_errors = 0, 0, 0, 0
-    last_face, axes = None, (0.0, 0.0, 0.0)
+    last_face, axes, said_size = None, (0.0, 0.0, 0.0), False
     cv2 = None
     if args.show:
         import cv2 as _cv2
         cv2 = _cv2
-    print(f"headtrack: source={args.source} map={args.map} gamepad={'off' if pad is None else 'on'} out={args.out}", flush=True)
+    print(f"headtrack: source={args.source} map={args.map} gamepad={'off' if pad is None else 'on'} out={args.out} "
+          f"pick={args.pick} search={args.detect_width or 'full frame'} min face={max(24, args.min_face)}px", flush=True)
     try:
         while True:
             now = time.time()
@@ -259,7 +278,11 @@ def main(argv=None) -> int:
             else:
                 last_frame_at = now
                 h, w = frame.shape[:2]
-                face = source.synthetic_face() if synthetic else pick_tracked(detector.detect(frame), last_face, TRACK_MAX_JUMP * w)
+                if not said_size:
+                    said_size = True
+                    print(f"headtrack: {w}x{h} frames; the smallest face it can find is {smallest_face(w, args.detect_width, args.min_face):.0f} px wide", flush=True)
+                acquire = (lambda fs, fw=w: pick_center(fs, fw)) if args.pick == "center" else None
+                face = source.synthetic_face() if synthetic else pick_tracked(detector.detect(frame), last_face, TRACK_MAX_JUMP * w, acquire)
                 if face is not None:
                     last_face = face
                 if rest_width <= 0:  # calibrating: average the rest pose, output rest meanwhile
@@ -284,7 +307,7 @@ def main(argv=None) -> int:
                     cv2.imshow("Fidelity head tracker (c = calibrate, q = quit)", frame)
                     key = cv2.waitKey(1) & 0xFF
             if smoother.lost_for > smoother.hold:
-                last_face = None  # lost beyond the hold: the next face is picked by size again
+                last_face = None  # lost beyond the hold: the next face is picked by the --pick rule again
             if key == ord("q"):
                 break
             if key == ord("c"):

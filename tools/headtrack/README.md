@@ -21,6 +21,28 @@ webcam -> headtrack.py (OpenCV Haar face box) -> ViGEm virtual Xbox pad -> C_Gam
    rest pose (face centre and width), and everything the pad gets is measured from that pose, so
    sitting normally is (0, 0, 0). Press `c` in the preview to redo all three.
 
+## A phone as the camera (a TV in the living room)
+
+An old phone (or your own, to try it) can be the camera: it streams its video over Wi-Fi and the tracker reads the
+stream. Nothing runs on the phone but a camera app.
+
+1. Install an IP-camera app that serves MJPEG. On Android, "IP Webcam" serves `http://<phone ip>:8080/video`; on an
+   iPhone, any IP-camera app with an MJPEG address works the same way.
+2. In the app set the video to **1280 x 720**, then start the server. The app shows the phone's address.
+3. Stand the phone **centred on the TV** (on top of it or just below it), looking at the sofa, not tilted.
+4. On the laptop: `python tools\headtrack\headtrack.py --source http://<phone ip>:8080/video --no-gamepad --room --show`
+   - `--room` searches the full picture for faces from 24 px wide (a face three metres from a phone is about 26 to
+     55 px at 1280 x 720) and follows **the person straight ahead**: of several faces it takes the one nearest the
+     picture's centre line, then keeps that person (continuity beats size) until they are lost for a moment.
+   - Without `--room` the tracker shrinks each frame to 320 px before the search, so a face must be at least 60 px
+     wide in a 640 px picture and 120 px in a 1280 px one: right for a webcam at a desk, never from a sofa.
+   - It prints, at the start, the smallest face it can find.
+5. Sit normally for the 2 s calibration; `head.json` then follows the player, and the twin's `/live` page and its
+   head-coupled window read it.
+
+The phone, the laptop and the TV only need the same Wi-Fi. One camera gives the direction to the head and a rough
+distance from the face's size, for one person at a time.
+
 ## What the pad carries
 
 | `--map` | x (left/right) | y (up/down) | depth |

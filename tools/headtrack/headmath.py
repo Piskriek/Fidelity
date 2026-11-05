@@ -109,12 +109,39 @@ def pick_largest(faces) -> tuple[float, float, float, float] | None:
     return best
 
 
-def pick_tracked(faces, last_face, max_jump: float) -> tuple[float, float, float, float] | None:
+def search_scale(frame_w: float, scale_width: int) -> float:
+    """How much a frame is shrunk before the face search: to `scale_width` when it is wider, never when 0."""
+    return scale_width / float(frame_w) if 0 < scale_width < frame_w else 1.0
+
+
+def smallest_face(frame_w: float, scale_width: int, min_face: int) -> float:
+    """The narrowest face the search can find, in the camera picture's own pixels (the cascade's window is 24)."""
+    return max(24, int(min_face)) / search_scale(frame_w, scale_width)
+
+
+def pick_center(faces, frame_w: float) -> tuple[float, float, float, float] | None:
+    """The face whose centre is nearest the picture's vertical centre line: with the camera centred on the
+    screen, the person sitting straight in front of it (the player, in a living room). Equal distances go to
+    the larger box."""
+    best, best_key = None, None
+    for f in faces or []:
+        x, y, w, h = f[0], f[1], f[2], f[3]
+        if w <= 0 or h <= 0:
+            continue
+        key = (abs(x + w * 0.5 - frame_w * 0.5), -w * h)
+        if best_key is None or key < best_key:
+            best, best_key = (float(x), float(y), float(w), float(h)), key
+    return best
+
+
+def pick_tracked(faces, last_face, max_jump: float, acquire=None) -> tuple[float, float, float, float] | None:
     """The face to follow: with a `last_face`, the box whose centre is nearest to it when that
     distance is within `max_jump` pixels (continuity beats size, so a second person or a false
-    positive nearer the camera cannot hijack the eye); otherwise, or without a last face, the largest."""
+    positive nearer the camera cannot hijack the eye); otherwise, or without a last face, the one
+    `acquire(faces)` picks: the largest by default, `pick_center` for the person straight ahead."""
+    acquire = acquire or pick_largest
     if last_face is None:
-        return pick_largest(faces)
+        return acquire(faces)
     lcx, lcy = last_face[0] + last_face[2] * 0.5, last_face[1] + last_face[3] * 0.5
     best, best_d = None, 0.0
     for f in faces or []:
@@ -124,7 +151,7 @@ def pick_tracked(faces, last_face, max_jump: float) -> tuple[float, float, float
         d = math.hypot(x + w * 0.5 - lcx, y + h * 0.5 - lcy)
         if d <= max_jump and (best is None or d < best_d):
             best, best_d = (float(x), float(y), float(w), float(h)), d
-    return best if best is not None else pick_largest(faces)
+    return best if best is not None else acquire(faces)
 
 
 def face_to_axes(face, frame_w: int, frame_h: int, rest_width: float, gain: float = 1.0,
